@@ -1,0 +1,129 @@
+# ======================
+
+# OS / System files
+
+# ======================
+
+.DS_Store
+Thumbs.db
+
+# ======================
+
+# Logs
+
+# ======================
+
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ======================
+
+# Node / React
+
+# ======================
+
+node_modules/
+build/
+dist/
+.next/
+out/
+.env
+.env.*
+!.env.example
+
+# ======================
+
+# IDE
+
+# ======================
+
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# ======================
+
+# Java / Spring Boot
+
+# ======================
+
+/target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven
+
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+
+.gradle/
+build/
+
+# ======================
+
+# Application Config (MUHIM 🔥)
+
+# ======================
+
+application.properties
+application.yml
+application-*.properties
+application-*.yml
+
+# agar resources ichida bo‘lsa:
+
+src/main/resources/application.properties
+src/main/resources/application.yml
+
+# ======================
+
+# Secrets / Keys
+
+# ======================
+
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+*.keystore
+
+# ======================
+
+# Database
+
+# ======================
+
+*.db
+*.sqlite
+*.sqlite3
+
+# ======================
+
+# Uploads / Files
+
+# ======================
+
+uploads/
+files/
+storage/
+
+# ======================
+
+# Misc
+
+# ======================
+
+coverage/
+tmp/
+temp/
+
