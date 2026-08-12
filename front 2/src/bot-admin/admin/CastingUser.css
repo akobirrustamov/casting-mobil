@@ -1,0 +1,343 @@
+/* Asosiy stil */
+.casting-dark {
+  font-family: "Inter", -apple-system, sans-serif;
+  background-color: #000000;
+  color: #ffffff;
+  min-height: 100vh;
+}
+.user-card {
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.active-card {
+  border: 2px solid #28a745; /* yashil */
+}
+
+.inactive-card {
+  border: 2px solid #dc3545; /* qizil */
+}
+.footer-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-details {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-details:hover {
+  opacity: 0.9;
+}
+
+.toggle-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.active-btn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+}
+
+.inactive-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+}
+
+.toggle-btn:hover {
+  opacity: 0.9;
+}
+/* Modal umumiy overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7); /* xiralik */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000; /* ustunroq bo‘lishi uchun */
+}
+
+/* Modal oynasi */
+.modal-content {
+  background: #1a1a1a;
+  color: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  animation: fadeIn 0.3s ease;
+}
+
+/* Modal ichidagi sarlavha */
+.modal-content h3 {
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+  color: #3b82f6;
+}
+
+/* Action tugmalar qatori */
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+/* Ha tugmasi */
+.btn-confirm {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.btn-confirm:hover {
+  background-color: #218838;
+}
+
+/* Yo‘q tugmasi */
+.btn-cancel {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.btn-cancel:hover {
+  background-color: #c82333;
+}
+
+/* Animatsiya */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Kontent */
+.casting-content {
+  padding: 1rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* Sarlavha */
+.casting-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+}
+
+/* Filter */
+.filter-container {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-label {
+  font-size: 0.9rem;
+  color: #a1a1aa;
+}
+
+.filter-select {
+  background-color: #1a1a1a;
+  color: #ffffff;
+  border: 1px solid #333333;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+/* Xatolik xabari */
+.error-message {
+  background-color: #450a0a;
+  color: #fca5a5;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #ef4444;
+}
+
+/* Yuklanayotgan holat */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(59, 130, 246, 0.2);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  margin-left: 1rem;
+  color: #a1a1aa;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Foydalanuvchi kartalari */
+.users-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.user-card {
+  background-color: #1a1a1a;
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid #333333;
+  transition: all 0.3s ease;
+}
+
+.user-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
+}
+
+.user-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.user-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-meta {
+  font-size: 0.85rem;
+  color: #a1a1aa;
+  margin-top: 0.25rem;
+}
+
+/* Status */
+.status-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+}
+
+.status-pending {
+  background-color: #422006;
+  color: #f59e0b;
+}
+
+.status-accepted {
+  background-color: #052e16;
+  color: #10b981;
+}
+
+.status-rejected {
+  background-color: #450a0a;
+  color: #ef4444;
+}
+
+/* User info */
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #d4d4d8;
+}
+
+.info-icon {
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+/* Footer */
+.user-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #a1a1aa;
+}
+
+.details-link {
+  color: #3b82f6;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+/* Responsive */
+@media (min-width: 640px) {
+  .users-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .users-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .filter-container {
+    flex-direction: row;
+    align-items: center;
+  }
+}

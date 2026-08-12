@@ -1,0 +1,26 @@
+{
+  "files": {
+    "main.css": "/static/css/main.40ff7fb6.css",
+    "main.js": "/static/js/main.4a14df90.js",
+    "static/js/453.0a36081d.chunk.js": "/static/js/453.0a36081d.chunk.js",
+    "static/media/bg.jpg": "/static/media/bg.9bf07e1791eadea11074.jpg",
+    "static/media/Lora-Italic.ttf": "/static/media/Lora-Italic.ee47d3ae3d66ccead751.ttf",
+    "static/media/Lora-Regular.ttf": "/static/media/Lora-Regular.363d06393aa47bc62e82.ttf",
+    "static/media/Lora-Bold.ttf": "/static/media/Lora-Bold.9a0fff275efa282f9516.ttf",
+    "static/media/logo1.jpg": "/static/media/logo1.d9528c4aae4a00204c70.jpg",
+    "static/media/bashara.png": "/static/media/bashara.90fb862777c6f478b285.png",
+    "static/media/banner.jpg": "/static/media/banner.6261a5993563a2c771c0.jpg",
+    "static/media/2.jpg": "/static/media/2.77cccb5a389072b64a59.jpg",
+    "static/media/1.jpg": "/static/media/1.a433b655f04ab391c39c.jpg",
+    "static/media/3.jpg": "/static/media/3.19b285a2ceebdc17133d.jpg",
+    "static/media/logo.jpg": "/static/media/logo.2b946e49ed040c096280.jpg",
+    "index.html": "/index.html",
+    "main.40ff7fb6.css.map": "/static/css/main.40ff7fb6.css.map",
+    "main.4a14df90.js.map": "/static/js/main.4a14df90.js.map",
+    "453.0a36081d.chunk.js.map": "/static/js/453.0a36081d.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.40ff7fb6.css",
+    "static/js/main.4a14df90.js"
+  ]
+}
