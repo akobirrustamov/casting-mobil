@@ -24,7 +24,6 @@ public class AuthController {
 
     @PostMapping(value = "/login", consumes = "application/json")
     public HttpEntity<?> login(@RequestBody UserDTO dto) {
-        System.out.println(dto);
         return service.login(dto);
     }
 
@@ -40,8 +39,6 @@ public class AuthController {
 
     @PutMapping("/password/{adminId}")
     public HttpEntity<?> password(@RequestBody PasswordUpdateRequest request, @PathVariable UUID adminId) {
-        System.out.printf("Password update request: %s%n", request.getPassword());
-        System.out.printf("Admin Id: %s%n", adminId);
         return ResponseEntity.ok(service.password(adminId, request.getPassword()));
 //        if (request.getPassword() == null || request.getPassword().isEmpty()) {
 //            return ResponseEntity.badRequest().body("Password cannot be empty");

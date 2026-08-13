@@ -33,7 +33,7 @@ function Header() {
     };
     return (
         <>
-            <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
+            <header className={`header admin-header ${isScrolled ? 'scrolled' : ''}`}>
                 <div className="header-container">
                     <div className="logo">
                         <Link to="/aadmin/casting-users/web">

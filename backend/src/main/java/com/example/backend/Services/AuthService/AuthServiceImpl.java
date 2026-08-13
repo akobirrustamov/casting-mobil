@@ -38,7 +38,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User user = userOpt.get();
-        System.out.println(user);
 
         Map<String, Object> response = new HashMap<>();
         response.put("access_token", jwtService.generateJwtToken(user));

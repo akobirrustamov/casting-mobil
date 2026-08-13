@@ -23,8 +23,6 @@ public class AttachmentController {
     private final AttachmentService attachmentService;
     @PostMapping("/upload")
     public HttpEntity<?> uploadFile(@RequestParam MultipartFile photo, @RequestParam String prefix) throws IOException {
-        System.out.println(photo);
-        System.out.println(prefix);
         return attachmentService.uploadFile(photo, prefix);
     }
     @GetMapping("/getFile/{id}")

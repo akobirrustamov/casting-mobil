@@ -7,7 +7,8 @@ public enum UserRoles {
     ROLE_USER,
     ROLE_SUPERADMIN,
     ROLE_TEACHER,
-    ROLE_DEKAN
+    ROLE_DEKAN,
+    ROLE_GIPERSUPERADMIN
 
 }
 

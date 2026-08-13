@@ -717,3 +717,22 @@ body.dark-mode .register-btn:hover {
     display: none;
   }
 }
+
+
+/* ===================================================================
+   Admin panel menyusi (faqat .admin-header ichida - public saytga ta'sir qilmaydi)
+   Admin sahifalarining foni qora (#000000), header foni esa transparent /
+   scroll qilinganda #111827. Umumiy .nav-link rangi #1f2937 (to'q kulrang)
+   bo'lgani uchun menyu qora fonda ko'rinmay qolgan edi.
+   =================================================================== */
+.admin-header .nav-link {
+  color: #f3f4f6;
+}
+
+.admin-header .nav-link:hover {
+  color: #93c5fd;
+}
+
+.admin-header .nav-link span {
+  color: inherit;
+}

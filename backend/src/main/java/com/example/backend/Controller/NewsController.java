@@ -31,7 +31,6 @@ public class NewsController {
     @PostMapping
     public HttpEntity<?> addNews(@RequestBody NewsDTO newsDTO) {
         try {
-            System.out.println(newsDTO);
             Attachment attachment = null;
             if (newsDTO.getMainPhoto() != null) {
                 Optional<Attachment> byId = attachmentRepo.findById(newsDTO.getMainPhoto());

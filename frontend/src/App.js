@@ -39,17 +39,23 @@ function App() {
   async function checkSecurity() {
     if (blockedPages.some((blockedPage) => location.pathname.startsWith(blockedPage))) {
       let accessToken = localStorage.getItem("access_token");
-      const res = await ApiCall("/api/v1/security", "GET")
-      if (res?.data == 401) {
+      if (accessToken === null) {
         navigate("/aadmin/login");
+        return;
       }
-      if (accessToken !== null) {
+      try {
+        const res = await ApiCall("/api/v1/security", "GET")
+        if (res?.data == 401) {
+          navigate("/aadmin/login");
+          return;
+        }
         if (res?.data !== 401 && res?.error) {
           if (res?.data[0]?.name !== "ROLE_ADMIN") {
             navigate("/404")
           }
         }
-      } else {
+      } catch (e) {
+        // token yaroqsiz yoki server javob bermadi
         navigate("/aadmin/login");
       }
     }
@@ -64,7 +70,7 @@ function App() {
         <Route path={"/aadmin/casting-users/:castingUserId"} element={<CastingUserDetail />} />
 
         <Route path={"/*"} element={<PageNotFound />} />
-        <Route path={"/"} element={<Home />} />b
+        <Route path={"/"} element={<Home />} />
 
         {/*bot admin*/}
         <Route path={"/admin/home"} element={<BotAdminHome />} />

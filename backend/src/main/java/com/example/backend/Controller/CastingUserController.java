@@ -39,7 +39,6 @@ public class CastingUserController {
 
     @PostMapping
     public HttpEntity<?> addCastingUser(@RequestBody CastingUserDTO castingUser){
-        System.out.println(castingUser);
         List<Attachment> attachments = new ArrayList<>();
         for (UUID photo : castingUser.getPhotos()) {
             Attachment attachment = new Attachment();
@@ -50,7 +49,6 @@ public class CastingUserController {
             }
 
         }
-        System.out.println(attachments);
 
         CastingUser castingUser1 = new CastingUser(castingUser.getTelegramId(), castingUser.getCastingType(), castingUser.getGender(), castingUser.getName(), castingUser.getRegion(), castingUser.getNationality(), castingUser.getBirthday(), castingUser.getAge(), castingUser.getHeight(), castingUser.getHairColor(), castingUser.getEyeColor(), castingUser.getClothSize(), castingUser.getShoeSize(), castingUser.getBust(), castingUser.getWaist(),castingUser.getSon(), castingUser.getEmail(), castingUser.getPhone(), castingUser.getTelegram(), castingUser.getFacebook(), castingUser.getInstagram(), castingUser.getPrice(), 0, attachments ,LocalDateTime.now());
         castingUser1.setIsWebShow(Boolean.FALSE);
@@ -127,14 +125,14 @@ public class CastingUserController {
             if (status == 1){
 
                 Message message1 = new Message(save,"\uD83D\uDFE2Siz Castingdan o'tdingiz!", price,  LocalDateTime.now(), true );
-                message1.setTelegramId(new BigInteger(save.getTelegramId()));
+                message1.setTelegramId(parseTelegramId(save.getTelegramId()));
                 message1.setName(save.getName());
                 message1.setCastingType(translatedType);
                 messageRepo.save(message1);
             }
             if (status == 2){
                 Message message2 = new Message(save,"⛔\uFE0F Afsuski, so‘rovingiz rad etildi! Castingdan o'ta olmadingiz.", "0",  LocalDateTime.now(), false);
-                message2.setTelegramId(new BigInteger(save.getTelegramId()));
+                message2.setTelegramId(parseTelegramId(save.getTelegramId()));
                 message2.setName(save.getName());
                 message2.setCastingType(translatedType);
                 messageRepo.save(message2);
@@ -185,20 +183,22 @@ public class CastingUserController {
 
     @GetMapping("/appeal/{appealId}")
     public HttpEntity<?> getAppealUser(@PathVariable Integer appealId){
-        System.out.println(appealId);
         Optional<CastingUser> byId = castingUserRepo.findById(appealId);
         if (byId.isEmpty()){
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        System.out.println(byId.get());
         return ResponseEntity.ok(byId.get());
     }
 
-
-
-
-
-
-
-
+    /** telegramId null yoki raqam bo'lmasa ilova qulab tushmasligi uchun. */
+    private BigInteger parseTelegramId(String telegramId) {
+        if (telegramId == null || telegramId.isBlank()) {
+            return null;
+        }
+        try {
+            return new BigInteger(telegramId.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
 }

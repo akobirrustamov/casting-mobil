@@ -20,7 +20,6 @@ function Models() {
     const [loading, setLoading] = useState(true);
     const [zoomPhoto, setZoomPhoto] = useState(null);
     const [contactLock, setContactLock] = useState(false);
-    console.log("weasdrghjkhgfdsa");
 
     // --- Фильтры ---
     const [query, setQuery] = useState('');
@@ -54,10 +53,8 @@ function Models() {
         const fetchData = async () => {
             try {
                 const res = await ApiCall('/api/v1/casting-user/web', 'GET');
-                console.log(res.data);
 
                 const list = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
-                console.log(list);
 
                 const mapped = list.map((u) => {
                     const photos = Array.isArray(u.photos) ? u.photos : [];
