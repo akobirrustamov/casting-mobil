@@ -43,3 +43,7 @@ yarn-error.*
 # tooling artifacts
 .playwright-mcp/
 .claude/
+
+# env
+.env
+

@@ -19,6 +19,13 @@ export const READ_ONLY = process.env.EXPO_PUBLIC_READ_ONLY !== 'false';
 
 const SAFE_METHODS = ['get', 'head', 'options'];
 
+/**
+ * Исключения из read-only: авторизация обязана писать (создание аккаунта,
+ * выдача токена). Всё остальное — каталоги, заявки, покупки — под запретом,
+ * пока не появится тестовый контур.
+ */
+const WRITE_ALLOWLIST = ['/api/v1/auth/'];
+
 export const api = axios.create({
   baseURL: BASE_URL,
   timeout: 15_000,
@@ -27,9 +34,12 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const method = (config.method ?? 'get').toLowerCase();
 
-  if (READ_ONLY && !SAFE_METHODS.includes(method)) {
+  const url = config.url ?? '';
+  const isAllowed = WRITE_ALLOWLIST.some((prefix) => url.startsWith(prefix));
+
+  if (READ_ONLY && !SAFE_METHODS.includes(method) && !isAllowed) {
     throw new Error(
-      `[READ_ONLY] Запрос ${method.toUpperCase()} ${config.url ?? ''} заблокирован. ` +
+      `[READ_ONLY] Запрос ${method.toUpperCase()} ${url} заблокирован. ` +
         'Приложение подключено к боевой базе сайта, запись запрещена.'
     );
   }

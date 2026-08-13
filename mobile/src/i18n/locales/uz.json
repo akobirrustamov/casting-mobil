@@ -32,6 +32,21 @@
     "premiere": "Premyera",
     "years": "{{count}} yosh"
   },
+  "auth": {
+    "phoneTitle": "Iltimos, telefon raqamingizni kiriting",
+    "phonePlaceholder": "91 123 45 67",
+    "continue": "DAVOM ETISH",
+    "consentPrefix": "Davom etish orqali siz",
+    "termsLink": "Foydalanuvchi kelishuvi",
+    "consentMiddle": "va",
+    "privacyLink": "Maxfiylik siyosatiga",
+    "consentSuffix": "rozilik bildirasiz",
+    "or": "yoki",
+    "google": "Google orqali kirish",
+    "googleUnavailable": "Google kiritish hozircha sozlanmagan",
+    "cancelled": "Kirish bekor qilindi",
+    "skip": "Keyinroq"
+  },
   "home": {
     "todayPremieres": "Bugungi premyeralar",
     "popularCreators": "Mashhur ijodkorlar",

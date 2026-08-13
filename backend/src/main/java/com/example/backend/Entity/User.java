@@ -22,10 +22,27 @@ public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
-    @Column(unique = true, nullable = false)
+
+    /**
+     * Google orqali kirgan foydalanuvchida telefon boshida bo'lmaydi,
+     * shuning uchun nullable. Admin/parol login uchun avvalgidek ishlaydi.
+     */
+    @Column(unique = true)
     private String phone;
+
     private String password;
     private String name;
+
+    /** Google hisobidan. */
+    @Column(unique = true)
+    private String email;
+
+    /** Google'dagi barqaror identifikator (ID token'dagi "sub"). */
+    @Column(unique = true)
+    private String googleSub;
+
+    private String avatarUrl;
+
     @ManyToMany(fetch = FetchType.EAGER)
     private List<Role> roles;
 
@@ -46,9 +63,13 @@ public class User implements UserDetails {
         return password;
     }
 
+    /**
+     * Telefon yo'q bo'lsa (Google login) — email ishlatiladi,
+     * aks holda Spring Security null username bilan yiqiladi.
+     */
     @Override
     public String getUsername() {
-        return phone;
+        return phone != null ? phone : email;
     }
 
     @Override

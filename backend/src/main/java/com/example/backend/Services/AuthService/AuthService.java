@@ -8,6 +8,10 @@ import java.util.UUID;
 
 public interface AuthService {
     HttpEntity<?> login(UserDTO dto);
+
+    /** Google ID token'ni tekshirib, o'z JWT'imizni qaytaradi. */
+    HttpEntity<?> googleLogin(String idToken);
+
     HttpEntity<?> refreshToken(String refreshToken);
     User decode(String token);
 

@@ -11,6 +11,10 @@ import java.util.UUID;
 public interface UserRepo extends JpaRepository<User, UUID> {
     Optional<User> findByPhone(String phone);
 
+    Optional<User> findByGoogleSub(String googleSub);
+
+    Optional<User> findByEmail(String email);
+
     @Query(value = "SELECT u.* FROM users u JOIN users_roles ur ON u.id = ur.user_id JOIN role r ON ur.roles_id = r.id WHERE r.name = 'ROLE_ADMIN'", nativeQuery = true)
     List<User> findAllAdminsByRole();
 

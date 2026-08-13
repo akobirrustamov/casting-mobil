@@ -29,6 +29,14 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#07070D",
+          "imageWidth": 180
+        }
+      ],
       "expo-secure-store",
       "expo-image",
       "expo-video",

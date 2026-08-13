@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
@@ -63,7 +64,9 @@ export default function ProfileScreen() {
         </View>
 
         {!isAuthorized ? (
-          <Button variant="primary">{t('profile.signIn')}</Button>
+          <Button variant="primary" onPress={() => router.push('/(auth)/sign-in')}>
+            {t('profile.signIn')}
+          </Button>
         ) : null}
       </View>
 

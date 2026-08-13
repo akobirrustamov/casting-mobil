@@ -5,11 +5,27 @@
  * креаторов — он подключён по-настоящему в features/creators).
  * Эти данные нужны, чтобы собрать и посмотреть главные экраны до контракта.
  *
- * Названия сериалов взяты из мокапов ТЗ (V4), цена 5 000 сум — из ТЗ.
+ * Названия сериалов взяты из мокапов ТЗ (V4).
  * Удалить целиком, как только появятся эндпоинты.
  */
 
-export const EPISODE_PRICE = 5000;
+/**
+ * Цены — из сообщения заказчика от 13.08.2026, см. docs/MONETIZATION.md.
+ * ⚠️ В ТЗ и на мокапах стоит 5 000 за серию — эта цифра устарела.
+ */
+export const EPISODE_PRICE = 3000;
+export const PREMIERE_PRICE = 15000;
+
+/** Тарифы Premium. */
+export const PREMIUM_PLANS = [
+  { id: 'm1', months: 1, price: 24000, best: false },
+  { id: 'm3', months: 3, price: 49999, best: false },
+  { id: 'm6', months: 6, price: 99000, best: false },
+  { id: 'y1', months: 12, price: 159900, best: true },
+] as const;
+
+/** Пакеты UzCasting Stars — донаты креаторам. */
+export const STARS_PACKS = [10, 50, 100, 500, 1000] as const;
 
 export type PlaceholderPremiere = {
   id: string;

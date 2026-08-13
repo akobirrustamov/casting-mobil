@@ -32,6 +32,21 @@
     "premiere": "Премьера",
     "years": "{{count}} лет"
   },
+  "auth": {
+    "phoneTitle": "Пожалуйста, введите номер телефона",
+    "phonePlaceholder": "91 123 45 67",
+    "continue": "ПРОДОЛЖИТЬ",
+    "consentPrefix": "Продолжая, вы соглашаетесь с",
+    "termsLink": "Пользовательским соглашением",
+    "consentMiddle": "и",
+    "privacyLink": "Политикой конфиденциальности",
+    "consentSuffix": "",
+    "or": "или",
+    "google": "Войти через Google",
+    "googleUnavailable": "Вход через Google пока не настроен",
+    "cancelled": "Вход отменён",
+    "skip": "Позже"
+  },
   "home": {
     "todayPremieres": "Сегодняшние премьеры",
     "popularCreators": "Популярные креаторы",
