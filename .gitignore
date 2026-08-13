@@ -127,3 +127,9 @@ coverage/
 tmp/
 temp/
 
+
+# ======================
+# Tooling artifacts
+# ======================
+.playwright-mcp/
+.claude/
