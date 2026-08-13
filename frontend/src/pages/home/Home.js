@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { FaArrowDown, FaCheckCircle } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import bg from "../../images/bg.jpg"
-import ImageWithLightAnimation from "./ImageWithLightAnimation"
+import VideoWithLightAnimation from "./VideoWithLightAnimation"
 import face from "../../images/bashara.png"
 import banner from "../../images/banner.jpg"
 import one from "../../images/1.jpg"
@@ -45,7 +45,11 @@ function Home() {
     return (
         <div className="home-container">
             <Header />
-            <ImageWithLightAnimation src={bg} alt="Tog' manzarasi" />
+            <VideoWithLightAnimation
+                src={`${process.env.PUBLIC_URL}/videos/sahna.mp4`}
+                poster={bg}
+                alt="Sahna ortidagi lavhalar"
+            />
 
             {/* ===== HERO ===== */}
             <section

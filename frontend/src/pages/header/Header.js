@@ -58,10 +58,7 @@ function Header() {
 
     return (
         <>
-            <header
-                style={{ backgroundColor: "#111827" }}
-                className={`header ${isScrolled ? "scrolled" : ""}`}
-            >
+            <header className={`header ${isScrolled ? "scrolled" : ""}`}>
 
                 <div className="header-container">
                     <div className="logo">

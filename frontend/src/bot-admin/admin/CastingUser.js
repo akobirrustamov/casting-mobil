@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ApiCall from "../../config/index";
 import { useNavigate } from "react-router-dom";
-import Header from "./HeaderAdmin";
+import { AdminPage, AdminPageHeader, AdminError, AdminLoading } from "./AdminLayout";
 import { FaUser, FaPhone, FaEnvelope, FaTelegram } from 'react-icons/fa';
 import './CastingUser.css';
 
@@ -111,19 +111,13 @@ const CastingUser = () => {
     };
 
     return (
-        <div className="casting-dark">
-            <Header props='admin/casting-users' />
+        <AdminPage headerProps='admin/casting-users'>
+                <AdminPageHeader title="Foydalanuvchilar" />
 
-            <div className="casting-content">
-                <h1 className="casting-title mb-4">Foydalanuvchilar</h1>
-
-                {error && <div className="error-message">{error}</div>}
+                <AdminError>{error}</AdminError>
 
                 {loading && !castingUsers.length ? (
-                    <div className="loading-container">
-                        <div className="loading-spinner"></div>
-                        <span className="loading-text">Yuklanmoqda...</span>
-                    </div>
+                    <AdminLoading />
                 ) : (
                     <div className="users-grid">
                         {filteredUsers.map((user) => (
@@ -176,7 +170,6 @@ const CastingUser = () => {
                         ))}
                     </div>
                 )}
-            </div>
 
             {confirmModal.show && (
                 <div className="modal-overlay">
@@ -189,7 +182,7 @@ const CastingUser = () => {
                     </div>
                 </div>
             )}
-        </div>
+        </AdminPage>
     );
 };
 

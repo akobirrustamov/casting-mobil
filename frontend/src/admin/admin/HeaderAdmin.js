@@ -89,7 +89,7 @@ function Header() {
                     </div>
                 </div>
             </header >
-            {/* <div className="header-spacer"></div> */}
+            <div className="header-spacer"></div>
         </>
     );
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ApiCall from "../../config";
 import { useNavigate } from "react-router-dom";
-import Header from "./HeaderAdmin";
+import { AdminPage, AdminPageHeader, AdminError, AdminLoading } from "./AdminLayout";
 import { FaUser, FaPhone, FaEnvelope, FaTelegram, FaCheckCircle, FaTimesCircle, FaClock, FaMoneyBillWave } from 'react-icons/fa';
 import './CastingUserAccepted.css';
 
@@ -87,31 +87,20 @@ const CastingUser = () => {
     };
 
     return (
-        <div className="casting-dark">
-            <Header props='admin/casting-users' />
-
-            <div className="casting-content">
-                <div className="page-header">
-                    <h1 className="casting-title">Qabul qilinganlar</h1>
+        <AdminPage headerProps='admin/casting-users'>
+                <AdminPageHeader title="Qabul qilinganlar">
                     <div className="stats-container">
                         <div className="stat-card">
                             <span className="stat-number">{filteredUsers.length}</span>
                             <span className="stat-label">Jami qabul qilinganlar</span>
                         </div>
                     </div>
-                </div>
+                </AdminPageHeader>
 
-                {error && (
-                    <div className="error-message">
-                        {error}
-                    </div>
-                )}
+                <AdminError>{error}</AdminError>
 
                 {loading && !castingUsers.length ? (
-                    <div className="loading-container">
-                        <div className="loading-spinner"></div>
-                        <span className="loading-text">Yuklanmoqda...</span>
-                    </div>
+                    <AdminLoading />
                 ) : (
                     <div className="users-grid">
                         {filteredUsers.map((user) => (
@@ -177,8 +166,7 @@ const CastingUser = () => {
                         <p>Qabul qilinganlar ro'yxati shu yerda ko'rinadi</p>
                     </div>
                 )}
-            </div>
-        </div>
+        </AdminPage>
     );
 };
 

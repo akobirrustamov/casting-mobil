@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
-import Header from "./HeaderAdmin";
+import { AdminPage, AdminPageHeader, AdminError, AdminLoading } from "./AdminLayout";
 import { FaPlus, FaTrash, FaTimes, FaSpinner, FaEdit } from 'react-icons/fa';
 import './AdminNews.css';
 
@@ -259,22 +259,17 @@ const AdminNews = () => {
 
     // ============== РЕНДЕР ==============
     return (
-        <div className="mobile-news-dark">
-            <Header props='admin/news' />
-
-            <div className="mobile-news-header">
-                <h1 className="mobile-news-title">Yangiliklar</h1>
+        <AdminPage headerProps='admin/news'>
+            <AdminPageHeader title="Yangiliklar">
                 <button onClick={openCreateModal} className="add-news-btn">
                     <FaPlus /> Qo'shish
                 </button>
-            </div>
+            </AdminPageHeader>
 
-            {error && <div className="error-message">{error}</div>}
+            <AdminError>{error}</AdminError>
 
             {loading && !newsList.length ? (
-                <div className="loading-spinner">
-                    <div className="spinner"></div>
-                </div>
+                <AdminLoading />
             ) : (
                 <div className="news-list">
                     {newsList.map((news) => (
@@ -455,7 +450,7 @@ const AdminNews = () => {
                     </div>
                 </div>
             )}
-        </div>
+        </AdminPage>
     );
 };
 

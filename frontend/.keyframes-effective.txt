@@ -1,0 +1,29 @@
+@keyframes react-responsive-modal-overlay-in {0%{opacity:0}to{opacity:1}}
+@keyframes react-responsive-modal-overlay-out {0%{opacity:1}to{opacity:0}}
+@keyframes react-responsive-modal-modal-in {0%{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(100%)}}
+@keyframes react-responsive-modal-modal-out {0%{opacity:1;transform:scale(100%)}to{opacity:0;transform:scale(.96)}}
+@keyframes text-rotate {to{transform:rotate(1turn)}}
+@keyframes ping {75%,to{opacity:0;transform:scale(1.8)}}
+@keyframes float {0%,to{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-18px) rotate(8deg)}}
+@keyframes cardEnter {0%{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes modalIn {0%{opacity:.9;transform:translateY(4px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes bbl {0%,80%,to{opacity:.6;transform:scale(.6)}40%{opacity:1;transform:scale(1)}}
+@keyframes fadeInUp {0%{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes bounce {0%,to{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes headerScroll {0%{opacity:.8;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulseAnimation {0%{box-shadow:0 0 0 0 #3b82f6b3}70%{box-shadow:0 0 0 15px #3b82f600}to{box-shadow:0 0 0 0 #3b82f600}}
+@keyframes shineEffect {0%{left:-100%}20%{left:100%}to{left:100%}}
+@keyframes colorShift {0%{background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 4px 15px #2563eb80}25%{background:linear-gradient(135deg,#1d4ed8,#3b82f6);box-shadow:0 4px 15px #1d4ed880}50%{background:linear-gradient(135deg,#4338ca,#4f46e5);box-shadow:0 4px 15px #4338ca80}75%{background:linear-gradient(135deg,#3730a3,#4338ca);box-shadow:0 4px 15px #3730a380}to{background:linear-gradient(135deg,#312e81,#3730a3);box-shadow:0 4px 15px #312e8180}}
+@keyframes colorShiftDark {0%{background:linear-gradient(135deg,#3b82f6,#60a5fa);box-shadow:0 4px 15px #3b82f699}25%{background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 4px 15px #2563eb99}50%{background:linear-gradient(135deg,#4f46e5,#6366f1);box-shadow:0 4px 15px #4f46e599}75%{background:linear-gradient(135deg,#4338ca,#4f46e5);box-shadow:0 4px 15px #4338ca99}to{background:linear-gradient(135deg,#3730a3,#4338ca);box-shadow:0 4px 15px #3730a399}}
+@keyframes slideDown {0%{opacity:0;transform:translateY(-100%)}to{opacity:1;transform:translateY(0)}}
+@keyframes menuSlideIn {0%{opacity:0;transform:translateX(50px)}to{opacity:1;transform:translateX(0)}}
+@keyframes shake {0%,to{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+@keyframes spin {to{transform:rotate(1turn)}}
+@keyframes pulse {0%{box-shadow:0 0 10px #3b82f666}to{box-shadow:0 0 20px #3b82f6cc}}
+@keyframes fadeIn {0%{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn {0%{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes progress-bar-stripes {0%{background-position-x:1rem}}
+@keyframes spinner-border {to{transform:rotate(1turn)}}
+@keyframes spinner-grow {0%{transform:scale(0)}50%{opacity:1;transform:none}}
+@keyframes placeholder-glow {50%{opacity:.2}}
+@keyframes placeholder-wave {to{-webkit-mask-position:-200% 0;mask-position:-200% 0}}

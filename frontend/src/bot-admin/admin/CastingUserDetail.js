@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Header from "./HeaderAdmin";
+import { AdminPage, AdminPageHeader, AdminLoading } from "./AdminLayout";
 import "react-responsive-modal/styles.css";
 import ApiCall, { baseUrl } from '../../config/index';
 import { useParams, useNavigate } from "react-router-dom";
@@ -205,18 +205,14 @@ function CastingUserDetail() {
     };
 
     return (
-        <div className="casting-detail-dark">
-            <Header props={""} />
-
-            <div className="casting-detail-content">
-                <button className="back-button" onClick={() => navigate("/admin/casting-users")}>
-                    <FaArrowLeft className="button-icon" /> Orqaga
-                </button>
+        <AdminPage headerProps={""}>
+                <AdminPageHeader title="Ariza tafsilotlari">
+                    <button className="back-button" onClick={() => navigate("/admin/casting-users")}>
+                        <FaArrowLeft className="button-icon" /> Orqaga
+                    </button>
+                </AdminPageHeader>
                 {loading && !casting ? (
-                    <div className="loading-container">
-                        <div className="loading-spinner"></div>
-                        <p className="loading-text">Yuklanmoqda...</p>
-                    </div>
+                    <AdminLoading />
                 ) : error ? (
                     <div className="error-message">
                         <div className="error-icon">⚠️</div>
@@ -632,8 +628,7 @@ function CastingUserDetail() {
                         </div>
                     </div>
                 </Modal>
-            </div>
-        </div>
+        </AdminPage>
     );
 }
 
