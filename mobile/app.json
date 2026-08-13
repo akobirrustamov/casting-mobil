@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "UzCasting",
+    "slug": "uzcasting",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "uzcasting",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#07070D",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "uz.uzcasting.app"
+    },
+    "android": {
+      "package": "uz.uzcasting.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#07070D",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-image",
+      "expo-video",
+      "expo-web-browser",
+      "expo-localization",
+      "expo-font"
+    ]
+  }
+}

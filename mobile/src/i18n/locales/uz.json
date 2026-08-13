@@ -1,0 +1,79 @@
+{
+  "tabs": {
+    "home": "Bosh sahifa",
+    "casting": "Casting",
+    "premiere": "Premyera",
+    "messages": "Xabarlar",
+    "profile": "Profil"
+  },
+  "states": {
+    "emptyTitle": "Hozircha bo'sh",
+    "emptyBody": "Bu yerda hali ma'lumot yo'q.",
+    "errorTitle": "Xatolik yuz berdi",
+    "errorBody": "Qayta urinib ko'ring.",
+    "retry": "Qayta urinish",
+    "offlineTitle": "Internet yo'q",
+    "offlineBody": "Ulanishni tekshiring.",
+    "lockedTitle": "Qism yopiq",
+    "lockedBody": "Ko'rish uchun sotib oling.",
+    "purchased": "Sotib olingan",
+    "loading": "Yuklanmoqda..."
+  },
+  "common": {
+    "price": "{{amount}} so'm",
+    "watch": "Ko'rish",
+    "buy": "Sotib olish",
+    "apply": "Ariza berish",
+    "save": "Saqlash",
+    "seeAll": "Barchasi",
+    "search": "Qidirish...",
+    "locked": "Yopiq",
+    "purchased": "Olingan",
+    "premiere": "Premyera",
+    "years": "{{count}} yosh"
+  },
+  "home": {
+    "todayPremieres": "Bugungi premyeralar",
+    "popularCreators": "Mashhur ijodkorlar",
+    "categories": "Yo'nalishlar",
+    "castings": "Casting e'lonlari",
+    "premiumTitle": "UzCasting Premium",
+    "premiumBody": "Eksklyuziv premyeralarni birinchi bo'lib ko'ring",
+    "premiumCta": "Premiumga o'tish",
+    "heroSubtitle": "Bugun faqat UzCasting'da",
+    "unlock": "Ochish"
+  },
+  "casting": {
+    "title": "Casting e'lonlari",
+    "subtitle": "Barcha rollar va loyihalar",
+    "paid": "To'lovli",
+    "unpaid": "To'lovsiz",
+    "deadline": "Muddat"
+  },
+  "premiere": {
+    "title": "Premyera",
+    "subtitle": "Eksklyuziv kontent markazi",
+    "tabsAll": "Barchasi",
+    "tabsSeries": "Seriallar",
+    "tabsShows": "Ko'rsatuvlar",
+    "tabsMovies": "Filmlar"
+  },
+  "profile": {
+    "title": "Profil",
+    "balance": "Balans",
+    "topUp": "Balansni to'ldirish",
+    "purchases": "Xaridlarim",
+    "paymentHistory": "To'lovlar tarixi",
+    "applications": "Arizalarim",
+    "portfolio": "Portfolio",
+    "favorites": "Sevimli",
+    "creatorStudio": "Creator Studio",
+    "premium": "Premium",
+    "devices": "Faol qurilmalar",
+    "settings": "Sozlamalar",
+    "contact": "Biz bilan bog'lanish",
+    "logout": "Chiqish",
+    "guest": "Mehmon",
+    "signIn": "Kirish"
+  }
+}

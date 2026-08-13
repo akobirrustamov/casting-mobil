@@ -1,0 +1,79 @@
+{
+  "tabs": {
+    "home": "Главная",
+    "casting": "Кастинг",
+    "premiere": "Премьера",
+    "messages": "Сообщения",
+    "profile": "Профиль"
+  },
+  "states": {
+    "emptyTitle": "Пока пусто",
+    "emptyBody": "Здесь ещё нет данных.",
+    "errorTitle": "Произошла ошибка",
+    "errorBody": "Попробуйте ещё раз.",
+    "retry": "Повторить",
+    "offlineTitle": "Нет интернета",
+    "offlineBody": "Проверьте подключение.",
+    "lockedTitle": "Серия закрыта",
+    "lockedBody": "Купите, чтобы смотреть.",
+    "purchased": "Куплено",
+    "loading": "Загрузка..."
+  },
+  "common": {
+    "price": "{{amount}} сум",
+    "watch": "Смотреть",
+    "buy": "Купить",
+    "apply": "Подать заявку",
+    "save": "Сохранить",
+    "seeAll": "Все",
+    "search": "Поиск...",
+    "locked": "Закрыто",
+    "purchased": "Куплено",
+    "premiere": "Премьера",
+    "years": "{{count}} лет"
+  },
+  "home": {
+    "todayPremieres": "Сегодняшние премьеры",
+    "popularCreators": "Популярные креаторы",
+    "categories": "Направления",
+    "castings": "Кастинги",
+    "premiumTitle": "UzCasting Premium",
+    "premiumBody": "Смотрите эксклюзивные премьеры первыми",
+    "premiumCta": "Перейти на Premium",
+    "heroSubtitle": "Сегодня только на UzCasting",
+    "unlock": "Открыть"
+  },
+  "casting": {
+    "title": "Кастинги",
+    "subtitle": "Все роли и проекты",
+    "paid": "Оплачиваемый",
+    "unpaid": "Без оплаты",
+    "deadline": "Срок"
+  },
+  "premiere": {
+    "title": "Премьера",
+    "subtitle": "Центр эксклюзивного контента",
+    "tabsAll": "Все",
+    "tabsSeries": "Сериалы",
+    "tabsShows": "Шоу",
+    "tabsMovies": "Фильмы"
+  },
+  "profile": {
+    "title": "Профиль",
+    "balance": "Баланс",
+    "topUp": "Пополнить баланс",
+    "purchases": "Мои покупки",
+    "paymentHistory": "История платежей",
+    "applications": "Мои заявки",
+    "portfolio": "Портфолио",
+    "favorites": "Избранное",
+    "creatorStudio": "Creator Studio",
+    "premium": "Premium",
+    "devices": "Активные устройства",
+    "settings": "Настройки",
+    "contact": "Связаться с нами",
+    "logout": "Выйти",
+    "guest": "Гость",
+    "signIn": "Войти"
+  }
+}
