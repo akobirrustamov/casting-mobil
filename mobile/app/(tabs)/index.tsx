@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
@@ -63,12 +64,13 @@ export default function HomeScreen() {
         ))}
       </Rail>
 
-      <Rail title={t('home.categories')}>
+      <Rail title={t('home.categories')} onSeeAll={() => router.push('/catalog/all')}>
         {CATEGORIES.map((c) => (
           <CategoryTile
             key={c.id}
             title={isRu ? c.titleRu : c.titleUz}
             accent={c.accent}
+            onPress={() => router.push(`/catalog/${c.id}`)}
           />
         ))}
       </Rail>
@@ -84,13 +86,17 @@ export default function HomeScreen() {
             <ScreenState kind="error" onRetry={() => creators.refetch()} />
           </View>
         ) : (
-          <Rail title={t('home.popularCreators')} onSeeAll={() => {}}>
+          <Rail
+            title={t('home.popularCreators')}
+            onSeeAll={() => router.push('/catalog/all')}
+          >
             {popular.map((c) => (
               <StoryCircle
                 key={c.id}
                 name={c.name}
                 role={c.age ? t('common.years', { count: c.age }) : undefined}
                 imageUrl={c.photoUrls[0]}
+                onPress={() => router.push(`/creator/${c.id}`)}
               />
             ))}
           </Rail>

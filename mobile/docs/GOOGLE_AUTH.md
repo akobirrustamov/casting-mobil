@@ -1,9 +1,10 @@
 # Google Sign-In — настройка OAuth-клиентов
 
 > Что вписывать в Google Cloud Console для проекта UzCasting и как это работает в коде.
-> Статус: **клиентская часть написана**, ждёт client ID и эндпоинт на бэкенде.
+> Статус: клиент и бэкенд написаны, client ID заведены, dev build собирается.
+> Упирается в сервер: нужен деплой бэкенда + `app.google.client-ids` в конфиге (см. §7).
 
-Последнее обновление: 13.08.2026
+Последнее обновление: 14.08.2026
 
 ---
 
@@ -79,14 +80,40 @@ keytool -list -v -keystore ~/.android/debug.keystore \
   -alias androiddebugkey -storepass android -keypass android
 ```
 
-⚠️ **Отпечаток выше годится только для локальных сборок.** Если dev build собирается
-через EAS в облаке, EAS создаёт собственный keystore — там будет другой SHA-1,
-и его нужно добавить в тот же Android-клиент дополнительно (`eas credentials`).
+**Этот же отпечаток работает и в облачных сборках EAS.** По умолчанию EAS генерирует
+собственный keystore — это дало бы второй SHA-1, который пришлось бы дописывать
+в Android-клиент. Чтобы этого избежать, keystore скопирован в `mobile/credentials/`
+и подключён через `credentials.json`, а в `eas.json` у профилей `development`
+и `preview` стоит `"credentialsSource": "local"`.
+
+`credentials.json` и папка `credentials/` — в `.gitignore`: там пароли от ключа.
+EAS CLI читает их локально и передаёт keystore напрямую в сборку, не через архив проекта,
+поэтому гитигнор им не мешает.
+
+Проверить, что EAS взял именно наш ключ, можно по строке в логе запуска:
+`✔ Using local Android credentials (credentials.json)`.
 
 **Релизный:** отпечаток ключа, которым подписывается сборка для Play Store.
 При загрузке в Play с включённым Play App Signing Google перевыпускает ключ —
 итоговый SHA-1 берётся из консоли Play (Setup → App integrity), и его тоже
 нужно добавить в Android-клиент, иначе вход в продакшене не заработает.
+
+---
+
+### Redirect на Android — вторая схема в app.json
+
+`expo-auth-session` строит для нативной платформы redirect вида
+`${applicationId}:/oauthredirect`, то есть **`uz.uzcasting.app:/oauthredirect`**.
+
+Это не наша основная схема `uzcasting`, поэтому в `app.json` зарегистрированы обе:
+
+```json
+"scheme": ["uzcasting", "uz.uzcasting.app"]
+```
+
+Без второй схемы браузер после согласия в Google не смог бы вернуться в приложение —
+вход завис бы на пустой вкладке. В самой консоли Google для Android-клиента redirect
+указывать не надо: он выводится из package name автоматически.
 
 ---
 
@@ -111,14 +138,11 @@ Bundle ID: uz.uzcasting.app
 добавляет тот, кто деплоит:
 
 ```properties
-app.google.client-ids=497193534365-urqt7p6tufge2qpqhdns5qv8nvshjsqe.apps.googleusercontent.com
+app.google.client-ids=497193534365-urqt7p6tufge2qpqhdns5qv8nvshjsqe.apps.googleusercontent.com,497193534365-03mh4geit6f6n13enrf2bqcs8dhcp1cb.apps.googleusercontent.com
 ```
 
-Клиентов будет несколько — перечисляются через запятую, без пробелов:
-
-```properties
-app.google.client-ids=<web>.apps.googleusercontent.com,<android>.apps.googleusercontent.com,<ios>.apps.googleusercontent.com
-```
+Первый — Web, второй — Android. Перечисляются через запятую, без пробелов.
+iOS-клиент добавится сюда же на 2-м этапе.
 
 Альтернатива без правки файла — переменная окружения `APP_GOOGLE_CLIENT_IDS` с тем же значением.
 
@@ -129,18 +153,62 @@ app.google.client-ids=<web>.apps.googleusercontent.com,<android>.apps.googleuser
 
 ## 7. Что блокирует финальную настройку
 
-1. **Android client ID** — создать клиент в консоли с package `uz.uzcasting.app` и SHA-1 выше, ID вписать в `.env` и в `app.google.client-ids` на сервере.
-2. **Test users.** Пока проект в статусе `Testing` (Google Auth Platform → Audience), войти могут только перечисленные там аккаунты. Симптом при пропуске — «доступ запрещён» без внятной причины.
-3. **`app.google.client-ids` на сервере** — иначе `503`.
-4. **Dev build.** В Expo Go Google-вход не работает: Google не принимает redirect на схему Expo Go. Нужен свой APK. Совпадает с другой причиной собрать dev build — Expo Go отстаёт по версии SDK, и для платёжных SDK с защищённым видео его всё равно не хватит.
-5. **SHA-1 релизного ключа** — когда определимся, кто подписывает сборку (EAS, локальный keystore или Play App Signing).
+| # | Что | Статус |
+|---|---|---|
+| 1 | **Android client ID** — клиент с package `uz.uzcasting.app` и SHA-1 выше | ✅ создан, ID в `.env` и `eas.json` |
+| 2 | **Test users** в Google Auth Platform → Audience. Пока проект в статусе `Testing`, войти могут только перечисленные аккаунты. Симптом при пропуске — «доступ запрещён» без внятной причины | ✅ добавлен `lazizkhamrakulov@gmail.com` (14.08.2026) |
+| 3 | **Dev build.** В Expo Go Google-вход не работает: Google не принимает redirect на схему Expo Go | ✅ EAS-профиль `development` настроен |
+| 4 | **Деплой бэкенда.** На `uzcasting.site` работает сборка без Google-логина | ❌ **блокирует вход** |
+| 5 | **`app.google.client-ids` на сервере** — иначе эндпоинт отвечает `503` | ❌ **блокирует вход**, делает тот, кто деплоит (см. §6) |
+| 6 | **SHA-1 релизного ключа** — когда решим, кто подписывает продакшен (наш keystore или Play App Signing) | ⏳ к этапу публикации |
 
-### Redirect URI веб-клиента не нужен
+Осталось 4 и 5, именно в этом порядке: сначала выкатить код, потом дописать свойство.
+Флоу дойдёт до выбора аккаунта Google, приложение получит `id_token`, а обмен упадёт.
+
+### Как проверить деплой одной командой
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -X POST https://uzcasting.site/api/v1/auth/google \
+  -H "Content-Type: application/json" -d '{"idToken":"probe"}'
+```
+
+| Код | Что значит |
+|---|---|
+| `405` | эндпоинта нет — **старая сборка на сервере** |
+| `503` | код выкачен, но `app.google.client-ids` не задан |
+| `401` | всё настроено, токен-пустышка честно отклонён — можно тестировать с телефона |
+
+`405`, а не `404`, потому что на неизвестный путь отвечает дефолтный обработчик статики
+Spring Boot: он смотрит `/**`, но только на GET. Проверено 14.08.2026 — сравнение
+с заведомо несуществующим путём дало тот же `405`, а живой `/api/v1/auth/login` — `401`.
+
+### Redirect URI веб-клиента: для телефона не нужен, для браузера обязателен
 
 Изначально закладывали `https://uzcasting.site/api/v1/auth/google/callback`. По факту флоу вышел
 другой: приложение получает ID-токен само, а бэкенд его только проверяет. Браузерного
-редиректа на сервер нет, значит и **Authorized redirect URIs у веб-клиента можно оставить пустым**.
-Заполнять надо только origins.
+редиректа на сервер нет — **для мобильного приложения redirect URI не нужен вообще**,
+там всё выводится из package name (см. §4).
+
+Но если гонять вход **через веб-превью** (`expo start --web`), Google требует
+зарегистрировать адрес страницы: `expo-auth-session` в браузере подставляет
+в `redirect_uri` текущий origin. Без записи — `Ошибка 400: redirect_uri_mismatch`.
+
+В **веб-клиенте** нужно добавить в оба поля:
+
+```
+Authorized JavaScript origins:  http://localhost:8082
+Authorized redirect URIs:       http://localhost:8082
+```
+
+Без хвостового слэша и без пути — ровно origin. Порт тот, на котором поднят
+веб-превью (`--port 8082`); при запуске без флага это `8081`, тогда добавляй его.
+
+Как узнать точное значение, если Google опять ругается: в URL страницы ошибки
+лежит параметр `authError` — это base64, внутри честно написан отправленный `redirect_uri`.
+
+```bash
+node -e "const u=process.argv[1];const s=new URL(u).searchParams.get('authError');const b=Buffer.from(s.replace(/-/g,'+').replace(/_/g,'/'),'base64').toString('utf8');console.log(b.match(/redirect_uri.{0,4}(https?:\/\/[^\s\x00-\x1f]+)/)?.[1])" "<вставить URL ошибки>"
+```
 
 ---
 
@@ -179,6 +247,19 @@ EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=
 
 **Импорт строчными буквами.** Правильно `expo-auth-session/providers/google`, а не `.../Google`. С заглавной резолвится на Windows (файловая система нечувствительна к регистру) и типы проходят, но Metro падает с `Unable to resolve module`.
 
+**`.env` не доезжает до облачной сборки.** EAS заливает только то, что лежит под git,
+а `.env` в гитигноре — значит в APK все `EXPO_PUBLIC_*` оказались бы `undefined`,
+и кнопка Google собралась бы в состоянии «не настроено». Ошибки при сборке при этом нет,
+видно только на телефоне. Поэтому client ID продублированы в `eas.json` → `env`
+у профилей `development` и `preview`. Секретов там нет: client ID и так лежит внутри APK.
+
+Проверка — строка в логе запуска сборки:
+`Environment variables loaded from the "development" build profile "env" configuration: ...`.
+Если её нет, переменные не доехали.
+
+**В `eas.json` нельзя писать комментарии.** Ключи `"//"` проходят как валидный JSON,
+но схема EAS их отклоняет: `"build.development.//" is not allowed`. Пояснения — только сюда.
+
 ---
 
 ## 8. Наш флоу авторизации
@@ -187,7 +268,18 @@ EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=
 
 ```
 Телефон:  +998 → OTP → [если новый] имя и язык → Home
-Google:   OAuth → [если новый] телефон + OTP → Home
+Google:   OAuth → Home
 ```
 
-Телефон подтверждаем в обеих ветках — он ключ пользователя по ТЗ, и к нему привязаны узбекские платёжные системы. Подробнее и с разбором экрана Yangi.TV — в [STRUCTURE.md §4](./STRUCTURE.md).
+**Телефон после Google не спрашиваем** (решение от 14.08.2026). Сначала было наоборот,
+но это оказалось нашей выдумкой, а не требованием: ТЗ разрешает создать аккаунт
+«telefon/**email** orqali», а соцвход помечен `Google / Apple / Telegram optional`.
+Обязательного номера там нет нигде.
+
+Бэкенд по-прежнему возвращает `phone_required` — теперь это подсказка, что номера
+у аккаунта нет, а не запрет на вход. Номер попросим точечно, там где он действительно
+нужен: выплаты креаторам и оплата через системы, завязанные на номер.
+
+Экран `(auth)/phone-link` остался, но открывается по требованию и имеет «Keyinroq».
+
+Подробнее и с разбором экрана Yangi.TV — в [STRUCTURE.md §4](./STRUCTURE.md).

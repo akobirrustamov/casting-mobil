@@ -76,6 +76,17 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+
+        <!--
+            Faqat lokal ishga tushirish uchun: telefon/mobil ilovani sinash paytida
+            Postgres va parol talab qilinmasin. Prod'da application.properties'dagi
+            datasource Postgres'ga ko'rsatadi, H2 umuman ishlatilmaydi.
+        -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

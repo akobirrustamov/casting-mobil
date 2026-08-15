@@ -32,8 +32,33 @@
     "premiere": "Premyera",
     "years": "{{count}} yosh"
   },
+  "splash": {
+    "subtitle": "Ijodkorlar uchun platforma"
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "next": "KEYINGI",
+    "start": "BOSHLASH",
+    "casting": {
+      "title": "Castingni toping",
+      "body": "Rollar, portfolio va professional imkoniyatlar bir joyda"
+    },
+    "premiere": {
+      "title": "Premyerani birinchi bo'lib ko'ring",
+      "body": "Eksklyuziv seriallar, ko'rsatuvlar va filmlar"
+    },
+    "earn": {
+      "title": "Ijod qiling va daromad oling",
+      "body": "Kontentingiz uchun to'g'ridan-to'g'ri to'lov"
+    },
+    "stars": {
+      "title": "UZCASTING STARS",
+      "body": "Sevimli ijodkorlaringizni qo'llab-quvvatlang"
+    }
+  },
   "auth": {
     "phoneTitle": "Iltimos, telefon raqamingizni kiriting",
+    "consentTail": "roziman",
     "phonePlaceholder": "91 123 45 67",
     "continue": "DAVOM ETISH",
     "consentPrefix": "Davom etish orqali siz",
@@ -90,5 +115,27 @@
     "logout": "Chiqish",
     "guest": "Mehmon",
     "signIn": "Kirish"
+  },
+  "catalog": {
+    "title": "Katalog",
+    "all": "Barchasi",
+    "filters": "Filtrlar",
+    "reset": "Tozalash",
+    "gender": "Jins",
+    "age": "Yosh",
+    "region": "Viloyat",
+    "male": "Erkak",
+    "female": "Ayol",
+    "found": "{{count}} ta anketa",
+    "emptyByFilters": "Tanlangan filtrlarga mos anketa topilmadi. Shartlarni kengaytiring.",
+    "noDataYet": "Bu yo'nalish bo'yicha anketalar hali qo'shilmagan."
+  },
+  "creator": {
+    "age": "Yosh",
+    "height": "Bo'y",
+    "region": "Viloyat",
+    "gender": "Jins",
+    "cm": "sm",
+    "notFound": "Anketa topilmadi"
   }
 }

@@ -1,8 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTabBarHeight } from '@/components/navigation/TabBar';
+import { TOUCH_TARGET, colors } from '@/theme/tokens';
 
 /**
  * Каркас экрана: тёмный фон из ТЗ, safe area сверху,
@@ -17,12 +19,18 @@ export function Screen({
   scroll = true,
   /** Отключить отступ под таб-бар — для экранов вне вкладок. */
   underTabBar = true,
+  /** Стрелка назад слева от заголовка. Задаём только на вложенных экранах. */
+  onBack,
+  /** Действие справа в шапке — например «Фильтры». */
+  headerRight,
   children,
 }: {
   title?: string;
   subtitle?: string;
   scroll?: boolean;
   underTabBar?: boolean;
+  onBack?: () => void;
+  headerRight?: ReactNode;
   children: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
@@ -32,7 +40,12 @@ export function Screen({
   if (!scroll) {
     return (
       <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
-        <Header title={title} subtitle={subtitle} />
+        <Header
+          title={title}
+          subtitle={subtitle}
+          onBack={onBack}
+          headerRight={headerRight}
+        />
         <View className="flex-1" style={{ paddingBottom: bottomPad }}>
           {children}
         </View>
@@ -42,7 +55,12 @@ export function Screen({
 
   return (
     <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
-      <Header title={title} subtitle={subtitle} />
+      <Header
+        title={title}
+        subtitle={subtitle}
+        onBack={onBack}
+        headerRight={headerRight}
+      />
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
@@ -55,15 +73,45 @@ export function Screen({
   );
 }
 
-function Header({ title, subtitle }: { title?: string; subtitle?: string }) {
+function Header({
+  title,
+  subtitle,
+  onBack,
+  headerRight,
+}: {
+  title?: string;
+  subtitle?: string;
+  onBack?: () => void;
+  headerRight?: ReactNode;
+}) {
   if (!title) return null;
 
   return (
-    <View className="px-4 pb-3 pt-2">
-      <Text className="text-h1 text-text">{title}</Text>
-      {subtitle ? (
-        <Text className="mt-1 text-caption text-text-muted">{subtitle}</Text>
+    <View className="flex-row items-start gap-2 px-4 pb-3 pt-2">
+      {onBack ? (
+        <Pressable
+          onPress={onBack}
+          accessibilityRole="button"
+          accessibilityLabel="Orqaga"
+          hitSlop={12}
+          // ТЗ: минимальный touch target 44px
+          style={{ minWidth: TOUCH_TARGET - 12, minHeight: TOUCH_TARGET - 12 }}
+          className="-ml-2 justify-center active:opacity-60"
+        >
+          <Ionicons name="chevron-back" size={26} color={colors.white} />
+        </Pressable>
       ) : null}
+
+      <View className="flex-1">
+        <Text numberOfLines={1} className="text-h1 text-text">
+          {title}
+        </Text>
+        {subtitle ? (
+          <Text className="mt-1 text-caption text-text-muted">{subtitle}</Text>
+        ) : null}
+      </View>
+
+      {headerRight}
     </View>
   );
 }

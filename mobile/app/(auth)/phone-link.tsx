@@ -2,18 +2,24 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
 import { colors } from '@/theme/tokens';
 
 /**
- * Привязка телефона после входа через Google.
+ * Привязка телефона — **добровольная**.
  *
- * Бэкенд отвечает `phone_required: true`, если аккаунт создан через Google
- * и телефона у него ещё нет. По ТЗ телефон — ключ пользователя и к нему
- * привязаны платёжные системы, поэтому спрашиваем сразу после входа.
+ * Раньше экран показывался принудительно после входа через Google, если
+ * бэкенд вернул `phone_required`. Убрано: ТЗ разрешает аккаунт
+ * «telefon/email orqali», а соцвход помечен как optional — требования
+ * обязательного номера там нет. Гнать человека за номером до того, как он
+ * вообще посмотрел приложение, — лишний барьер.
+ *
+ * Экран остаётся для случаев, когда номер действительно нужен: выплаты
+ * креаторам и оплата через узбекские платёжные системы, завязанные на номер.
+ * Открывается по требованию, а не на пути входа.
  *
  * ⚠️ Отправки OTP пока нет — эндпоинта не существует (docs/API.md §5).
  */
@@ -51,12 +57,20 @@ export default function PhoneLinkScreen() {
 
       <Button
         variant="primary"
+        shape="card"
         disabled={digits.length !== PHONE_DIGITS}
         // TODO: отправить OTP и привязать телефон, когда появится эндпоинт
         onPress={() => router.replace('/(tabs)')}
       >
         {t('auth.continue')}
       </Button>
+
+      {/* Экран не должен быть тупиком: уйти можно без номера */}
+      <Pressable onPress={() => router.replace('/(tabs)')} hitSlop={8}>
+        <Text className="text-center text-caption text-text-muted">
+          {t('auth.skip')}
+        </Text>
+      </Pressable>
     </View>
   );
 }

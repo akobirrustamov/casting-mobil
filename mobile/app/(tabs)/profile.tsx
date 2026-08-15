@@ -1,9 +1,14 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { Screen } from '@/components/ui/Screen';
+import { useAuthStore } from '@/features/auth/store';
+import { colors } from '@/theme/tokens';
 
 /**
  * Профиль. Пункты по ТЗ (V3, стр. 22 «21. Foydalanuvchi profili»):
@@ -25,9 +30,16 @@ type MenuItem = {
 export default function ProfileScreen() {
   const { t } = useTranslation();
 
-  // TODO: брать из стора после авторизации
-  const isAuthorized = false;
-  const isCreator = false;
+  const user = useAuthStore((s) => s.user);
+  const isAuthorized = useAuthStore((s) => s.isAuthorized);
+  const signOut = useAuthStore((s) => s.signOut);
+
+  const isCreator = user?.role === 'creator';
+
+  // Имени может не быть: Google отдаёт его не всегда. Тогда показываем email,
+  // иначе карточка выглядит пустой у реально вошедшего человека.
+  const displayName = user?.name || user?.email || user?.phone || '—';
+  const subtitle = user?.email ?? user?.phone ?? null;
 
   const items: MenuItem[] = [
     { key: 'topUp', label: t('profile.topUp') },
@@ -52,11 +64,28 @@ export default function ProfileScreen() {
     <Screen title={t('profile.title')}>
       <View className="gap-3 rounded-card-lg bg-surface p-4">
         <View className="flex-row items-center gap-3">
-          <View className="h-14 w-14 rounded-pill bg-surface-2" />
+          {user?.avatarUrl ? (
+            <Image
+              source={{ uri: user.avatarUrl }}
+              style={{ width: 56, height: 56, borderRadius: 999 }}
+              contentFit="cover"
+              transition={150}
+            />
+          ) : (
+            <View className="h-14 w-14 items-center justify-center rounded-pill bg-surface-2">
+              <Ionicons name="person-outline" size={26} color={colors.textMuted} />
+            </View>
+          )}
+
           <View className="flex-1">
-            <Text className="text-h2 text-text">
-              {isAuthorized ? '—' : t('profile.guest')}
+            <Text className="text-h2 text-text" numberOfLines={1}>
+              {isAuthorized ? displayName : t('profile.guest')}
             </Text>
+            {isAuthorized && subtitle ? (
+              <Text className="text-caption text-text-muted" numberOfLines={1}>
+                {subtitle}
+              </Text>
+            ) : null}
             <Text className="text-caption text-text-muted">
               {t('profile.balance')}: 0 UZS
             </Text>
@@ -70,10 +99,15 @@ export default function ProfileScreen() {
         ) : null}
       </View>
 
+      <LanguageSwitcher />
+
       <View className="overflow-hidden rounded-card bg-surface">
         {visible.map((item, i) => (
           <Pressable
             key={item.key}
+            accessibilityRole="button"
+            // Остальные пункты пока без экранов — появятся по мере готовности
+            onPress={item.key === 'logout' ? signOut : undefined}
             className={`flex-row items-center justify-between px-4 py-4 active:opacity-70 ${
               i > 0 ? 'border-t border-border' : ''
             }`}

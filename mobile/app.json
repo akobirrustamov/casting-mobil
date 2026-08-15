@@ -5,7 +5,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "uzcasting",
+    "scheme": [
+      "uzcasting",
+      "uz.uzcasting.app"
+    ],
     "userInterfaceStyle": "dark",
     "backgroundColor": "#07070D",
     "newArchEnabled": true,
@@ -43,6 +46,13 @@
       "expo-web-browser",
       "expo-localization",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0ce6ce6a-5243-426b-9a5f-adff85882fec"
+      }
+    },
+    "owner": "bukakish"
   }
 }

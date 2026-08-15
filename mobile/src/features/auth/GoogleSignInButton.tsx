@@ -81,7 +81,8 @@ function ButtonShell({
       accessibilityState={{ disabled, busy: loading }}
       disabled={disabled}
       onPress={onPress}
-      className={`flex-row items-center justify-center gap-3 rounded-pill border border-border py-3.5 ${
+      // Форма и фон совпадают с полем телефона — на макете это один ряд
+      className={`flex-row items-center justify-center gap-3 rounded-card border border-border bg-surface py-4 ${
         disabled ? 'opacity-40' : 'active:opacity-70'
       }`}
     >
