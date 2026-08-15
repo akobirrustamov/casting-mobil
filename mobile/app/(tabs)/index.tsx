@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
@@ -9,10 +10,14 @@ import { HeroCarousel, type HeroItem } from '@/components/ui/HeroCarousel';
 import { PosterCard } from '@/components/ui/PosterCard';
 import { Rail } from '@/components/ui/Rail';
 import { Screen } from '@/components/ui/Screen';
+import { SkeletonRail } from '@/components/ui/Skeleton';
 import { StoryCircle } from '@/components/ui/StoryCircle';
+import { Wordmark } from '@/components/ui/Wordmark';
 import { CATEGORIES } from '@/features/catalog/categories';
 import { useCreators, withPhotos } from '@/features/creators/api';
+import { useIsOffline } from '@/lib/network';
 import { CASTINGS, EPISODE_PRICE, PREMIERES } from '@/lib/placeholder';
+import { colors } from '@/theme/tokens';
 
 /**
  * Главная. Состав блоков — строго по ТЗ (V2 стр. 4 «HOME — БОШ САҲИФА»):
@@ -28,6 +33,7 @@ import { CASTINGS, EPISODE_PRICE, PREMIERES } from '@/lib/placeholder';
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const creators = useCreators();
+  const isOffline = useIsOffline();
 
   const isRu = i18n.language === 'ru';
   const price = t('common.price', { amount: EPISODE_PRICE.toLocaleString('ru-RU') });
@@ -43,10 +49,24 @@ export default function HomeScreen() {
   const popular = withPhotos(creators.data).slice(0, 12);
 
   return (
-    <Screen title="UzCasting">
+    <Screen
+      // Логотип вместо текста — у Yangi.TV в шапке главной именно знак,
+      // по центру и без иконок вокруг (docs/STRUCTURE.md §3.1)
+      titleContent={
+        <View className="items-center py-1">
+          <Wordmark />
+        </View>
+      }
+      onRefresh={() => creators.refetch()}
+      refreshing={creators.isRefetching}
+    >
       {/* Поиск: по ТЗ это строка на главной, а не отдельная вкладка */}
-      <Pressable className="flex-row items-center gap-2 rounded-card bg-surface px-4 py-3 active:opacity-70">
-        <Text className="text-body text-text-muted">⌕</Text>
+      <Pressable
+        onPress={() => router.push('/search')}
+        accessibilityRole="button"
+        className="flex-row items-center gap-2 rounded-card bg-surface px-4 py-3 active:opacity-70"
+      >
+        <Ionicons name="search-outline" size={18} color={colors.textMuted} />
         <Text className="text-body text-text-muted">{t('common.search')}</Text>
       </Pressable>
 
@@ -78,12 +98,20 @@ export default function HomeScreen() {
       {/* Единственный блок на боевых данных */}
       <View className="gap-3">
         {creators.isPending ? (
-          <View className="h-28 items-center justify-center">
-            <ScreenState kind="loading" />
+          <View className="gap-3">
+            <Text className="text-h2 text-text">{t('home.popularCreators')}</Text>
+            {/* Круглые аватары — поэтому и заглушки круглые */}
+            <View className="-mx-4">
+              <SkeletonRail count={5} width={64} height={64} />
+            </View>
           </View>
         ) : creators.isError ? (
           <View className="h-40">
-            <ScreenState kind="error" onRetry={() => creators.refetch()} />
+            <ScreenState
+              // При пропавшей сети «ошибка» вводит в заблуждение
+              kind={isOffline ? 'offline' : 'error'}
+              onRetry={() => creators.refetch()}
+            />
           </View>
         ) : (
           <Rail

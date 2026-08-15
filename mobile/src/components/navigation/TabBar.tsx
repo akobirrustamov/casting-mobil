@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 import { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -143,6 +144,10 @@ export function TabBar({ state, descriptors, navigation }: TabBarProps) {
               canPreventDefault: true,
             });
             if (!focused && !event.defaultPrevented) {
+              // Короткий отклик на смену вкладки. Только при реальном переходе:
+              // вибрация по повторному тапу на активную вкладку раздражает.
+              // На вебе модуль недоступен — молча пропускаем.
+              Haptics.selectionAsync().catch(() => {});
               navigation.navigate(route.name);
             }
           };

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTabBarHeight } from '@/components/navigation/TabBar';
@@ -15,6 +15,8 @@ import { TOUCH_TARGET, colors } from '@/theme/tokens';
  */
 export function Screen({
   title,
+  /** Заменяет текстовый заголовок — например логотипом. Приоритетнее `title`. */
+  titleContent,
   subtitle,
   scroll = true,
   /** Отключить отступ под таб-бар — для экранов вне вкладок. */
@@ -23,14 +25,20 @@ export function Screen({
   onBack,
   /** Действие справа в шапке — например «Фильтры». */
   headerRight,
+  /** Потянуть вниз для обновления. Без обработчика жест не включается. */
+  onRefresh,
+  refreshing = false,
   children,
 }: {
   title?: string;
+  titleContent?: ReactNode;
   subtitle?: string;
   scroll?: boolean;
   underTabBar?: boolean;
   onBack?: () => void;
   headerRight?: ReactNode;
+  onRefresh?: () => void;
+  refreshing?: boolean;
   children: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
@@ -42,6 +50,7 @@ export function Screen({
       <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
         <Header
           title={title}
+          titleContent={titleContent}
           subtitle={subtitle}
           onBack={onBack}
           headerRight={headerRight}
@@ -57,6 +66,7 @@ export function Screen({
     <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
       <Header
         title={title}
+        titleContent={titleContent}
         subtitle={subtitle}
         onBack={onBack}
         headerRight={headerRight}
@@ -66,6 +76,18 @@ export function Screen({
         showsVerticalScrollIndicator={false}
         contentContainerClassName="px-4 gap-4"
         contentContainerStyle={{ paddingBottom: bottomPad }}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              // Спиннер по умолчанию серый и на тёмном фоне почти не виден
+              tintColor={colors.purple}
+              colors={[colors.purple]}
+              progressBackgroundColor={colors.surface}
+            />
+          ) : undefined
+        }
       >
         {children}
       </ScrollView>
@@ -75,16 +97,18 @@ export function Screen({
 
 function Header({
   title,
+  titleContent,
   subtitle,
   onBack,
   headerRight,
 }: {
   title?: string;
+  titleContent?: ReactNode;
   subtitle?: string;
   onBack?: () => void;
   headerRight?: ReactNode;
 }) {
-  if (!title) return null;
+  if (!title && !titleContent) return null;
 
   return (
     <View className="flex-row items-start gap-2 px-4 pb-3 pt-2">
@@ -103,9 +127,11 @@ function Header({
       ) : null}
 
       <View className="flex-1">
-        <Text numberOfLines={1} className="text-h1 text-text">
-          {title}
-        </Text>
+        {titleContent ?? (
+          <Text numberOfLines={1} className="text-h1 text-text">
+            {title}
+          </Text>
+        )}
         {subtitle ? (
           <Text className="mt-1 text-caption text-text-muted">{subtitle}</Text>
         ) : null}

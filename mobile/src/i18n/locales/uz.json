@@ -137,5 +137,15 @@
     "gender": "Jins",
     "cm": "sm",
     "notFound": "Anketa topilmadi"
+  },
+  "search": {
+    "minLength": "Minimal qidiruv uzunligi {{count}} ta harf!",
+    "hintTitle": "Kimni qidiryapsiz?",
+    "hintBody": "Ism, yo'nalish yoki viloyat bo'yicha qidiring.",
+    "nothingTitle": "Hech narsa topilmadi",
+    "nothingBody": "Boshqa so'z bilan urinib ko'ring."
+  },
+  "favorites": {
+    "empty": "Yurak belgisini bosib, yoqqan ijodkorlarni shu yerga qo'shing."
   }
 }

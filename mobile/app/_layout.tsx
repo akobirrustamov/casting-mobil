@@ -13,7 +13,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { SplashOverlay } from '@/components/SplashOverlay';
+import { OfflineBanner } from '@/components/states/OfflineBanner';
 import { useAuthStore } from '@/features/auth/store';
+import { useFavoritesStore } from '@/features/favorites/store';
 import { isOnboardingSeen } from '@/features/onboarding/store';
 import i18nInstance from '@/i18n';
 import { loadLanguage } from '@/i18n/storage';
@@ -56,6 +58,9 @@ export default function RootLayout() {
               <Stack.Screen name="(auth)" />
             </Stack>
 
+            {/* Поверх навигатора, но под splash — на splash сеть ещё не нужна */}
+            <OfflineBanner />
+
             {showSplash ? <SplashOverlay subtitle={t('splash.subtitle')} /> : null}
           </ThemeProvider>
         </QueryClientProvider>
@@ -75,6 +80,7 @@ export default function RootLayout() {
  */
 function useBootstrap(): boolean {
   const restore = useAuthStore((s) => s.restore);
+  const restoreFavorites = useFavoritesStore((s) => s.restore);
   const navigationState = useRootNavigationState();
   const isNavigatorReady = Boolean(navigationState?.key);
 
@@ -90,6 +96,7 @@ function useBootstrap(): boolean {
         isOnboardingSeen(),
         loadLanguage(),
         restore(),
+        restoreFavorites(),
       ]);
       const { isAuthorized } = useAuthStore.getState();
 
@@ -118,7 +125,7 @@ function useBootstrap(): boolean {
     return () => {
       cancelled = true;
     };
-  }, [restore]);
+  }, [restore, restoreFavorites]);
 
   useEffect(() => {
     if (!target || !isNavigatorReady || done) return;

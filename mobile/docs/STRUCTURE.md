@@ -385,7 +385,12 @@ Google:   Кнопка «Войти через Google» → OAuth → Home
 | `PaymentMethodGrid` | сетка логотипов платёжных систем |
 | `BottomSheet` | промокод и подобные |
 
-Три уже есть: `Button`, `Badge`, `ScreenState`.
+Готовы: `Button`, `Badge`, `ScreenState`, `PosterCard`, `Rail`, `HeroCarousel`,
+`StoryCircle`, `CategoryTile`, `CreatorCard`, `SearchRow`, `Skeleton`,
+`LanguageSwitcher`, `Wordmark`, `OfflineBanner`.
+
+Осталось: `MetaTable`, `StatChips`, `PersonAvatar`, `PaymentMethodGrid`,
+`BottomSheet` — все нужны для экранов, которые ждут ответов по монетизации.
 
 ---
 

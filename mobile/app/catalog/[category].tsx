@@ -1,12 +1,20 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import {
+  FlatList,
+  Pressable,
+  RefreshControl,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 
 import { useTabBarHeight } from '@/components/navigation/TabBar';
 import { ScreenState } from '@/components/states/ScreenState';
 import { CreatorCard } from '@/components/ui/CreatorCard';
 import { Screen } from '@/components/ui/Screen';
+import { SkeletonGrid } from '@/components/ui/Skeleton';
 import { CATEGORIES } from '@/features/catalog/categories';
 import { useCreators } from '@/features/creators/api';
 import {
@@ -18,6 +26,8 @@ import {
   type CreatorFilters,
 } from '@/features/creators/filters';
 import type { Gender } from '@/features/creators/types';
+import { useFavoritesStore } from '@/features/favorites/store';
+import { useIsOffline } from '@/lib/network';
 import { colors } from '@/theme/tokens';
 
 /**
@@ -42,6 +52,9 @@ export default function CatalogScreen() {
   const tabBarHeight = useTabBarHeight();
 
   const creators = useCreators();
+  const isOffline = useIsOffline();
+  const favoriteIds = useFavoritesStore((s) => s.ids);
+  const toggleFavorite = useFavoritesStore((s) => s.toggle);
   const isRu = i18n.language === 'ru';
 
   const meta = CATEGORIES.find((c) => c.id === category) ?? null;
@@ -81,7 +94,7 @@ export default function CatalogScreen() {
   if (creators.isPending) {
     return (
       <Screen title={title} scroll={false} onBack={() => router.back()}>
-        <ScreenState kind="loading" />
+        <SkeletonGrid cardWidth={cardWidth} />
       </Screen>
     );
   }
@@ -89,7 +102,10 @@ export default function CatalogScreen() {
   if (creators.isError) {
     return (
       <Screen title={title} scroll={false} onBack={() => router.back()}>
-        <ScreenState kind="error" onRetry={() => creators.refetch()} />
+        <ScreenState
+          kind={isOffline ? 'offline' : 'error'}
+          onRetry={() => creators.refetch()}
+        />
       </Screen>
     );
   }
@@ -142,6 +158,15 @@ export default function CatalogScreen() {
             gap: GAP,
           }}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={creators.isRefetching}
+              onRefresh={() => creators.refetch()}
+              tintColor={colors.purple}
+              colors={[colors.purple]}
+              progressBackgroundColor={colors.surface}
+            />
+          }
           renderItem={({ item }) => (
             <CreatorCard
               name={item.name}
@@ -154,6 +179,8 @@ export default function CatalogScreen() {
               imageUrl={item.photoUrls[0]}
               width={cardWidth}
               onPress={() => router.push(`/creator/${item.id}`)}
+              isFavorite={favoriteIds.has(item.id)}
+              onToggleFavorite={() => toggleFavorite(item.id)}
             />
           )}
         />

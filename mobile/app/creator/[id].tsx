@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FlatList,
+  Pressable,
   Text,
   View,
   useWindowDimensions,
@@ -16,6 +17,7 @@ import { ScreenState } from '@/components/states/ScreenState';
 import { Screen } from '@/components/ui/Screen';
 import { CATEGORIES, EXTRA_API_TYPES } from '@/features/catalog/categories';
 import { useCreator } from '@/features/creators/api';
+import { useFavoritesStore, useIsFavorite } from '@/features/favorites/store';
 import { colors } from '@/theme/tokens';
 
 /**
@@ -33,6 +35,9 @@ export default function CreatorScreen() {
   const numericId = Number(id);
   const query = useCreator(Number.isFinite(numericId) ? numericId : null);
   const creator = query.data;
+
+  const isFavorite = useIsFavorite(numericId);
+  const toggleFavorite = useFavoritesStore((s) => s.toggle);
 
   if (query.isPending) {
     return (
@@ -84,6 +89,21 @@ export default function CreatorScreen() {
       subtitle={typeLabel ?? undefined}
       onBack={() => router.back()}
       underTabBar={false}
+      headerRight={
+        <Pressable
+          onPress={() => toggleFavorite(creator.id)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: isFavorite }}
+          hitSlop={10}
+          className="h-11 w-11 items-center justify-center active:opacity-60"
+        >
+          <Ionicons
+            name={isFavorite ? 'heart' : 'heart-outline'}
+            size={24}
+            color={isFavorite ? colors.magenta : colors.white}
+          />
+        </Pressable>
+      }
     >
       <Gallery photos={creator.photoUrls} />
 

@@ -8,8 +8,12 @@ import { colors } from '@/theme/tokens';
  * Карточка креатора для сетки каталога.
  *
  * Портретная пропорция 3:4 — как на постерах Yangi.TV и на сайте кастинга.
- * Имя и мета лежат поверх фото на градиентной подложке: так карточка
- * остаётся одной высоты независимо от длины имени, и сетка не «рвётся».
+ * Имя и мета лежат поверх фото на затемнении: так карточка остаётся одной
+ * высоты независимо от длины имени, и сетка не «рвётся».
+ *
+ * Сердечко — сосед основной области нажатия, а не потомок. Вложенные
+ * Pressable на нативе перехватывают касания друг у друга, а в вебе дают
+ * <button> внутри <button> — невалидный HTML и ошибка гидратации.
  */
 export function CreatorCard({
   name,
@@ -17,21 +21,26 @@ export function CreatorCard({
   imageUrl,
   width,
   onPress,
+  isFavorite,
+  onToggleFavorite,
 }: {
   name: string;
   meta?: string;
   imageUrl?: string;
   width: number;
   onPress?: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      style={{ width }}
-      className="overflow-hidden rounded-card bg-surface-2 active:opacity-80"
-    >
-      <View style={{ width: '100%', aspectRatio: 0.75 }} className="bg-surface-2">
+    <View style={{ width }} className="overflow-hidden rounded-card bg-surface-2">
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={name}
+        style={{ width: '100%', aspectRatio: 0.75 }}
+        className="active:opacity-80"
+      >
         {imageUrl ? (
           <Image
             source={{ uri: imageUrl }}
@@ -62,7 +71,24 @@ export function CreatorCard({
             </Text>
           ) : null}
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+
+      {onToggleFavorite ? (
+        <Pressable
+          onPress={onToggleFavorite}
+          accessibilityRole="button"
+          accessibilityState={{ selected: isFavorite }}
+          hitSlop={8}
+          className="absolute right-1.5 top-1.5 h-9 w-9 items-center justify-center rounded-pill active:opacity-60"
+          style={{ backgroundColor: 'rgba(7,7,13,0.5)' }}
+        >
+          <Ionicons
+            name={isFavorite ? 'heart' : 'heart-outline'}
+            size={18}
+            color={isFavorite ? colors.magenta : colors.white}
+          />
+        </Pressable>
+      ) : null}
+    </View>
   );
 }

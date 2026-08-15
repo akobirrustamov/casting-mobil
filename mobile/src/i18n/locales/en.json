@@ -137,5 +137,15 @@
     "gender": "Gender",
     "cm": "cm",
     "notFound": "Profile not found"
+  },
+  "search": {
+    "minLength": "Minimum query length is {{count}} characters!",
+    "hintTitle": "Who are you looking for?",
+    "hintBody": "Search by name, category or region.",
+    "nothingTitle": "Nothing found",
+    "nothingBody": "Try a different word."
+  },
+  "favorites": {
+    "empty": "Tap the heart to collect creators here."
   }
 }
