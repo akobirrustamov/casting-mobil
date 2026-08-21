@@ -214,6 +214,22 @@ public class HomepageController {
      * kirishini saqlaydigan joy yo'q edi — ya'ni «Maxsus qator» ni yoqish
      * mumkin, to'ldirish esa mumkin emas edi.
      */
+    /**
+     * Bo'limlar tartibi — bitta atomar so'rov (ТЗ §31).
+     *
+     * Bittalab o'zgartirish oraliq holat yaratardi va o'sha lahzada
+     * foydalanuvchi aralashib ketgan bosh sahifani ko'rardi.
+     */
+    @PutMapping("/homepage/sections/order")
+    @RequirePermission(Permission.HOMEPAGE_EDIT)
+    public ResponseEntity<List<HomepageSectionDto>> reorderSections(
+            @Valid @RequestBody SectionOrderRequest request) {
+
+        return ResponseEntity.ok(homepageService
+                .reorderSections(CurrentUser.get(), request.getSectionIds())
+                .stream().map(HomepageSectionDto::from).toList());
+    }
+
     @GetMapping("/homepage/sections/{id}/items")
     @RequirePermission(Permission.HOMEPAGE_VIEW)
     public ResponseEntity<List<ContentListDto>> sectionItems(@PathVariable Long id) {

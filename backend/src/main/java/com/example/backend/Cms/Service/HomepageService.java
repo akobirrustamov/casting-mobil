@@ -410,6 +410,56 @@ public class HomepageService {
         return result;
     }
 
+    /**
+     * Bo'limlar tartibini BITTA tranzaksiyada o'rnatadi (ТЗ §31).
+     *
+     * <h2>Nima uchun kerak</h2>
+     * Tartibni bittalab o'zgartirish oraliq holat yaratadi: admin
+     * bo'limni yuqoriga sudrasa, panel 8 ta so'rov yuboradi va ular
+     * orasida ikkita bo'lim bir xil raqamda turadi. O'sha lahzada
+     * {@code /app/home} ni so'ragan foydalanuvchi aralashib ketgan bosh
+     * sahifani ko'rardi.
+     *
+     * <h2>Ro'yxatga kirmagan bo'limlar</h2>
+     * Tartibi o'zgarmaydi va ular ro'yxatdagilardan KEYIN turadi. Shunda
+     * panel faqat ko'rinib turgan bo'limlarni yuborsa ham, qolganlari
+     * yo'qolib qolmaydi.
+     */
+    @Transactional
+    public List<HomepageSection> reorderSections(User actor, List<Long> sectionIds) {
+        List<Long> ids = sectionIds == null ? List.of() : sectionIds;
+
+        // Takror ID tartibni aniqsiz qilardi: bitta bo'lim ikkita
+        // raqamga da'vogar bo'lardi.
+        Set<Long> seen = new LinkedHashSet<>();
+        for (Long id : ids) {
+            if (id != null && !seen.add(id)) {
+                throw BusinessException.validation("Bo'lim ro'yxatda takrorlangan: #" + id);
+            }
+        }
+
+        int order = 0;
+        for (Long id : seen) {
+            HomepageSection section = homepageSectionRepo.findById(id)
+                    .orElseThrow(() -> BusinessException.notFound("HomepageSection", id));
+            section.setSortOrder(order++);
+            homepageSectionRepo.save(section);
+        }
+
+        // Ro'yxatga kirmaganlar oxiriga suriladi — tartibi o'zaro saqlanadi.
+        int tail = order;
+        for (HomepageSection rest : homepageSectionRepo.findAllByOrderBySortOrderAscIdAsc()) {
+            if (!seen.contains(rest.getId())) {
+                rest.setSortOrder(tail++);
+                homepageSectionRepo.save(rest);
+            }
+        }
+
+        auditService.log(actor, "HOMEPAGE_SECTIONS_REORDERED", "HomepageSection", null, null,
+                Map.of("count", seen.size()));
+        return homepageSectionRepo.findAllByOrderBySortOrderAscIdAsc();
+    }
+
     @Transactional(readOnly = true)
     public List<HomepageSectionItem> sectionItems(Long sectionId) {
         return sectionItemRepo.findForSection(sectionId);

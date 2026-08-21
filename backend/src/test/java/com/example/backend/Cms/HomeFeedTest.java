@@ -7,6 +7,7 @@ import com.example.backend.Admin.Dto.HomepageSectionSaveRequest;
 import com.example.backend.Admin.Dto.PremiereDto;
 import com.example.backend.Admin.Dto.PremiereSaveRequest;
 import com.example.backend.Cms.Dto.HomeFeedDto;
+import com.example.backend.Cms.Entity.Category;
 import com.example.backend.Cms.Entity.Content;
 import com.example.backend.Cms.Entity.HomepageSection;
 import com.example.backend.Cms.Enums.*;
@@ -15,6 +16,7 @@ import com.example.backend.Cms.Service.ContentService;
 import com.example.backend.Cms.Service.HomeFeedService;
 import com.example.backend.Cms.Service.HomepageService;
 import com.example.backend.support.CapturingStatementInspector;
+import com.example.backend.exceptions.BusinessException;
 import com.example.backend.support.Translations;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,6 +34,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * ТЗ §31 — bosh sahifa backenddan olinadi.
@@ -53,6 +56,9 @@ class HomeFeedTest {
     @Autowired private HomepageService homepageService;
     @Autowired private HomepageSectionRepo sectionRepo;
     @Autowired private ContentService contentService;
+    @Autowired private com.example.backend.Cms.Service.TaxonomyService taxonomyService;
+    @Autowired private com.example.backend.Cms.Repository.CategoryRepo categoryRepo;
+    @Autowired private com.example.backend.Cms.Repository.ContentRepo contentRepo;
     @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager em;
 
     @BeforeEach
@@ -305,6 +311,158 @@ class HomeFeedTest {
         }
     }
 
+    // ------------------------------------------------------- qator tartibi
+
+    @Nested
+    @DisplayName("Qatorlar tartibi boshqariladi (ТЗ §31)")
+    class RowOrdering {
+
+        @Test
+        @DisplayName("Admin tanlagan tartib avtomatik qoidadan ustun")
+        void manualOrderOverridesAutomatic() {
+            Content eski = content(ContentType.MINI_SERIES, PublicationStatus.PUBLISHED,
+                    ContentVisibility.PUBLIC);
+            Content yangi = content(ContentType.MINI_SERIES, PublicationStatus.PUBLISHED,
+                    ContentVisibility.PUBLIC);
+
+            // ⚠️ Avtomatik qoida - publicationDate DESC, ya'ni [yangi, eski].
+            // Qo'lda esa TESKARI tartib beriladi. Aks holda ikkala tartib
+            // bir xil natija berardi va test qo'lda tartiblash ishlayotganini
+            // umuman tekshirmasdi.
+            eski.setPublicationDate(LocalDateTime.now().minusDays(10));
+            yangi.setPublicationDate(LocalDateTime.now());
+            contentRepo.save(eski);
+            contentRepo.save(yangi);
+
+            HomepageSection row = section(HomepageSectionType.MINI_SERIES);
+            homepageService.replaceSectionItems(null, row.getId(),
+                    List.of(eski.getId(), yangi.getId()));
+
+            List<HomeFeedDto.ContentCard> cards =
+                    inFeed(feed(), HomepageSectionType.MINI_SERIES).getContent();
+
+            // Ilgari qo'lda tartiblash faqat CUSTOM_ROW da bor edi, qolgan
+            // qatorlar qat'iy publicationDate desc bilan chiqardi — admin
+            // «Mini seriallar» da qaysi film birinchi turishini hal qila
+            // olmasdi.
+            assertThat(cards).extracting(HomeFeedDto.ContentCard::getId)
+                    .containsExactly(eski.getId(), yangi.getId());
+        }
+
+        @Test
+        @DisplayName("Ro'yxat bo'sh bo'lsa avtomatik qoida ishlaydi")
+        void emptyListFallsBackToAutomatic() {
+            content(ContentType.MINI_SERIES, PublicationStatus.PUBLISHED,
+                    ContentVisibility.PUBLIC);
+
+            // Admin har bir qatorni qo'lda to'ldirishga majbur emas —
+            // aks holda yangi kontent bosh sahifaga umuman tushmasdi.
+            assertThat(inFeed(feed(), HomepageSectionType.MINI_SERIES).getContent())
+                    .hasSize(1);
+        }
+
+        @Test
+        @DisplayName("Bo'limlar tartibi bitta so'rovda o'rnatiladi")
+        void sectionsAreReorderedAtomically() {
+            newPremiere();
+            content(ContentType.MINI_SERIES, PublicationStatus.PUBLISHED,
+                    ContentVisibility.PUBLIC);
+
+            Long premieres = section(HomepageSectionType.NEW_PREMIERES).getId();
+            Long mini = section(HomepageSectionType.MINI_SERIES).getId();
+
+            homepageService.reorderSections(null, List.of(mini, premieres));
+
+            List<HomepageSectionType> order = feed().getSections().stream()
+                    .map(HomeFeedDto.Section::getType).toList();
+
+            assertThat(order.indexOf(HomepageSectionType.MINI_SERIES))
+                    .isLessThan(order.indexOf(HomepageSectionType.NEW_PREMIERES));
+        }
+
+        @Test
+        @DisplayName("Ro'yxatga kirmagan bo'lim yo'qolmaydi va ZIDDIYAT yaratmaydi")
+        void sectionsOutsideTheListSurvive() {
+            newPremiere();
+            content(ContentType.MINI_SERIES, PublicationStatus.PUBLISHED,
+                    ContentVisibility.PUBLIC);
+
+            Long premyeraId = section(HomepageSectionType.NEW_PREMIERES).getId();
+            Long miniId = section(HomepageSectionType.MINI_SERIES).getId();
+
+            // Avval premyera birinchi o'ringa (sortOrder = 0) qo'yiladi.
+            homepageService.reorderSections(null, List.of(premyeraId));
+
+            // Endi FAQAT mini seriallar yuboriladi — panel ko'rinib turgan
+            // bo'limlarnigina yuborgan holat.
+            homepageService.reorderSections(null, List.of(miniId));
+
+            List<HomeFeedDto.Section> sections = feed().getSections();
+
+            // Bo'lim yo'qolmasligi kerak.
+            assertThat(sections).extracting(HomeFeedDto.Section::getType)
+                    .contains(HomepageSectionType.NEW_PREMIERES);
+
+            // ⚠️ ASOSIY TEKSHIRUV: mini ham, premyera ham 0 raqamiga
+            // da'vogar. Ro'yxatdan tashqaridagilar surilmasa, ikkalasi
+            // bir xil raqamda qolib, tartib ID bo'yicha tasodifiy hal
+            // bo'lardi — ya'ni admin sudragan tartib buzilardi.
+            HomeFeedDto.Section mini = sections.stream()
+                    .filter(x -> x.getType() == HomepageSectionType.MINI_SERIES)
+                    .findFirst().orElseThrow();
+            HomeFeedDto.Section premyera = sections.stream()
+                    .filter(x -> x.getType() == HomepageSectionType.NEW_PREMIERES)
+                    .findFirst().orElseThrow();
+
+            assertThat(mini.getSortOrder())
+                    .as("Ro'yxatdagi bo'lim tashqaridagidan QAT'IY oldin turishi kerak")
+                    .isLessThan(premyera.getSortOrder());
+        }
+
+        @Test
+        @DisplayName("Takror ID rad etiladi")
+        void duplicateIdIsRejected() {
+            Long mini = section(HomepageSectionType.MINI_SERIES).getId();
+
+            // Bitta bo'lim ikkita raqamga da'vogar bo'lardi.
+            assertThatThrownBy(() ->
+                    homepageService.reorderSections(null, List.of(mini, mini)))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("takrorlangan");
+        }
+
+        @Test
+        @DisplayName("Kategoriya qatori tartibi boshqariladi")
+        void categoryRowOrderIsManaged() {
+            // ⚠️ `if (...)` bilan tekshirish YARAMAYDI: test profilida
+            // kategoriya yo'q, shart bajarilmay test bo'sh o'tib ketardi.
+            // Shuning uchun kategoriyalar shu yerda yaratiladi.
+            Category ikkinchi = category("Ikkinchi", 20);
+            Category birinchi = category("Birinchi", 10);
+
+            HomeFeedDto.Section categories = inFeed(feed(), HomepageSectionType.CATEGORIES);
+
+            assertThat(categories).isNotNull();
+            // Tartib Category.sortOrder bilan boshqariladi (ТЗ §31).
+            assertThat(categories.getCategories())
+                    .extracting(HomeFeedDto.CategoryCard::getId)
+                    .containsExactly(birinchi.getId(), ikkinchi.getId());
+        }
+
+        @Test
+        @DisplayName("Nofaol kategoriya qatorda ko'rinmaydi")
+        void inactiveCategoryIsHidden() {
+            Category faol = category("Faol", 10);
+            Category nofaol = category("Nofaol", 20);
+            nofaol.setActive(false);
+            categoryRepo.save(nofaol);
+
+            assertThat(inFeed(feed(), HomepageSectionType.CATEGORIES).getCategories())
+                    .extracting(HomeFeedDto.CategoryCard::getId)
+                    .containsExactly(faol.getId());
+        }
+    }
+
     // ------------------------------------------------------------ N+1 guard
 
     @Nested
@@ -379,6 +537,16 @@ class HomeFeedTest {
 
     private void newAd(AdAudience audience) {
         homepageService.saveAdvertisement(null, null, adRequest(audience));
+    }
+
+    /** Faol kategoriya — berilgan tartib raqami bilan. */
+    private Category category(String name, int sortOrder) {
+        com.example.backend.Admin.Dto.TaxonomySaveRequest req =
+                new com.example.backend.Admin.Dto.TaxonomySaveRequest();
+        req.setSortOrder(sortOrder);
+        req.setActive(true);
+        req.setTranslations(Translations.all(name + " " + SEQ.incrementAndGet()));
+        return taxonomyService.saveCategory(null, null, req);
     }
 
     private Content content(ContentType type, PublicationStatus status,

@@ -437,6 +437,17 @@ GET /api/v1/app/home?locale=UZ
 | `POPULAR_CREATORS` | Mashhur ijodkorlar (ТЗ §25) |
 | `CUSTOM_ROW` | Admin qo'lda yiqqan qator — `HomepageSectionItem` |
 
+**Qator tartibi ikki bosqichli.** Admin qatorga aniq ro'yxat bersa
+(`PUT /homepage/sections/{id}/items`) — o'sha tartib ishlatiladi. Ro'yxat
+bo'sh bo'lsa avtomatik qoida (yangi kontent birinchi). Shunda admin har bir
+qatorni qo'lda to'ldirishga majbur emas, lekin xohlasa to'liq nazorat
+qiladi.
+
+**Bo'limlar tartibi bitta so'rovda** — `PUT /homepage/sections/order`.
+Bittalab o'zgartirish oraliq holat yaratardi: ikkita bo'lim bir xil
+raqamda qolib, o'sha lahzada foydalanuvchi aralashib ketgan bosh sahifani
+ko'rardi.
+
 **Bo'sh bo'lim javobga tushmaydi.** Elementi yo'q bo'lim klientda sarlavhasi
 bor, ichi yo'q qator bo'lib chiqardi. Ma'lumot yo'q bo'lsa — bo'lim yo'q,
 o'ylab topilgan element emas.

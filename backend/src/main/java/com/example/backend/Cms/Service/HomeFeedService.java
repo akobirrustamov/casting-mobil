@@ -101,13 +101,8 @@ public class HomeFeedService {
                 b.creators(items);
                 empty = items.isEmpty();
             }
-            case CUSTOM_ROW -> {
-                List<HomeFeedDto.ContentCard> items = curated(section, lang, user, limit);
-                b.content(items);
-                empty = items.isEmpty();
-            }
             default -> {
-                List<HomeFeedDto.ContentCard> items = contentFor(section.getType(), lang, user, limit);
+                List<HomeFeedDto.ContentCard> items = contentRow(section, lang, user, limit);
                 b.content(items);
                 empty = items.isEmpty();
             }
@@ -162,7 +157,31 @@ public class HomeFeedService {
                 .toList();
     }
 
-    /** Admin qo'lda yig'gan qator (§31 — «Custom content rows»). */
+    /**
+     * Kontent qatori — avval QO'LDA tartib, bo'lmasa avtomatik qoida (ТЗ §31).
+     *
+     * <h2>Nima uchun ikki bosqich</h2>
+     * ТЗ: «Category/content rows tartibi boshqarilsin». Ilgari qo'lda
+     * tartiblash faqat {@code CUSTOM_ROW} da bor edi, qolgan qatorlar esa
+     * qat'iy {@code publicationDate desc} bilan chiqardi — ya'ni admin
+     * «Tanlangan» qatorida qaysi film birinchi turishini umuman hal qila
+     * olmasdi.
+     *
+     * Endi har qanday qator uchun ro'yxat berish mumkin. Ro'yxat bo'sh
+     * bo'lsa avtomatik qoida ishlaydi — aks holda admin har bir qatorni
+     * qo'lda to'ldirishga majbur bo'lardi va yangi kontent bosh sahifaga
+     * umuman tushmasdi.
+     */
+    private List<HomeFeedDto.ContentCard> contentRow(HomepageSection section, Locale lang,
+                                                     User user, int limit) {
+        List<HomeFeedDto.ContentCard> curated = curated(section, lang, user, limit);
+        if (!curated.isEmpty()) {
+            return curated;
+        }
+        return contentFor(section.getType(), lang, user, limit);
+    }
+
+    /** Admin qo'lda yig'gan tartib. Bo'sh bo'lsa — qator sozlanmagan. */
     private List<HomeFeedDto.ContentCard> curated(HomepageSection section, Locale lang,
                                                   User user, int limit) {
         return sectionItemRepo.findForSection(section.getId()).stream()
@@ -194,6 +213,8 @@ public class HomeFeedService {
             case SHOWS -> byType(ContentType.SHOW);
             case STREAMS -> byType(ContentType.STREAM);
             case CLIPS -> byType(ContentType.CLIP);
+            // CUSTOM_ROW uchun avtomatik qoida YO'Q: u butunlay admin
+            // tanloviga asoslangan qator. Ro'yxat bo'sh bo'lsa - qator yo'q.
             default -> List.of();
         };
         return pool.stream()

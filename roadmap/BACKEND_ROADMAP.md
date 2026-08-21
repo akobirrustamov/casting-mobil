@@ -436,6 +436,23 @@ Entity/ Repository/ Services/   ESKI casting
   esa bir nechta va bitta film bir nechtasida turishi mumkin
 - `[x]` `GET · PUT /homepage/sections/{id}/items` — ro'yxat tartibi =
   ko'rinish tartibi; takror ID tushunarli xato beradi
+- `[x]` ⚠️ **Qo'lda tartiblash BARCHA kontent qatorlarida.** Ilgari u faqat
+  `CUSTOM_ROW` da bor edi, qolgan qatorlar qat'iy `publicationDate desc`
+  bilan chiqardi — ya'ni admin «Tanlangan» yoki «Mini seriallar» qatorida
+  qaysi film birinchi turishini umuman hal qila olmasdi. Endi ro'yxat
+  berilsa u ustun, berilmasa avtomatik qoida ishlaydi (aks holda admin har
+  bir qatorni qo'lda to'ldirishga majbur bo'lardi va yangi kontent bosh
+  sahifaga tushmasdi)
+- `[x]` ⚠️ **`PUT /homepage/sections/order` — atomar qayta tartiblash.**
+  Ilgari tartib bittalab o'rnatilardi: bo'limni sudrash 8 ta so'rov
+  talab qilardi va ular orasida ikkita bo'lim bir xil raqamda turardi —
+  o'sha lahzada `/app/home` ni so'ragan foydalanuvchi ARALASHIB KETGAN
+  bosh sahifani ko'rardi
+- `[x]` Ro'yxatga kirmagan bo'limlar oxiriga suriladi — panel faqat
+  ko'rinib turgan bo'limlarni yuborsa ham ziddiyat (bir xil raqam)
+  yuzaga kelmaydi
+- `[x]` **Kategoriya qatori** tartibi `Category.sortOrder` bilan
+  boshqariladi; nofaol kategoriya qatorga tushmaydi
 - `[x]` **`GET /api/v1/app/home` — mobil ilova bosh sahifasi.** ТЗ: «homepage
   hardcoded bo'lmasin». Bu endpointgacha bosh sahifani boshqarish faqat
   admin panelida bor edi — ilova uni so'raydigan joy yo'q edi
@@ -448,8 +465,9 @@ Entity/ Repository/ Services/   ESKI casting
 - `[x]` **N+1 yo'q** — `Content.translations` va `Content.media` da
   `@BatchSize(50)`. `@EntityGraph` yaramaydi: ikkita to'plamni birdan
   fetch join qilish `MultipleBagFetchException` beradi
-- `[x]` `HomeFeedTest` — 16 test, N+1 nazorati mutatsiya bilan tasdiqlangan
-  (batching o'chirilsa 12 ta so'rov, yoqilganda 1 ta)
+- `[x]` `HomeFeedTest` — 23 test. N+1 nazorati, qo'lda tartib, atomar
+  qayta tartiblash va kategoriya tartibi — hammasi mutatsiya bilan
+  tasdiqlangan
 - `[ ]` `POPULAR_CONTENT` analitika reytingi bo'yicha (hozir qo'lda bayroq,
   §25 dagi kabi — arxitektura tayyor)
 
@@ -801,7 +819,7 @@ aniqlab ishlat. Real ma'lumot bo'lmasa fake statistic yaratma.»
 | `AdAnalyticsTest` | 8 | **ТЗ §29** — beshta ko'rsatkich, unikal qayta hisoblanadi |
 | `AdStatisticsEndpointTest` | 6 | **ТЗ §29** — har bir reklama uchun statistika |
 | `PremiereModuleTest` | 20 | **ТЗ §30** — maydonlar, havola, BARCHA matnlar uch tilda |
-| `HomeFeedTest` | 16 | **ТЗ §31** — bosh sahifa backenddan, N+1 nazorati |
+| `HomeFeedTest` | 23 | **ТЗ §31** — bosh sahifa backenddan, qator tartibi, N+1 nazorati |
 | `NotificationModuleTest` | 17 | **ТЗ §32/§33** — rejalashtirish, soxta muvaffaqiyat yo'q |
 | `DonationAndPaymentTest` | 9 | **ТЗ §42/§44** — valyutalar qo'shilmaydi, soxta to'lov yo'q |
 | `ModerationAndUsersTest` | 16 | **ТЗ §34/§35/§38** — filtrlar birga, xodimlar ajratilgan, ID qidiruvi |
