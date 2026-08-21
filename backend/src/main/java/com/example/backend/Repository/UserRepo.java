@@ -45,6 +45,13 @@ public interface UserRepo extends JpaRepository<User, UUID> {
      * Xodimlar alohida ekranda boshqariladi (ТЗ §12). Bu ro'yxat esa
      * ilova foydalanuvchilari uchun — ular aralashsa, admin o'zini
      * bloklab qo'yishi mumkin edi.
+     *
+     * <h2>ID bo'yicha qidiruv</h2>
+     * ТЗ §38 premium sovg'a qilish uchun foydalanuvchini <b>telefon,
+     * email yoki ID</b> orqali topishni talab qiladi. ID — UUID, uni
+     * {@code like} bilan qidirib bo'lmaydi (turlar mos kelmaydi), shuning
+     * uchun alohida parametr: qidiruv matni to'g'ri UUID bo'lsa
+     * to'ldiriladi, aks holda {@code null} va shart o'chadi.
      */
     @Query("""
             select u from User u
@@ -55,7 +62,10 @@ public interface UserRepo extends JpaRepository<User, UUID> {
             and (:q is null
                  or lower(u.phone) like lower(concat('%', :q, '%'))
                  or lower(u.email) like lower(concat('%', :q, '%'))
-                 or lower(u.name)  like lower(concat('%', :q, '%')))
+                 or lower(u.name)  like lower(concat('%', :q, '%'))
+                 or (:exactId is not null and u.id = :exactId))
             """)
-    Page<User> findAppUsers(@Param("q") String q, Pageable pageable);
+    Page<User> findAppUsers(@Param("q") String q,
+                            @Param("exactId") UUID exactId,
+                            Pageable pageable);
 }

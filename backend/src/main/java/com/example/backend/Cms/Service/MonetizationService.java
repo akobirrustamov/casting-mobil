@@ -1,6 +1,7 @@
 package com.example.backend.Cms.Service;
 
 import com.example.backend.Admin.Dto.TariffSaveRequest;
+import com.example.backend.Admin.Dto.CurrencyPackageSaveRequest;
 import com.example.backend.Cms.Entity.CurrencyPackage;
 import com.example.backend.Cms.Entity.Tariff;
 import com.example.backend.Cms.Entity.TariffTranslation;
@@ -109,7 +110,26 @@ public class MonetizationService {
     }
 
     @Transactional
-    public CurrencyPackage savePackage(User actor, Long id, CurrencyPackage incoming) {
+    /**
+     * Valyuta paketini saqlash (ТЗ §40, §41).
+     *
+     * <h2>Nima uchun so'rov DTO'si, entity emas</h2>
+     * Ilgari bu metod {@code CurrencyPackage} entity'sini qabul qilardi va
+     * uni controller to'g'ridan-to'g'ri {@code @RequestBody} dan olardi.
+     * Tekshiruv esa faqat shu yerda edi va {@code kind} umuman
+     * tekshirilmasdi — bo'sh yuborilsa xato bazada chiqib, panelda
+     * «500» ko'rinardi.
+     *
+     * DTO'da {@code @NotNull} bor, ya'ni xato so'rov servisga yetib ham
+     * kelmaydi va admin aniq xabar oladi.
+     */
+    public CurrencyPackage savePackage(User actor, Long id,
+                                       CurrencyPackageSaveRequest incoming) {
+        // Servis to'g'ridan-to'g'ri chaqirilsa DTO annotatsiyalari
+        // ishlamaydi — shuning uchun bu yerda ham tekshiriladi.
+        if (incoming.getKind() == null) {
+            throw BusinessException.validation("Valyuta turi tanlanmagan");
+        }
         if (incoming.getAmount() == null || incoming.getAmount() <= 0) {
             throw BusinessException.validation("Miqdor noldan katta bo'lishi kerak");
         }

@@ -2,6 +2,9 @@ package com.example.backend.Admin.Controller;
 
 import com.example.backend.Admin.CurrentUser;
 import com.example.backend.Admin.RequirePermission;
+import com.example.backend.Admin.Dto.CurrencyPackageDto;
+import com.example.backend.Admin.Dto.CurrencyPackageSaveRequest;
+import com.example.backend.Admin.Dto.PlatformSettingDto;
 import com.example.backend.Admin.Dto.TariffSaveRequest;
 import com.example.backend.Admin.Dto.TranslationDto;
 import com.example.backend.Cms.Entity.CurrencyPackage;
@@ -77,23 +80,32 @@ public class MonetizationController {
     // ------------------------------------------------------- valyuta paketi
 
     @GetMapping("/currency-packages")
-    public ResponseEntity<List<CurrencyPackage>> packages() {
+    public ResponseEntity<List<CurrencyPackageDto>> packages() {
         require(Permission.DONATION_VIEW);
-        return ResponseEntity.ok(monetizationService.packages());
+        return ResponseEntity.ok(monetizationService.packages().stream()
+                .map(CurrencyPackageDto::from).toList());
     }
 
+    /**
+     * ⚠️ Ilgari bu yerda {@code @RequestBody CurrencyPackage} turgan edi —
+     * entity to'g'ridan-to'g'ri va HECH QANDAY tekshiruvsiz. {@code kind}
+     * bo'sh yuborilsa xato faqat bazada chiqardi va panelda «500 Internal
+     * Server Error» ko'rinardi: admin nimani to'ldirmaganini bilmasdi.
+     */
     @PostMapping("/currency-packages")
-    public ResponseEntity<CurrencyPackage> createPackage(@RequestBody CurrencyPackage body) {
+    public ResponseEntity<CurrencyPackageDto> createPackage(
+            @Valid @RequestBody CurrencyPackageSaveRequest body) {
         require(Permission.DONATION_PACKAGE_EDIT);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(monetizationService.savePackage(CurrentUser.get(), null, body));
+        return ResponseEntity.status(HttpStatus.CREATED).body(CurrencyPackageDto.from(
+                monetizationService.savePackage(CurrentUser.get(), null, body)));
     }
 
     @PutMapping("/currency-packages/{id}")
-    public ResponseEntity<CurrencyPackage> updatePackage(@PathVariable Long id,
-                                                         @RequestBody CurrencyPackage body) {
+    public ResponseEntity<CurrencyPackageDto> updatePackage(
+            @PathVariable Long id, @Valid @RequestBody CurrencyPackageSaveRequest body) {
         require(Permission.DONATION_PACKAGE_EDIT);
-        return ResponseEntity.ok(monetizationService.savePackage(CurrentUser.get(), id, body));
+        return ResponseEntity.ok(CurrencyPackageDto.from(
+                monetizationService.savePackage(CurrentUser.get(), id, body)));
     }
 
     @DeleteMapping("/currency-packages/{id}")
@@ -130,16 +142,18 @@ public class MonetizationController {
     // ------------------------------------------------------------ sozlamalar
 
     @GetMapping("/settings")
-    public ResponseEntity<List<PlatformSetting>> settings() {
+    public ResponseEntity<List<PlatformSettingDto>> settings() {
         require(Permission.SETTINGS_VIEW);
-        return ResponseEntity.ok(settingsService.all());
+        return ResponseEntity.ok(settingsService.all().stream()
+                .map(PlatformSettingDto::from).toList());
     }
 
     @PutMapping("/settings/{key}")
-    public ResponseEntity<PlatformSetting> updateSetting(@PathVariable String key,
-                                                         @RequestBody SettingValue body) {
+    public ResponseEntity<PlatformSettingDto> updateSetting(@PathVariable String key,
+                                                            @RequestBody SettingValue body) {
         require(Permission.SETTINGS_EDIT);
-        return ResponseEntity.ok(settingsService.update(CurrentUser.get(), key, body.getValue()));
+        return ResponseEntity.ok(PlatformSettingDto.from(
+                settingsService.update(CurrentUser.get(), key, body.getValue())));
     }
 
     // ------------------------------------------------------------------ DTO

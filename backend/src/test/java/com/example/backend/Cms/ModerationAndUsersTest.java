@@ -236,6 +236,45 @@ class ModerationAndUsersTest {
         }
 
         @Test
+        @DisplayName("ID bo'yicha qidiruv — ТЗ §38 premium sovg'a qilish uchun")
+        void searchById() {
+            User u = appUser();
+
+            // §38: foydalanuvchini telefon, email YOKI ID orqali topish.
+            // UUID'ni `like` bilan qidirib bo'lmaydi.
+            var result = userAdminService.searchPage(u.getId().toString(),
+                    PageRequest.of(0, 20));
+
+            assertThat(result.getContent()).extracting(r -> r.user().getId())
+                    .containsExactly(u.getId());
+        }
+
+        @Test
+        @DisplayName("UUID bo'lmagan matn oddiy qidiruv sifatida ishlaydi")
+        void nonUuidTextIsPlainSearch() {
+            User u = appUser();
+
+            assertThat(userAdminService.searchPage("Sinov", PageRequest.of(0, 200))
+                    .getContent()).extracting(r -> r.user().getId())
+                    .contains(u.getId());
+        }
+
+        @Test
+        @DisplayName("Premium uzaytiriladi — boshidan boshlanmaydi")
+        void premiumIsExtendedNotReset() {
+            User u = appUser();
+
+            var first = userAdminService.grantPremium(null, u.getId(), 1, null);
+            LocalDateTime afterFirst = first.getPremiumUntil();
+
+            var second = userAdminService.grantPremium(null, u.getId(), 1, null);
+
+            // Aks holda ikkinchi sovg'a birinchisini yeb qo'yardi va
+            // foydalanuvchi to'lagan muddatini yo'qotardi.
+            assertThat(second.getPremiumUntil()).isAfter(afterFirst);
+        }
+
+        @Test
         @DisplayName("Bloklash va blokdan chiqarish")
         void blockAndUnblock() {
             User u = appUser();

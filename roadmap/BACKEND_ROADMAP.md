@@ -551,17 +551,42 @@ aniqlab ishlat. Real ma'lumot bo'lmasa fake statistic yaratma.»
 - `[ ]` Muddati tugashidan oldin ogohlantirish
 - `[ ]` Obuna tarixi uchun klient endpointi
 
-## 22. Tariffs `[x]`
+## 22. Tariffs `[x]` — ТЗ §36 to'liq
 
-**Entity:** `Tariff` + `TariffTranslation` · **Migratsiya:** V5 (seed bilan)
+**Entity:** `Tariff` + `TariffTranslation` · **Migratsiya:** V5
 
-- `[x]` `GET /tariffs` · `POST` · `PUT /{id}`
-- `[x]` Doskadan olingan narxlar seed qilingan
-- `[x]` `durationMonths`, `price`, `currency`, `highlighted`, `active`
-- `[x]` Uch tilda nom va tavsif
-- `[x]` Pul `numeric(12,2)` — **hech qachon float emas**
-- `[ ]` O'chirish (faol obunasi borlarni tekshirish bilan)
-- `[ ]` Chegirma / aksiya narxi
+- `[x]` Maydonlar: id · code · `durationMonths` · price · currency ·
+  active · sortOrder · uch tilli nom, tavsif, badge va **features**
+- `[x]` ⚠️ **Narx `BigDecimal`** — floating point pul uchun yaramaydi
+  (0.1 + 0.2 ≠ 0.3). Buyurtmachi talabi
+- `[x]` **Narxlar kodda hardcoded emas** — barchasi bazada, admin panel
+  orqali o'zgartiriladi
+- `[x]` `GET · POST · PUT /tariffs`
+- `[x]` **Valyuta paketi endpointlari DTO'ga o'tkazildi.** Ilgari
+  controller `@RequestBody CurrencyPackage` — entity'ni to'g'ridan-to'g'ri
+  va HECH QANDAY tekshiruvsiz qabul qilardi: `kind` bo'sh yuborilsa xato
+  faqat bazada chiqib, panelda «500 Internal Server Error» ko'rinardi va
+  admin nimani to'ldirmaganini bilmasdi
+- `[x]` `PlatformSetting` ham DTO orqali qaytadi — API baza sxemasiga
+  bog'lanib qolmasin
+
+## 22.2. Premium huquqlari va sovg'a `[x]` — ТЗ §37, §38
+
+- `[x]` **Markazlashtirilgan** — barcha entitlement qarorlari
+  `AccessService` da. Klientga sochilmagan: mobil ilova, sayt va backend
+  bir xil javob beradi
+- `[x]` Premium huquqlari: barcha premium kontent · premyeralar ·
+  seriallar · filmlar · **reklamasiz ko'rish** (`shouldShowAds`) ·
+  **casting loyihasiga kirish** (`canAccessCasting`)
+- `[x]` Sovg'a qilish: foydalanuvchi **telefon, email yoki ID** orqali
+  topiladi (§38)
+- `[x]` ⚠️ ID bo'yicha qidiruv alohida parametr: UUID'ni `like` bilan
+  qidirib bo'lmaydi
+- `[x]` **Premium UZAYTIRILADI, boshidan boshlanmaydi** — aks holda
+  ikkinchi sovg'a birinchisini yeb qo'yardi va foydalanuvchi to'lagan
+  muddatini yo'qotardi
+- `[x]` Bekor qilish (`revokePremium`)
+- `[x]` Har bir amal audit jurnalida: `PREMIUM_GRANTED`, `PREMIUM_REVOKED`
 
 ## 22.1. Kirish siyosati va narx `[x]` — ТЗ §23
 
@@ -731,7 +756,7 @@ aniqlab ishlat. Real ma'lumot bo'lmasa fake statistic yaratma.»
 | `PremiereModuleTest` | 14 | **ТЗ §30** — maydonlar, havola, uch til |
 | `HomeFeedTest` | 16 | **ТЗ §31** — bosh sahifa backenddan, N+1 nazorati |
 | `NotificationModuleTest` | 17 | **ТЗ §32/§33** — rejalashtirish, soxta muvaffaqiyat yo'q |
-| `ModerationAndUsersTest` | 13 | **ТЗ §34/§35** — filtrlar birga, xodimlar ajratilgan |
+| `ModerationAndUsersTest` | 16 | **ТЗ §34/§35/§38** — filtrlar birga, xodimlar ajratilgan, ID qidiruvi |
 | `InternalLinkReuseTest` | 9 | **ТЗ §28** — havola mexanizmi uchala modulda bir xil |
 | `BackendAuthorizationTest` | 10 | **Ikki qavatli avtorizatsiya, 6 xil escalation urinishi** |
 | `BootstrapAccountSecurityTest` | 7 | **Standart parolli master hisob qaytmasin** |

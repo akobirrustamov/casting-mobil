@@ -60,7 +60,20 @@ public class UserAdminService {
     @Transactional(readOnly = true)
     public Page<AppUserRow> searchPage(String query, Pageable pageable) {
         String q = query == null || query.isBlank() ? null : query.trim();
-        Page<User> page = userRepo.findAppUsers(q, pageable);
+
+        // ТЗ §38: foydalanuvchini ID orqali ham topish kerak. UUID'ni
+        // `like` bilan qidirib bo'lmaydi, shuning uchun matn to'g'ri UUID
+        // bo'lsa alohida parametrga tushadi.
+        UUID exactId = null;
+        if (q != null) {
+            try {
+                exactId = UUID.fromString(q);
+            } catch (IllegalArgumentException ignored) {
+                // Oddiy qidiruv matni — ID emas. Bu normal holat.
+            }
+        }
+
+        Page<User> page = userRepo.findAppUsers(q, exactId, pageable);
 
         List<UUID> ids = page.getContent().stream().map(User::getId).toList();
         if (ids.isEmpty()) {
