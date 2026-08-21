@@ -1,0 +1,538 @@
+/* ==========================================================================
+   UZCASTING Admin Panel - dizayn tokenlari
+   --------------------------------------------------------------------------
+   Gamma: TO'Q KO'K (buyurtmachi qarori, 19.08.2026).
+
+   Bu mobil ilovaning palitrasi EMAS. Mobil ilovada ТЗ V2 (18-bet) bo'yicha
+   tasdiqlangan to'q binafsha/qora gamma qoladi va u o'zgartirilmaydi.
+   Admin panel - alohida mahsulot yuzasi, shuning uchun ziddiyat yo'q.
+
+   Ranglar faqat SHU YERDA. Komponentlarga hex yozilmaydi (§50).
+   ========================================================================== */
+
+.uz-panel {
+    /* Fon qatlamlari - eng chuqurdan yuzagacha */
+    --p-bg:          #070E20;
+    --p-surface:     #0C1730;
+    --p-surface-2:   #12203F;
+    --p-surface-3:   #1A2B52;
+    --p-border:      #1E3163;
+    --p-border-soft: #16254A;
+
+    /* Asosiy rang */
+    --p-primary:       #2F6BFF;
+    --p-primary-hover: #1D4ED8;
+    --p-primary-soft:  rgba(47, 107, 255, 0.14);
+
+    /* Yordamchi ranglar */
+    --p-accent:  #38BDF8;
+    --p-gold:    #F5C542;
+    --p-success: #34D399;
+    --p-warning: #FBBF24;
+    --p-danger:  #F87171;
+
+    /* Matn */
+    --p-text:     #E9EFFB;
+    --p-muted:    #8FA3C8;
+    --p-disabled: #566C99;
+
+    /* O'lchamlar */
+    --p-radius:    12px;
+    --p-radius-lg: 18px;
+    --p-sidebar:   264px;
+    --p-header:    64px;
+
+    --p-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+    background: var(--p-bg);
+    color: var(--p-text);
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Fon uchun yengil nur - tekis to'q ko'k quruq ko'rinmasligi uchun */
+.uz-panel::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(900px 500px at 12% -8%, rgba(47, 107, 255, 0.16), transparent 60%),
+        radial-gradient(700px 420px at 92% 4%, rgba(56, 189, 248, 0.10), transparent 62%);
+    z-index: 0;
+}
+
+/* ⚠️ Bu yerda `.uz-panel > * { position: relative }` YOZILMAYDI.
+   U Tailwind'ning `.fixed` klassi bilan bir xil aniqlikda (0,1,0) va keyinroq
+   yuklanadi, natijada yon panel oqimda qolib kontentni pastga suradi.
+   Joylashuv har bir element uchun aniq beriladi. */
+
+/* !important ATAYLAB.
+   src/pages/home/home.css da `* { font-family: 'Lora', serif !important }`
+   degan universal qoida bor - u bosh sahifa uslubi bo'lsa-da, butun saytga,
+   shu jumladan panelga ham sizib chiqadi. Uni o'chirish mavjud sayt
+   ko'rinishini o'zgartirardi, shuning uchun bu yerda ustunlik beriladi:
+   `.uz-panel *` (0,1,0) universal `*` (0,0,0) dan kuchliroq. */
+.uz-panel, .uz-panel * {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif !important;
+}
+
+/* Raqamlar jadval va statistikada tekis turishi uchun */
+.uz-panel .uz-mono { font-variant-numeric: tabular-nums; }
+
+/* ------------------------------------------------------------------ tipografiya */
+.uz-h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+.uz-h2 { font-size: 18px; font-weight: 650; }
+.uz-muted { color: var(--p-muted); }
+.uz-mono { font-variant-numeric: tabular-nums; }
+
+/* ------------------------------------------------------------------ sirtlar */
+.uz-card {
+    background: var(--p-surface);
+    border: 1px solid var(--p-border-soft);
+    border-radius: var(--p-radius-lg);
+}
+
+.uz-card-hover:hover {
+    border-color: var(--p-border);
+    background: var(--p-surface-2);
+}
+
+/* ------------------------------------------------------------------ tugmalar */
+.uz-btn {
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;              /* touch target - ТЗ talabi */
+    padding: 0 18px;
+    border-radius: var(--p-radius);
+    border: 1px solid transparent;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, opacity .15s;
+    white-space: nowrap;
+}
+
+.uz-btn:focus-visible {
+    outline: 2px solid var(--p-accent);
+    outline-offset: 2px;
+}
+
+.uz-btn-primary { background: var(--p-primary); color: #fff; }
+.uz-btn-primary:hover:not(:disabled) { background: var(--p-primary-hover); }
+
+.uz-btn-ghost {
+    background: transparent;
+    border-color: var(--p-border);
+    color: var(--p-text);
+}
+.uz-btn-ghost:hover:not(:disabled) { background: var(--p-surface-2); }
+
+.uz-btn-danger { background: transparent; border-color: var(--p-danger); color: var(--p-danger); }
+.uz-btn-danger:hover:not(:disabled) { background: rgba(248, 113, 113, 0.12); }
+
+.uz-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ------------------------------------------------------------------ formalar */
+.uz-input, .uz-select {
+    /* Sayt global 'Lora' serif shriftini o'rnatgan - form elementlari uni
+       meros olib qolmasligi uchun ataylab qayta beriladi. */
+    font-family: inherit;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 14px;
+    background: var(--p-surface-2);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius);
+    color: var(--p-text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+.uz-input::placeholder { color: var(--p-disabled); }
+
+/* Chrome autofill maydonni oq qilib qo'yadi va to'q mavzuni buzadi.
+   background-color to'g'ridan-to'g'ri o'zgartirilmaydi, shuning uchun
+   ichki soya bilan bosiladi - bu yagona ishonchli usul. */
+.uz-input:-webkit-autofill,
+.uz-input:-webkit-autofill:hover,
+.uz-input:-webkit-autofill:focus,
+.uz-input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--p-text);
+    -webkit-box-shadow: 0 0 0 1000px var(--p-surface-2) inset;
+    box-shadow: 0 0 0 1000px var(--p-surface-2) inset;
+    caret-color: var(--p-text);
+    transition: background-color 100000s ease-in-out 0s;
+}
+
+.uz-input:focus, .uz-select:focus {
+    border-color: var(--p-primary);
+    box-shadow: 0 0 0 3px var(--p-primary-soft);
+}
+
+.uz-input[aria-invalid="true"] { border-color: var(--p-danger); }
+
+.uz-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--p-muted);
+}
+
+.uz-field-error { margin-top: 6px; font-size: 12px; color: var(--p-danger); }
+
+/* ------------------------------------------------------------------ bejaklar */
+.uz-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    border: 1px solid;
+}
+
+.uz-badge-published { color: var(--p-success); border-color: rgba(52,211,153,.4); background: rgba(52,211,153,.10); }
+.uz-badge-draft     { color: var(--p-muted);   border-color: var(--p-border);      background: var(--p-surface-2); }
+.uz-badge-scheduled { color: var(--p-warning); border-color: rgba(251,191,36,.4);  background: rgba(251,191,36,.10); }
+.uz-badge-archived  { color: var(--p-disabled);border-color: var(--p-border);      background: transparent; }
+.uz-badge-blocked   { color: var(--p-danger);  border-color: rgba(248,113,113,.4); background: rgba(248,113,113,.10); }
+.uz-badge-info      { color: var(--p-accent);  border-color: rgba(56,189,248,.4);  background: rgba(56,189,248,.10); }
+.uz-badge-gold      { color: var(--p-gold);    border-color: rgba(245,197,66,.4);  background: rgba(245,197,66,.10); }
+
+/* ------------------------------------------------------------------ jadval */
+.uz-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+
+.uz-table th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--p-muted);
+    border-bottom: 1px solid var(--p-border);
+    white-space: nowrap;
+}
+
+.uz-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--p-border-soft);
+    vertical-align: middle;
+}
+
+.uz-table tbody tr:hover { background: var(--p-surface-2); }
+.uz-table tbody tr:last-child td { border-bottom: none; }
+
+/* Keng jadval o'z ichida siljisin, sahifa gorizontal siljimasin */
+.uz-table-wrap { overflow-x: auto; }
+
+/* ------------------------------------------------------------------ yon panel */
+.uz-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 50;
+    width: var(--p-sidebar);
+    overflow-y: auto;
+    background: var(--p-surface);
+    border-right: 1px solid var(--p-border-soft);
+}
+
+.uz-content {
+    position: relative;
+    z-index: 1;
+    margin-left: var(--p-sidebar);
+    min-height: 100vh;
+}
+
+.uz-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    margin: 2px 10px;
+    border-radius: 10px;
+    color: var(--p-muted);
+    font-size: 14px;
+    font-weight: 550;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+
+.uz-nav-item:hover { background: var(--p-surface-2); color: var(--p-text); }
+
+.uz-nav-item.active {
+    background: var(--p-primary-soft);
+    color: #fff;
+    box-shadow: inset 2px 0 0 var(--p-primary);
+}
+
+.uz-nav-section {
+    padding: 16px 24px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--p-disabled);
+}
+
+/* ------------------------------------------------------------------ skeleton */
+@keyframes uz-pulse { 0%,100% { opacity: .45 } 50% { opacity: .8 } }
+
+.uz-skeleton {
+    background: var(--p-surface-2);
+    border-radius: 8px;
+    animation: uz-pulse 1.4s ease-in-out infinite;
+}
+
+/* Menyu tugmasi faqat tor ekranda.
+   Tailwind'ning `lg:hidden` klassi bu yerda ishlamaydi: `.uz-btn` bilan bir xil
+   aniqlikda va panel.css keyinroq yuklanadi. Shuning uchun o'z media so'rovimiz. */
+.uz-menu-btn { display: none; }
+
+/* Mobil menyu ochiq bo'lganda orqa fon. Faqat tor ekranda ko'rinadi. */
+.uz-scrim { display: none; }
+
+/* ------------------------------------------------------------------ responsiv */
+@media (max-width: 1024px) {
+    .uz-sidebar {
+        z-index: 60;
+        transform: translateX(-100%);
+        transition: transform .22s ease;
+    }
+    .uz-sidebar.open { transform: translateX(0); }
+    .uz-content { margin-left: 0; }
+    .uz-menu-btn { display: inline-flex; }
+    .uz-scrim {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 55;
+        background: rgba(0, 0, 0, .6);
+    }
+}
+
+@media (max-width: 640px) {
+    .uz-h1 { font-size: 20px; }
+    .uz-table th, .uz-table td { padding: 10px 12px; }
+}
+
+/* Harakatni kamaytirish sozlamasini hurmat qilamiz */
+@media (prefers-reduced-motion: reduce) {
+    .uz-skeleton { animation: none; }
+    .uz-sidebar { transition: none; }
+}
+
+/* ------------------------------------------------------------------ modal */
+.uz-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+    overflow-y: auto;
+    background: rgba(3, 7, 18, .72);
+    backdrop-filter: blur(3px);
+}
+
+.uz-modal {
+    width: 100%;
+    background: var(--p-surface);
+    border: 1px solid var(--p-border);
+    border-radius: var(--p-radius-lg);
+    box-shadow: var(--p-shadow);
+}
+
+.uz-modal-head,
+.uz-modal-foot {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+}
+
+.uz-modal-head { justify-content: space-between; border-bottom: 1px solid var(--p-border-soft); }
+.uz-modal-foot { justify-content: flex-end; border-top: 1px solid var(--p-border-soft); }
+.uz-modal-body { padding: 20px; }
+
+/* --------------------------------------------------------------- til tablari */
+.uz-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    margin-bottom: 16px;
+    background: var(--p-surface-2);
+    border-radius: var(--p-radius);
+}
+
+.uz-tab {
+    flex: 1;
+    min-height: 36px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--p-muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+
+.uz-tab:hover { color: var(--p-text); }
+.uz-tab.active { background: var(--p-primary); color: #fff; }
+
+/* Tarjimasi yo'q til belgilanadi - admin darhol ko'rsin */
+.uz-tab .uz-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background: var(--p-danger);
+    vertical-align: middle;
+}
+
+/* --------------------------------------------------------- media tanlagich */
+.uz-media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.uz-media-tile {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--p-surface-2);
+}
+
+.uz-media-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.uz-media-tile:hover { border-color: var(--p-border); }
+.uz-media-tile.selected { border-color: var(--p-primary); }
+
+.uz-thumb {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid var(--p-border);
+    background: var(--p-surface-2);
+}
+
+.uz-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+.uz-col { flex: 1 1 200px; min-width: 0; }
+
+.uz-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.uz-check input { width: 18px; height: 18px; accent-color: var(--p-primary); cursor: pointer; }
+
+.uz-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--p-border);
+    background: var(--p-surface-2);
+    color: var(--p-muted);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+}
+
+.uz-chip:hover { color: var(--p-text); }
+.uz-chip.selected {
+    background: var(--p-primary-soft);
+    border-color: var(--p-primary);
+    color: var(--p-text);
+}
+
+.uz-progress {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--p-surface-2);
+    overflow: hidden;
+}
+
+.uz-progress > div {
+    height: 100%;
+    background: var(--p-primary);
+    transition: width .2s;
+}
+
+/* ---------------------------------------------------------------- galereya */
+/* Rasm soni oldindan noma'lum, shuning uchun auto-fill: ekran kengligiga
+   qarab ustunlar soni o'zi moslashadi va mobil qurilmada ham buzilmaydi. */
+.uz-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.uz-gallery-item {
+  position: relative;
+  border: 1px solid var(--p-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--p-surface-2);
+}
+
+.uz-gallery-item img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.uz-gallery-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  padding: 6px;
+  background: var(--p-surface);
+  border-top: 1px solid var(--p-border);
+}
+
+.uz-icon-btn {
+  min-width: 30px;
+  min-height: 30px;
+  border: 1px solid var(--p-border);
+  border-radius: 8px;
+  background: var(--p-surface-2);
+  color: var(--p-text);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.uz-icon-btn:hover:not(:disabled) { border-color: var(--p-accent); }
+.uz-icon-btn:disabled { opacity: .35; cursor: not-allowed; }
+.uz-icon-btn-danger:hover:not(:disabled) { border-color: var(--p-danger); color: var(--p-danger); }

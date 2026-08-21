@@ -22,11 +22,18 @@ public class JwtService {
     private static final String BEARER_PREFIX = "Bearer ";
 
     /**
-     * Maxfiy kalit. Prod uchun application.properties yoki environment orqali beriladi:
-     * app.jwt.secret=...   (yoki APP_JWT_SECRET env)
-     * Default qiymat avvalgi kodda qotirilgan kalit bilan bir xil - mavjud tokenlar ishlayveradi.
+     * Maxfiy kalit. FAQAT environment orqali beriladi: {@code APP_JWT_SECRET}.
+     *
+     * ⚠️ Ilgari bu yerda default qiymat qotirilgan edi va u ochiq repozitoriyda
+     * turardi - ya'ni kimdir istalgan foydalanuvchi nomidan token yasay olardi.
+     * Default olib tashlandi: kalit berilmasa ilova KO'TARILMAYDI. Bu ataylab -
+     * jim ishlab, lekin himoyasiz qolishdan ko'ra darhol yiqilgani yaxshiroq.
+     *
+     * Deploy paytida: mavjud sessiyalar saqlanishi kerak bo'lsa eski qiymatni
+     * bering (u git tarixida), aks holda hamma qaytadan kiradi.
+     * Batafsil - application.properties.example.
      */
-    @Value("${app.jwt.secret:333aae7133c19eda8f7f61ce07e64281c295df67681b1ed47c9c270a488f94d0}")
+    @Value("${app.jwt.secret}")
     private String secret;
 
     /** Access token amal qilish muddati (ms). Default - avvalgidek 6 000 000 ms. */

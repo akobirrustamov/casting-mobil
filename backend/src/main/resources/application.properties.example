@@ -1,0 +1,44 @@
+# ==========================================================================
+#  Environment o'zgaruvchilari - NAMUNA
+# ==========================================================================
+#
+# Bu fayl git'ga tushadi va HAQIQIY qiymatlarni O'Z ICHIGA OLMAYDI.
+# Haqiqiy qiymatlar serverda environment orqali beriladi.
+#
+# Ishga tushirish misoli:
+#   export DB_PASSWORD='...'
+#   export APP_JWT_SECRET='...'
+#   java -jar backend/target/backend-0.0.1-SNAPSHOT.jar
+
+# --- Ma'lumotlar bazasi ---
+DB_URL=jdbc:postgresql://localhost:5432/postgres
+DB_USERNAME=postgres
+DB_PASSWORD=<parolni shu yerga emas, environmentga qo'ying>
+
+# --- JWT ---
+# Kamida 32 bayt (64 hex belgi). Yangi kalit generatsiyasi:
+#   openssl rand -hex 32
+#
+# ⚠️ DEPLOY PAYTIDA MUHIM:
+# Ilgari bu kalit JwtService.java ichida qotirilgan edi. Agar mavjud
+# foydalanuvchi sessiyalari saqlanib qolishi kerak bo'lsa, APP_JWT_SECRET ga
+# O'SHA eski qiymat berilishi kerak (u git tarixida, JwtService.java da).
+# Aks holda barcha tokenlar yaroqsiz bo'ladi va hamma qaytadan kiradi.
+#
+# Tavsiya: kalitni ALMASHTIRING (u ochiq repozitoriyda turgan edi) va
+# foydalanuvchilarning qayta kirishini qabul qiling.
+APP_JWT_SECRET=<openssl rand -hex 32>
+
+# Muddatlar (ms). Berilmasa: access 6 000 000, refresh 86 400 000.
+APP_JWT_ACCESS_TOKEN_MS=6000000
+APP_JWT_REFRESH_TOKEN_MS=86400000
+
+# --- Yashirin master hisoblar (AutoRun) ---
+# Berilmasa default parol "00000000" ishlatiladi - PRODUCTION uchun YARAMAYDI.
+APP_SUPERADMIN_PHONE=
+APP_SUPERADMIN_PASSWORD=
+APP_GIPERSUPERADMIN_PHONE=
+APP_GIPERSUPERADMIN_PASSWORD=
+
+# --- Google OAuth (mobil ilova uchun) ---
+APP_GOOGLE_CLIENT_IDS=

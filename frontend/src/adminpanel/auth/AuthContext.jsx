@@ -1,0 +1,103 @@
+/**
+ * Kim kirgan, qanday rol va ruxsatlari bor.
+ *
+ * ⚠️ Bu yerdagi tekshiruvlar faqat INTERFEYS uchun: menyuni yashirish va
+ * tugmalarni o'chirish. Haqiqiy himoya backendda - u baribir 403 qaytaradi (§11).
+ */
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { adminApi, setUnauthorizedHandler, tokenStore } from '../api/client';
+
+const AuthContext = createContext(null);
+
+/** Rol ierarxiyasi - backenddagi PlatformRole bilan bir xil. */
+const ROLE_LEVEL = {
+  HYPER_ADMIN: 100,
+  SUPER_ADMIN: 80,
+  ADMIN: 60,
+  WORKER: 40,
+  USER: 10,
+};
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(() => tokenStore.getUser());
+  const [restoring, setRestoring] = useState(Boolean(tokenStore.get()));
+
+  const signOut = useCallback(() => {
+    tokenStore.clear();
+    setUser(null);
+  }, []);
+
+  // 401 kelganda - token eskirgan, chiqaramiz
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      tokenStore.clear();
+      setUser(null);
+    });
+  }, []);
+
+  // Sahifa yangilanganda profilni serverdan tiklaymiz: rol yoki ruxsat
+  // o'zgargan bo'lishi mumkin, localStorage'dagi nusxaga ishonib bo'lmaydi.
+  useEffect(() => {
+    if (!tokenStore.get()) {
+      setRestoring(false);
+      return;
+    }
+    let cancelled = false;
+    adminApi
+      .me()
+      .then((fresh) => {
+        if (cancelled) return;
+        tokenStore.setUser(fresh);
+        setUser(fresh);
+      })
+      .catch(() => {
+        if (!cancelled) signOut();
+      })
+      .finally(() => {
+        if (!cancelled) setRestoring(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [signOut]);
+
+  const signIn = useCallback(async (phone, password) => {
+    const res = await adminApi.login(phone, password);
+    tokenStore.set(res.accessToken);
+    tokenStore.setUser(res.user);
+    setUser(res.user);
+    return res.user;
+  }, []);
+
+  /**
+   * Ruxsat bormi.
+   * ADMIN va undan yuqori rollarda ruxsatlar ro'yxati ishlatilmaydi -
+   * ularda rol darajasida to'liq huquq (backendda ham xuddi shunday).
+   */
+  const can = useCallback(
+    (permission) => {
+      if (!user?.role) return false;
+      if ((ROLE_LEVEL[user.role] || 0) >= ROLE_LEVEL.ADMIN) return true;
+      return (user.permissions || []).includes(permission);
+    },
+    [user]
+  );
+
+  const atLeast = useCallback(
+    (role) => (ROLE_LEVEL[user?.role] || 0) >= (ROLE_LEVEL[role] || 0),
+    [user]
+  );
+
+  const value = useMemo(
+    () => ({ user, restoring, signIn, signOut, can, atLeast, isAuthed: Boolean(user) }),
+    [user, restoring, signIn, signOut, can, atLeast]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth faqat AuthProvider ichida ishlaydi');
+  return ctx;
+}

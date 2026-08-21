@@ -1,0 +1,204 @@
+import { useState } from 'react';
+import { adminApi, mediaUrl } from '../api/client';
+import { useApi } from '../api/useApi';
+import { useAuth } from '../auth/AuthContext';
+import { EmptyState, ErrorState, LoadingState } from '../components/States';
+import { Badge, PageHeader, Pagination, SearchInput, StatusBadge, TableWrap } from '../components/Ui';
+import { toBackendLocale, usePanelI18n } from '../i18n';
+import ContentEditor from './ContentEditor';
+
+const STATUSES = ['PUBLISHED', 'DRAFT', 'SCHEDULED', 'IN_REVIEW', 'ARCHIVED', 'BLOCKED'];
+const TYPES = ['MOVIE', 'SERIES', 'MINI_SERIES', 'SHORT_FILM', 'PODCAST', 'SHOW', 'INTERVIEW', 'STREAM', 'CLIP'];
+
+export default function ContentPage() {
+  const { t, locale } = usePanelI18n();
+  const { can } = useAuth();
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [page, setPage] = useState(0);
+  const [status, setStatus] = useState('');
+  const [type, setType] = useState('');
+  const [q, setQ] = useState('');
+
+  const { data, error, loading, reload } = useApi(
+    () => adminApi.content({ page, size: 20, status: status || undefined, type: type || undefined, q: q || undefined }),
+    [page, status, type, q]
+  );
+
+  const backendLocale = toBackendLocale(locale);
+
+  /** Tanlangan tildagi sarlavha; tarjima yo'q bo'lsa boshqa tildan olinadi. */
+  const titleOf = (item) => {
+    const tr = item.translations || {};
+    return tr[backendLocale]?.title || tr.UZ?.title || Object.values(tr)[0]?.title || item.slug;
+  };
+
+  /** Til uchun alohida afisha bormi - bo'lsa o'sha, bo'lmasa umumiysi. */
+  const posterOf = (item) => {
+    const localeSpecific = item.localePosters?.[backendLocale];
+    return mediaUrl(localeSpecific || item.posterMediaId);
+  };
+
+  const hasLocalePoster = (item) => Boolean(item.localePosters?.[backendLocale]);
+
+  return (
+    <>
+      <PageHeader
+        title={t('content.title')}
+        subtitle={t('content.subtitle')}
+        right={
+          <>
+            <SearchInput value={q} onChange={(v) => { setQ(v); setPage(0); }} placeholder={t('content.search')} />
+            <select
+              className="uz-select" style={{ width: 'auto' }} value={status}
+              aria-label={t('content.col.status')}
+              onChange={(e) => { setStatus(e.target.value); setPage(0); }}
+            >
+              <option value="">{t('content.allStatuses')}</option>
+              {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <select
+              className="uz-select" style={{ width: 'auto' }} value={type}
+              aria-label={t('content.col.type')}
+              onChange={(e) => { setType(e.target.value); setPage(0); }}
+            >
+              <option value="">{t('content.allTypes')}</option>
+              {TYPES.map((s) => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+            </select>
+            {can('CONTENT_CREATE') && (
+              <button
+                type="button"
+                className="uz-btn uz-btn-primary"
+                onClick={() => { setEditingId(null); setEditorOpen(true); }}
+              >
+                + {t('editor.new')}
+              </button>
+            )}
+          </>
+        }
+      />
+
+      <div className="uz-card overflow-hidden">
+        {loading ? (
+          <LoadingState />
+        ) : error ? (
+          <ErrorState error={error} onRetry={reload} />
+        ) : !data?.items?.length ? (
+          <EmptyState icon="🎬" />
+        ) : (
+          <>
+            <TableWrap>
+              <table className="uz-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: 64 }} />
+                    <th>{t('content.col.title')}</th>
+                    <th>{t('content.col.type')}</th>
+                    <th>{t('content.col.orientation')}</th>
+                    <th>{t('content.col.status')}</th>
+                    <th>{t('content.col.access')}</th>
+                    <th style={{ textAlign: 'right' }}>{t('content.col.views')}</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.items.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        {posterOf(item) ? (
+                          <img
+                            src={posterOf(item)}
+                            alt=""
+                            loading="lazy"
+                            style={{
+                              width: 48, height: 48, objectFit: 'cover',
+                              borderRadius: 8, border: '1px solid var(--p-border)',
+                            }}
+                          />
+                        ) : (
+                          <div className="uz-skeleton" style={{ width: 48, height: 48 }} />
+                        )}
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{titleOf(item)}</div>
+                        <div className="uz-muted" style={{ fontSize: 12 }}>
+                          {item.slug}
+                          {hasLocalePoster(item) && (
+                            <span style={{ marginLeft: 8, color: 'var(--p-accent)' }}>
+                              • {t('content.localePoster')}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="uz-muted" style={{ fontSize: 13 }}>
+                        {String(item.contentType).replace(/_/g, ' ')}
+                      </td>
+                      <td>
+                        <Badge tone={item.orientation === 'VERTICAL' ? 'gold' : 'info'}>
+                          {item.orientation === 'VERTICAL' ? t('content.vertical') : t('content.landscape')}
+                        </Badge>
+                      </td>
+                      <td><StatusBadge status={item.status} /></td>
+                      <td className="uz-muted" style={{ fontSize: 12 }}>
+                        {item.accessPolicy === 'FREE'
+                          ? t('common.free')
+                          : String(item.accessPolicy).replace(/_/g, ' ')}
+                        {item.premierePrice && (
+                          <div style={{ color: 'var(--p-gold)', fontWeight: 600 }}>
+                            {Number(item.premierePrice).toLocaleString()} {t('common.currency')}
+                          </div>
+                        )}
+                      </td>
+                      <td className="uz-mono" style={{ textAlign: 'right' }}>
+                        {Number(item.viewCount || 0).toLocaleString()}
+                      </td>
+                      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        {can('CONTENT_EDIT') && (
+                          <button
+                            type="button"
+                            className="uz-btn uz-btn-ghost"
+                            style={{ minHeight: 34, padding: '0 12px', fontSize: 13 }}
+                            onClick={() => { setEditingId(item.id); setEditorOpen(true); }}
+                          >
+                            {t('common.edit')}
+                          </button>
+                        )}
+                        {can('CONTENT_DELETE') && (
+                          <button
+                            type="button"
+                            className="uz-btn uz-btn-danger"
+                            style={{ minHeight: 34, padding: '0 12px', fontSize: 13, marginLeft: 8 }}
+                            onClick={async () => {
+                              // Qaytarib bo'lmaydigan ko'rinadigan amal - tasdiq so'raladi (§51)
+                              if (!window.confirm(`${item.slug} — ${t('common.remove')}?`)) return;
+                              await adminApi.archiveContent(item.id);
+                              reload();
+                            }}
+                          >
+                            {t('common.remove')}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableWrap>
+            <Pagination page={data.page} totalPages={data.totalPages} onPage={setPage} />
+          </>
+        )}
+      </div>
+
+      {data && (
+        <p className="uz-muted mt-3 text-sm">{t('common.total', { n: data.totalItems })}</p>
+      )}
+
+      <ContentEditor
+        open={editorOpen}
+        contentId={editingId}
+        onClose={() => setEditorOpen(false)}
+        onSaved={reload}
+      />
+    </>
+  );
+}

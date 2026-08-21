@@ -1,0 +1,58 @@
+package com.example.backend.Cms.Repository;
+
+import com.example.backend.Cms.Entity.ContentDailyStatistic;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+public interface ContentDailyStatisticRepo extends JpaRepository<ContentDailyStatistic, Long> {
+
+    Optional<ContentDailyStatistic> findByContentIdAndStatDate(Long contentId, LocalDate statDate);
+
+    List<ContentDailyStatistic> findAllByStatDateBetweenOrderByStatDateAsc(LocalDate from, LocalDate to);
+
+    @Query("""
+            select s.contentId as contentId,
+                   sum(s.views) as views,
+                   sum(s.plays) as plays,
+                   sum(s.completes) as completes,
+                   sum(s.uniqueViewers) as uniqueViewers
+            from ContentDailyStatistic s
+            where s.statDate between :from and :to
+            group by s.contentId
+            order by sum(s.views) desc
+            """)
+    List<ContentTotals> totalsBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    /** Kunlik qator — grafik uchun. */
+    @Query("""
+            select s.statDate as day,
+                   sum(s.views) as views,
+                   sum(s.plays) as plays,
+                   sum(s.completes) as completes
+            from ContentDailyStatistic s
+            where s.statDate between :from and :to
+            group by s.statDate
+            order by s.statDate
+            """)
+    List<DailyPoint> dailySeries(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    interface ContentTotals {
+        Long getContentId();
+        Long getViews();
+        Long getPlays();
+        Long getCompletes();
+        Long getUniqueViewers();
+    }
+
+    interface DailyPoint {
+        LocalDate getDay();
+        Long getViews();
+        Long getPlays();
+        Long getCompletes();
+    }
+}

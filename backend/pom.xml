@@ -71,6 +71,30 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Bean Validation - request DTO'larni tekshirish uchun (@NotBlank, @Size...).
+             Spring Boot 3'da web starter'ga kirmaydi, alohida qo'shiladi. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- Flyway - sxema migratsiyalari.
+             Ilgari sxemani Hibernate'ning ddl-auto=update boshqarardi: o'zgarish
+             nazoratsiz, rollback yo'q, review yo'q edi. Endi har bir o'zgarish
+             db/migration ostidagi versiyalangan SQL fayl. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
+        <!-- AOP - @RequirePermission annotatsiyasi uchun.
+             Ruxsat tekshiruvi qo'lda chaqirilganda uni unutish oson;
+             annotatsiya buni metod imzosida ko'rinadigan qiladi. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>

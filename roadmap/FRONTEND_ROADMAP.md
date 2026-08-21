@@ -1,0 +1,349 @@
+# UZCASTING FRONTEND ROADMAP
+
+> Admin web panel uchun batafsil checklist.
+> Root [roadmap.md](./roadmap.md) · Arxitektura → [FRONTEND_ARCHITECTURE.md](./FRONTEND_ARCHITECTURE.md)
+
+Status: `[ ]` TODO · `[~]` IN PROGRESS · `[x]` DONE · `[!]` BLOCKED
+
+Oxirgi yangilanish: 20.08.2026 — PHASE 5–8 qo'shildi
+
+---
+
+## 0. Existing React Audit `[x]`
+
+- `[x]` React 18.3.1 + CRA 5 (`react-scripts`), **JavaScript** — TypeScript emas
+- `[x]` Routing: `react-router-dom` v6, barcha route `src/App.js` ichida
+- `[x]` HTTP: `src/config/index.js` — axios wrapper, `{error, data}` qaytaradi
+- `[x]` Server-state kutubxonasi **yo'q** (TanStack Query yo'q)
+- `[x]` UI: Bootstrap 5 + PrimeReact + Tailwind 3.4 + FontAwesome + react-icons (aralash)
+- `[x]` i18n: `i18next` + `react-i18next` mavjud (`src/i18next.js`)
+- `[x]` Token: `localStorage.access_token`
+- `[x]` Baseline `react-scripts build` ✅ (≈40 ta ESLint warning bilan)
+
+### Mavjud sahifalar
+
+| Route | Papka | Tavsif |
+|---|---|---|
+| `/` | `pages/home` | Public landing |
+| `/models` | `pages/models` | Anketa katalogi, filtrlar bilan |
+| `/aadmin/login` | `admin/LoginAdmin.js` | Sayt admin login |
+| `/aadmin/casting-users/*` | `admin/admin/` | Casting anketalari admini |
+| `/admin/*` | `bot-admin/admin/` | Telegram bot admini |
+| `/bot/:userId`, `/data-form/:userId`, `/history/:userId`, `/appeal/:userId` | `pages/` | Bot WebApp oqimi |
+
+### Aniqlangan muammolar
+
+- **B4 (HIGH):** `App.js:31` — `blockedPages = ["/dashboard"]`, bunday route yo'q.
+  Haqiqiy admin route'lar `/aadmin/*`. **Guard hech qachon ishlamaydi.**
+- Barcha route bitta faylda — kengaytirish qiyin
+- Uchta UI kutubxona parallel — dizayn izchilligi yo'q
+- Reusable table/pagination/filter komponentlari yo'q
+- ~40 ta ESLint warning (pre-existing)
+
+---
+
+## 1. PHASE 1 — Core `[~]`
+
+- `[x]` Audit va hujjatlar
+- `[x]` `src/adminpanel/` papkasi — mavjud `admin/` va `bot-admin/` TEGILMADI
+- `[x]` Marshrutlar `adminpanel/PanelApp.jsx` da; `App.js` ga bitta qator qo'shildi
+- `[x]` `AdminLayout` — yon menyu + yuqori panel + `<Outlet />`
+- `[x]` `AuthContext` — token, user, rol, ruxsatlar; sahifa yangilanganda `/me` bilan tiklanadi
+- `[x]` `RequireAuth` / `RequirePermission`
+- `[x]` 403 sahifasi (`ForbiddenState`)
+- `[x]` API qatlami: `adminpanel/api/client.js` — 401 bitta joyda ushlanadi
+- `[x]` Design token'lar (`theme/panel.css`) — **to'q ko'k**, hex faqat shu faylda
+- `[x]` `i18n.js` — 100+ kalit, UZ/RU/EN
+- `[x]` `useApi` hook — loading/error/reload
+- `[ ]` Token refresh oqimi (hozir 401 da chiqariladi)
+
+---
+
+## 2. PHASE 2 — Staff Management `[ ]`
+
+- `[x]` `/app/panel/staff` — ro'yxat: ism, telefon, rol, ruxsatlar soni
+- `[x]` Faqat o'zidan quyi rollar ko'rinadi (backendda filtrlanadi)
+- `[ ]` Avatar, createdBy, lastLoginAt ustunlari
+- `[ ]` Filter: role, active/inactive, qidiruv, sana
+- `[ ]` Create/Edit modal — role tanlash yaratuvchi huquqiga qarab cheklanadi
+- `[ ]` Worker uchun permission tanlash UI (checkbox guruhlari)
+- `[ ]` Activate / deactivate / reset password / block
+- `[ ]` Confirmation dialog barcha xavfli action'larga
+
+---
+
+## 3. PHASE 3 — CMS Foundation `[ ]`
+
+- `[x]` `/app/panel/categories` — ro'yxat, **uchala tarjima ustunda** (yetishmasa qizil «—»)
+- `[x]` `/app/panel/genres` — ro'yxat, uchala tarjima
+- `[x]` `/app/panel/creators` — kartochkalar, foto/cover, featured bejagi, Stars soni, qidiruv
+- `[x]` `/app/panel/media` — ro'yxat, oldindan ko'rish, sahifalash
+- `[x]` **CRUD formalar** — `TaxonomyForm` (kategoriya+janr), `CreatorForm`
+- `[x]` **`MediaPicker`** — kutubxonadan tanlash yoki shu yerda yuklash, progress bar
+- `[x]` **`MediaField`** — oldindan ko'rish + almashtirish + olib tashlash
+- `[x]` `LocaleTabs` — to'ldirilmagan til qizil nuqta bilan belgilanadi
+- `[x]` `Modal` — Escape bilan yopiladi, fon siljimaydi
+
+---
+
+## 4. PHASE 4 — Content `[ ]`
+
+- `[x]` `/app/panel/content` — ro'yxat: afisha, sarlavha (tanlangan tilda), tur, format,
+  status, kirish siyosati + narx, ko'rishlar
+- `[x]` Filtrlar: status, tur, qidiruv (debounce bilan)
+- `[x]` **Tilga xos afisha** ko'rsatiladi va belgilanadi
+- `[x]` Sahifalash
+
+**`ContentEditor` — 6 bo'limli, bitta 100 inputli forma EMAS (§22, §53):**
+
+- `[x]` Asosiy — tur, tuzilish, **format (Yonlama/Reels)**, kategoriya, janr chiplari, yosh, davomiylik
+- `[x]` Matnlar — **UZ/RU/EN tab'lari**, to'ldirilmagan til belgilanadi
+- `[x]` Media — umumiy afisha, muqova + **har bir til uchun alohida afisha**
+- `[x]` Ijodkorlar — qidiruv, qo'shish, rol va qahramon ismi
+- `[x]` Monetizatsiya — kirish siyosati, premyera narxi
+- `[x]` Nashr — status, sana, slug, featured/popular
+- `[x]` Saqlanmagan o'zgarish haqida ogohlantirish
+- `[x]` `CONTENT_PUBLISH` ruxsati yo'q bo'lsa PUBLISHED tanlanmaydi
+- `[x]` **Fasl va qismlar** — `EpisodesTab`, tuzilishga qarab moslashadi
+- `[ ]` Galereya rasmlarini boshqarish
+
+**`EpisodesTab` — tuzilishga qarab uch xil ishlaydi:**
+
+- `[x]` SEASONAL — fasllar, har birining ichida qismlari; fasl qo'shish/tahrirlash/o'chirish
+- `[x]` EPISODIC — faslsiz tekis qismlar ro'yxati
+- `[x]` SINGLE — bo'lim umuman ko'rsatilmaydi
+- `[x]` Qism formasi: 3 til, kadr, davomiylik, holat, kirish siyosati, narx
+- `[x]` **Video segmentlar** — qo'shish/o'chirish, segment raqami, dublyaj tili
+- `[x]` Kirish siyosatida «Kontentdan meros (...)» varianti — meros aniq ko'rinadi
+- `[x]` Qism raqami avtomatik hisoblanadi (mavjudlaridan keyingisi)
+- `[x]` Modal ichida modal yo'q — ro'yxat ↔ forma almashadi, «qaytish» tugmasi bilan
+- `[x]` Qismlar bo'limida ikkinchi «Saqlash» ko'rsatilmaydi — chalkashlik bo'lmasin
+
+---
+
+## 5. PHASE 5 — Homepage / Ads / Premieres `[ ]`
+
+- `[x]` `/app/panel/homepage` — 12 bo'lim, **ro'yxatning o'zida toggle**, tartib, element soni
+- `[x]` Uchala tarjima ustunda — yetishmagani qizil «—» bilan
+- `[x]` `/app/panel/ads` — CRUD, rasm + mobileImage, tugma on/off, havola turi
+- `[x]` Ad audience bejagi: «Reklama» (oltin) / «Admin e'loni» (ko'k)
+- `[x]` «Efirda / Efirda emas» — vaqt oynasi hisobga olinadi
+- `[x]` `/app/panel/premieres` — CRUD, treyler, subtitle, bog'langan kontent
+- `[x]` `LinkFields` — reklama va premyera uchun UMUMIY havola tahrirlagichi
+- `[x]` `BannerPage` — ikkalasi bitta komponentda (maydonlari deyarli bir xil)
+
+---
+
+## 6. PHASE 6 — Engagement `[ ]`
+
+- `[x]` `/app/panel/comments` — moderatsiya: yashirish, tiklash, o'chirilgan deb belgilash
+- `[x]` Filtrlar: status, matn qidiruv, «faqat shikoyat qilinganlar»
+- `[x]` Shikoyat soni qizil bejak bilan
+- `[x]` `/app/panel/notifications` — CRUD, rejalashtirish, auditoriya, havola
+- `[x]` **Provayder ulanmagani sahifada ochiq yozilgan** — sariq ogohlantirish
+- `[x]` Yiqilgan yuborish sababi qatorda ko'rinadi
+- `[ ]` Notification report — provayder ulangandan keyin
+
+---
+
+## 7. PHASE 7 — Users & Monetization `[ ]`
+
+- `[x]` `/app/panel/users` — ro'yxat, qidiruv, block/unblock (sabab bilan)
+- `[x]` Har bir qatorda premium, balans (pul + ⭐ + ◎), qurilmalar soni
+- `[x]` Qurilmalar modali — ro'yxat va «chiqarib yuborish»
+- `[x]` Premium sovg'a qilish — modal, muddat ustiga qo'shilishi tushuntirilgan
+- `[x]` Premium tortib olish — tasdiq bilan
+- `[x]` `/app/panel/tariffs` — 4 tarif, narx va imkoniyatlarni tahrirlash
+- `[x]` «Oyiga» ustuni avtomatik hisoblanadi
+- `[x]` Valyuta paketlari — narxni joyida tahrirlash
+- `[x]` **Kurs aytilmagani ochiq yozilgan** — 0 «sozlanmagan» degani
+- `[ ]` Donation report ekrani (backend `GET /donations/top` tayyor)
+- `[ ]` Xaridlar tarixi
+
+---
+
+## 8. PHASE 8 — Analytics `[ ]`
+
+- `[x]` `/app/panel` — dashboard: 10 ta real ko'rsatkich; modul yo'q bo'lganlar ochiq «—» bilan
+- `[x]` **Bitta** `dashboard/summary` chaqiruvi (§73)
+- `[ ]` Charts: user growth, views, revenue
+- `[ ]` Charts: user growth, views, subscription revenue, donations
+- `[ ]` Tables: latest content, top content, latest users, best ads, top creators
+- `[ ]` **Bitta** `dashboard/summary` chaqiruvi — 20 ta parallel request emas
+- `[ ]` `/app/panel/reports` — filter: today / yesterday / 7 / 30 / custom + content/category/creator/tariff/ad
+- `[!]` Ma'lumot yo'q bo'lsa **empty state**, fake grafik emas
+
+---
+
+## 9. PHASE 9 — Hardening `[~]`
+
+- `[x]` Katta video yuklash — bo'laklab, qayta urinish bilan (§16)
+- `[ ]` Barcha list sahifalarda: search, filter, pagination, sorting, loading, empty, error, retry
+- `[ ]` Search debounce
+- `[ ]` Accessibility: button label, keyboard, modal focus, form label, kontrast
+- `[ ]` Responsive: desktop-first, laptop/tablet'da buzilmasin
+- `[ ]` Critical flow testlari (§86): login, forbidden route, create/edit content, create creator, add episode, create ad, staff permission
+
+---
+
+## 10. Shared komponentlar rejasi
+
+```
+DataTable · Pagination · SearchInput · FilterPanel · StatusBadge
+ConfirmDialog · MediaUploader · ImagePicker · VideoUploader
+PermissionGuard · PageHeader · EmptyState · ErrorState · LoadingState
+InternalTargetPicker · MoneyInput · SortableList
+```
+
+Bir xil pagination/filter logikasi 20 marta copy-paste qilinmaydi (§72).
+Lekin haddan tashqari abstraction ham qilinmaydi.
+
+
+---
+
+## 11. Brauzerda tekshirilgan (19.08.2026)
+
+Chrome, `http://localhost:3000/panel`, backend `dev` profilida.
+
+| Nima | Natija |
+|---|---|
+| 5 roldan kirish | ✅ HYPER/SUPER/ADMIN/WORKER×2 |
+| USER admin panelga kira olmasligi | ✅ `ACCESS_DENIED` |
+| Menyu ruxsatga qarab filtrlanishi | ✅ cheklangan WORKER'da «Janrlar» va «Xodimlar» yo'q |
+| Manzilni qo'lda kiritish (`/app/panel/staff`) | ✅ frontend 403 sahifasi, backend `403 ACCESS_DENIED` |
+| Til almashish (UZ/RU/EN) | ✅ interfeys ham, kontent sarlavhalari ham |
+| Ruscha qidiruv | ✅ «сердц» → «Хозяин моего сердца» topildi |
+| Tilga xos afisha | ✅ RU uchun alohida afisha va belgisi ko'rindi |
+| Valyuta tarjimasi | ✅ so'm / сум / UZS |
+| Dashboard | ✅ real raqamlar; modul yo'qlarida «—» va izoh |
+
+### Yo'l-yo'lakay tuzatilgan xatolar
+
+1. **Admin login bloklangan edi** — `/api/v1/app/admin/auth/login` `permitAll` ro'yxatiga
+   kirmagan. Regressiya testi qo'shildi.
+2. **Chrome autofill** input'larni oq qilib qo'yardi → `:-webkit-autofill` bosildi.
+3. **Serif shrift** — `pages/home/home.css` dagi `* { font-family: Lora !important }`
+   butun saytga sizadi. Panel qoidasiga ustunlik berildi.
+4. **Yon panel kontentni surib yuborardi** — `.uz-panel > * { position: relative }`
+   Tailwind'ning `.fixed` klassini bosgan. Joylashuv aniq berildi.
+5. **Menyu tugmasi desktopda ko'rinardi** — `.uz-btn` Tailwind `lg:hidden` ni bosgan.
+   O'z media so'rovimiz yozildi.
+
+### Tekshirilmagan
+
+⚠️ **Responsivlik** — bu muhitda brauzer viewport'i 1512px da qotib qolgan
+(`resize_window` ta'sir qilmadi), shuning uchun tor ekran haqiqiy sinovdan
+o'tmadi. CSS media so'rovlari yozilgan va ko'zdan kechirilgan, lekin qurilmada
+tasdiqlanishi kerak.
+
+
+---
+
+## 12. CRUD brauzerda sinaldi (19.08.2026)
+
+| Oqim | Natija |
+|---|---|
+| Kontent yaratish — 3 til, janr, muharrir orqali | ✅ slug avtomatik: `brauzer-sinovi` |
+| Kontent tahrirlash — UZ o'zgardi | ✅ RU/EN saqlanib qoldi, slug o'zgarmadi |
+| Statusni PUBLISHED qilish | ✅ audit'ga `CONTENT_PUBLISHED` tushdi |
+| Kategoriya yaratish — 3 til | ✅ slug `talim-va-kurslar` (apostrof tashlandi) |
+| Ijodkor yaratish — 3 til | ✅ `displayName` ism+familiyadan yig'ildi |
+| Tarjimasiz til belgisi | ✅ tab'da qizil nuqta, majburiy maydonda xato |
+| Ruxsat nazorati | ✅ `CONTENT_CREATE` yo'q worker → 403 |
+
+### Sinov davomida topilgan va tuzatilgan 3 ta bug
+
+1. **`EnumSet.copyOf` bo'sh to'plamda yiqilardi** — ruxsatsiz Worker yaratib bo'lmasdi. Unit test topdi.
+2. **Tarjima yangilanganda `UNIQUE(parent, locale)` buzilardi** — `clear()`+`add` o'rniga joyida yangilash. Brauzer sinovi topdi.
+3. **Tahrirlashda slug jim o'zgarardi** — havolalar sinardi. API sinovi topdi.
+
+
+---
+
+## 13. Fasl/qism muharriri brauzerda sinaldi (20.08.2026)
+
+| Oqim | Natija |
+|---|---|
+| SEASONAL serial — fasllar va ichidagi qismlar | ✅ 2 fasl, 5 qism ko'rindi |
+| «BEPUL» vs «PREMIUM OR PURCHASE» bejaklari | ✅ override va meros farqlanadi |
+| Yangi qism qo'shish | ✅ fasl oldindan tanlangan, raqam avtomatik 4 |
+| «Kontentdan meros (PREMIUM OR PURCHASE)» varianti | ✅ kontent siyosati nomi bilan ko'rsatildi |
+| Uch tilni to'ldirish | ✅ qizil nuqtalar yo'qoldi |
+| Saqlash → ro'yxatga qaytish | ✅ yangi qism darhol ko'rindi, sanoq 4 ga o'zgardi |
+| EPISODIC mini-serial | ✅ faslsiz tekis ro'yxat |
+| SINGLE film | ✅ bo'lim umuman yo'q (6 tab, 7 emas) |
+
+
+---
+
+## 14. PHASE 5 brauzerda sinaldi (20.08.2026)
+
+| Oqim | Natija |
+|---|---|
+| Bosh sahifa bo'limlari | ✅ 12 ta, avtomatik yaratildi |
+| «Mashhur ijodkorlar» tartibi | ✅ 999 — eng pastda |
+| Bo'limni o'chirish/yoqish (toggle) | ✅ bazada saqlandi, qator xiralashdi |
+| Reklama ro'yxati | ✅ auditoriya bejaklari, «Efirda / Efirda emas» |
+| Vaqt oynasi | ✅ 2027-yilda boshlanadigan banner «Efirda emas» |
+| Premyera ro'yxati | ✅ bog'langan kontent, treyler |
+| Til almashish | ✅ sarlavha tarjima bo'ldi, ichki nom o'zgarmadi |
+
+
+---
+
+## 15. PHASE 6–7 sahifalari (20.08.2026)
+
+Qo'shilgan: `/app/panel/comments`, `/app/panel/notifications`, `/app/panel/users`,
+`/app/panel/tariffs`, `/app/panel/settings`, `/app/panel/audit`.
+
+Menyu uchta yangi guruhga bo'lindi: **Muloqot** (izohlar, bildirishnomalar),
+**Foydalanuvchilar** (foydalanuvchilar, tariflar), **Tizim** (xodimlar,
+sozlamalar, audit).
+
+### Ikkita joyda holat ochiq aytiladi
+
+1. **Bildirishnomalar** — sariq ogohlantirish: FCM ulanmagan, xabarlar
+   saqlanadi va rejalashtiriladi, lekin YUBORILMAYDI. Soxta statistika yo'q.
+2. **Valyuta paketlari** — kurs buyurtmachi tomonidan aytilmagan, narxlar 0.
+   Bu «sozlanmagan» degani, taxminiy raqam emas.
+
+### ⚠️ Brauzerda tekshirilmadi
+
+Bu sahifalar API darajasida to'liq sinaldi (izoh moderatsiyasi, shikoyat
+filtri, premium sovg'a/tortib olish, bloklash, tarif seed'i, donat reytingi,
+sozlamalar), lekin **brauzerda ko'z bilan tekshirilmadi** — sessiya oxirida
+Chrome kengaytmasi uzilib qoldi. Oldingi sahifalar bir xil komponentlardan
+qurilgani uchun risk past, lekin tasdiqlash kerak.
+
+---
+
+## 16. Katta video yuklash (20.08.2026)
+
+`api/client.js` dagi `uploadFile` endi o'lchamga qarab **o'zi tanlaydi**:
+
+| Fayl | Usul |
+|---|---|
+| ≤ 8 MB | bitta `multipart` so'rov (avvalgidek) |
+| > 8 MB | bo'laklab yuklash, 5 MB'lik bo'laklar |
+
+Chaqiruvchi kod **umuman o'zgarmadi** — `MediaPicker` bir xil
+`adminApi.uploadMedia(file, folder, setProgress)` ni chaqiradi va progress
+bari ikkala holatda ham ishlaydi.
+
+### Nega kerak edi
+
+Serverda `multipart` chegarasi 50 MB. Epizod videosi bunga sig'masdi, ya'ni
+**panel orqali video yuklab bo'lmasdi**.
+
+### Bo'laklab yuklashda nima qilinadi
+
+- Har bir bo'lak alohida `PUT` — bittasi uzilsa faqat o'sha qayta yuboriladi.
+- Har bo'lak uchun **3 martagacha qayta urinish**, lekin faqat tarmoq va
+  server (5xx) xatolarida. 4xx — bu serverning ongli «yo'q» javobi, uni
+  qayta urinish bilan yengib bo'lmaydi va bekorga vaqt ketardi.
+- Bo'lak so'rovi uchun alohida, uzoqroq kutish (120 s) — 5 MB sekin
+  internetda standart 20 soniyaga sig'maydi.
+- Server allaqachon qabul qilgan bo'laklarni aytadi, ular o'tkazib
+  yuboriladi (davom ettirish).
+- Progress bo'laklar bo'yicha 99% gacha, 100% esa yig'ish tugagach —
+  aks holda bar to'lgan holda foydalanuvchi kutib qolardi.
