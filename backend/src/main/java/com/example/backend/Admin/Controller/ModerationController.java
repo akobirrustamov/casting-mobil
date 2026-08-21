@@ -1,6 +1,7 @@
 package com.example.backend.Admin.Controller;
 
 import com.example.backend.Admin.CurrentUser;
+import com.example.backend.Admin.Dto.NotificationReportDto;
 import com.example.backend.Admin.RequirePermission;
 import com.example.backend.Admin.Dto.CommentDto;
 import com.example.backend.Admin.Dto.NotificationDto;
@@ -122,6 +123,19 @@ public class ModerationController {
                     HttpStatus.SERVICE_UNAVAILABLE);
         }
         return ResponseEntity.ok(NotificationDto.from(sent));
+    }
+
+    /**
+     * Bildirishnoma hisoboti (ТЗ §33).
+     *
+     * Qaysi ko'rsatkich real o'lchanishi javobning o'zida ko'rsatiladi:
+     * {@code delivered} push provayderi kvitansiyasini talab qiladi va u
+     * hozir ulanmagan — nol emas, «o'lchanmaydi» qaytadi.
+     */
+    @GetMapping("/notifications/{id}/report")
+    @RequirePermission(Permission.NOTIFICATION_VIEW)
+    public ResponseEntity<NotificationReportDto> notificationReport(@PathVariable Long id) {
+        return ResponseEntity.ok(notificationService.report(id));
     }
 
     @PostMapping("/notifications/{id}/cancel")

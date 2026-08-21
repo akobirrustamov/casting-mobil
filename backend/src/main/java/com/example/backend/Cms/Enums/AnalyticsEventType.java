@@ -21,7 +21,16 @@ public enum AnalyticsEventType {
     CONTENT_COMPLETE,
 
     /** Bildirishnoma ochildi. */
-    NOTIFICATION_OPEN;
+    NOTIFICATION_OPEN,
+
+    /**
+     * Bildirishnoma ichidagi havola bosildi (ТЗ §33).
+     *
+     * OCHISH dan farq qiladi: odam xabarni ochib, havolani bosmasligi
+     * mumkin. Ikkalasi bitta hodisa deb sanalsa, «clicked» ko'rsatkichi
+     * «opened» ning nusxasi bo'lib qolardi.
+     */
+    NOTIFICATION_CLICK;
 
     /** Reklama bilan bog'liqmi — agregatda qaysi jadvalga tushishini hal qiladi. */
     public boolean isAdEvent() {

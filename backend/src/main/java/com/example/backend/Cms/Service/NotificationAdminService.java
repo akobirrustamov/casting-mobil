@@ -1,12 +1,16 @@
 package com.example.backend.Cms.Service;
 
+import com.example.backend.Admin.Dto.NotificationDto;
+import com.example.backend.Admin.Dto.NotificationReportDto;
 import com.example.backend.Admin.Dto.NotificationSaveRequest;
 import com.example.backend.Cms.Entity.InternalLink;
 import com.example.backend.Cms.Entity.Notification;
 import com.example.backend.Cms.Entity.NotificationTranslation;
 import com.example.backend.Cms.Enums.Locale;
+import com.example.backend.Cms.Enums.AnalyticsEventType;
 import com.example.backend.Cms.Enums.NotificationStatus;
 import com.example.backend.Cms.Repository.MediaAssetRepo;
+import com.example.backend.Cms.Repository.AnalyticsEventRepo;
 import com.example.backend.Cms.Repository.NotificationRepo;
 import com.example.backend.Entity.User;
 import com.example.backend.Services.AuditService.AuditAction;
@@ -19,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -33,6 +38,8 @@ import java.util.*;
 public class NotificationAdminService {
 
     private final NotificationRepo notificationRepo;
+    private final InternalLinkValidator linkValidator;
+    private final AnalyticsEventRepo eventRepo;
     private final MediaAssetRepo mediaAssetRepo;
     private final AuditService auditService;
 
@@ -46,10 +53,25 @@ public class NotificationAdminService {
 
     @Transactional
     public Notification save(User actor, Long id, NotificationSaveRequest request) {
-        var uz = request.getTranslations().get(Locale.UZ);
-        if (uz == null || isBlank(uz.getTitle()) || isBlank(uz.getBody())) {
+        // Havola nishoni bazada bor-yo'qligi tekshiriladi — reklama va
+        // premyera bilan AYNI mexanizm (§28).
+        linkValidator.validate(request.getLink());
+
+        // Rejalashtirilgan bildirishnoma foydalanuvchiga BORADI, ya'ni u
+        // uchala tilda bo'lishi shart: aks holda rus tilidagi odamga
+        // o'zbekcha push kelardi va uni o'chirishning iloji yo'q — xabar
+        // allaqachon telefonda.
+        boolean willBeSent = request.getScheduledAt() != null;
+        TranslationRules.require(request.getTranslations(),
+                NotificationSaveRequest.NotificationTextDto::getTitle, "Sarlavha", willBeSent);
+        TranslationRules.require(request.getTranslations(),
+                NotificationSaveRequest.NotificationTextDto::getBody, "Matn", willBeSent);
+
+        if (willBeSent && request.getScheduledAt().isBefore(LocalDateTime.now())) {
+            // O'tmishdagi vaqt jimgina «hozir yuborish» ga aylanib
+            // qolmasin — admin sanani xato kiritgan bo'lishi mumkin.
             throw BusinessException.validation(
-                    "O'zbekcha sarlavha va matn majburiy - u asosiy til");
+                    "Rejalashtirilgan vaqt o'tmishda bo'lishi mumkin emas");
         }
 
         Notification n = id == null ? new Notification()
@@ -152,6 +174,50 @@ public class NotificationAdminService {
         n.setStatus(NotificationStatus.CANCELLED);
         notificationRepo.save(n);
         auditService.log(actor, "NOTIFICATION_CANCELLED", "Notification", id);
+    }
+
+    /**
+     * Bildirishnoma hisoboti (ТЗ §33).
+     *
+     * <h2>Qaysi ko'rsatkich HAQIQATDAN o'lchanadi</h2>
+     * <ul>
+     *   <li><b>sent · failed</b> — bizning yozuvimiz, ishonchli;</li>
+     *   <li><b>opened · clicked</b> — klient yuboradigan analitika
+     *       hodisasi ({@code NOTIFICATION_OPEN}, {@code NOTIFICATION_CLICK});</li>
+     *   <li><b>delivered</b> — FAQAT push provayderi kvitansiyasidan
+     *       kelishi mumkin. Provayder ulanmagan, shuning uchun raqam emas,
+     *       «o'lchanmaydi» holati qaytariladi.</li>
+     * </ul>
+     *
+     * Nol qaytarilsa admin «hech kimga yetib bormadi» deb o'ylardi — bu
+     * yolg'on bo'lardi, chunki biz shunchaki BILMAYMIZ.
+     */
+    @Transactional(readOnly = true)
+    public NotificationReportDto report(Long id) {
+        Notification n = notificationRepo.findById(id)
+                .orElseThrow(() -> BusinessException.notFound("Notification", id));
+
+        boolean wasSent = n.getStatus() == NotificationStatus.SENT;
+        boolean wasFailed = n.getStatus() == NotificationStatus.FAILED;
+
+        return NotificationReportDto.builder()
+                .notificationId(n.getId())
+                .status(n.getStatus().name())
+                .scheduledAt(n.getScheduledAt())
+                .sentAt(n.getSentAt())
+                .failureReason(n.getFailureReason())
+                .sent(NotificationReportDto.Metric.of(wasSent ? 1 : 0))
+                .failed(NotificationReportDto.Metric.of(wasFailed ? 1 : 0))
+                .opened(NotificationReportDto.Metric.of(
+                        eventRepo.countByTypeAndTargetId(AnalyticsEventType.NOTIFICATION_OPEN, id),
+                        eventRepo.countUniquesForTarget(AnalyticsEventType.NOTIFICATION_OPEN, id)))
+                .clicked(NotificationReportDto.Metric.of(
+                        eventRepo.countByTypeAndTargetId(AnalyticsEventType.NOTIFICATION_CLICK, id),
+                        eventRepo.countUniquesForTarget(AnalyticsEventType.NOTIFICATION_CLICK, id)))
+                .delivered(NotificationReportDto.Metric.unavailable(
+                        "Yetkazish kvitansiyasi push provayderidan keladi. "
+                                + PROVIDER_NOT_CONFIGURED))
+                .build();
     }
 
     private static boolean isBlank(String s) {

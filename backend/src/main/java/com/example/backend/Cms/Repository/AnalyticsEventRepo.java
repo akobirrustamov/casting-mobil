@@ -63,6 +63,23 @@ public interface AnalyticsEventRepo extends JpaRepository<AnalyticsEvent, Long> 
 
     long countByTypeAndEventDateBetween(AnalyticsEventType type, LocalDate from, LocalDate to);
 
+    /** Bitta nishon bo'yicha hodisalar soni — bildirishnoma hisoboti uchun (§33). */
+    long countByTypeAndTargetId(AnalyticsEventType type, Long targetId);
+
+    /**
+     * Bitta nishon bo'yicha UNIKAL odamlar soni.
+     *
+     * Bir odam xabarni ikki qurilmada ochsa ham bitta sanaladi. Ro'yxatdan
+     * o'tmaganlar {@code deviceKey} bo'yicha farqlanadi.
+     */
+    @Query("""
+            select count(distinct coalesce(cast(e.userId as string), e.deviceKey))
+            from AnalyticsEvent e
+            where e.type = :type and e.targetId = :targetId
+            """)
+    long countUniquesForTarget(@Param("type") AnalyticsEventType type,
+                               @Param("targetId") Long targetId);
+
     /** Proyeksiya — entity yuklamasdan faqat kerakli ustunlar (§66). */
     interface AggregateRow {
         LocalDate getDay();

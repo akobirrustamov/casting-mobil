@@ -438,23 +438,59 @@ Entity/ Repository/ Services/   ESKI casting
 - `[ ]` `POPULAR_CONTENT` analitika reytingi bo'yicha (hozir qo'lda bayroq,
   §25 dagi kabi — arxitektura tayyor)
 
-## 19. Notifications `[~]`
+## 19. Notifications `[x]` — ТЗ §32 · hisobot §33
 
 **Entity:** `Notification` + `NotificationTranslation` · **Migratsiya:** V5
 
-- `[x]` `GET · POST · PUT /notifications`
-- `[x]` `POST /notifications/{id}/send` — `NOTIFICATION_SEND`
-- `[x]` `POST /notifications/{id}/cancel`
-- `[x]` Uch tilda sarlavha va matn, rasm
-- `[x]` Rejalashtirish (`scheduledAt`), holat mashinasi
-- `[x]` Sahifalash N+1 siz (`PageHydrator`)
-- `[x]` **Halol xatti-harakat**: FCM sozlanmagan → **503**, urinish `FAILED`
-  holatda saqlanadi, soxta «yuborildi» yozilmaydi
-- `[ ]` ⚠️ **FCM ulanishi** (R16) — kalit yo'q. `NotificationAdminService.send()`
-  da TODO
-- `[ ]` Rejalashtirilganlarni yuboradigan `@Scheduled` vazifa
-- `[ ]` Segmentlash (faqat Premium / faqat yangi foydalanuvchilar)
-- `[ ]` Yuborish statistikasi (yetkazildi / ochildi)
+- `[x]` `NotificationType`: `APP_NOTIFICATION` · `CASTING_NOTIFICATION`
+- `[x]` Holatlar to'liq: `DRAFT` · `SCHEDULED` · `SENDING` · `SENT` ·
+  `FAILED` · `CANCELLED`
+- `[x]` `NotificationAudience`: `ALL` · `PREMIUM_ONLY` · `NON_PREMIUM`
+- `[x]` `InternalLink` — reklama va premyera bilan **ayni mexanizm** (§28);
+  nishon mavjudligi saqlashda tekshiriladi
+- `[x]` **`NotificationDispatcher` (yangi)** — rejalashtirilganlarni vaqti
+  kelganda yuboradi. `scheduledAt` maydoni ham, `SCHEDULED` holati ham bor
+  edi, lekin ularni **O'QIYDIGAN hech narsa yo'q edi**: ertaga soat 9 ga
+  qo'yilgan xabar abadiy `SCHEDULED` bo'lib qolardi va admin buni faqat
+  foydalanuvchilar shikoyat qilganda bilardi
+- `[x]` Bir yugurishda 50 ta — yuzlab xabar bir vaqtda kelsa baza uzoq
+  band bo'lmasin
+- `[x]` **Rejalashtirishda uchala til majburiy** — xabar telefonga boradi
+  va uni qaytarib olib bo'lmaydi
+- `[x]` O'tmishdagi vaqtga rejalashtirib bo'lmaydi — u jimgina «hozir
+  yuborish» ga aylanib qolmasin
+- `[x]` ⚠️ **Provayder sozlanmagan bo'lsa `FAILED`** — «yuborildi» deb
+  belgilanmaydi. Soxta muvaffaqiyat foydalanuvchilar xabar olgandek
+  taassurot qoldirardi va admin muammoni umuman ko'rmasdi
+- `[x]` Urinish natijasi saqlanadi (istisno tashlanmaydi) — izsiz
+  yo'qolmaydi
+- `[x]` `NotificationModuleTest` — 17 test; dispatcher mutatsiya bilan
+  tekshirilgan (navbat holati va vaqt sharti)
+- `[ ]` ⚠️ **FCM ulanmagan** — `APP_FCM_CREDENTIALS` berilishi kerak
+- `[ ]` Auditoriya bo'yicha haqiqiy yuborish (token ro'yxati)
+
+### 19.1. Notification report `[x]` — ТЗ §33
+
+`GET /api/v1/app/admin/notifications/{id}/report`
+
+ТЗ: «Mavjud infrastructure qaysi metricni real berishi mumkinligini
+aniqlab ishlat. Real ma'lumot bo'lmasa fake statistic yaratma.»
+
+| Ko'rsatkich | Manba | Holat |
+|---|---|---|
+| `sent` | bizning yozuvimiz (status) | ✅ real |
+| `failed` | bizning yozuvimiz (status) | ✅ real |
+| `opened` | klient hodisasi `NOTIFICATION_OPEN` | ✅ real, unikal bilan |
+| `clicked` | klient hodisasi `NOTIFICATION_CLICK` | ✅ real, unikal bilan |
+| `delivered` | push provayderi kvitansiyasi | ❌ **o'lchanmaydi** |
+
+- `[x]` Har bir ko'rsatkichda `available` bayrog'i bor. `delivered` uchun
+  **nol emas, `null` + sabab** qaytadi: nol ko'rsatilsa admin «hech kimga
+  yetib bormadi» deb o'ylardi, aslida biz shunchaki BILMAYMIZ
+- `[x]` `NOTIFICATION_CLICK` hodisa turi qo'shildi — odam xabarni ochib,
+  havolani bosmasligi mumkin; ikkalasi bitta hodisa bo'lsa «clicked»
+  «opened» ning nusxasi bo'lib qolardi
+- `[ ]` Yetkazish kvitansiyasi — FCM ulangach
 
 ## 20. Comments `[x]`
 
@@ -663,6 +699,7 @@ Entity/ Repository/ Services/   ESKI casting
 | `AdStatisticsEndpointTest` | 6 | **ТЗ §29** — har bir reklama uchun statistika |
 | `PremiereModuleTest` | 14 | **ТЗ §30** — maydonlar, havola, uch til |
 | `HomeFeedTest` | 16 | **ТЗ §31** — bosh sahifa backenddan, N+1 nazorati |
+| `NotificationModuleTest` | 17 | **ТЗ §32/§33** — rejalashtirish, soxta muvaffaqiyat yo'q |
 | `InternalLinkReuseTest` | 9 | **ТЗ §28** — havola mexanizmi uchala modulda bir xil |
 | `BackendAuthorizationTest` | 10 | **Ikki qavatli avtorizatsiya, 6 xil escalation urinishi** |
 | `BootstrapAccountSecurityTest` | 7 | **Standart parolli master hisob qaytmasin** |

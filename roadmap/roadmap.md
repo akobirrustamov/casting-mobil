@@ -545,7 +545,7 @@ Til tanlovi `localStorage` da saqlanadi va kontent tarjimasiga ham ta'sir qiladi
 | 3 | CMS foundation — Category, Genre, Creator, Media Library | `[x]` model + ro'yxat + CRUD + media yuklash |
 | 4 | Content — Content/Season/Episode/VideoPart/Access | `[x]` to'liq: kontent, fasl, qism, video segmentlar |
 | 5 | Homepage — sections, Ads, Premieres, Featured | `[x]` bo'limlar, reklama, premyeralar, **ochiq `/app/home` feed** (ТЗ §29–§31) |
-| 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma (FCM ulanmagan) |
+| 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma: rejalashtirish ishlaydi, hisobot halol (ТЗ §32–§33). FCM ulanmagan |
 | 7 | Users & Monetization — tariffs, premium, Stars, Coin | `[x]` foydalanuvchi, tarif, balans, qurilma, donat |
 | 8 | Analytics — events, aggregation, dashboard, reports | `[x]` ikki qatlamli: xom hodisa + kunlik jamlanma |
 | 9 | Hardening — tests, performance, security, indexes | `[~]` |
