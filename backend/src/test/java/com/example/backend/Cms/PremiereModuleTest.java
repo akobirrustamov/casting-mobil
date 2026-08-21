@@ -167,6 +167,18 @@ class PremiereModuleTest {
         }
 
         @Test
+        @DisplayName("ТЗ §30 dagi barcha nishon turlari mavjud")
+        void allTargetTypesFromSpecExist() {
+            // ТЗ: film · serial · episode · creator · casting.
+            // Film va serial — ikkalasi ham CONTENT (§13: tur ≠ kategoriya).
+            assertThat(InternalTargetType.values())
+                    .contains(InternalTargetType.CONTENT,
+                            InternalTargetType.EPISODE,
+                            InternalTargetType.CREATOR,
+                            InternalTargetType.CASTING);
+        }
+
+        @Test
         @DisplayName("Havolasiz kartochka ham to'g'ri")
         void linkIsOptional() {
             Premiere p = homepageService.savePremiere(null, null, request("Havolasiz"));
@@ -242,6 +254,87 @@ class PremiereModuleTest {
         }
 
         @Test
+        @DisplayName("Ustki matn («Tez kunda») ham uch tilda")
+        void subtitleNeedsAllThree() {
+            PremiereSaveRequest r = request("Ustki matnli");
+            r.setStatus(PublicationStatus.PUBLISHED);
+            fillAllLocales(r, "Ustki matnli");
+            // Faqat o'zbekchada — rus tilidagi ekranda o'zbekcha qator
+            // turardi va kartochka yarim tarjima bo'lib chiqardi.
+            r.getTranslations().get(Locale.UZ).setSubtitle("Tez kunda");
+
+            assertThatThrownBy(() -> homepageService.savePremiere(null, null, r))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("Ustki matn");
+        }
+
+        @Test
+        @DisplayName("Tavsif ham uch tilda")
+        void descriptionNeedsAllThree() {
+            PremiereSaveRequest r = request("Tavsifli");
+            r.setStatus(PublicationStatus.PUBLISHED);
+            fillAllLocales(r, "Tavsifli");
+            r.getTranslations().get(Locale.UZ).setDescription("Treylerni ko'rish");
+
+            assertThatThrownBy(() -> homepageService.savePremiere(null, null, r))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("Tavsif");
+        }
+
+        @Test
+        @DisplayName("Uch qatorli kartochka uchala tilda to'liq — nashr o'tadi")
+        void fullyTranslatedCardPublishes() {
+            PremiereSaveRequest r = request("Qalbing egasi");
+            r.setStatus(PublicationStatus.PUBLISHED);
+            r.setButtonEnabled(true);
+
+            // ТЗ §30 misolidagi kartochka, uchala tilda:
+            //   Qalbing egasi / Tez kunda / Treylerni ko'rish
+            fill(r, Locale.UZ, "Qalbing egasi", "Tez kunda", "Treylerni ko'rish");
+            fill(r, Locale.RU, "Владелец сердца", "Скоро", "Смотреть трейлер");
+            fill(r, Locale.EN, "Owner of the heart", "Coming soon", "Watch trailer");
+
+            Premiere p = homepageService.savePremiere(null, null, r);
+
+            assertThat(p.getTranslations()).hasSize(3);
+            assertThat(p.getTranslations()).allSatisfy(t -> {
+                assertThat(t.getTitle()).isNotBlank();
+                assertThat(t.getSubtitle()).isNotBlank();
+                assertThat(t.getDescription()).isNotBlank();
+                assertThat(t.getButtonText()).isNotBlank();
+            });
+        }
+
+        @Test
+        @DisplayName("Matn bo'sh bo'lsa tarjima talab qilinmaydi")
+        void emptyOptionalTextsAreFine() {
+            PremiereSaveRequest r = request("Faqat sarlavha");
+            r.setStatus(PublicationStatus.PUBLISHED);
+            fillAllLocales(r, "Faqat sarlavha");
+            r.setButtonEnabled(false);
+
+            // Kartochka faqat sarlavhadan iborat bo'lishi mumkin.
+            Premiere p = homepageService.savePremiere(null, null, r);
+
+            assertThat(p.getTranslations()).hasSize(3);
+        }
+
+        @Test
+        @DisplayName("⚠️ Sarlavhasiz matn JIMGINA yo'qolmaydi")
+        void textWithoutTitleIsNotSilentlyDropped() {
+            PremiereSaveRequest r = request("Sarlavhasiz qator");
+            // Admin rus tabida ustki matnni yozdi, sarlavhani unutdi.
+            r.getTranslations().put(Locale.RU,
+                    PremiereDto.PremiereTextDto.builder().subtitle("Скоро").build());
+
+            // Ilgari butun RU qatori o'tkazib yuborilardi: saqlash
+            // muvaffaqiyatli ko'rinardi, matn esa izsiz yo'qolardi.
+            assertThatThrownBy(() -> homepageService.savePremiere(null, null, r))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("RU");
+        }
+
+        @Test
         @DisplayName("Tugma o'chirilgan bo'lsa matn talab qilinmaydi")
         void disabledButtonNeedsNoText() {
             PremiereSaveRequest r = request("Tugmasiz premyera");
@@ -265,6 +358,17 @@ class PremiereModuleTest {
         tr.put(Locale.UZ, PremiereDto.PremiereTextDto.builder().title(title).build());
         r.setTranslations(tr);
         return r;
+    }
+
+    /** Bitta tilning barcha matnlarini to'ldiradi. */
+    private void fill(PremiereSaveRequest r, Locale locale,
+                      String title, String subtitle, String buttonText) {
+        r.getTranslations().put(locale, PremiereDto.PremiereTextDto.builder()
+                .title(title)
+                .subtitle(subtitle)
+                .description(subtitle + " — " + title)
+                .buttonText(buttonText)
+                .build());
     }
 
     private void fillAllLocales(PremiereSaveRequest r, String title) {

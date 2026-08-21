@@ -140,17 +140,36 @@ public class HomepageService {
         validateWindow(request.getStartAt(), request.getEndAt());
         validateLink(request.getLink());
 
-        // Nashr qilinganda uchala til ham majburiy — premyera kartochkasi
-        // bosh sahifada har bir foydalanuvchiga ko'rinadi (§30 + 3 til qoidasi).
+        // ⚠️ ТЗ §30: kartochkadagi BARCHA matnlar uch tilda bo'lishi kerak.
+        //
+        // Kartochka bosh sahifada har bir foydalanuvchiga ko'rinadi va u
+        // uch qatordan iborat:
+        //
+        //     Qalbing egasi        <- title
+        //     Tez kunda            <- subtitle (ТЗ dagi "text")
+        //     Treylerni ko'rish    <- description / tugma matni
+        //
+        // Bittasi tarjimasiz qolsa, rus tilidagi ekranda o'zbekcha qator
+        // turardi — ya'ni kartochka yarim tarjima bo'lib chiqardi.
+        boolean visible = isUserVisible(request.getStatus());
+
+        // Sarlavha MAJBURIY: usiz kartochkani umuman chizib bo'lmaydi.
         TranslationRules.require(request.getTranslations(),
-                PremiereDto.PremiereTextDto::getTitle, "Premyera sarlavhasi",
-                isUserVisible(request.getStatus()));
+                PremiereDto.PremiereTextDto::getTitle, "Premyera sarlavhasi", visible);
+
+        // Qolgan matnlar IXTIYORIY — kartochka faqat sarlavhadan iborat
+        // bo'lishi ham mumkin. Lekin bittasi to'ldirila boshlagan bo'lsa,
+        // uchala tilda ham to'ldirilsin.
+        TranslationRules.requireAllIfAny(request.getTranslations(),
+                PremiereDto.PremiereTextDto::getSubtitle, "Ustki matn", visible);
+        TranslationRules.requireAllIfAny(request.getTranslations(),
+                PremiereDto.PremiereTextDto::getDescription, "Tavsif", visible);
+
         if (Boolean.TRUE.equals(request.getButtonEnabled())) {
             // Tugma yoqilgan bo'lsa uning matni ham tarjima qilinsin —
             // aks holda rus tilidagi ekranda o'zbekcha tugma turardi.
             TranslationRules.requireAllIfAny(request.getTranslations(),
-                    PremiereDto.PremiereTextDto::getButtonText, "Tugma matni",
-                    isUserVisible(request.getStatus()));
+                    PremiereDto.PremiereTextDto::getButtonText, "Tugma matni", visible);
         }
 
         Premiere p = id == null ? new Premiere()
@@ -172,6 +191,29 @@ public class HomepageService {
         if (id == null) {
             p.setCreatedBy(actor == null ? null : actor.getId());
         }
+
+        // ⚠️ Sarlavhasiz til qatori JIMGINA TASHLANARDI.
+        //
+        // Admin rus tabida "Tez kunda" va tavsifni yozib, sarlavhani
+        // to'ldirmasa — pastdagi sikl butun qatorni o'tkazib yuborardi va
+        // yozilgan matn izsiz yo'qolardi. Saqlash muvaffaqiyatli
+        // ko'rinardi, ma'lumot esa yo'q edi.
+        //
+        // Sarlavhani NULL qilib saqlab ham bo'lmaydi — ustun `not null`.
+        // Shuning uchun jimgina yo'qotish o'rniga aniq xato.
+        request.getTranslations().forEach((locale, dto) -> {
+            if (dto == null || !isBlank(dto.getTitle())) {
+                return;
+            }
+            boolean hasOtherText = !isBlank(dto.getSubtitle())
+                    || !isBlank(dto.getDescription())
+                    || !isBlank(dto.getButtonText());
+            if (hasOtherText) {
+                throw BusinessException.validation(locale.name()
+                        + " tilida matn kiritilgan, lekin sarlavha bo'sh. "
+                        + "Sarlavha kartochkaning asosi — usiz qolgan matnlar saqlanmaydi");
+            }
+        });
 
         Map<Locale, PremiereTranslation> existing = new HashMap<>();
         p.getTranslations().forEach(t -> existing.put(t.getLocale(), t));

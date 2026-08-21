@@ -396,12 +396,27 @@ Entity/ Repository/ Services/   ESKI casting
   link · CTA tugma · start date · end date · sort order · active/inactive
 - `[x]` **Havola nishoni** — film · serial · qism · ijodkor · kasting,
   hammasi `InternalTargetType` da; mavjudligi saqlashda tekshiriladi
-- `[x]` **Uch til**: nashrda sarlavha uchala tilda majburiy; tugma yoqilgan
-  bo'lsa tugma matni ham — aks holda rus tilidagi ekranda o'zbekcha tugma
-  turardi
+- `[x]` ⚠️ **BARCHA matnlar uch tilda.** Kartochka uch qatordan iborat:
+
+  ```
+  Qalbing egasi        <- title       (majburiy)
+  Tez kunda            <- subtitle    (ixtiyoriy)
+  Treylerni ko'rish    <- description / tugma matni
+  ```
+
+  Sarlavha nashrda uchala tilda **majburiy**. Qolgan matnlar ixtiyoriy —
+  kartochka faqat sarlavhadan iborat bo'lishi mumkin — lekin bittasi
+  to'ldirila boshlagan bo'lsa, uchala tilda ham to'ldirilsin. Aks holda
+  rus tilidagi ekranda o'zbekcha qator turardi va kartochka yarim tarjima
+  bo'lib chiqardi
+- `[x]` ⚠️ **Sarlavhasiz til qatori JIMGINA TASHLANARDI.** Admin rus
+  tabida «Tez kunda» va tavsifni yozib sarlavhani to'ldirmasa, sikl butun
+  qatorni o'tkazib yuborardi: saqlash muvaffaqiyatli ko'rinardi, matn esa
+  izsiz yo'qolardi. Sarlavhani `null` qilib saqlab ham bo'lmaydi — ustun
+  `not null`. Endi aniq xato chiqadi
 - `[x]` **Ochiq (klient) endpoint** — `GET /api/v1/app/home` ichida,
   «Yangi premyeralar» bo'limi sifatida
-- `[x]` `PremiereModuleTest` — 14 test
+- `[x]` `PremiereModuleTest` — 20 test, uch til qoidalari mutatsiya bilan tekshirilgan
 - `[ ]` Premyera boshlanganda bildirishnoma yuborish
 
 ## 18.1. Homepage `[x]` — ТЗ §31 to'liq
@@ -785,7 +800,7 @@ aniqlab ishlat. Real ma'lumot bo'lmasa fake statistic yaratma.»
 | `AdvertisementModuleTest` | 10 | **ТЗ §27** — ixtiyoriy tugma va havola, o'lik havola rad etiladi |
 | `AdAnalyticsTest` | 8 | **ТЗ §29** — beshta ko'rsatkich, unikal qayta hisoblanadi |
 | `AdStatisticsEndpointTest` | 6 | **ТЗ §29** — har bir reklama uchun statistika |
-| `PremiereModuleTest` | 14 | **ТЗ §30** — maydonlar, havola, uch til |
+| `PremiereModuleTest` | 20 | **ТЗ §30** — maydonlar, havola, BARCHA matnlar uch tilda |
 | `HomeFeedTest` | 16 | **ТЗ §31** — bosh sahifa backenddan, N+1 nazorati |
 | `NotificationModuleTest` | 17 | **ТЗ §32/§33** — rejalashtirish, soxta muvaffaqiyat yo'q |
 | `DonationAndPaymentTest` | 9 | **ТЗ §42/§44** — valyutalar qo'shilmaydi, soxta to'lov yo'q |
