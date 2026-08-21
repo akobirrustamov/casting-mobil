@@ -13,6 +13,13 @@ import com.example.backend.Entity.User;
 import com.example.backend.Services.AuditService.AuditAction;
 import com.example.backend.Services.AuditService.AuditService;
 import com.example.backend.exceptions.BusinessException;
+import com.example.backend.Admin.Dto.DonationReportDto;
+import com.example.backend.Cms.Entity.DonationTransaction;
+import com.example.backend.Cms.Enums.DonationTargetType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -171,7 +178,70 @@ public class MonetizationService {
         return donationRepo.topTargets(PageRequest.of(0, Math.min(Math.max(limit, 1), 100)));
     }
 
+    /**
+     * To'liq donat hisoboti (ТЗ §42).
+     *
+     * <h2>Nima uchun valyutalar qo'shilmaydi</h2>
+     * STARS va COIN — ikki xil valyuta, kursi admin panelida alohida
+     * belgilanadi (§40, §41). Ularni bitta «jami» ga qo'shish 10 so'm va
+     * 10 dollarni qo'shishday bo'lardi. Kurs hozircha 0 (buyurtmachi
+     * aytmagan), shuning uchun so'mdagi ekvivalent ham hisoblanmaydi —
+     * soxta raqam chiqmasin.
+     *
+     * @param days nechа kun orqaga kunlik kesim olinadi
+     */
     @Transactional(readOnly = true)
+    public DonationReportDto donationReport(int limit, int days) {
+        int safeLimit = Math.min(Math.max(limit, 1), 100);
+        int window = Math.min(Math.max(days, 1), 365);
+        LocalDateTime from = LocalDate.now().minusDays(window - 1L).atStartOfDay();
+        LocalDateTime to = LocalDate.now().plusDays(1).atStartOfDay();
+
+        return DonationReportDto.builder()
+                .totalTransactions(donationRepo.count())
+                .byKind(donationRepo.totalsByKind().stream()
+                        .map(k -> DonationReportDto.KindTotal.builder()
+                                .kind(k.getKind())
+                                .total(k.getTotal())
+                                .transactions(k.getTransactions())
+                                .build())
+                        .toList())
+                .topCreators(targetRows(DonationTargetType.CREATOR, safeLimit))
+                .topContent(targetRows(DonationTargetType.CONTENT, safeLimit))
+                .daily(donationRepo.dailyTotals(from, to).stream()
+                        .map(d -> DonationReportDto.DayRow.builder()
+                                .date(d.getDay())
+                                .kind(d.getKind())
+                                .total(d.getTotal())
+                                .transactions(d.getTransactions())
+                                .build())
+                        .toList())
+                .build();
+    }
+
+    private List<DonationReportDto.TargetRow> targetRows(DonationTargetType type, int limit) {
+        return donationRepo.topTargetsOfType(type, PageRequest.of(0, limit)).stream()
+                .map(r -> DonationReportDto.TargetRow.builder()
+                        .targetType(r.getTargetType())
+                        .targetId(r.getTargetId())
+                        .kind(r.getKind())
+                        .total(r.getTotal())
+                        .transactions(r.getTransactions())
+                        .build())
+                .toList();
+    }
+
+    /**
+     * Tranzaksiyalar ro'yxati (ТЗ §42).
+     *
+     * ⚠️ Faqat O'QISH. Moliyaviy tarix o'zgarmas: tahrirlash va o'chirish
+     * endpointi ataylab YO'Q.
+     */
+    @Transactional(readOnly = true)
+    public Page<DonationTransaction> donationTransactions(Pageable pageable) {
+        return donationRepo.findAllByOrderByCreatedAtDesc(pageable);
+    }
+
     public long donationCount() {
         return donationRepo.count();
     }

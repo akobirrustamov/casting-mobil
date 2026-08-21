@@ -3,6 +3,9 @@ package com.example.backend.Admin.Controller;
 import com.example.backend.Admin.CurrentUser;
 import com.example.backend.Admin.RequirePermission;
 import com.example.backend.Admin.Dto.CurrencyPackageDto;
+import com.example.backend.Admin.Dto.DonationReportDto;
+import com.example.backend.Admin.Dto.DonationTransactionDto;
+import com.example.backend.Admin.Dto.PageResponse;
 import com.example.backend.Admin.Dto.CurrencyPackageSaveRequest;
 import com.example.backend.Admin.Dto.PlatformSettingDto;
 import com.example.backend.Admin.Dto.TariffSaveRequest;
@@ -137,6 +140,40 @@ public class MonetizationController {
                 .totalTransactions(monetizationService.donationCount())
                 .top(top)
                 .build());
+    }
+
+    /**
+     * To'liq donat hisoboti (ТЗ §42).
+     *
+     * Ilgari faqat «top nishonlar» bor edi. ТЗ esa valyuta bo'yicha
+     * jamlanma, top ijodkorlar va top kontent ALOHIDA, hamda kunlik
+     * summalarni talab qiladi.
+     */
+    @GetMapping("/donations/report")
+    public ResponseEntity<DonationReportDto> donationReport(
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "30") int days) {
+
+        require(Permission.DONATION_VIEW);
+        return ResponseEntity.ok(monetizationService.donationReport(limit, days));
+    }
+
+    /**
+     * Tranzaksiyalar ro'yxati (ТЗ §42).
+     *
+     * ⚠️ Faqat o'qish. Moliyaviy tarix o'zgarmas — tahrirlash va o'chirish
+     * endpointi ataylab yo'q.
+     */
+    @GetMapping("/donations/transactions")
+    public ResponseEntity<PageResponse<DonationTransactionDto>> donationTransactions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        require(Permission.DONATION_VIEW);
+        int safeSize = Math.min(Math.max(size, 1), 200);
+        var result = monetizationService.donationTransactions(
+                org.springframework.data.domain.PageRequest.of(Math.max(page, 0), safeSize));
+        return ResponseEntity.ok(PageResponse.of(result, DonationTransactionDto::from));
     }
 
     // ------------------------------------------------------------ sozlamalar

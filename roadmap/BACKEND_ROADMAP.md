@@ -603,21 +603,53 @@ aniqlab ishlat. Real ma'lumot bo'lmasa fake statistic yaratma.»
 - `[x]` Pullik SINGLE uchun narx majburiy (film — sotiladigan yagona narsa)
 - `[x]` `AccessPricingTest` — 9 test, mutatsiya bilan tekshirilgan
 
-## 23. Donations `[~]`
+## 23. Donations `[x]` — ТЗ §39–§44
 
 **Entity:** `DonationTransaction` · `CurrencyPackage` · `UserBalance` ·
 **Migratsiya:** V5
 
-- `[x]` `GET /donations/top` — reyting
-- `[x]` `GET · POST · PUT · DELETE /currency-packages`
-- `[x]` `CurrencyKind`: Stars · Coin (R8)
-- `[x]` `DonationTargetType` — kontent yoki ijodkorga
-- `[x]` Indekslar: yuboruvchi, maqsad, sana
-- `[x]` **Halol**: kurs berilmagan → paketlar narxi 0, daromad `null`
-- `[ ]` ⚠️ Stars/Coin **kursi** — buyurtchidan kutilmoqda
-- `[ ]` Donat yuborish oqimi (R9): balansdan yechish, yetmasa «to'ldiring»
-- `[ ]` Balansni to'ldirish (R10)
-- `[ ]` Ijodkorga pul yechib berish
+### Valyutalar (§39–§41)
+
+- `[x]` Ikkita virtual valyuta: `STARS` · `COIN`
+- `[x]` Nishonlar: **ijodkor** va **kontent** — har biri bo'yicha alohida
+  hisoblanadi
+- `[x]` Paketlar boshqariladi: miqdor · narx · faol/nofaol · tartib
+- `[x]` **Kurs sozlamada, kodda emas**: `currency.star.rate`,
+  `currency.coin.rate`
+- `[x]` ⚠️ Kurs **0** — buyurtmachi hali aytmagan. Soxta kurs yozilmadi:
+  0 «belgilanmagan» degani va so'mdagi ekvivalent umuman hisoblanmaydi
+
+### Balans (§43)
+
+- `[x]` `UserBalance`: `starsBalance` · `coinBalance` · `moneyBalance`
+- `[x]` Mobil UI yozilmadi (ТЗ shunday deydi), lekin ma'lumot modeli tayyor
+
+### Hisobot (§42)
+
+- `[x]` `GET /donations/report` — valyuta bo'yicha jamlanma · top
+  ijodkorlar · top kontent · kunlik summalar
+- `[x]` ⚠️ **STARS va COIN QO'SHILMAYDI.** Ularni bitta «jami» ga qo'shish
+  10 so'm va 10 dollarni qo'shishday bo'lardi — kurslari alohida
+- `[x]` **Top ijodkorlar va top kontent ALOHIDA ro'yxat** — ilgari faqat
+  aralash «top nishonlar» bor edi
+- `[x]` `GET /donations/transactions` — sahifalangan ro'yxat
+- `[x]` ⚠️ **O'zgarmas tarix**: tahrirlash va o'chirish endpointi ataylab
+  YO'Q. Moliyaviy yozuv hard delete qilinmaydi
+- `[x]` `DonationAndPaymentTest` — 9 test
+
+### To'lov (§44)
+
+- `[x]` `PaymentProvider` interfeysi — chegara belgilangan, qaysi
+  provayder ulansa ham qolgan kod o'zgarmaydi
+- `[x]` Provayder nomi **konfiguratsiyadan** (`app.payment.provider`),
+  business logic ichida «agar Payme bo'lsa» degan shartlar yo'q
+- `[x]` ⚠️ **`NotConfiguredPaymentProvider` — soxta muvaffaqiyat
+  QAYTARMAYDI.** Soxta «to'landi» eng xavfli variant bo'lardi:
+  foydalanuvchi premium olardi, pul esa hech qayerdan kelmasdi va buni
+  faqat oy oxirida hisob-kitobda payqashardi
+- `[x]` Xato **503**, 500 emas — bu dastur xatosi emas, sozlama yetishmayapti
+- `[ ]` ⚠️ **Haqiqiy integratsiya yo'q** — Payme / Click / Uzum merchant
+  ma'lumotlari berilmagan. Buyurtmachi provayderni tanlashi kerak (§44)
 
 ## 24. Analytics `[x]`
 
@@ -756,6 +788,7 @@ aniqlab ishlat. Real ma'lumot bo'lmasa fake statistic yaratma.»
 | `PremiereModuleTest` | 14 | **ТЗ §30** — maydonlar, havola, uch til |
 | `HomeFeedTest` | 16 | **ТЗ §31** — bosh sahifa backenddan, N+1 nazorati |
 | `NotificationModuleTest` | 17 | **ТЗ §32/§33** — rejalashtirish, soxta muvaffaqiyat yo'q |
+| `DonationAndPaymentTest` | 9 | **ТЗ §42/§44** — valyutalar qo'shilmaydi, soxta to'lov yo'q |
 | `ModerationAndUsersTest` | 16 | **ТЗ §34/§35/§38** — filtrlar birga, xodimlar ajratilgan, ID qidiruvi |
 | `InternalLinkReuseTest` | 9 | **ТЗ §28** — havola mexanizmi uchala modulda bir xil |
 | `BackendAuthorizationTest` | 10 | **Ikki qavatli avtorizatsiya, 6 xil escalation urinishi** |
