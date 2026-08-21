@@ -98,6 +98,28 @@ public class NotificationAdminService {
             n.setCreatedBy(actor == null ? null : actor.getId());
         }
 
+        // ⚠️ To'liqsiz til qatori JIMGINA TASHLANARDI.
+        //
+        // Admin rus tabida sarlavhani yozib matnni to'ldirmasa, pastdagi
+        // sikl butun qatorni o'tkazib yuborardi: saqlash muvaffaqiyatli
+        // ko'rinardi, yozilgan sarlavha esa izsiz yo'qolardi.
+        //
+        // Ikkala ustun ham `not null`, shuning uchun yarim qatorni saqlab
+        // bo'lmaydi — jimgina yo'qotish o'rniga aniq xato.
+        request.getTranslations().forEach((locale, dto) -> {
+            if (dto == null) {
+                return;
+            }
+            boolean titleFilled = !isBlank(dto.getTitle());
+            boolean bodyFilled = !isBlank(dto.getBody());
+            if (titleFilled != bodyFilled) {
+                throw BusinessException.validation(locale.name()
+                        + " tilida " + (titleFilled ? "matn" : "sarlavha")
+                        + " to'ldirilmagan. Ikkalasi ham kerak — aks holda"
+                        + " bu til umuman saqlanmaydi");
+            }
+        });
+
         Map<Locale, NotificationTranslation> existing = new HashMap<>();
         n.getTranslations().forEach(t -> existing.put(t.getLocale(), t));
         Set<Locale> keep = new HashSet<>();
@@ -149,6 +171,18 @@ public class NotificationAdminService {
                     "Bu bildirishnoma allaqachon yuborilgan", HttpStatus.CONFLICT);
         }
 
+        // ⚠️ UCH TIL — AYNAN SHU YERDA.
+        //
+        // Ilgari tekshiruv faqat saqlashda va faqat `scheduledAt` berilgan
+        // bo'lsa ishlardi. Ya'ni teshik bor edi: qoralamani o'zbekcha
+        // yaratib, «yuborish» tugmasini bosish kifoya edi — rus tilidagi
+        // foydalanuvchiga o'zbekcha push ketardi.
+        //
+        // Push telefonga chiqqandan keyin uni qaytarib olib bo'lmaydi,
+        // shuning uchun tekshiruv yuborishning O'ZIDA turadi: qaysi yo'l
+        // bilan kelishidan qat'i nazar.
+        requireAllLanguages(n);
+
         // TODO: FCM ulangach — provayderga yuborish, javobga qarab SENT yoki FAILED.
         n.setStatus(NotificationStatus.FAILED);
         n.setFailureReason(PROVIDER_NOT_CONFIGURED);
@@ -157,6 +191,27 @@ public class NotificationAdminService {
         auditService.log(actor, AuditAction.NOTIFICATION_SENT, "Notification", id, null,
                 Map.of("result", "provider_not_configured"));
         return saved;
+    }
+
+    /**
+     * Saqlangan bildirishnomada uchala til ham bormi.
+     *
+     * <h2>Nima uchun so'rov emas, ENTITY tekshiriladi</h2>
+     * Yuborish so'rov bilan emas, ID bilan chaqiriladi: bildirishnoma
+     * ancha oldin yaratilgan bo'lishi mumkin. Shuning uchun bazadagi
+     * holat tekshiriladi.
+     *
+     * <h2>Nima uchun FAILED deb belgilanmaydi</h2>
+     * Tarjimasi to'liqsiz bildirishnoma buzilgan emas — u shunchaki
+     * TAYYOR emas. FAILED deb belgilash «provayder ishlamadi» degan
+     * ma'noni berardi va admin muammoni butunlay boshqa joydan qidirardi.
+     */
+    private void requireAllLanguages(Notification n) {
+        Map<Locale, NotificationTranslation> byLocale = new HashMap<>();
+        n.getTranslations().forEach(t -> byLocale.put(t.getLocale(), t));
+
+        TranslationRules.requireAll(byLocale, NotificationTranslation::getTitle, "Sarlavha");
+        TranslationRules.requireAll(byLocale, NotificationTranslation::getBody, "Matn");
     }
 
     /** Provayder sozlanmaganini bildiruvchi sabab — controller ham tekshiradi. */

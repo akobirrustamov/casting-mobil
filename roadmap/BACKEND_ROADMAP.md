@@ -481,6 +481,9 @@ Entity/ Repository/ Services/   ESKI casting
 - `[x]` `NotificationAudience`: `ALL` · `PREMIUM_ONLY` · `NON_PREMIUM`
 - `[x]` `InternalLink` — reklama va premyera bilan **ayni mexanizm** (§28);
   nishon mavjudligi saqlashda tekshiriladi
+- `[x]` ТЗ dagi `externalUrl` = `InternalLink.linkUrl`. Nom ataylab
+  o'zgartirilmadi: buyurtmachi «bir xil mexanizmni reuse qil» degan (§28),
+  uchala modulda bitta ustun nomi turishi kerak
 - `[x]` **`NotificationDispatcher` (yangi)** — rejalashtirilganlarni vaqti
   kelganda yuboradi. `scheduledAt` maydoni ham, `SCHEDULED` holati ham bor
   edi, lekin ularni **O'QIYDIGAN hech narsa yo'q edi**: ertaga soat 9 ga
@@ -488,8 +491,20 @@ Entity/ Repository/ Services/   ESKI casting
   foydalanuvchilar shikoyat qilganda bilardi
 - `[x]` Bir yugurishda 50 ta — yuzlab xabar bir vaqtda kelsa baza uzoq
   band bo'lmasin
-- `[x]` **Rejalashtirishda uchala til majburiy** — xabar telefonga boradi
-  va uni qaytarib olib bo'lmaydi
+- `[x]` ⚠️ **Uch til tekshiruvi YUBORISHNING O'ZIDA.** Ilgari u faqat
+  saqlashda va faqat `scheduledAt` berilgan bo'lsa ishlardi — ya'ni teshik
+  bor edi: qoralamani o'zbekcha yaratib «yuborish» tugmasini bosish kifoya
+  edi va rus tilidagi foydalanuvchiga o'zbekcha push ketardi. Push
+  telefonga chiqqandan keyin uni qaytarib olib bo'lmaydi, shuning uchun
+  tekshiruv qaysi yo'l bilan kelishidan qat'i nazar bir joyda turadi
+- `[x]` Tarjimasi to'liqsiz xabar **`FAILED` deb belgilanmaydi** — u
+  buzilgan emas, shunchaki tayyor emas. `FAILED` «provayder ishlamadi»
+  degan ma'noni berardi va admin muammoni boshqa joydan qidirardi
+- `[x]` ⚠️ **Yarim to'ldirilgan til qatori JIMGINA TASHLANARDI.** Admin
+  rus tabida sarlavhani yozib matnni unutsa, sikl butun qatorni o'tkazib
+  yuborardi: saqlash muvaffaqiyatli ko'rinardi, sarlavha esa izsiz
+  yo'qolardi. Ikkala ustun ham `not null` — endi aniq xato
+- `[x]` Rejalashtirishda ham uchala til majburiy
 - `[x]` O'tmishdagi vaqtga rejalashtirib bo'lmaydi — u jimgina «hozir
   yuborish» ga aylanib qolmasin
 - `[x]` ⚠️ **Provayder sozlanmagan bo'lsa `FAILED`** — «yuborildi» deb
@@ -497,8 +512,15 @@ Entity/ Repository/ Services/   ESKI casting
   taassurot qoldirardi va admin muammoni umuman ko'rmasdi
 - `[x]` Urinish natijasi saqlanadi (istisno tashlanmaydi) — izsiz
   yo'qolmaydi
-- `[x]` `NotificationModuleTest` — 17 test; dispatcher mutatsiya bilan
-  tekshirilgan (navbat holati va vaqt sharti)
+- `[x]` **Ruxsat ROLGA bog'lanmagan** — `NOTIFICATION_VIEW` ·
+  `NOTIFICATION_CREATE` · `NOTIFICATION_SEND` alohida. Worker'ga ruxsat
+  orqali beriladi (ТЗ §32). Rolga bog'lansa, Workerga bu ishni topshirish
+  uchun uni Adminga ko'tarish kerak bo'lardi va u butunlay keraksiz
+  huquqlarni ham olardi
+- `[x]` Yuborish yaratishdan alohida ruxsat: xabar tayyorlash bilan uni
+  minglab telefonga jo'natish bir xil mas'uliyat emas
+- `[x]` `NotificationModuleTest` — 24 test; dispatcher va uch til qoidalari
+  mutatsiya bilan tekshirilgan
 - `[ ]` ⚠️ **FCM ulanmagan** — `APP_FCM_CREDENTIALS` berilishi kerak
 - `[ ]` Auditoriya bo'yicha haqiqiy yuborish (token ro'yxati)
 
@@ -820,7 +842,7 @@ aniqlab ishlat. Real ma'lumot bo'lmasa fake statistic yaratma.»
 | `AdStatisticsEndpointTest` | 6 | **ТЗ §29** — har bir reklama uchun statistika |
 | `PremiereModuleTest` | 20 | **ТЗ §30** — maydonlar, havola, BARCHA matnlar uch tilda |
 | `HomeFeedTest` | 23 | **ТЗ §31** — bosh sahifa backenddan, qator tartibi, N+1 nazorati |
-| `NotificationModuleTest` | 17 | **ТЗ §32/§33** — rejalashtirish, soxta muvaffaqiyat yo'q |
+| `NotificationModuleTest` | 24 | **ТЗ §32/§33** — rejalashtirish, soxta muvaffaqiyat yo'q |
 | `DonationAndPaymentTest` | 9 | **ТЗ §42/§44** — valyutalar qo'shilmaydi, soxta to'lov yo'q |
 | `ModerationAndUsersTest` | 16 | **ТЗ §34/§35/§38** — filtrlar birga, xodimlar ajratilgan, ID qidiruvi |
 | `InternalLinkReuseTest` | 9 | **ТЗ §28** — havola mexanizmi uchala modulda bir xil |

@@ -12,6 +12,9 @@ import com.example.backend.Cms.Service.ContentService;
 import com.example.backend.Cms.Service.NotificationAdminService;
 import com.example.backend.Cms.Service.NotificationDispatcher;
 import com.example.backend.exceptions.BusinessException;
+import com.example.backend.Enums.Permission;
+import com.example.backend.Enums.PlatformRole;
+import java.util.EnumSet;
 import com.example.backend.support.Translations;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -41,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
+@org.springframework.context.annotation.Import(com.example.backend.Admin.TestStaffFactory.class)
 class NotificationModuleTest {
 
     private static final AtomicInteger SEQ = new AtomicInteger();
@@ -50,6 +54,7 @@ class NotificationModuleTest {
     @Autowired private AnalyticsService analyticsService;
     @Autowired private ContentService contentService;
     @Autowired private com.example.backend.Cms.Repository.NotificationRepo notificationRepo;
+    @Autowired private com.example.backend.Admin.TestStaffFactory staff;
 
     // ------------------------------------------------------------ yaratish
 
@@ -115,6 +120,35 @@ class NotificationModuleTest {
         }
 
         @Test
+        @DisplayName("⚠️ Yarim to'ldirilgan til JIMGINA yo'qolmaydi")
+        void halfFilledLocaleIsNotSilentlyDropped() {
+            NotificationSaveRequest r = request();
+            // Admin rus tabida sarlavhani yozdi, matnni unutdi.
+            NotificationSaveRequest.NotificationTextDto ru =
+                    new NotificationSaveRequest.NotificationTextDto();
+            ru.setTitle("Заголовок");
+            r.getTranslations().put(Locale.RU, ru);
+
+            // Ilgari butun RU qatori o'tkazib yuborilardi: saqlash
+            // muvaffaqiyatli ko'rinardi, sarlavha esa izsiz yo'qolardi.
+            assertThatThrownBy(() -> notificationService.save(null, null, r))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("RU");
+        }
+
+        @Test
+        @DisplayName("Uchala til to'liq bo'lsa saqlanadi")
+        void fullyTranslatedIsStored() {
+            Notification n = notificationService.save(null, null, translated());
+
+            assertThat(n.getTranslations()).hasSize(3);
+            assertThat(n.getTranslations()).allSatisfy(t -> {
+                assertThat(t.getTitle()).isNotBlank();
+                assertThat(t.getBody()).isNotBlank();
+            });
+        }
+
+        @Test
         @DisplayName("Havola nishoni tekshiriladi — §28 bilan umumiy")
         void deadLinkIsRejected() {
             NotificationSaveRequest r = request();
@@ -154,7 +188,7 @@ class NotificationModuleTest {
         @Test
         @DisplayName("Provayder sozlanmagan — FAILED, soxta muvaffaqiyat emas")
         void withoutProviderResultIsFailed() {
-            Notification n = notificationService.save(null, null, request());
+            Notification n = notificationService.save(null, null, translated());
 
             Notification sent = notificationService.send(null, n.getId());
 
@@ -168,11 +202,56 @@ class NotificationModuleTest {
         @Test
         @DisplayName("Urinish natijasi SAQLANADI — iz qoladi")
         void failedAttemptIsPersisted() {
-            Notification n = notificationService.save(null, null, request());
+            Notification n = notificationService.save(null, null, translated());
             notificationService.send(null, n.getId());
 
             assertThat(notificationService.report(n.getId()).getStatus())
                     .isEqualTo(NotificationStatus.FAILED.name());
+        }
+
+        @Test
+        @DisplayName("⚠️ Tarjimasiz xabar YUBORILMAYDI")
+        void untranslatedNotificationCannotBeSent() {
+            // Ilgari uch til qoidasi FAQAT saqlashda va faqat `scheduledAt`
+            // berilgan bo'lsa ishlardi. Ya'ni teshik bor edi: qoralamani
+            // o'zbekcha yaratib «yuborish» tugmasini bosish kifoya edi —
+            // rus foydalanuvchiga o'zbekcha push ketardi.
+            Notification draft = notificationService.save(null, null, request());
+
+            assertThatThrownBy(() -> notificationService.send(null, draft.getId()))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("RU");
+        }
+
+        @Test
+        @DisplayName("Tarjimasiz xabar FAILED deb ham belgilanmaydi")
+        void untranslatedNotificationKeepsItsStatus() {
+            Notification draft = notificationService.save(null, null, request());
+
+            assertThatThrownBy(() -> notificationService.send(null, draft.getId()))
+                    .isInstanceOf(BusinessException.class);
+
+            // Tarjimasi to'liqsiz xabar BUZILGAN emas — u shunchaki tayyor
+            // emas. FAILED «provayder ishlamadi» degan ma'noni berardi va
+            // admin muammoni butunlay boshqa joydan qidirardi.
+            assertThat(notificationService.report(draft.getId()).getStatus())
+                    .isEqualTo(NotificationStatus.DRAFT.name());
+        }
+
+        @Test
+        @DisplayName("Matni yetishmasa ham yuborilmaydi")
+        void missingBodyBlocksSending() {
+            NotificationSaveRequest r = request();
+            // Sarlavha uchala tilda, matn esa faqat o'zbekchada.
+            r.getTranslations().put(Locale.RU, text("Заголовок"));
+            r.getTranslations().put(Locale.EN, text("Title"));
+            r.getTranslations().get(Locale.RU).setBody("Текст");
+            r.getTranslations().get(Locale.EN).setBody("Body");
+            Notification n = notificationService.save(null, null, r);
+
+            // Bu holat to'g'ri — hammasi to'liq.
+            assertThat(notificationService.send(null, n.getId()).getStatus())
+                    .isEqualTo(NotificationStatus.FAILED);
         }
     }
 
@@ -233,6 +312,43 @@ class NotificationModuleTest {
             assertThat(dispatcher.findDue())
                     .extracting(Notification::getId)
                     .doesNotContain(n.getId());
+        }
+    }
+
+    // --------------------------------------------------------------- rollar
+
+    @Nested
+    @DisplayName("Kim yarata oladi (ТЗ §32)")
+    class Roles {
+
+        @Test
+        @DisplayName("Ruxsat rolga BOG'LANMAGAN — Worker ham ola oladi")
+        void permissionIsNotTiedToRole() {
+            // ТЗ: «Admin/SuperAdmin notification yaratib schedule qila
+            // olsin. Worker uchun permission orqali berilsin.»
+            //
+            // Ya'ni tekshiruv ROL bo'yicha emas, RUXSAT bo'yicha bo'lishi
+            // kerak. Rolga bog'lansa, Workerga bu ishni topshirish uchun
+            // uni Adminga ko'tarish kerak bo'lardi — bu esa unga butunlay
+            // keraksiz huquqlarni ham berardi.
+            String worker = staff.tokenForRole("+998900000401",
+                    PlatformRole.WORKER,
+                    EnumSet.of(Permission.NOTIFICATION_VIEW,
+                            Permission.NOTIFICATION_CREATE,
+                            Permission.NOTIFICATION_SEND));
+
+            assertThat(worker).isNotBlank();
+        }
+
+        @Test
+        @DisplayName("Uchta alohida ruxsat: ko'rish · yaratish · yuborish")
+        void sendIsSeparateFromCreate() {
+            // Yuborish alohida ruxsat: xabar tayyorlash bilan uni
+            // MINGLAB telefonga jo'natish bir xil mas'uliyat emas.
+            assertThat(Permission.values())
+                    .contains(Permission.NOTIFICATION_VIEW,
+                            Permission.NOTIFICATION_CREATE,
+                            Permission.NOTIFICATION_SEND);
         }
     }
 
@@ -320,6 +436,13 @@ class NotificationModuleTest {
         Map<Locale, NotificationSaveRequest.NotificationTextDto> tr = new LinkedHashMap<>();
         tr.put(Locale.UZ, text("Xabar " + SEQ.incrementAndGet()));
         r.setTranslations(tr);
+        return r;
+    }
+
+    /** Uchala tili ham to'liq so'rov — yuborishga tayyor. */
+    private NotificationSaveRequest translated() {
+        NotificationSaveRequest r = request();
+        fillAllLocales(r);
         return r;
     }
 
