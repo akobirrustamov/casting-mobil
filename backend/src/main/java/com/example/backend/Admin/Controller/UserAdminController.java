@@ -2,6 +2,7 @@ package com.example.backend.Admin.Controller;
 
 import com.example.backend.Admin.CurrentUser;
 import com.example.backend.Admin.Dto.AppUserDto;
+import com.example.backend.Admin.Dto.PageResponse;
 import com.example.backend.Cms.Entity.UserDevice;
 import com.example.backend.Cms.Repository.UserDeviceRepo;
 import com.example.backend.Cms.Service.UserAdminService;
@@ -41,22 +42,27 @@ public class UserAdminController {
         }
     }
 
+    /**
+     * Ilova foydalanuvchilari ro'yxati (ТЗ §35).
+     *
+     * <h2>Nima uchun sahifalash</h2>
+     * Ilgari butun jadval xotiraga tortilib, chegara Java'da qo'llanardi.
+     * 100 000 ta foydalanuvchida panelni ochish har safar 100 000 satr
+     * degani edi.
+     */
     @GetMapping
-    public ResponseEntity<List<AppUserDto>> list(
+    public ResponseEntity<PageResponse<AppUserDto>> list(
             @RequestParam(required = false) String q,
-            @RequestParam(defaultValue = "50") int limit) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
         require(Permission.USER_VIEW);
-        List<AppUserDto> users = userAdminService.search(q, Math.min(Math.max(limit, 1), 200))
-                .stream()
-                .map(u -> {
-                    var account = userAdminService.accountOf(u.getId());
-                    var balance = userAdminService.balanceOf(u.getId());
-                    int devices = deviceRepo.findAllByUserIdAndActiveTrueOrderByLastActiveAtAsc(u.getId()).size();
-                    return AppUserDto.from(u, account, balance, devices);
-                })
-                .toList();
-        return ResponseEntity.ok(users);
+        int safeSize = Math.min(Math.max(size, 1), 200);
+        var result = userAdminService.searchPage(q,
+                org.springframework.data.domain.PageRequest.of(Math.max(page, 0), safeSize));
+
+        return ResponseEntity.ok(PageResponse.of(result, row -> AppUserDto.from(
+                row.user(), row.account(), row.balance(), row.activeDevices())));
     }
 
     @GetMapping("/{userId}")

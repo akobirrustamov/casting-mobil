@@ -10,6 +10,7 @@ import com.example.backend.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,22 +32,29 @@ public class ModerationService {
     private final CommentRepo commentRepo;
     private final AuditService auditService;
 
+    /**
+     * Moderatsiya ro'yxati (ТЗ §34).
+     *
+     * <h2>Filtrlar BIRGA ishlaydi</h2>
+     * Ilgari bu yerda {@code if/else} zanjiri turardi va filtrlar
+     * bir-birini inkor qilardi: moderator «yashirilgan» + «shu kino» ni
+     * birga tanlasa, kino filtri status filtrini jimgina yutib yuborardi va
+     * ro'yxatda ko'rinadigan izohlar ham chiqardi. Ekranda hech qanday xato
+     * ko'rinmasdi — shunchaki noto'g'ri ro'yxat edi.
+     *
+     * <h2>Foydalanuvchi va sana filtri</h2>
+     * ТЗ ro'yxatida bor edi, kodda umuman yo'q edi.
+     *
+     * @param query kamida 2 belgi — bitta harf butun bazani skanerlashiga
+     *              arzimaydi
+     */
     @Transactional(readOnly = true)
-    public Page<Comment> comments(CommentStatus status, Long contentId, String query,
-                                  boolean reportedOnly, Pageable pageable) {
-        if (query != null && query.trim().length() >= 2) {
-            return commentRepo.search(query.trim(), pageable);
-        }
-        if (reportedOnly) {
-            return commentRepo.findAllByReportsCountGreaterThanOrderByReportsCountDesc(0, pageable);
-        }
-        if (contentId != null) {
-            return commentRepo.findAllByContentId(contentId, pageable);
-        }
-        if (status != null) {
-            return commentRepo.findAllByStatus(status, pageable);
-        }
-        return commentRepo.findAll(pageable);
+    public Page<Comment> comments(CommentStatus status, Long contentId, UUID authorId,
+                                  LocalDateTime from, LocalDateTime to,
+                                  String query, boolean reportedOnly, Pageable pageable) {
+        String q = query == null || query.trim().length() < 2 ? null : query.trim();
+        return commentRepo.moderationList(status, contentId, authorId, from, to,
+                reportedOnly, q, pageable);
     }
 
     @Transactional

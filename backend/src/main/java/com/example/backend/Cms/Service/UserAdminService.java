@@ -12,6 +12,8 @@ import com.example.backend.Services.AuditService.AuditAction;
 import com.example.backend.Services.AuditService.AuditService;
 import com.example.backend.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,31 +41,55 @@ public class UserAdminService {
     private final AuditService auditService;
 
     /**
-     * Foydalanuvchilarni qidirish: telefon, email yoki ism bo'yicha (§35, §38).
+     * Ilova foydalanuvchilari ro'yxati (ТЗ §35).
      *
-     * Faqat USER rolidagilar — xodimlar alohida bo'limda.
+     * Qidiruv telefon, email yoki ism bo'yicha. Faqat USER rolidagilar —
+     * xodimlar alohida bo'limda boshqariladi (§12).
+     *
+     * <h2>Nima o'zgardi</h2>
+     * Ilgari {@code findAll()} chaqirilib, xodimlar Java'da ajratilardi va
+     * chegara faqat shundan keyin qo'llanardi — ya'ni panelni ochish BUTUN
+     * jadvalni xotiraga tortardi. Endi filtr ham, sahifalash ham bazada.
+     *
+     * <h2>N+1</h2>
+     * Har bir foydalanuvchi uchun hisob, balans va qurilmalar alohida
+     * so'ralardi: 50 kishilik sahifa 150 ta qo'shimcha so'rov degani edi.
+     * Endi uchalasi ham bitta {@code in (...)} so'rovi bilan olinadi va
+     * {@link AppUserRow} ichida beriladi.
      */
     @Transactional(readOnly = true)
-    public List<User> search(String query, int limit) {
-        List<User> all = userRepo.findAll();
-        String q = query == null ? "" : query.trim().toLowerCase();
+    public Page<AppUserRow> searchPage(String query, Pageable pageable) {
+        String q = query == null || query.isBlank() ? null : query.trim();
+        Page<User> page = userRepo.findAppUsers(q, pageable);
 
-        return all.stream()
-                .filter(u -> {
-                    PlatformRole role = RoleMapper.highestRole(u);
-                    return role == null || role == PlatformRole.USER;
-                })
-                .filter(u -> q.isEmpty()
-                        || contains(u.getPhone(), q)
-                        || contains(u.getEmail(), q)
-                        || contains(u.getName(), q)
-                        || u.getId().toString().equalsIgnoreCase(q))
-                .limit(limit)
-                .toList();
+        List<UUID> ids = page.getContent().stream().map(User::getId).toList();
+        if (ids.isEmpty()) {
+            return page.map(u -> new AppUserRow(u, null, null, 0));
+        }
+
+        Map<UUID, UserAccount> accounts = new HashMap<>();
+        accountRepo.findAllByUserIdIn(ids)
+                .forEach(a -> accounts.put(a.getUser().getId(), a));
+
+        Map<UUID, UserBalance> balances = new HashMap<>();
+        balanceRepo.findAllByUserIdIn(ids)
+                .forEach(b -> balances.put(b.getUser().getId(), b));
+
+        Map<UUID, Integer> deviceCounts = new HashMap<>();
+        deviceRepo.findAllByUserIdInAndActiveTrue(ids)
+                .forEach(d -> deviceCounts.merge(d.getUser().getId(), 1, Integer::sum));
+
+        return page.map(u -> new AppUserRow(u,
+                accounts.get(u.getId()),
+                balances.get(u.getId()),
+                deviceCounts.getOrDefault(u.getId(), 0)));
     }
 
-    /** Hisob yozuvi yo'q bo'lsa yaratiladi — eski foydalanuvchilarda u yo'q. */
-    @Transactional
+    /** Ro'yxatning bitta qatori — foydalanuvchi va u bilan bog'liq hammasi. */
+    public record AppUserRow(User user, UserAccount account,
+                             UserBalance balance, int activeDevices) {
+    }
+
     public UserAccount accountOf(UUID userId) {
         return accountRepo.findByUserId(userId).orElseGet(() -> {
             User user = userRepo.findById(userId)

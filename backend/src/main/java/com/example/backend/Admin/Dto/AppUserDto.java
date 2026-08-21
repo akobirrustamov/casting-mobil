@@ -36,6 +36,9 @@ public class AppUserDto {
     private Long starsBalance;
     private Long coinBalance;
 
+    /** ТЗ §35 ro'yxatida bor edi, DTO'da yo'q edi. */
+    private LocalDateTime createdAt;
+
     private LocalDateTime lastActiveAt;
     private Integer activeDevices;
 
@@ -53,6 +56,7 @@ public class AppUserDto {
                 .moneyBalance(balance == null ? BigDecimal.ZERO : balance.getMoneyBalance())
                 .starsBalance(balance == null ? 0L : balance.getStarsBalance())
                 .coinBalance(balance == null ? 0L : balance.getCoinBalance())
+                .createdAt(account == null ? null : account.getCreatedAt())
                 .lastActiveAt(account == null ? null : account.getLastActiveAt())
                 .activeDevices(devices)
                 .build();

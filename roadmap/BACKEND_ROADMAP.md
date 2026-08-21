@@ -492,18 +492,49 @@ aniqlab ishlat. Real ma'lumot bo'lmasa fake statistic yaratma.»
   «opened» ning nusxasi bo'lib qolardi
 - `[ ]` Yetkazish kvitansiyasi — FCM ulangach
 
-## 20. Comments `[x]`
+## 20. Comments `[x]` — ТЗ §34 to'liq
 
 **Entity:** `Comment` · **Migratsiya:** V5
 
-- `[x]` `GET /comments` — holat, kontent va shikoyat bo'yicha filtr
-- `[x]` `PUT /comments/{id}/status/{status}` — `COMMENT_MODERATE`
-- `[x]` `reportsCount` + shikoyat qilinganlar filtri
-- `[x]` Indekslar: `status+created`, `content+created`, `reports`
-- `[x]` `@EntityGraph` faqat to-one — sahifalash to'g'ri ishlaydi
-- `[ ]` Izoh yozish uchun ochiq (klient) endpoint
-- `[ ]` Javob (thread) — model yassi
-- `[ ]` Avtomatik filtr (so'kinish, spam)
+- `[x]` Ro'yxat maydonlari: user · content · episode · matn · createdAt ·
+  status · reportsCount
+- `[x]` Amallar: ko'rish · yashirish · tiklash · `DELETED` deb belgilash.
+  **Hard delete yo'q** — moderator qarori saqlanadi
+- `[x]` ⚠️ **Filtrlar BIRGA ishlaydi.** Ilgari `if/else` zanjiri edi va
+  filtrlar bir-birini INKOR QILARDI: moderator «yashirilgan» + «shu kino»
+  ni birga tanlasa, kino filtri status filtrini jimgina yutib yuborardi va
+  ro'yxatda ko'rinadigan izohlar ham chiqardi. Ekranda hech qanday xato
+  ko'rinmasdi — shunchaki noto'g'ri ro'yxat edi
+- `[x]` **Foydalanuvchi va sana filtri qo'shildi** — ТЗ ro'yxatida bor edi,
+  kodda umuman yo'q edi
+- `[x]` Matn qidiruvi kamida 2 belgi — bitta harf butun bazani
+  skanerlashiga arzimaydi
+- `[x]` Foydalanuvchini bloklash — §35 dagi endpoint orqali
+- `[x]` `ModerationAndUsersTest` — 13 test; filtrlar mutatsiya bilan
+  tekshirilgan
+- `[ ]` Izoh yozish (klient endpointi) — hozir faqat moderatsiya
+
+## 20.1. User management `[x]` — ТЗ §35 to'liq
+
+**Entity:** `User` (eski) + `UserAccount` · **Migratsiya:** V5
+
+- `[x]` Ro'yxat maydonlari: id · avatar · ism · telefon · email · status ·
+  premium holati · `premiumUntil` · **`createdAt`** · `lastActiveAt`
+- `[x]` `createdAt` DTO'ga qo'shildi — ТЗ ro'yxatida bor edi, javobda
+  yo'q edi
+- `[x]` Amallar: qidiruv · ko'rish · bloklash · blokdan chiqarish ·
+  premium berish · premium qaytarib olish
+- `[x]` **Xodimlar ro'yxatga tushmaydi** — ular §12 dagi alohida ekranda.
+  Aralashsa admin o'zini bloklab qo'yishi mumkin edi
+- `[x]` ⚠️ **Ro'yxat endi bazada sahifalanadi.** Ilgari `findAll()`
+  chaqirilib, xodimlar Java'da ajratilardi va chegara faqat shundan keyin
+  qo'llanardi — ya'ni panelni ochish BUTUN jadvalni xotiraga tortardi.
+  100 000 ta foydalanuvchida bu har bir sahifa ochilishida 100 000 satr
+- `[x]` ⚠️ **N+1 tuzatildi.** Har bir foydalanuvchi uchun hisob, balans va
+  qurilmalar alohida so'ralardi: 50 kishilik sahifa 150 ta qo'shimcha
+  so'rov degani edi. Endi uchalasi bitta `in (...)` so'rovi bilan
+- `[x]` **USER admin panelga kira olmaydi** — `canAccessAdminPanel`
+  tekshiruvi `AdminAuthController` da
 
 ## 21. Subscriptions `[x]`
 
@@ -700,6 +731,7 @@ aniqlab ishlat. Real ma'lumot bo'lmasa fake statistic yaratma.»
 | `PremiereModuleTest` | 14 | **ТЗ §30** — maydonlar, havola, uch til |
 | `HomeFeedTest` | 16 | **ТЗ §31** — bosh sahifa backenddan, N+1 nazorati |
 | `NotificationModuleTest` | 17 | **ТЗ §32/§33** — rejalashtirish, soxta muvaffaqiyat yo'q |
+| `ModerationAndUsersTest` | 13 | **ТЗ §34/§35** — filtrlar birga, xodimlar ajratilgan |
 | `InternalLinkReuseTest` | 9 | **ТЗ §28** — havola mexanizmi uchala modulda bir xil |
 | `BackendAuthorizationTest` | 10 | **Ikki qavatli avtorizatsiya, 6 xil escalation urinishi** |
 | `BootstrapAccountSecurityTest` | 7 | **Standart parolli master hisob qaytmasin** |

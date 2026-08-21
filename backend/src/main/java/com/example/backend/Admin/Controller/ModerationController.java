@@ -53,11 +53,23 @@ public class ModerationController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) CommentStatus status,
             @RequestParam(required = false) Long contentId,
+            @RequestParam(required = false) java.util.UUID userId,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(
+                    iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
+            java.time.LocalDateTime from,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(
+                    iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
+            java.time.LocalDateTime to,
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "false") boolean reportedOnly) {
 
         require(Permission.COMMENT_VIEW);
-        var result = moderationService.comments(status, contentId, q, reportedOnly,
+        // ⚠️ Filtrlar BIRGA ishlaydi. Ilgari ular bir-birini inkor qilardi
+        // va tanlangan filtrlardan biri jimgina e'tiborsiz qolardi (§34).
+        var result = moderationService.comments(status, contentId, userId, from, to,
+                q, reportedOnly,
                 page(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
         return ResponseEntity.ok(PageResponse.of(result, CommentDto::from));
     }
