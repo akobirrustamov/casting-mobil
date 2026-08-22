@@ -13,7 +13,10 @@ import com.example.backend.Cms.Repository.TariffRepo;
 import com.example.backend.Entity.User;
 import com.example.backend.Services.AuditService.AuditAction;
 import com.example.backend.Services.AuditService.AuditService;
+import com.example.backend.Cms.Enums.PurchaseType;
+import com.example.backend.Cms.Repository.PurchaseRepo;
 import com.example.backend.exceptions.BusinessException;
+import org.springframework.http.HttpStatus;
 import com.example.backend.Admin.Dto.DonationReportDto;
 import com.example.backend.Cms.Entity.DonationTransaction;
 import com.example.backend.Cms.Enums.DonationTargetType;
@@ -41,6 +44,7 @@ public class MonetizationService {
     private final TariffRepo tariffRepo;
     private final CurrencyPackageRepo packageRepo;
     private final DonationRepo donationRepo;
+    private final PurchaseRepo purchaseRepo;
     private final AuditService auditService;
 
     // ---------------------------------------------------------------- tarif
@@ -171,6 +175,16 @@ public class MonetizationService {
     public void deletePackage(User actor, Long id) {
         CurrencyPackage p = packageRepo.findById(id)
                 .orElseThrow(() -> BusinessException.notFound("CurrencyPackage", id));
+        // Sotilgan paket o'chsa, xarid tarixida «50 000 so'm — nimaga?»
+        // qoladi. Sotuvdan olib qo'yish uchun active = false ishlatiladi.
+        long purchases = purchaseRepo.countByTypeAndTargetId(PurchaseType.CURRENCY_PACKAGE, id);
+        if (purchases > 0) {
+            throw new BusinessException("PACKAGE_PURCHASED",
+                    "Bu paket " + purchases + " marta sotib olingan, o'chirib bo'lmaydi. "
+                            + "Sotuvdan olish uchun uni nofaol qiling.",
+                    HttpStatus.CONFLICT);
+        }
+
         packageRepo.delete(p);
         auditService.log(actor, "PACKAGE_DELETED", "CurrencyPackage", id);
     }

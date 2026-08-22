@@ -79,7 +79,7 @@ export default function SearchableSelect({
         onClick={() => setOpen((v) => !v)}
       >
         {selected ? selected.label : (
-          <span className="uz-muted">{placeholder || t('common.select')}</span>
+          <span className="uz-muted">{placeholder || t('common.selectPlaceholder')}</span>
         )}
       </button>
 

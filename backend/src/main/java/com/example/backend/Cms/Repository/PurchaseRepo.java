@@ -22,6 +22,14 @@ public interface PurchaseRepo extends JpaRepository<Purchase, Long> {
     long countByTypeAndRefundedAtIsNull(PurchaseType type);
 
     /**
+     * Nishonga bog'langan xaridlar soni (§58).
+     *
+     * Qaytarilganlar ham sanaladi: qaytarilgan xarid ham moliyaviy tarix,
+     * nishoni o'chsa u ham «nima uchun pul qaytarildi»ni ko'rsatolmay qoladi.
+     */
+    long countByTypeAndTargetId(PurchaseType type, Long targetId);
+
+    /**
      * Bir martalik kontent xaridlari daromadi (§45).
      *
      * Qaytarilganlar chiqarib tashlanadi — qaytarilgan pul daromad emas.

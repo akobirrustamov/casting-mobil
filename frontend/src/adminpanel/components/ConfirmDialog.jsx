@@ -23,6 +23,8 @@ export default function ConfirmDialog({
   open,
   title,
   message,
+  /** Ixtiyoriy tushuntirish — amal aslida nima qilishini aniqlashtiradi. */
+  note,
   confirmLabel,
   danger = true,
   busy = false,
@@ -66,6 +68,13 @@ export default function ConfirmDialog({
       }
     >
       <p style={{ margin: 0, lineHeight: 1.6 }}>{message}</p>
+
+      {note && (
+        <p style={{ margin: '8px 0 0', lineHeight: 1.6, fontSize: 13,
+                    color: 'var(--p-muted)' }}>
+          {note}
+        </p>
+      )}
 
       {input && (
         <label style={{ marginTop: 14, display: 'block' }}>
@@ -124,6 +133,7 @@ export function useConfirm(onDone) {
       open: Boolean(state),
       title: state?.title,
       message: state?.message,
+      note: state?.note,
       confirmLabel: state?.confirmLabel,
       danger: state?.danger !== false,
       input: state?.input,

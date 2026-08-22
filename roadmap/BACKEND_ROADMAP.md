@@ -1472,6 +1472,56 @@ CONTENT_VIEW  →  CONTENT_PLAY  →  CONTENT_COMPLETE
   havolada
 - `[x]` `ReportFiltersTest` — 10 test, uch mutatsiya bilan tekshirilgan
 
+## 23.1. Soft delete `[x]` — ТЗ §58
+
+### Nega bu shunchaki «qator yo'qolishi» emas
+
+Xarid yozuvi nishoniga **id bo'yicha** bog'lanadi (`Purchase.targetId`).
+Qism o'chirilsa, yozuvda «EPISODE #42 — 3 000 so'm» qoladi-yu, 42-qism yo'q:
+foydalanuvchi pul to'lagan, lekin na u ko'ra oladi, na qo'llab-quvvatlash
+nima sotilganini aniqlay oladi. Moliyaviy tarix **butun ko'rinadi, aslida
+bo'sh** — bu ochiqchasiga o'chirishdan ham yomonroq, chunki muammo
+hisobotda ko'rinmaydi.
+
+### Ikki strategiya — turiga qarab
+
+| Tur | Yechim | Sabab |
+|---|---|---|
+| Reklama, premyera | **arxivlash** (`status = ARCHIVED`) | Ko'rsatish/bosish statistikasi shu id'ga bog'langan |
+| Qism, valyuta paketi | **taqiqlash** (sotilgan bo'lsa) | «Arxiv» holati xaridorning huquqini anglatmaydi |
+| Kontent | arxivlash — allaqachon bor edi | `ContentService.archive()` |
+| Fasl | taqiqlash — allaqachon bor edi | `SEASON_NOT_EMPTY` |
+| Donat, xarid, obuna | o'chirilmaydi | §42 da yopilgan (`FinancialHistoryImmutableTest`) |
+
+- `[x]` `deleteAdvertisement` → `ARCHIVED`, audit `ADVERTISEMENT_ARCHIVED`
+- `[x]` `deletePremiere` → `ARCHIVED`, audit `PREMIERE_ARCHIVED`
+- `[x]` Arxivlangani admin ro'yxatidan chiqadi, lekin **hisobotda nomi
+  ko'rinaveradi** (`ReportController` repo'dan to'g'ridan-to'g'ri o'qiydi)
+- `[x]` Ommaviy feed avtomatik toza: `isLiveAt()` `PUBLISHED` talab qiladi
+- `[x]` `deleteEpisode` — xaridi bo'lsa `EPISODE_PURCHASED` (409)
+- `[x]` `deletePackage` — xaridi bo'lsa `PACKAGE_PURCHASED` (409),
+  sotuvdan olish uchun `active = false`
+- `[x]` **Qaytarilgan xarid ham himoya qiladi** — «nega pul qaytdi?»
+  savoliga javob kerak bo'ladi
+
+### Ataylab hard delete qolgan joylar
+
+- **Media fayli** — §26 dagi `MediaUsageService` tekshiruvi bilan
+  himoyalangan: ishlatilayotgan fayl o'chmaydi. Fayl biznes yozuvi emas,
+  unga pul bog'lanmagan
+- **Xaridi yo'q qism/paket** — hech kim sotib olmagan bo'lsa, taqiq
+  faqat panelni axlat bilan to'ldirardi
+
+### Qo'riqchi
+
+`SoftDeleteTest` (13 test) manba matnini o'qib, §58 ro'yxatidagi
+repo'larda `delete(` chaqirig'i paydo bo'lishini taqiqlaydi. Nomlar
+**aniq** solishtiriladi: `userPermissionRepo` «user» bilan boshlansa ham
+foydalanuvchi emas, ruxsat qatori.
+
+⚠️ Mutatsiya bilan tekshirildi: to'rtala tuzatish ham qaytarib ko'rildi,
+har safar tegishli testlar yiqildi.
+
 ## 26. Audit logs `[x]`
 
 **Entity:** `AuditLog` · **Migratsiya:** V2

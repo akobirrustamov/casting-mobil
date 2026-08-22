@@ -10,6 +10,8 @@ import com.example.backend.Cms.Enums.StructureType;
 import com.example.backend.Cms.Repository.*;
 import com.example.backend.Entity.User;
 import com.example.backend.Services.AuditService.AuditService;
+import com.example.backend.Cms.Enums.PurchaseType;
+import com.example.backend.Cms.Repository.PurchaseRepo;
 import com.example.backend.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -37,6 +39,7 @@ public class EpisodeService {
     private final SeasonRepo seasonRepo;
     private final EpisodeRepo episodeRepo;
     private final MediaAssetRepo mediaAssetRepo;
+    private final PurchaseRepo purchaseRepo;
     private final AuditService auditService;
 
     // ---------------------------------------------------------------- fasllar
@@ -189,6 +192,17 @@ public class EpisodeService {
         if (!episode.getContent().getId().equals(contentId)) {
             throw BusinessException.validation("Bu qism boshqa kontentga tegishli");
         }
+        // Sotilgan qismni o'chirib bo'lmaydi: xarid yozuvi qism id'siga
+        // bog'langan, qism yo'qolsa foydalanuvchi pul to'lagan-u, nimaga
+        // to'laganini na u, na qo'llab-quvvatlash ko'ra oladi.
+        long purchases = purchaseRepo.countByTypeAndTargetId(PurchaseType.EPISODE, episodeId);
+        if (purchases > 0) {
+            throw new BusinessException("EPISODE_PURCHASED",
+                    "Bu qism " + purchases + " marta sotib olingan, o'chirib bo'lmaydi. "
+                            + "Uni arxivga o'tkazing (status = ARCHIVED).",
+                    HttpStatus.CONFLICT);
+        }
+
         episodeRepo.delete(episode);
         auditService.log(actor, "EPISODE_DELETED", "Episode", episodeId);
     }

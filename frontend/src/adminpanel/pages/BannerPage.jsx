@@ -150,6 +150,9 @@ export default function BannerPage({ kind }) {
 
   const remove = (row) => confirmer.ask({
     message: `${row.name} — ${t('common.remove')}?`,
+    // Yozuv arxivlanadi, yo'q qilinmaydi (§58) — admin statistikasi
+    // yo'qolib ketdi deb o'ylamasligi uchun shu izoh ko'rsatiladi.
+    note: t('ads.removeNote'),
     confirmLabel: t('common.remove'),
     run: async () => {
       try {

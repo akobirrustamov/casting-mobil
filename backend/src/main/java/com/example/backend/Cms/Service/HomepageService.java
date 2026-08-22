@@ -44,7 +44,11 @@ public class HomepageService {
 
     @Transactional(readOnly = true)
     public List<Advertisement> advertisements() {
-        return advertisementRepo.findAllByOrderBySortOrderAscIdAsc();
+        // Arxivlangan reklama — «o'chirilgan» degani (§58 soft delete).
+        // Yozuv hisobotlar uchun saqlanadi, lekin panel ro'yxatini to'ldirmaydi.
+        return advertisementRepo.findAllByOrderBySortOrderAscIdAsc().stream()
+                .filter(a -> a.getStatus() != PublicationStatus.ARCHIVED)
+                .toList();
     }
 
     @Transactional
@@ -124,15 +128,20 @@ public class HomepageService {
     public void deleteAdvertisement(User actor, Long id) {
         Advertisement ad = advertisementRepo.findById(id)
                 .orElseThrow(() -> BusinessException.notFound("Advertisement", id));
-        advertisementRepo.delete(ad);
-        auditService.log(actor, "ADVERTISEMENT_DELETED", "Advertisement", id);
+        // Hard delete emas: reklama statistikasi (ko'rsatish/bosish) shu id'ga
+        // bog'langan, yozuv yo'qolsa hisobotda egasiz raqamlar qolardi.
+        ad.setStatus(PublicationStatus.ARCHIVED);
+        advertisementRepo.save(ad);
+        auditService.log(actor, "ADVERTISEMENT_ARCHIVED", "Advertisement", id);
     }
 
     // --------------------------------------------------------------- premyera
 
     @Transactional(readOnly = true)
     public List<Premiere> premieres() {
-        return premiereRepo.findAllByOrderBySortOrderAscIdAsc();
+        return premiereRepo.findAllByOrderBySortOrderAscIdAsc().stream()
+                .filter(p -> p.getStatus() != PublicationStatus.ARCHIVED)
+                .toList();
     }
 
     @Transactional
@@ -246,8 +255,11 @@ public class HomepageService {
     public void deletePremiere(User actor, Long id) {
         Premiere p = premiereRepo.findById(id)
                 .orElseThrow(() -> BusinessException.notFound("Premiere", id));
-        premiereRepo.delete(p);
-        auditService.log(actor, "PREMIERE_DELETED", "Premiere", id);
+        // Premyeraga PurchaseType.PREMIERE xaridlari bog'lanadi — yozuv
+        // o'chsa, to'lov tarixi nima uchun to'langanini ko'rsatolmay qolardi.
+        p.setStatus(PublicationStatus.ARCHIVED);
+        premiereRepo.save(p);
+        auditService.log(actor, "PREMIERE_ARCHIVED", "Premiere", id);
     }
 
     // ------------------------------------------------------------ bosh sahifa
