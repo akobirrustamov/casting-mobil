@@ -35,6 +35,14 @@ public class DonationReportDto {
     /** Kunlik summalar — grafik uchun. */
     private List<DayRow> daily;
 
+    /**
+     * Oylik summalar (ТЗ §42).
+     *
+     * Kunlikdan hisoblab bo'lmaydi: kunlik kesim qisqa oyna uchun,
+     * oylik esa uzoq tendensiyani ko'rsatadi.
+     */
+    private List<MonthRow> monthly;
+
     @Data
     @Builder
     public static class KindTotal {
@@ -48,6 +56,16 @@ public class DonationReportDto {
     public static class TargetRow {
         private DonationTargetType targetType;
         private Long targetId;
+        private CurrencyKind kind;
+        private Long total;
+        private Long transactions;
+    }
+
+    @Data
+    @Builder
+    public static class MonthRow {
+        private Integer year;
+        private Integer month;
         private CurrencyKind kind;
         private Long total;
         private Long transactions;

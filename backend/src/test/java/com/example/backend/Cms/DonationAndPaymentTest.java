@@ -120,6 +120,57 @@ class DonationAndPaymentTest {
         }
 
         @Test
+        @DisplayName("Oylik summalar ham keladi (ТЗ §42)")
+        void monthlyTotalsArePresent() {
+            User sender = user();
+            donate(sender, DonationTargetType.CREATOR, 66L, CurrencyKind.STARS, 80);
+
+            DonationReportDto report = monetizationService.donationReport(20, 30);
+
+            assertThat(report.getMonthly()).isNotEmpty();
+            assertThat(report.getMonthly()).allSatisfy(m -> {
+                assertThat(m.getYear()).isNotNull();
+                assertThat(m.getMonth()).isBetween(1, 12);
+            });
+        }
+
+        @Test
+        @DisplayName("⚠️ Oylik kunlik oynadan KENGROQ")
+        void monthlyCoversMoreThanTheDailyWindow() {
+            User sender = user();
+            DonationTransaction old = donate(sender, DonationTargetType.CREATOR, 77L,
+                    CurrencyKind.STARS, 40);
+            old.setCreatedAt(LocalDateTime.now().minusMonths(4));
+            donationRepo.save(old);
+
+            // Kunlik oyna 7 kun — 4 oy oldingi donat unga kirmaydi.
+            DonationReportDto report = monetizationService.donationReport(20, 7);
+
+            assertThat(report.getDaily())
+                    .as("4 oy oldingi donat 7 kunlik oynada bo'lmasligi kerak")
+                    .noneSatisfy(d -> assertThat(d.getTotal()).isEqualTo(40L));
+
+            // Oylik esa uzoq tendensiyani ko'rsatadi — kunlikdan
+            // hisoblab bo'lmaydigan sabab aynan shu.
+            assertThat(report.getMonthly())
+                    .anySatisfy(m -> assertThat(m.getTotal()).isEqualTo(40L));
+        }
+
+        @Test
+        @DisplayName("Oylik ham valyuta bo'yicha ajratiladi")
+        void monthlyIsSplitByCurrency() {
+            User sender = user();
+            donate(sender, DonationTargetType.CREATOR, 88L, CurrencyKind.STARS, 10);
+            donate(sender, DonationTargetType.CREATOR, 88L, CurrencyKind.UZCASTING_COIN, 20);
+
+            DonationReportDto report = monetizationService.donationReport(20, 30);
+
+            assertThat(report.getMonthly())
+                    .extracting(DonationReportDto.MonthRow::getKind)
+                    .contains(CurrencyKind.STARS, CurrencyKind.UZCASTING_COIN);
+        }
+
+        @Test
         @DisplayName("Tranzaksiyalar ro'yxati eng yangisidan boshlanadi")
         void transactionsAreNewestFirst() {
             User sender = user();

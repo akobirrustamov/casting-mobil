@@ -70,6 +70,44 @@ public interface DonationRepo extends JpaRepository<DonationTransaction, Long> {
     List<PeriodTotal> dailyTotals(@Param("from") LocalDateTime from,
                                   @Param("to") LocalDateTime to);
 
+    /**
+     * Oylik summalar (ТЗ §42).
+     *
+     * <h2>Nima uchun kunlikdan hisoblab bo'lmaydi</h2>
+     * Kunlik kesim qisqa oyna uchun (odatda 30 kun). Oylik esa uzoq
+     * tendensiyani ko'rsatadi — «bu yil qaysi oyda ko'proq donat
+     * bo'lgan». Kunlik qatorlardan yig'ish oynadan tashqaridagi oylarni
+     * umuman ko'rsatmasdi.
+     *
+     * ⚠️ {@code extract} — JPQL standarti (Hibernate 6). Baza turiga
+     * bog'liq {@code to_char} yoki {@code date_format} ishlatilmadi:
+     * loyihada PostgreSQL ham, H2 ham bor.
+     */
+    @Query("""
+            select extract(year from d.createdAt) as year,
+                   extract(month from d.createdAt) as month,
+                   d.kind as kind,
+                   sum(d.amount) as total,
+                   count(d) as transactions
+            from DonationTransaction d
+            where d.createdAt >= :from
+            group by extract(year from d.createdAt),
+                     extract(month from d.createdAt),
+                     d.kind
+            order by extract(year from d.createdAt),
+                     extract(month from d.createdAt)
+            """)
+    List<MonthTotal> monthlyTotals(@Param("from") LocalDateTime from);
+
+    /** Oylik kesim. */
+    interface MonthTotal {
+        Integer getYear();
+        Integer getMonth();
+        com.example.backend.Cms.Enums.CurrencyKind getKind();
+        Long getTotal();
+        Long getTransactions();
+    }
+
     /** Proyeksiya — entity o'rniga faqat kerakli ustunlar (§66). */
     interface KindTotal {
         com.example.backend.Cms.Enums.CurrencyKind getKind();

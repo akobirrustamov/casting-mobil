@@ -873,15 +873,34 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 
 ### Hisobot (§42)
 
-- `[x]` `GET /donations/report` — valyuta bo'yicha jamlanma · top
-  ijodkorlar · top kontent · kunlik summalar
+- `[x]` `GET /donations/report` — jami · valyuta bo'yicha jamlanma · top
+  ijodkorlar · top kontent · **kunlik** · **oylik** summalar
+- `[x]` ⚠️ **Oylik qo'shildi** — ilgari faqat kunlik bor edi. Uni
+  kunlikdan hisoblab bo'lmaydi: kunlik kesim qisqa oyna uchun (odatda
+  30 kun), oylik esa 12 oylik tendensiyani ko'rsatadi. Kunlik
+  qatorlardan yig'ish oynadan tashqaridagi oylarni umuman
+  ko'rsatmasdi
+- `[x]` `extract(year/month ...)` — JPQL standarti. Bazaga bog'liq
+  `to_char` yoki `date_format` ishlatilmadi: loyihada PostgreSQL ham,
+  H2 ham bor
 - `[x]` ⚠️ **STARS va COIN QO'SHILMAYDI.** Ularni bitta «jami» ga qo'shish
   10 so'm va 10 dollarni qo'shishday bo'lardi — kurslari alohida
 - `[x]` **Top ijodkorlar va top kontent ALOHIDA ro'yxat** — ilgari faqat
   aralash «top nishonlar» bor edi
 - `[x]` `GET /donations/transactions` — sahifalangan ro'yxat
-- `[x]` ⚠️ **O'zgarmas tarix**: tahrirlash va o'chirish endpointi ataylab
-  YO'Q. Moliyaviy yozuv hard delete qilinmaydi
+- `[x]` ⚠️ **O'zgarmas tarix ARXITEKTURA TESTI bilan qo'riqlanadi.**
+  Tahrirlash va o'chirish endpointi ataylab yo'q — lekin `DonationRepo`
+  `JpaRepository` dan meros oladi, ya'ni `delete`, `deleteById` va
+  `deleteAll` har qanday chaqiruvchiga OCHIQ turadi. Ertaga kimdir «bu
+  sinov donatlarini tozalab tashlay» deb bir qator yozib qo'yishi mumkin:
+  kod ishlaydi, testlar yashil, moliyaviy tarix esa qaytarib bo'lmaydigan
+  tarzda yo'qoladi.
+
+  `FinancialHistoryImmutableTest` kod matnini o'qiydi va `donationRepo` ·
+  `purchaseRepo` · `subscriptionRepo` ustidagi o'chirish chaqiruvini
+  topsa yiqiladi. Ijobiy nazorat + haddan oshmaslik testi ham bor
+  (media va yuklash sessiyalari o'chirilishi MUMKIN — ular moliyaviy
+  yozuv emas)
 - `[x]` `DonationAndPaymentTest` — 9 test
 
 ### To'lov (§44)
@@ -1038,6 +1057,7 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 | `PremiumGiftTest` | 15 | **ТЗ §38** — telefon/email/ID qidiruvi, audit |
 | `PremiumRightsTest` | 4 | **ТЗ §37** — qoida bir joyda, sochilishga to'siq |
 | `TariffModuleTest` | 16 | **ТЗ §36** — BigDecimal, seed narxlari, tarif muddati |
+| `FinancialHistoryImmutableTest` | 5 | **ТЗ §42** — moliyaviy tarix o'chirilmaydi |
 | `SettingValidationTest` | 12 | **ТЗ §40/§41** — xato narx saqlanmaydi |
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
 | `DonationFlowTest` | 13 | **ТЗ §39** — donat yuborish, nishon, balans |
