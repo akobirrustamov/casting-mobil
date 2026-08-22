@@ -118,6 +118,82 @@ class PanelUiRequirementsTest {
     }
 
     @Nested
+    @DisplayName("Qidiruv va sahifalash")
+    class SearchAndPaging {
+
+        /**
+         * Cheksiz o'sadigan ro'yxatlar.
+         *
+         * ⚠️ Bu ro'yxatga QO'SHILMAGANLAR ataylab tashqarida:
+         * <ul>
+         *   <li>{@code TariffsPage} — tariflar bir nechta (ТЗ §36 da
+         *       to'rttasi). Sahifalash u yerda shovqin bo'lardi;</li>
+         *   <li>{@code HomepagePage} — bo'limlar soni enum bilan
+         *       CHEKLANGAN (13 ta), ular o'smaydi;</li>
+         *   <li>{@code SettingsPage}, {@code ReportsPage},
+         *       {@code DashboardPage} — ro'yxat emas.</li>
+         * </ul>
+         *
+         * Qoidani hamma joyga yoyish testni qo'pol qilardi: u haqiqiy
+         * muammoni emas, shaklni tekshirardi.
+         */
+        private static final List<String> UNBOUNDED_LISTS = List.of(
+                "ContentPage.jsx",
+                "CreatorsPage.jsx",
+                "TaxonomyPage.jsx",
+                "MediaPage.jsx",
+                "StaffPage.jsx",
+                "UsersPage.jsx",
+                "CommentsPage.jsx",
+                "NotificationsPage.jsx",
+                "AuditPage.jsx",
+                "DonationsPage.jsx");
+
+        @Test
+        @DisplayName("⚠️ Cheksiz o'sadigan ro'yxatda QIDIRUV bor")
+        void unboundedListsHaveSearch() throws IOException {
+            List<String> offenders = new ArrayList<>();
+
+            for (String page : UNBOUNDED_LISTS) {
+                String src = Files.readString(PAGES.resolve(page));
+                // Donatlar tarixida qidiruv o'rniga hisobot filtri bor —
+                // u alohida ko'rib chiqilgan.
+                if (page.equals("DonationsPage.jsx")) {
+                    continue;
+                }
+                if (!src.contains("SearchInput")) {
+                    offenders.add(page);
+                }
+            }
+
+            assertThat(offenders)
+                    .as("Ro'yxat cheksiz o'sadi, lekin qidiruv yo'q. Admin "
+                            + "kerakli yozuvni sahifalab qidirishga majbur "
+                            + "bo'lardi.")
+                    .isEmpty();
+        }
+
+        @Test
+        @DisplayName("⚠️ Cheksiz o'sadigan ro'yxatda SAHIFALASH bor")
+        void unboundedListsHavePagination() throws IOException {
+            List<String> offenders = new ArrayList<>();
+
+            for (String page : UNBOUNDED_LISTS) {
+                String src = Files.readString(PAGES.resolve(page));
+                if (!src.contains("Pagination")) {
+                    offenders.add(page);
+                }
+            }
+
+            assertThat(offenders)
+                    .as("Ro'yxat cheksiz o'sadi, lekin sahifalash yo'q. "
+                            + "Butun jadval bitta so'rovda kelardi va "
+                            + "platforma o'sgani sari sahifa sekinlashardi.")
+                    .isEmpty();
+        }
+    }
+
+    @Nested
     @DisplayName("Buzuvchi amallar tasdiqlanadi")
     class Confirmation {
 

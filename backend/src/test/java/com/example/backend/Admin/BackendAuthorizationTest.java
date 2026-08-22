@@ -123,7 +123,7 @@ class BackendAuthorizationTest {
             String worker = token("+998900001011", PlatformRole.WORKER,
                     Permission.CONTENT_VIEW);
 
-            mockMvc.perform(get("/api/v1/app/admin/staff")
+            mockMvc.perform(get("/api/v1/app/admin/staff").param("size", "200")
                             .header("Authorization", "Bearer " + worker))
                     .andExpect(status().isForbidden());
 

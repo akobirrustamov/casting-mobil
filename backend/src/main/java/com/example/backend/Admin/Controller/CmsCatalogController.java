@@ -60,35 +60,76 @@ public class CmsCatalogController {
 
     // ------------------------------------------------------------ categories
 
+    /**
+     * Kategoriyalar — sahifalangan va qidiruvli (ТЗ §51).
+     *
+     * ⚠️ Ilgari {@code findAll()} edi: panel har ochilganda BUTUN jadval
+     * kelardi. Kategoriya soni cheklanmagan va platforma o'sgani sari
+     * ro'yxat uzayardi.
+     *
+     * ⚠️ Sahifasiz eski chaqiruv ham ishlashi kerak — panelning boshqa
+     * joylarida (kontent muharriri, filtrlar) to'liq ro'yxat kerak.
+     * Shuning uchun {@code size} kattaroq bo'lishi mumkin.
+     */
     @GetMapping("/categories")
-    public ResponseEntity<List<CategoryDto>> categories() {
+    public ResponseEntity<PageResponse<CategoryDto>> categories(
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+
         require(Permission.CATEGORY_VIEW);
-        return ResponseEntity.ok(categoryRepo.findAll(Sort.by("sortOrder"))
-                .stream().map(CategoryDto::from).toList());
+        return ResponseEntity.ok(PageResponse.of(
+                categoryRepo.searchPage(query(q),
+                        pageable(page, size, Sort.by("sortOrder"))),
+                CategoryDto::from));
     }
 
     // ---------------------------------------------------------------- genres
 
+    /** Janrlar — sahifalangan va qidiruvli (ТЗ §51). */
     @GetMapping("/genres")
-    public ResponseEntity<List<GenreDto>> genres() {
+    public ResponseEntity<PageResponse<GenreDto>> genres(
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+
         require(Permission.GENRE_VIEW);
-        return ResponseEntity.ok(genreRepo.findAll(Sort.by("sortOrder"))
-                .stream().map(GenreDto::from).toList());
+        return ResponseEntity.ok(PageResponse.of(
+                genreRepo.searchPage(query(q),
+                        pageable(page, size, Sort.by("sortOrder"))),
+                GenreDto::from));
     }
 
     // -------------------------------------------------------------- creators
 
+    /**
+     * Ijodkorlar — sahifalangan va qidiruvli (ТЗ §51).
+     *
+     * ⚠️ Ilgari qidiruv bor edi, lekin natija {@code List} bo'lib
+     * qaytardi va JAMI son noma'lum edi — panel «3-sahifadan 5-sahifaga»
+     * o'tishni ko'rsata olmasdi. Qidiruvsiz esa BUTUN jadval kelardi.
+     */
     @GetMapping("/creators")
-    public ResponseEntity<List<CreatorDto>> creators(
+    public ResponseEntity<PageResponse<CreatorDto>> creators(
             @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
+
         require(Permission.CREATOR_VIEW);
-        if (q != null && q.trim().length() >= 2) {
-            return ResponseEntity.ok(creatorRepo.search(q.trim(), pageable(0, size, Sort.unsorted()))
-                    .stream().map(CreatorDto::from).toList());
-        }
-        return ResponseEntity.ok(creatorRepo.findAll(Sort.by("sortOrder"))
-                .stream().map(CreatorDto::from).toList());
+        return ResponseEntity.ok(PageResponse.of(
+                creatorRepo.searchPage(query(q),
+                        pageable(page, size, Sort.by("sortOrder"))),
+                CreatorDto::from));
+    }
+
+    /**
+     * Qidiruv matnini tayyorlaydi.
+     *
+     * Kamida 2 belgi: bitta harf butun jadvalni skanerlashiga arzimaydi
+     * va natija ham foydasiz bo'lardi.
+     */
+    private String query(String q) {
+        return q == null || q.trim().length() < 2 ? null : q.trim();
     }
 
     // --------------------------------------------------------------- content

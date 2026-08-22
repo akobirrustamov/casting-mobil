@@ -89,9 +89,16 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
     setLocale('UZ');
     setError(null);
     setDirty(false);
-    adminApi.categories().then(setCategories).catch(() => setCategories([]));
-    adminApi.genres().then(setGenres).catch(() => setGenres([]));
-    adminApi.creators({ size: 100 }).then(setCreators).catch(() => setCreators([]));
+    // ⚠️ Bu yerda TO'LIQ ro'yxat kerak: ular ochiluvchi ro'yxatlarga
+    // to'ldiriladi, sahifalanmaydi. Shuning uchun katta `size` so'raladi
+    // va `items` ochib olinadi.
+    const all = { size: 200 };
+    adminApi.categories(all).then((r) => setCategories(r.items || []))
+      .catch(() => setCategories([]));
+    adminApi.genres(all).then((r) => setGenres(r.items || []))
+      .catch(() => setGenres([]));
+    adminApi.creators(all).then((r) => setCreators(r.items || []))
+      .catch(() => setCreators([]));
   }, [open]);
 
   // Tahrirlashda mavjud qiymatlarni yuklaymiz

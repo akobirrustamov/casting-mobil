@@ -233,11 +233,11 @@ export const adminApi = {
   createCreator: (body) => api.post('/api/v1/app/admin/creators', body),
   updateCreator: (id, body) => api.put(`/api/v1/app/admin/creators/${id}`, body),
 
-  categories: () => api.get('/api/v1/app/admin/categories'),
+  categories: (params) => api.get('/api/v1/app/admin/categories', params),
   createCategory: (body) => api.post('/api/v1/app/admin/categories', body),
   updateCategory: (id, body) => api.put(`/api/v1/app/admin/categories/${id}`, body),
 
-  genres: () => api.get('/api/v1/app/admin/genres'),
+  genres: (params) => api.get('/api/v1/app/admin/genres', params),
   createGenre: (body) => api.post('/api/v1/app/admin/genres', body),
   updateGenre: (id, body) => api.put(`/api/v1/app/admin/genres/${id}`, body),
 
@@ -301,5 +301,5 @@ export const adminApi = {
 
   auditLogs: (params) => api.get('/api/v1/app/admin/audit-logs', params),
 
-  staff: () => api.get('/api/v1/app/admin/staff'),
+  staff: (params) => api.get('/api/v1/app/admin/staff', params),
 };

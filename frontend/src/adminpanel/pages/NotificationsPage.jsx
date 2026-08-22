@@ -7,7 +7,7 @@ import LocaleTabs from '../components/LocaleTabs';
 import MediaField from '../components/MediaField';
 import Modal from '../components/Modal';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
-import { Badge, PageHeader, Pagination, TableWrap } from '../components/Ui';
+import { Badge, PageHeader, Pagination, SearchInput, TableWrap } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
 
 const TYPES = ['APP_NOTIFICATION', 'CASTING_NOTIFICATION'];
@@ -27,8 +27,13 @@ export default function NotificationsPage() {
   const { t } = usePanelI18n();
   const { can } = useAuth();
   const [page, setPage] = useState(0);
+  const [q, setQ] = useState('');
   const { data, error, loading, reload } = useApi(
-    () => adminApi.notifications({ page, size: 20 }), [page]);
+    () => adminApi.notifications({ q: q || undefined, page, size: 20 }),
+    [q, page]
+  );
+
+  const onSearch = (value) => { setQ(value); setPage(0); };
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -109,10 +114,15 @@ export default function NotificationsPage() {
       <PageHeader
         title={t('nt.title')}
         subtitle={t('nt.subtitle')}
-        right={can('NOTIFICATION_CREATE') && (
-          <button type="button" className="uz-btn uz-btn-primary" onClick={() => openForm(null)}>
-            + {t('nt.new')}
-          </button>
+        right={(
+          <div className="flex items-center gap-3 flex-wrap">
+            <SearchInput value={q} onChange={onSearch} placeholder={t('nt.search')} />
+            {can('NOTIFICATION_CREATE') && (
+              <button type="button" className="uz-btn uz-btn-primary" onClick={() => openForm(null)}>
+                + {t('nt.new')}
+              </button>
+            )}
+          </div>
         )}
       />
 

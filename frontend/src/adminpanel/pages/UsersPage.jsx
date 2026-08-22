@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
 import Modal from '../components/Modal';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
-import { Badge, PageHeader, SearchInput, TableWrap } from '../components/Ui';
+import { Badge, PageHeader, Pagination, SearchInput, TableWrap } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
 
 /**
@@ -21,8 +21,17 @@ export default function UsersPage() {
   // Tasdiqlash oqimi — barcha xavfli amallar shu yerdan o'tadi (§51).
   const confirmer = useConfirm(() => reload());
 
+  const [page, setPage] = useState(0);
+
+  // ⚠️ Ilgari `limit: 100` yuborilardi — backend §35 da `page`/`size` ga
+  // o'tkazilgan va eski parametr JIMGINA e'tiborsiz qolardi: sahifa
+  // standart 20 ta qator olib, qolganini umuman ko'rsatmasdi.
   const { data, error, loading, reload } = useApi(
-    () => adminApi.users({ q: q || undefined, limit: 100 }), [q]);
+    () => adminApi.users({ q: q || undefined, page, size: 20 }),
+    [q, page]
+  );
+
+  const onSearch = (value) => { setQ(value); setPage(0); };
 
   const [premiumFor, setPremiumFor] = useState(null);
   const [months, setMonths] = useState(1);
@@ -56,7 +65,7 @@ export default function UsersPage() {
       <PageHeader
         title={t('us.title')}
         subtitle={t('us.subtitle')}
-        right={<SearchInput value={q} onChange={setQ} placeholder={t('us.search')} />}
+        right={<SearchInput value={q} onChange={onSearch} placeholder={t('us.search')} />}
       />
       <p className="uz-muted mb-4 text-sm">{t('us.noStaffHint')}</p>
 
@@ -71,7 +80,8 @@ export default function UsersPage() {
       <div className="uz-card overflow-hidden">
         {loading ? <LoadingState /> :
          error ? <ErrorState error={error} onRetry={reload} /> :
-         !data?.length ? <EmptyState icon="👤" /> : (
+         !data?.items?.length ? <EmptyState icon="👤" /> : (
+          <>
           <TableWrap>
             <table className="uz-table">
               <thead>
@@ -86,7 +96,7 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.map((u) => (
+                {data.items.map((u) => (
                   <tr key={u.id}>
                     <td style={{ fontWeight: 600 }}>{u.name || '—'}</td>
                     <td className="uz-mono uz-muted" style={{ fontSize: 13 }}>{u.phone || u.email}</td>
@@ -161,6 +171,9 @@ export default function UsersPage() {
               </tbody>
             </table>
           </TableWrap>
+
+          <Pagination page={page} totalPages={data.totalPages} onPage={setPage} />
+          </>
         )}
       </div>
 

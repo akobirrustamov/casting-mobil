@@ -62,10 +62,10 @@ class StaffManagementTest {
     }
 
     private JsonNode findRow(String token, String id) throws Exception {
-        String body = mockMvc.perform(get("/api/v1/app/admin/staff")
+        String body = mockMvc.perform(get("/api/v1/app/admin/staff").param("size", "200")
                         .header("Authorization", "Bearer " + token))
                 .andReturn().getResponse().getContentAsString();
-        for (JsonNode row : objectMapper.readTree(body)) {
+        for (JsonNode row : objectMapper.readTree(body).get("items")) {
             if (id.equals(row.get("id").asText())) {
                 return row;
             }
@@ -125,7 +125,7 @@ class StaffManagementTest {
                     .andExpect(status().isOk())
                     .andReturn().getResponse().getContentAsString();
 
-            for (JsonNode row : objectMapper.readTree(body)) {
+            for (JsonNode row : objectMapper.readTree(body).get("items")) {
                 assertThat(row.get("role").asText()).isEqualTo("WORKER");
             }
         }
@@ -143,7 +143,7 @@ class StaffManagementTest {
                         .andExpect(status().isOk())
                         .andReturn().getResponse().getContentAsString();
 
-                assertThat(objectMapper.readTree(body).size())
+                assertThat(objectMapper.readTree(body).get("items").size())
                         .as("'%s' bo'yicha qidiruv natija berishi kerak", needle)
                         .isGreaterThan(0);
             }
@@ -166,7 +166,7 @@ class StaffManagementTest {
                     .andReturn().getResponse().getContentAsString();
 
             boolean found = false;
-            for (JsonNode row : objectMapper.readTree(body)) {
+            for (JsonNode row : objectMapper.readTree(body).get("items")) {
                 assertThat(row.get("status").asText()).isEqualTo("INACTIVE");
                 if (id.equals(row.get("id").asText())) {
                     found = true;
@@ -339,10 +339,10 @@ class StaffManagementTest {
     }
 
     private String findRowByPhone(String token, String phone) throws Exception {
-        String body = mockMvc.perform(get("/api/v1/app/admin/staff")
+        String body = mockMvc.perform(get("/api/v1/app/admin/staff").param("size", "200")
                         .header("Authorization", "Bearer " + token))
                 .andReturn().getResponse().getContentAsString();
-        for (JsonNode row : objectMapper.readTree(body)) {
+        for (JsonNode row : objectMapper.readTree(body).get("items")) {
             if (phone.equals(row.get("phone").asText())) {
                 return row.get("id").asText();
             }

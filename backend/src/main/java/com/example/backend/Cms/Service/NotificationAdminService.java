@@ -47,10 +47,28 @@ public class NotificationAdminService {
 
     @Transactional(readOnly = true)
     public Page<Notification> list(Pageable pageable) {
-        Page<Notification> page = notificationRepo.findAllByOrderByCreatedAtDesc(pageable);
-        // Sahifa toza limit bilan olindi; tarjimalar bitta so'rov bilan
-        // to'ldiriladi. Batafsil: PageHydrator.
-        return PageHydrator.warm(page, Notification::getId, notificationRepo::findAllByIdIn);
+        return list(null, pageable);
+    }
+
+    /**
+     * Ro'yxat, ixtiyoriy qidiruv bilan (ТЗ §51).
+     *
+     * Qidiruv matni kamida 2 belgi: bitta harf butun jadvalni
+     * skanerlashiga arzimaydi.
+     */
+    @Transactional(readOnly = true)
+    public Page<Notification> list(String query, Pageable pageable) {
+        String q = query == null || query.trim().length() < 2 ? null : query.trim();
+        Page<Notification> page = q == null
+                ? notificationRepo.findAllByOrderByCreatedAtDesc(pageable)
+                : notificationRepo.search(q, pageable);
+
+        // Tarjimalarni bitta so'rovda to'ldiramiz (N+1 emas).
+        if (!page.isEmpty()) {
+            notificationRepo.findAllByIdIn(
+                    page.getContent().stream().map(Notification::getId).toList());
+        }
+        return page;
     }
 
     @Transactional

@@ -24,6 +24,33 @@ public interface NotificationRepo extends JpaRepository<Notification, Long> {
      */
     Page<Notification> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
+    /**
+     * Sarlavha va matn bo'yicha qidiruv (ТЗ §51).
+     *
+     * ⚠️ Qidiruv TARJIMALARDA: bildirishnoma matni uch tilda saqlanadi
+     * va admin qaysi tilda yozishi noma'lum.
+     *
+     * ⚠️ `@EntityGraph` bu yerda YO'Q: `distinct` bilan birga to-many
+     * fetch join sahifalashni buzardi. Tarjimalar `findAllByIdIn` bilan
+     * alohida to'ldiriladi.
+     */
+    @org.springframework.data.jpa.repository.Query(value = """
+            select distinct n from Notification n
+            left join n.translations t
+            where lower(t.title) like lower(concat('%', :q, '%'))
+               or lower(t.body) like lower(concat('%', :q, '%'))
+            order by n.createdAt desc
+            """,
+            countQuery = """
+            select count(distinct n) from Notification n
+            left join n.translations t
+            where lower(t.title) like lower(concat('%', :q, '%'))
+               or lower(t.body) like lower(concat('%', :q, '%'))
+            """)
+    Page<Notification> search(
+            @org.springframework.data.repository.query.Param("q") String q,
+            Pageable pageable);
+
     /** Sahifadagi elementlar uchun tarjimalarni bitta so'rovda oladi. */
     @EntityGraph(attributePaths = "translations")
     List<Notification> findAllByIdIn(Collection<Long> ids);

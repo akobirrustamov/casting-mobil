@@ -1025,10 +1025,32 @@ tashlansa maydon baribir ko'rinardi).
 - `[x]` `useConfirm` hooki — har bir sahifada «qaysi element
   tasdiqlanmoqda» holatini qo'lda saqlash takrorlanish edi va bitta
   joyda unutilsa amal tasdiqsiz bajarilardi
-- `[x]` `PanelUiRequirementsTest` — 5 test, mutatsiya bilan tekshirilgan
-- `[ ]` Qidiruv va sahifalash ba'zi ro'yxatlarda yo'q (`MediaPage`,
-  `StaffPage`, `TaxonomyPage`, `TariffsPage`, `HomepagePage`,
-  `CreatorsPage`) — backend qo'llab-quvvatlaydi, panel qismi qoldi
+- `[x]` `PanelUiRequirementsTest` — 7 test, mutatsiya bilan tekshirilgan
+- `[x]` **Qidiruv va sahifalash** — cheksiz o'sadigan barcha ro'yxatlarda
+
+  ⚠️ Bo'shliq BACKENDDA ham bor edi: kategoriya, janr, ijodkor va xodim
+  ro'yxatlari `findAll()` qaytarardi. Panel sahifalay olmaydigan narsani
+  sahifalay olmaydi — avval backend tuzatildi:
+  - `CategoryRepo.searchPage` · `GenreRepo.searchPage` ·
+    `CreatorRepo.searchPage` — sahifalangan, **tarjimalarda** qidiradi
+    (nom uch tilda saqlanadi va admin qaysi tilda yozishi noma'lum);
+  - `NotificationRepo.search` — sarlavha va matn bo'yicha;
+  - xodimlar ro'yxati `PageResponse.ofList` bilan **xotirada** kesiladi:
+    filtr allaqachon xotirada (eski sxema muzlatilgan) va uni SQL'ga
+    ko'chirish katta o'zgarish bo'lardi, foydasi esa yo'q
+
+- `[x]` ⚠️ **§35 dagi o'zgarishim frontendni JIMGINA buzgan ekan.**
+  `UsersPage` hamon eski `limit: 100` yuborardi — backend `page`/`size`
+  ga o'tkazilgan va eski parametr e'tiborsiz qolardi: sahifa standart
+  20 ta qator olib, qolganini umuman ko'rsatmasdi. Buni §51 testi
+  topdi
+- `[x]` ⚠️ **Sahifalash CHEKLANGAN ro'yxatlarga qo'yilmadi**:
+  `TariffsPage` (tariflar bir nechta), `HomepagePage` (bo'limlar soni
+  enum bilan cheklangan). Qoidani hamma joyga yoyish testni qo'pol
+  qilardi — u haqiqiy muammoni emas, shaklni tekshirardi
+- `[x]` Filtr yoki qidiruv o'zgarganda **birinchi sahifaga qaytiladi**:
+  aks holda «3-sahifa» da turib filtrlasa natija bo'sh ko'rinardi va
+  foydalanuvchi buni «hech narsa topilmadi» deb tushunardi
 
 ## 23.7. Brend va dizayn tokenlari `[x]` — ТЗ §50
 
@@ -1313,7 +1335,7 @@ CONTENT_VIEW  →  CONTENT_PLAY  →  CONTENT_COMPLETE
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
 | `ReportFiltersTest` | 10 | **ТЗ §47** — davr va obyekt filtrlari, kesishma |
 | `ContentAnalyticsTest` | 9 | **ТЗ §46** — voronka, har bir kontent uchun hisobot |
-| `PanelUiRequirementsTest` | 5 | **ТЗ §51** — holatlar va tasdiqlash |
+| `PanelUiRequirementsTest` | 7 | **ТЗ §51** — holatlar va tasdiqlash |
 | `DesignTokensTest` | 7 | **ТЗ §50** — ranglar bir joyda, holat ranglari mustaqil |
 | `SidebarPermissionsTest` | 3 | **ТЗ §49** — menyu va backend bir xil ruxsat nomlari |
 | `DashboardMetricsTest` | 18 | **ТЗ §45** — 20 ko'rsatkich, soxta statistika yo'q |

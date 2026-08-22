@@ -155,11 +155,11 @@ class SuperAdminScopeTest {
                             .content("[\"CONTENT_VIEW\",\"CONTENT_EDIT\"]"))
                     .andExpect(status().isOk());
 
-            String after = mockMvc.perform(get("/api/v1/app/admin/staff")
+            String after = mockMvc.perform(get("/api/v1/app/admin/staff").param("size", "200")
                             .header("Authorization", "Bearer " + token))
                     .andReturn().getResponse().getContentAsString();
 
-            for (var row : objectMapper.readTree(after)) {
+            for (var row : objectMapper.readTree(after).get("items")) {
                 if (id.equals(row.get("id").asText())) {
                     var perms = objectMapper.convertValue(row.get("permissions"),
                             String[].class);
@@ -190,12 +190,12 @@ class SuperAdminScopeTest {
             staff.tokenForRole("+998900000931", PlatformRole.HYPER_ADMIN,
                     EnumSet.noneOf(Permission.class));
 
-            String body = mockMvc.perform(get("/api/v1/app/admin/staff")
+            String body = mockMvc.perform(get("/api/v1/app/admin/staff").param("size", "200")
                             .header("Authorization", "Bearer " + superAdmin()))
                     .andExpect(status().isOk())
                     .andReturn().getResponse().getContentAsString();
 
-            for (var row : objectMapper.readTree(body)) {
+            for (var row : objectMapper.readTree(body).get("items")) {
                 assertThat(row.get("role").asText())
                         .as("SUPER_ADMIN faqat o'zidan quyi rollarni ko'rishi kerak")
                         .isNotEqualTo("HYPER_ADMIN");

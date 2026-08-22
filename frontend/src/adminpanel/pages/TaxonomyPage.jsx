@@ -3,7 +3,7 @@ import { adminApi, mediaUrl } from '../api/client';
 import { useApi } from '../api/useApi';
 import { useAuth } from '../auth/AuthContext';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
-import { Badge, PageHeader, TableWrap } from '../components/Ui';
+import { Badge, PageHeader, Pagination, SearchInput, TableWrap } from '../components/Ui';
 import { LOCALES, toBackendLocale, usePanelI18n } from '../i18n';
 import TaxonomyForm from './TaxonomyForm';
 
@@ -16,25 +16,41 @@ export default function TaxonomyPage({ kind }) {
   const { can } = useAuth();
   const isCategory = kind === 'category';
   const [formOpen, setFormOpen] = useState(false);
+  const [q, setQ] = useState('');
+  const [page, setPage] = useState(0);
   const [editing, setEditing] = useState(null);
   const canCreate = can(isCategory ? 'CATEGORY_CREATE' : 'GENRE_CREATE');
   const canEdit = can(isCategory ? 'CATEGORY_EDIT' : 'GENRE_EDIT');
 
+  // Qidiruv va sahifalash BACKENDDA: ro'yxat cheklanmagan va butun
+  // jadvalni tortib olib xotirada filtrlash platforma o'sgani sari
+  // sekinlashardi (ТЗ §51).
+  const params = { q: q || undefined, page, size: 20 };
   const { data, error, loading, reload } = useApi(
-    () => (isCategory ? adminApi.categories() : adminApi.genres()),
-    [kind]
+    () => (isCategory ? adminApi.categories(params) : adminApi.genres(params)),
+    [kind, q, page]
   );
+
+  // Qidiruv o'zgarganda birinchi sahifaga qaytamiz: aks holda
+  // «3-sahifa» da turib qidirsa, natija bo'sh ko'rinardi.
+  const onSearch = (value) => { setQ(value); setPage(0); };
 
   return (
     <>
       <PageHeader
         title={isCategory ? t('categories.title') : t('genres.title')}
         subtitle={isCategory ? t('categories.subtitle') : t('genres.subtitle')}
-        right={canCreate && (
-          <button type="button" className="uz-btn uz-btn-primary"
-                  onClick={() => { setEditing(null); setFormOpen(true); }}>
-            + {t('common.create')}
-          </button>
+        right={(
+          <div className="flex items-center gap-3 flex-wrap">
+            <SearchInput value={q} onChange={onSearch}
+                         placeholder={t('common.search')} />
+            {canCreate && (
+            <button type="button" className="uz-btn uz-btn-primary"
+                    onClick={() => { setEditing(null); setFormOpen(true); }}>
+              + {t('common.create')}
+            </button>
+            )}
+          </div>
         )}
       />
 
@@ -43,7 +59,7 @@ export default function TaxonomyPage({ kind }) {
           <LoadingState />
         ) : error ? (
           <ErrorState error={error} onRetry={reload} />
-        ) : !data?.length ? (
+        ) : !data?.items?.length ? (
           <EmptyState icon="▤" />
         ) : (
           <TableWrap>
@@ -59,7 +75,7 @@ export default function TaxonomyPage({ kind }) {
                 </tr>
               </thead>
               <tbody>
-                {data.map((row) => (
+                {data.items.map((row) => (
                   <tr key={row.id}>
                     {isCategory && (
                       <td>
@@ -102,6 +118,10 @@ export default function TaxonomyPage({ kind }) {
               </tbody>
             </table>
           </TableWrap>
+        )}
+
+        {data?.items?.length > 0 && (
+          <Pagination page={page} totalPages={data.totalPages} onPage={setPage} />
         )}
       </div>
 

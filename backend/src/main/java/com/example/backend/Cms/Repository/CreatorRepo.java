@@ -39,4 +39,30 @@ public interface CreatorRepo extends JpaRepository<Creator, Long> {
                or lower(coalesce(t.lastName, '')) like lower(concat('%', :q, '%'))
             """)
     List<Creator> search(@Param("q") String q, Pageable pageable);
+
+    /**
+     * Sahifalangan ro'yxat, ixtiyoriy qidiruv bilan (ТЗ §51).
+     *
+     * ⚠️ Mavjud {@link #search} metodi {@code List} qaytaradi va JAMI
+     * sonni bilmaydi — panel «3-sahifadan 5-sahifaga» o'tishni ko'rsata
+     * olmasdi. Bu esa {@code Page}: jami son bilan.
+     */
+    @Query(value = """
+            select distinct c from Creator c
+            left join c.translations t
+            where :q is null
+               or lower(t.displayName) like lower(concat('%', :q, '%'))
+               or lower(t.firstName) like lower(concat('%', :q, '%'))
+               or lower(t.lastName) like lower(concat('%', :q, '%'))
+            """,
+            countQuery = """
+            select count(distinct c) from Creator c
+            left join c.translations t
+            where :q is null
+               or lower(t.displayName) like lower(concat('%', :q, '%'))
+               or lower(t.firstName) like lower(concat('%', :q, '%'))
+               or lower(t.lastName) like lower(concat('%', :q, '%'))
+            """)
+    org.springframework.data.domain.Page<Creator> searchPage(
+            @Param("q") String q, Pageable pageable);
 }

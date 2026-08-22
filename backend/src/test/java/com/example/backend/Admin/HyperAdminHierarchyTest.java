@@ -157,12 +157,12 @@ class HyperAdminHierarchyTest {
         void seesEveryStaffAccount() throws Exception {
             String token = hyperAdmin();
 
-            String body = mockMvc.perform(get("/api/v1/app/admin/staff")
+            String body = mockMvc.perform(get("/api/v1/app/admin/staff").param("size", "200")
                             .header("Authorization", "Bearer " + token))
                     .andExpect(status().isOk())
                     .andReturn().getResponse().getContentAsString();
 
-            var rows = objectMapper.readTree(body);
+            var rows = objectMapper.readTree(body).get("items");
             long hyperCount = 0;
             boolean selfManageable = true;
             for (var row : rows) {

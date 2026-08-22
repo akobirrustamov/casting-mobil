@@ -98,10 +98,11 @@ public class ModerationController {
 
     @GetMapping("/notifications")
     public ResponseEntity<PageResponse<NotificationDto>> notifications(
+            @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         require(Permission.NOTIFICATION_VIEW);
-        var result = notificationService.list(page(page, size, Sort.unsorted()));
+        var result = notificationService.list(q, page(page, size, Sort.unsorted()));
         return ResponseEntity.ok(PageResponse.of(result, NotificationDto::from));
     }
 

@@ -3,6 +3,7 @@ package com.example.backend.Admin.Controller;
 import com.example.backend.Admin.CurrentUser;
 import com.example.backend.Admin.RequirePermission;
 import com.example.backend.Admin.Dto.AdminUserDto;
+import com.example.backend.Admin.Dto.PageResponse;
 import com.example.backend.Admin.Dto.StaffCreateRequest;
 import com.example.backend.Admin.Dto.StaffPasswordRequest;
 import com.example.backend.Admin.Dto.StaffUpdateRequest;
@@ -73,14 +74,16 @@ public class StaffController {
      * ⚠️ Agar xodimlar soni minglarga yetsa — buni SQL'ga ko'chirish kerak.
      */
     @GetMapping
-    public ResponseEntity<List<AdminUserDto>> list(
+    public ResponseEntity<PageResponse<AdminUserDto>> list(
             @RequestParam(required = false) PlatformRole role,
             @RequestParam(required = false) StaffStatus status,
             @RequestParam(required = false) String q,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdFrom,
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdTo) {
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdTo,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
         User actor = CurrentUser.get();
         PlatformRole actorRole = permissionService.roleOf(actor);
@@ -145,7 +148,17 @@ public class StaffController {
                 .sorted(Comparator.comparing((AdminUserDto d) -> d.getRole().getLevel()).reversed())
                 .toList();
 
-        return ResponseEntity.ok(staff);
+        // ⚠️ Sahifa XOTIRADA kesiladi.
+        //
+        // Filtrlash yuqorida xotirada bajariladi (eski sxema muzlatilgan
+        // va xodimlar soni o'nlab). Sahifani SQL'da kesish uchun butun
+        // filtrni ham SQL'ga ko'chirish kerak bo'lardi — bu esa katta
+        // o'zgarish, foydasi esa yo'q: kesiladigan ro'yxat allaqachon
+        // xotirada.
+        //
+        // ⚠️ Xodimlar soni minglarga yetsa — ikkalasini ham SQL'ga
+        // ko'chirish kerak.
+        return ResponseEntity.ok(PageResponse.ofList(staff, page, Math.min(Math.max(size, 1), 200)));
     }
 
     @PostMapping

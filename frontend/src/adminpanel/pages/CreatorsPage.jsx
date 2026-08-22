@@ -3,7 +3,7 @@ import { adminApi, mediaUrl } from '../api/client';
 import { useApi } from '../api/useApi';
 import { useAuth } from '../auth/AuthContext';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
-import { Badge, PageHeader, SearchInput } from '../components/Ui';
+import { Badge, PageHeader, Pagination, SearchInput } from '../components/Ui';
 import { toBackendLocale, usePanelI18n } from '../i18n';
 import CreatorForm from './CreatorForm';
 
@@ -13,10 +13,18 @@ export default function CreatorsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [q, setQ] = useState('');
+  const [page, setPage] = useState(0);
+
+  // ⚠️ Qidiruvsiz ilgari BUTUN jadval kelardi. Ijodkorlar soni
+  // cheklanmagan (ТЗ §24: har bir kino uchun aktyorlar, rejissyor,
+  // operator...) — ro'yxat tez o'sadi.
   const { data, error, loading, reload } = useApi(
-    () => adminApi.creators({ q: q || undefined }),
-    [q]
+    () => adminApi.creators({ q: q || undefined, page, size: 24 }),
+    [q, page]
   );
+
+  // Qidiruv o'zgarganda birinchi sahifaga qaytamiz.
+  const onSearch = (value) => { setQ(value); setPage(0); };
 
   const bl = toBackendLocale(locale);
   const nameOf = (c) => {
@@ -32,7 +40,7 @@ export default function CreatorsPage() {
         subtitle={t('creators.subtitle')}
         right={
           <>
-            <SearchInput value={q} onChange={setQ} placeholder={t('creators.search')} />
+            <SearchInput value={q} onChange={onSearch} placeholder={t('creators.search')} />
             {can('CREATOR_CREATE') && (
               <button type="button" className="uz-btn uz-btn-primary"
                       onClick={() => { setEditing(null); setFormOpen(true); }}>
@@ -47,11 +55,11 @@ export default function CreatorsPage() {
         <div className="uz-card"><LoadingState /></div>
       ) : error ? (
         <div className="uz-card"><ErrorState error={error} onRetry={reload} /></div>
-      ) : !data?.length ? (
+      ) : !data?.items?.length ? (
         <div className="uz-card"><EmptyState icon="★" /></div>
       ) : (
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))' }}>
-          {data.map((c) => (
+          {data.items.map((c) => (
             <div key={c.id} className="uz-card uz-card-hover overflow-hidden">
               <div style={{ position: 'relative', aspectRatio: '16 / 9', background: 'var(--p-surface-2)' }}>
                 {c.coverMediaId && (
@@ -103,6 +111,10 @@ export default function CreatorsPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {data?.items?.length > 0 && (
+        <Pagination page={page} totalPages={data.totalPages} onPage={setPage} />
       )}
 
       <CreatorForm
