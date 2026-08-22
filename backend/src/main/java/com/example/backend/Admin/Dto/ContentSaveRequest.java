@@ -2,6 +2,7 @@ package com.example.backend.Admin.Dto;
 
 import com.example.backend.Cms.Enums.*;
 import com.example.backend.Cms.Enums.Locale;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -65,7 +66,16 @@ public class ContentSaveRequest {
     private Boolean popular = false;
 
     /** Uch til. UZ majburiy, qolganlari ixtiyoriy (lekin tavsiya etiladi). */
-    @NotNull(message = "Tarjimalar kiritilmagan")
+    /**
+     * ⚠️ {@code @NotEmpty}, {@code @NotNull} EMAS.
+     *
+     * Maydonda standart qiymat bor ({@code new LinkedHashMap<>()}),
+     * shuning uchun u HECH QACHON null bo'lmaydi va {@code @NotNull}
+     * hech qachon ishlamasdi. Annotatsiya himoya qilayotgandek
+     * ko'rinardi, aslida o'lik edi: bo'sh tana bemalol o'tib,
+     * xato servisda — maydon nomisiz — chiqardi.
+     */
+    @NotEmpty(message = "Tarjimalar kiritilmagan")
     private Map<Locale, TranslationDto> translations = new LinkedHashMap<>();
 
     /** To'liq almashtiriladi: yuborilmagan media o'chiriladi. */

@@ -2,6 +2,7 @@ package com.example.backend.Admin.Dto;
 
 import com.example.backend.Cms.Enums.Locale;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -35,6 +36,15 @@ public class TariffSaveRequest {
     private Boolean highlighted = false;
     private Integer sortOrder = 0;
 
-    @NotNull(message = "Nomlar kiritilmagan")
+    /**
+     * ⚠️ {@code @NotEmpty}, {@code @NotNull} EMAS.
+     *
+     * Maydonda standart qiymat bor ({@code new LinkedHashMap<>()}),
+     * shuning uchun u HECH QACHON null bo'lmaydi va {@code @NotNull}
+     * hech qachon ishlamasdi. Annotatsiya himoya qilayotgandek
+     * ko'rinardi, aslida o'lik edi: bo'sh tana bemalol o'tib,
+     * xato servisda — maydon nomisiz — chiqardi.
+     */
+    @NotEmpty(message = "Nomlar kiritilmagan")
     private Map<Locale, TariffTextDto> translations = new LinkedHashMap<>();
 }

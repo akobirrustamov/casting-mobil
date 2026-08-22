@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useFieldErrors } from '../api/useFieldErrors';
 import { adminApi } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
@@ -54,6 +55,9 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
   const [locale, setLocale] = useState('UZ');
   // Tasdiqlash oqimi — saqlanmagan o'zgarish uchun (§51).
   const confirmer = useConfirm();
+
+  // Backend maydon xatolari (ТЗ §52).
+  const fields = useFieldErrors();
 
   const [form, setForm] = useState(emptyForm);
   const [categories, setCategories] = useState([]);
@@ -157,6 +161,10 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
 
   const uzTitleMissing = !form.translations?.UZ?.title?.trim();
 
+  // Backend ichma-ich maydonni `translations[UZ].title` deb yuboradi.
+  const titleError = fields.errorOf(`translations[${locale}].title`)
+    || fields.errorOf('translations');
+
   async function handleSave() {
     if (uzTitleMissing) {
       setTab('text');
@@ -207,6 +215,11 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
       onSaved();
       onClose();
     } catch (err) {
+      // ⚠️ Kontent muharriri o'nlab maydonli va OLTI bo'limli. Umumiy
+      // «Validatsiya xatosi» xabari bilan admin qaysi bo'limdagi qaysi
+      // maydonni tuzatishni bilmasdi va ularni birma-bir sinab
+      // ko'rishga majbur bo'lardi.
+      fields.apply(err);
       setError(err);
     } finally {
       setSaving(false);
@@ -376,11 +389,16 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
             </label>
             <input id="ti" className="uz-input"
                    value={form.translations?.[locale]?.title || ''}
-                   aria-invalid={locale === 'UZ' && uzTitleMissing}
+                   aria-invalid={Boolean(titleError) || (locale === 'UZ' && uzTitleMissing)}
                    onChange={(e) => setTranslation('title', e.target.value)} />
-            {locale === 'UZ' && uzTitleMissing && (
+            {/* Avval BACKEND xatosi: u haqiqiy rad etish sababi va
+                aniqroq (masalan «RU, EN tillarida to'ldirilmagan»).
+                Klient tekshiruvi esa yuborishdan oldingi ogohlantirish. */}
+            {titleError ? (
+              <div className="uz-field-error">{titleError}</div>
+            ) : locale === 'UZ' && uzTitleMissing ? (
               <div className="uz-field-error">{t('editor.uzRequired')}</div>
-            )}
+            ) : null}
           </div>
           <div className="mb-4">
             <label className="uz-label" htmlFor="sd">{t('editor.shortDesc')}</label>

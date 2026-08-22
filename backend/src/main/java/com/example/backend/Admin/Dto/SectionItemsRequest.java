@@ -16,6 +16,15 @@ import java.util.List;
 @Data
 public class SectionItemsRequest {
 
-    @NotNull(message = "Kontent ro'yxati kiritilmagan")
+    /**
+     * ⚠️ Bu yerda {@code @NotNull} ATAYLAB YO'Q.
+     *
+     * Bo'sh ro'yxat MA'NOLI: u «qatorni butunlay tozalash» degani.
+     * Maydonda standart qiymat bor, ya'ni u hech qachon null
+     * bo'lmaydi — annotatsiya himoya qilayotgandek ko'rinib,
+     * aslida hech narsa qilmasdi. Ishlamaydigan annotatsiya
+     * yo'qidan yomonroq: u tekshiruv bor degan taassurot
+     * qoldiradi.
+     */
     private List<Long> contentIds = new ArrayList<>();
 }

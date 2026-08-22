@@ -1006,6 +1006,51 @@ tashlansa maydon baribir ko'rinardi).
 - `[x]` Ko'rsatishsiz CTR — nol, nolga bo'linish yo'q
 - `[x]` `DashboardMetricsTest` — 10 test, mutatsiya bilan tekshirilgan
 
+## 23.5. Form validation `[x]` — ТЗ §52
+
+### Xato formati
+
+Loyihadagi mavjud konvensiya ТЗ so'raganiga **aynan mos** va u davom
+ettirildi:
+
+```json
+{ "code": "VALIDATION_ERROR", "message": "...", "errors": [{"field": "...", "message": "..."}] }
+```
+
+### ⚠️ To'qqizta O'LIK annotatsiya
+
+- `[x]` `@NotNull` **standart qiymatga ega maydonda hech qachon
+  ishlamaydi.** `translations` maydonlarida
+  `= new LinkedHashMap<>()` turgan — ya'ni ular hech qachon `null`
+  bo'lmaydi va annotatsiya **himoya qilayotgandek ko'rinib, aslida
+  hech narsa qilmasdi**.
+
+  Oqibati: bo'sh tana bean-validatsiyadan bemalol o'tib, xato servisda
+  chiqardi — va u yerda MAYDON NOMI yo'q. Ya'ni javobda `errors[]`
+  umuman bo'lmasdi va frontend xatoni maydon yoniga qo'ya olmasdi.
+
+  Yettitasi `@NotEmpty` ga o'tkazildi (bo'sh xarita ham rad etiladi).
+- `[x]` `contentIds` va `sectionIds` da annotatsiya **olib tashlandi**:
+  u yerda bo'sh ro'yxat MA'NOLI («qatorni tozalash», «tartibni
+  o'zgartirmaslik»). Ishlamaydigan annotatsiya yo'qidan yomonroq — u
+  tekshiruv bor degan taassurot qoldiradi
+
+### Panel maydon xatolarini ishlatadi
+
+- `[x]` ⚠️ Backend maydon xatolarini qaytarardi, lekin ularni **faqat
+  `LoginPage`** ishlatardi. Qolgan formalar umumiy «Validatsiya xatosi»
+  ko'rsatardi va foydalanuvchi o'nlab maydonli formada qaysi birini
+  tuzatishni bilmasdi
+- `[x]` `useFieldErrors` hooki — har bir formada bir xil «xatoni yoyish»
+  kodi takrorlanardi va bitta joyda unutilsa o'sha forma jimgina umumiy
+  xabarga qaytardi
+- `[x]` `TaxonomyForm` · `CreatorForm` · `ContentEditor` ulandi
+- `[x]` **Backend xatosi klient tekshiruvidan ustun** — u haqiqiy rad
+  etish sababi va aniqroq (masalan «RU, EN tillarida to'ldirilmagan»)
+- `[x]` Maydon xatosi ko'rsatilganda tepadagi umumiy xabar
+  **takrorlanmaydi**
+- `[x]` `ValidationFormatTest` — 6 test, mutatsiya bilan tekshirilgan
+
 ## 23.6. Panel UI talablari `[x]` — ТЗ §51
 
 - `[x]` **Yuklash, bo'sh va xato holati** — barcha ro'yxat sahifalarida
@@ -1335,6 +1380,7 @@ CONTENT_VIEW  →  CONTENT_PLAY  →  CONTENT_COMPLETE
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
 | `ReportFiltersTest` | 10 | **ТЗ §47** — davr va obyekt filtrlari, kesishma |
 | `ContentAnalyticsTest` | 9 | **ТЗ §46** — voronka, har bir kontent uchun hisobot |
+| `ValidationFormatTest` | 6 | **ТЗ §52** — xato formati, maydon xatolari |
 | `PanelUiRequirementsTest` | 7 | **ТЗ §51** — holatlar va tasdiqlash |
 | `DesignTokensTest` | 7 | **ТЗ §50** — ranglar bir joyda, holat ranglari mustaqil |
 | `SidebarPermissionsTest` | 3 | **ТЗ §49** — menyu va backend bir xil ruxsat nomlari |

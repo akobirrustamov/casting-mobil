@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useFieldErrors } from '../api/useFieldErrors';
 import { adminApi } from '../api/client';
 import LocaleTabs from '../components/LocaleTabs';
 import MediaField from '../components/MediaField';
@@ -24,6 +25,9 @@ export default function CreatorForm({ open, row, onClose, onSaved }) {
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  // Backend maydon xatolari (ТЗ §52).
+  const fields = useFieldErrors();
 
   useEffect(() => {
     if (!open) return;
@@ -85,6 +89,8 @@ export default function CreatorForm({ open, row, onClose, onSaved }) {
       onSaved();
       onClose();
     } catch (err) {
+      // Backend qaysi maydon noto'g'ri ekanini aytadi (§52).
+      fields.apply(err);
       setError(err);
     } finally {
       setSaving(false);
@@ -92,6 +98,10 @@ export default function CreatorForm({ open, row, onClose, onSaved }) {
   }
 
   const tr = form.translations?.[locale] || {};
+
+  // Backend ichma-ich maydonni `translations[UZ].displayName` deb yuboradi.
+  const nameError = fields.errorOf(`translations[${locale}].displayName`)
+    || fields.errorOf('translations');
 
   return (
     <Modal
@@ -138,8 +148,13 @@ export default function CreatorForm({ open, row, onClose, onSaved }) {
       <div className="mb-4">
         <label className="uz-label" htmlFor="cr-dn">{t('cr.displayName')}</label>
         <input id="cr-dn" className="uz-input" value={tr.displayName || ''}
+               aria-invalid={Boolean(nameError)}
                onChange={(e) => setTr('displayName', e.target.value)} />
-        <p className="uz-muted mt-1" style={{ fontSize: 11 }}>{t('cr.displayHint')}</p>
+        {nameError ? (
+          <div className="uz-field-error">{nameError}</div>
+        ) : (
+          <p className="uz-muted mt-1" style={{ fontSize: 11 }}>{t('cr.displayHint')}</p>
+        )}
       </div>
 
       <div className="mb-5">

@@ -27,6 +27,15 @@ public class SectionOrderRequest {
      * Ro'yxatga kirmagan bo'limlar tartibi o'zgarmaydi va ular
      * ro'yxatdagilardan keyin turadi.
      */
-    @NotNull(message = "Bo'limlar ro'yxati kiritilmagan")
+    /**
+     * ⚠️ Bu yerda {@code @NotNull} ATAYLAB YO'Q.
+     *
+     * Bo'sh ro'yxat MA'NOLI: u «tartibni o’zgartirmaslik» degani.
+     * Maydonda standart qiymat bor, ya'ni u hech qachon null
+     * bo'lmaydi — annotatsiya himoya qilayotgandek ko'rinib,
+     * aslida hech narsa qilmasdi. Ishlamaydigan annotatsiya
+     * yo'qidan yomonroq: u tekshiruv bor degan taassurot
+     * qoldiradi.
+     */
     private List<Long> sectionIds = new ArrayList<>();
 }

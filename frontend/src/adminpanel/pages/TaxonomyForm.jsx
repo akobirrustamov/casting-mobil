@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useFieldErrors } from '../api/useFieldErrors';
 import { adminApi } from '../api/client';
 import LocaleTabs from '../components/LocaleTabs';
 import MediaField from '../components/MediaField';
@@ -23,6 +24,9 @@ export default function TaxonomyForm({ open, kind, row, onClose, onSaved }) {
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  // Backend maydon xatolari (ТЗ §52).
+  const fields = useFieldErrors();
 
   useEffect(() => {
     if (!open) return;
@@ -49,6 +53,10 @@ export default function TaxonomyForm({ open, kind, row, onClose, onSaved }) {
     }));
 
   const uzMissing = !form.translations?.UZ?.title?.trim();
+
+  // Backend ichma-ich maydonni `translations[UZ].name` deb yuboradi.
+  const nameError = fields.errorOf(`translations[${locale}].name`)
+    || fields.errorOf('translations');
 
   async function save() {
     if (uzMissing) {
@@ -77,6 +85,9 @@ export default function TaxonomyForm({ open, kind, row, onClose, onSaved }) {
       onSaved();
       onClose();
     } catch (err) {
+      // Backend AYNAN qaysi maydon noto'g'ri ekanini aytadi (§52) —
+      // umumiy xabar o'rniga uni maydon yoniga qo'yamiz.
+      fields.apply(err);
       setError(err);
     } finally {
       setSaving(false);
@@ -122,11 +133,15 @@ export default function TaxonomyForm({ open, kind, row, onClose, onSaved }) {
         </label>
         <input id="tx-name" className="uz-input"
                value={form.translations?.[locale]?.title || ''}
-               aria-invalid={locale === 'UZ' && uzMissing}
+               aria-invalid={Boolean(nameError) || (locale === 'UZ' && uzMissing)}
                onChange={(e) => setTr('title', e.target.value)} />
-        {locale === 'UZ' && uzMissing && (
+        {/* Avval BACKEND xatosi: u aniqroq va u haqiqiy rad etish sababi.
+            Klient tekshiruvi esa faqat yuborishdan oldingi ogohlantirish. */}
+        {nameError ? (
+          <div className="uz-field-error">{nameError}</div>
+        ) : locale === 'UZ' && uzMissing ? (
           <div className="uz-field-error">{t('editor.uzRequired')}</div>
-        )}
+        ) : null}
       </div>
 
       {isCategory && (
