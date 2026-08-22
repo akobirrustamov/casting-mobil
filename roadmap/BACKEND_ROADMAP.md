@@ -1006,6 +1006,43 @@ tashlansa maydon baribir ko'rinardi).
 - `[x]` Ko'rsatishsiz CTR — nol, nolga bo'linish yo'q
 - `[x]` `DashboardMetricsTest` — 10 test, mutatsiya bilan tekshirilgan
 
+## 23.0. ID strategiyasi `[x]` — ТЗ §57
+
+| Modul | ID turi |
+|---|---|
+| Yangi CMS (39 entity) | **`Long` + `IDENTITY`** — istisnosiz |
+| Eski casting | aralash: `UUID` (`User`, `Attachment`), `Integer` (`CastingUser`, `News`, `Message`), `int` (`Role`) |
+
+- `[x]` **Yangi modul to'liq izchil** — 39 tadan 39 tasi `Long`
+- `[x]` Ikkita **tabiiy kalit** istisno: `PlatformSetting` (kalitning
+  o'zi — `pricing.episode.default`) va `UploadSession` (yuklash tokeni).
+  Ularga qo'shimcha raqamli ID berish faqat ortiqcha ustun qo'shardi
+- `[x]` **Eski modul TEGILMAGAN** — ID turini o'zgartirish barcha FK
+  ustunlarini qayta yozishni talab qilardi va mavjud ma'lumot bilan
+  bog'liq xavf foydadan katta (§4: casting regressiyaga uchramasin)
+- `[x]` Yangi modulda `Integer` ISHLATILMAYDI — u 2 milliardda tugaydi
+  va analitika hodisalari bu chegaraga yetishi mumkin
+
+### Chegara aniq belgilangan
+
+- `[x]` Foydalanuvchi ID si hamma joyda `UUID` — `Long` sifatida
+  saqlansa chegarada tur o'girish kerak bo'lardi va u ertami-kechmi
+  xato berardi
+- `[x]` ⚠️ **Kasting ID si aniq o'giriladi**: havola nishoni `Long`,
+  eski `CastingUser` esa `Integer`. `InternalLinkValidator` da
+  `id <= Integer.MAX_VALUE` tekshiruvi bor — yashirin o'girish jimgina
+  noto'g'ri natija berardi
+- `[x]` `IdStrategyTest` — 6 test
+
+### ⚠️ Detektorimning zaifligi
+
+Birinchi variantda naqsh faqat `private Long id` ni topardi va
+`private java.util.UUID id` e'tiborsiz qolardi — ya'ni to'liq nom
+yozgan dasturchi tekshiruvdan bemalol o'tib ketardi.
+
+Buni mutatsiya ko'rsatdi: entity'ni UUID ga o'tkazsam test **o'tib
+ketdi**. Naqsh tuzatildi va endi ikkala yozuv usulini ham ushlaydi.
+
 ## 23.1. Database qoidalari `[x]` — ТЗ §56
 
 - `[x]` PostgreSQL · Flyway migratsiyalari (V1–V22) · `ddl-auto=none`
@@ -1556,6 +1593,7 @@ CONTENT_VIEW  →  CONTENT_PLAY  →  CONTENT_COMPLETE
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
 | `ReportFiltersTest` | 10 | **ТЗ §47** — davr va obyekt filtrlari, kesishma |
 | `ContentAnalyticsTest` | 9 | **ТЗ §46** — voronka, har bir kontent uchun hisobot |
+| `IdStrategyTest` | 6 | **ТЗ §57** — ID turi izchil, eski modul tegilmagan |
 | `DatabaseRulesTest` | 7 | **ТЗ §56** — buzuvchi migratsiya yo'q, indekslar naqshga qarab |
 | `SearchIndexTest` | 4 | **ТЗ §55** — qidiruv indekslari, sxemaga moslik |
 | `CreatorSelectionTest` | 10 | **ТЗ §54** — qidirish, joyida yaratish, biriktirish |
