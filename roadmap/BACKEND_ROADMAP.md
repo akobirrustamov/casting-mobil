@@ -754,7 +754,22 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
   ikkinchi sovg'a birinchisini yeb qo'yardi va foydalanuvchi to'lagan
   muddatini yo'qotardi
 - `[x]` Bekor qilish (`revokePremium`)
-- `[x]` Har bir amal audit jurnalida: `PREMIUM_GRANTED`, `PREMIUM_REVOKED`
+- `[x]` **Har bir amal audit jurnalida** — `PREMIUM_GRANTED`,
+  `PREMIUM_REVOKED`. Yozuvda «kim, kimga, qancha muddatga, qaysi tarif»
+  ko'rinadi: faqat «premium berildi» degan qator savolga javob bermaydi
+- `[x]` Bekor qilishda **OLDINGI muddat** saqlanadi — nima yo'qotilganini
+  bilmasa, qarorni qaytarib bo'lmaydi
+- `[x]` Bekor qilish faol obunani ham yopadi (`revokedAt`, `revokedBy`)
+- `[x]` Premiumsiz foydalanuvchini bekor qilish xato bermaydi — admin
+  ikki marta bosishi mumkin, bu xato holat emas
+- `[x]` ⚠️ **Auditda parol va token YO'Q** — alohida test qo'riqlaydi
+- `[x]` `PremiumGiftTest` — 15 test. Audit talabi mutatsiya bilan
+  tekshirilgan: yozuvni o'chirsam testlar yiqiladi.
+
+  Nima uchun bu muhim: audit yozuvi bo'lmasa ham asosiy amal ishlayveradi —
+  premium beriladi, foydalanuvchi ko'radi, hech kim shikoyat qilmaydi.
+  Xato faqat oylar o'tib «bu odamga premiumni kim bergan?» degan savol
+  chiqqanda bilinadi va o'shanda javob topib bo'lmaydi
 
 ## 22.1. Kirish siyosati va narx `[x]` — ТЗ §23
 
@@ -956,6 +971,7 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 | `PremiereModuleTest` | 20 | **ТЗ §30** — maydonlar, havola, BARCHA matnlar uch tilda |
 | `HomeFeedTest` | 23 | **ТЗ §31** — bosh sahifa backenddan, qator tartibi, N+1 nazorati |
 | `NotificationModuleTest` | 30 | **ТЗ §32/§33** — rejalashtirish, soxta muvaffaqiyat yo'q |
+| `PremiumGiftTest` | 15 | **ТЗ §38** — telefon/email/ID qidiruvi, audit |
 | `PremiumRightsTest` | 4 | **ТЗ §37** — qoida bir joyda, sochilishga to'siq |
 | `TariffModuleTest` | 16 | **ТЗ §36** — BigDecimal, seed narxlari, tarif muddati |
 | `DonationAndPaymentTest` | 9 | **ТЗ §42/§44** — valyutalar qo'shilmaydi, soxta to'lov yo'q |
