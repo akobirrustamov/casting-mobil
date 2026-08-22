@@ -1006,6 +1006,50 @@ tashlansa maydon baribir ko'rinardi).
 - `[x]` Ko'rsatishsiz CTR — nol, nolga bo'linish yo'q
 - `[x]` `DashboardMetricsTest` — 10 test, mutatsiya bilan tekshirilgan
 
+## 23.2. Search `[x]` — ТЗ §55
+
+ТЗ so'ragan oltala qidiruv ishlaydi: kontent sarlavhasi · ijodkor ·
+foydalanuvchi · telefon · email · kategoriya. Ular §51 da qo'shilgan.
+
+### ⚠️ Indekslar (V21) — asosiy ish
+
+Panel qidiruvlari `lower(x) like '%q%'` ko'rinishida. **Oldingi joker
+belgi tufayli B-tree indeksi ISHLATILMAYDI** — baza har qidiruvda butun
+jadvalni skanerlaydi.
+
+Kichik bazada bu sezilmaydi. 100 000 kontent va 500 000 foydalanuvchida
+esa har bir qidiruv sekundlarga cho'ziladi — va aynan o'sha paytda
+qidiruv eng ko'p kerak bo'ladi.
+
+- `[x]` **`pg_trgm` + GIN indekslari** — trigram satrni uch harfli
+  bo'laklarga ajratadi va `like '%...%'` ni indekslanadigan qiladi
+- `[x]` **13 ta ustun**: `users` (phone · email · name) ·
+  kontent sarlavhasi · ijodkor ismi (3 maydon) · kategoriya va janr
+  nomi · izoh matni · bildirishnoma (title · body) · media fayl nomi
+- `[x]` ⚠️ **Indeks `lower(...)` bo'yicha qurilади** — so'rov aynan shu
+  ifodani ishlatadi. Oddiy ustun bo'yicha qurilsa indeks ISHLATILMASDI
+- `[x]` ⚠️ **Java migratsiya**: `pg_trgm` — PostgreSQL kengaytmasi, H2 da
+  u yo'q va oddiy SQL migratsiya dev hamda testda yiqilardi. H2 da
+  indekslar umuman yaratilmaydi va bu to'g'ri: u yerda jadvallar kichik
+- `[x]` `CONCURRENTLY` ishlatilmadi — u tranzaksiya ichida ishlamaydi,
+  Flyway esa migratsiyani tranzaksiyada bajaradi. Jadvallar hali kichik
+
+### ⚠️ Xato ustun nomi faqat PRODUCTION'da chiqardi
+
+H2 da migratsiya o'tkazib yuboriladi, ya'ni ustun nomidagi xato dev va
+testda umuman sezilmasdi — u faqat deploy paytida, **ilova ishga
+tushayotganda** chiqardi va ilova ko'tarilmasdi.
+
+- `[x]` `SearchIndexTest` migratsiya ro'yxatini HAQIQIY sxema bilan
+  solishtiradi va har bir qidiriladigan maydon indekslanganini
+  tekshiradi — 4 test, uch mutatsiya bilan tasdiqlangan
+
+### Aniq moslik qidiruvlari
+
+- `[x]` `users.phone` · `email` · `google_sub` — `unique` cheklovi
+  tufayli B-tree indekslari allaqachon bor. Login har so'rovda telefon
+  bo'yicha qidiradi va u indekslangan
+
 ## 23.3. Creator selection `[x]` — ТЗ §54
 
 Oqim: **qidirish → topilmasa joyida yaratish → darhol biriktirish**.
@@ -1465,6 +1509,7 @@ CONTENT_VIEW  →  CONTENT_PLAY  →  CONTENT_COMPLETE
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
 | `ReportFiltersTest` | 10 | **ТЗ §47** — davr va obyekt filtrlari, kesishma |
 | `ContentAnalyticsTest` | 9 | **ТЗ §46** — voronka, har bir kontent uchun hisobot |
+| `SearchIndexTest` | 4 | **ТЗ §55** — qidiruv indekslari, sxemaga moslik |
 | `CreatorSelectionTest` | 10 | **ТЗ §54** — qidirish, joyida yaratish, biriktirish |
 | `ContentEditorStructureTest` | 7 | **ТЗ §53** — komponentlarga ajratish, rejalashtirish |
 | `ValidationFormatTest` | 6 | **ТЗ §52** — xato formati, maydon xatolari |
