@@ -725,6 +725,24 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 - `[x]` **Markazlashtirilgan** — barcha entitlement qarorlari
   `AccessService` da. Klientga sochilmagan: mobil ilova, sayt va backend
   bir xil javob beradi
+- `[x]` ⚠️ **Sochilishga TO'SQINLIK qo'yildi** — `PremiumRightsTest`
+  kod matnini o'qiydi va `hasActivePremium()` chaqiruvi `AccessService`
+  dan tashqarida uchrasa yiqiladi.
+
+  Nima uchun oddiy test yetarli emas: bugun hamma qaror bir joyda bo'lsa
+  ham, ertaga kimdir shoshib controllerda `account.hasActivePremium()`
+  yozib qo'yishi mumkin. Kod ishlaydi, testlar yashil — lekin qoida
+  ikkiga bo'linadi va uch oydan keyin ular chetga chiqib, «nega mobil
+  ilovada ko'rinadi, saytda yo'q» degan xatolar boshlanadi.
+
+  Ruxsat berilgan uch joy ataylab sanab qo'yilgan: `AppUserDto` (faqat
+  ko'rsatadi), `UserAdminService` (premiumni uzaytiradi — yozish),
+  `DevDataSeeder` (ishlab chiqarishda yuklanmaydi)
+- `[x]` **Ijobiy nazorat** — detektorning o'zi ishlayotganini tekshiradi.
+  Aks holda yo'l buzilsa u bo'sh ro'yxat qaytarib, test abadiy yashil
+  turardi
+- `[x]` **Frontend toza** — admin panelda faqat API chaqiruvi va tarjima
+  matnlari, hech qanday entitlement sharti yo'q
 - `[x]` Premium huquqlari: barcha premium kontent · premyeralar ·
   seriallar · filmlar · **reklamasiz ko'rish** (`shouldShowAds`) ·
   **casting loyihasiga kirish** (`canAccessCasting`)
@@ -938,6 +956,7 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 | `PremiereModuleTest` | 20 | **ТЗ §30** — maydonlar, havola, BARCHA matnlar uch tilda |
 | `HomeFeedTest` | 23 | **ТЗ §31** — bosh sahifa backenddan, qator tartibi, N+1 nazorati |
 | `NotificationModuleTest` | 30 | **ТЗ §32/§33** — rejalashtirish, soxta muvaffaqiyat yo'q |
+| `PremiumRightsTest` | 4 | **ТЗ §37** — qoida bir joyda, sochilishga to'siq |
 | `TariffModuleTest` | 16 | **ТЗ §36** — BigDecimal, seed narxlari, tarif muddati |
 | `DonationAndPaymentTest` | 9 | **ТЗ §42/§44** — valyutalar qo'shilmaydi, soxta to'lov yo'q |
 | `ModerationAndUsersTest` | 23 | **ТЗ §34/§35/§38** — filtrlar birga, xodimlar ajratilgan, ID qidiruvi |
