@@ -36,7 +36,14 @@ public class AppUserDto {
     private Long starsBalance;
     private Long coinBalance;
 
-    /** ТЗ §35 ro'yxatida bor edi, DTO'da yo'q edi. */
+    /**
+     * Ro'yxatdan o'tgan sana (ТЗ §35).
+     *
+     * ⚠️ {@code UserAccount.createdAt} EMAS: u dangasa yaratiladi va
+     * «admin birinchi marta tekkan vaqt» ni bildiradi. V17 dan oldin
+     * ro'yxatdan o'tganlarda {@code null} — sana bilinmaydi va o'ylab
+     * topilmaydi.
+     */
     private LocalDateTime createdAt;
 
     private LocalDateTime lastActiveAt;
@@ -56,7 +63,7 @@ public class AppUserDto {
                 .moneyBalance(balance == null ? BigDecimal.ZERO : balance.getMoneyBalance())
                 .starsBalance(balance == null ? 0L : balance.getStarsBalance())
                 .coinBalance(balance == null ? 0L : balance.getCoinBalance())
-                .createdAt(account == null ? null : account.getCreatedAt())
+                .createdAt(u.getCreatedAt())
                 .lastActiveAt(account == null ? null : account.getLastActiveAt())
                 .activeDevices(devices)
                 .build();

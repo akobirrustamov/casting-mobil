@@ -1,6 +1,8 @@
 package com.example.backend.Entity;
 
 import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -61,6 +63,39 @@ public class User implements UserDetails {
     @ManyToMany(fetch = FetchType.EAGER)
     @org.hibernate.annotations.BatchSize(size = 50)
     private List<Role> roles;
+
+    /**
+     * Ro'yxatdan o'tgan sana (ТЗ §35, V17).
+     *
+     * <h2>Nima uchun {@code UserAccount.createdAt} yaramaydi</h2>
+     * U bor, lekin BOSHQA narsani bildiradi: hisob satri dangasa
+     * yaratiladi — faqat admin biror amal qilganda. Ya'ni ko'pchilik
+     * foydalanuvchida u umuman yo'q, bo'lganda ham «admin birinchi marta
+     * tekkan vaqt» ni ko'rsatadi.
+     *
+     * 2020-yilda ro'yxatdan o'tib 2026-yilda bloklangan odam ro'yxatda
+     * «2026» bo'lib chiqardi — bo'sh katakdan ham yomon, chunki admin
+     * raqamga ishonadi.
+     *
+     * <h2>Eski satrlar</h2>
+     * {@code null} — ular qachon ro'yxatdan o'tgani BILINMAYDI va
+     * o'ylab topilgan sana yozilmaydi.
+     */
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    /**
+     * Barcha yaratish yo'llari uchun bitta joy.
+     *
+     * Ro'yxatdan o'tish, Google orqali kirish, xodim yaratish — hammasi
+     * shu yerdan o'tadi, ya'ni eski kodning birortasiga tegilmaydi.
+     */
+    @PrePersist
+    void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 
     public User(String phone, String password, String name, List<Role> roles) {
         this.phone = phone;

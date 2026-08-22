@@ -374,6 +374,57 @@ class ModerationAndUsersTest {
         }
 
         @Test
+        @DisplayName("ТЗ §35 ro'yxat maydonlari to'liq")
+        void listFieldsAreComplete() {
+            User u = appUser();
+            userAdminService.grantPremium(null, u.getId(), 1, null);
+
+            var row = userAdminService.searchPage(u.getPhone(), PageRequest.of(0, 20))
+                    .getContent().stream()
+                    .filter(r -> r.user().getId().equals(u.getId()))
+                    .findFirst().orElseThrow();
+            var dto = com.example.backend.Admin.Dto.AppUserDto.from(
+                    row.user(), row.account(), row.balance(), row.activeDevices());
+
+            // id · avatar · name · phone · email · status ·
+            // premium status · premium expiresAt · createdAt · lastActiveAt
+            assertThat(dto.getId()).isEqualTo(u.getId());
+            assertThat(dto.getName()).isNotBlank();
+            assertThat(dto.getPhone()).isNotBlank();
+            assertThat(dto.getStatus()).isNotNull();
+            assertThat(dto.getPremiumActive()).isTrue();
+            assertThat(dto.getPremiumUntil()).isAfter(LocalDateTime.now());
+            assertThat(dto.getCreatedAt()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("⚠️ createdAt — RO'YXATDAN O'TGAN sana, admin tekkan vaqt emas")
+        void createdAtIsRegistrationNotAdminTouch() {
+            User u = appUser();
+            LocalDateTime registered = u.getCreatedAt();
+
+            assertThat(registered).isNotNull();
+
+            // Admin keyinroq bloklaydi — shunda UserAccount satri yaratiladi.
+            userAdminService.setBlocked(null, u.getId(), true, "sinov");
+
+            var row = userAdminService.searchPage(u.getPhone(), PageRequest.of(0, 20))
+                    .getContent().stream()
+                    .filter(r -> r.user().getId().equals(u.getId()))
+                    .findFirst().orElseThrow();
+            var dto = com.example.backend.Admin.Dto.AppUserDto.from(
+                    row.user(), row.account(), row.balance(), row.activeDevices());
+
+            // Ilgari bu qiymat UserAccount dan olinardi. Hisob satri esa
+            // DANGASA yaratiladi — ya'ni 2020-yilda ro'yxatdan o'tib
+            // 2026-yilda bloklangan odam ro'yxatda «2026» bo'lib chiqardi.
+            // Bo'sh katakdan ham yomon: admin raqamga ishonadi.
+            assertThat(dto.getCreatedAt()).isEqualTo(registered);
+            assertThat(dto.getCreatedAt())
+                    .isNotEqualTo(row.account().getCreatedAt());
+        }
+
+        @Test
         @DisplayName("Bloklash va blokdan chiqarish")
         void blockAndUnblock() {
             User u = appUser();

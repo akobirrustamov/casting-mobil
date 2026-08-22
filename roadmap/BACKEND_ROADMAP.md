@@ -621,8 +621,21 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 
 - `[x]` Ro'yxat maydonlari: id · avatar · ism · telefon · email · status ·
   premium holati · `premiumUntil` · **`createdAt`** · `lastActiveAt`
-- `[x]` `createdAt` DTO'ga qo'shildi — ТЗ ro'yxatida bor edi, javobda
-  yo'q edi
+- `[x]` ⚠️ **`createdAt` — HAQIQIY ro'yxatdan o'tish sanasi (V17).**
+  Bunday ustun hech qayerda yo'q edi. Men uni avval
+  `cms_user_account.created_at` dan olgandim — bu XATO edi: hisob satri
+  DANGASA yaratiladi, faqat admin biror amal qilganda. Ya'ni ko'pchilik
+  foydalanuvchida u umuman yo'q, bo'lganda ham «admin birinchi marta
+  tekkan vaqt» ni bildiradi: 2020-yilda ro'yxatdan o'tib 2026-yilda
+  bloklangan odam ro'yxatda «2026» bo'lib chiqardi. **Bo'sh katakdan ham
+  yomon — admin raqamga ishonadi.**
+  Endi `users.created_at`, `@PrePersist` orqali barcha yaratish yo'llarida
+  to'ladi
+- `[x]` ⚠️ **Mavjud satrlar TO'LDIRILMADI** — ular qachon ro'yxatdan
+  o'tganini bilmaymiz va o'ylab topilgan sana yozilmaydi. `null` halol
+  javob: «ma'lum emas»
+- `[x]` Ustun QO'SHILDI, hech narsa o'chirilmadi — eski casting kodi bu
+  ustunni bilmaydi va undan ta'sirlanmaydi
 - `[x]` Amallar: qidiruv · ko'rish · bloklash · blokdan chiqarish ·
   premium berish · premium qaytarib olish
 - `[x]` **Xodimlar ro'yxatga tushmaydi** — ular §12 dagi alohida ekranda.
@@ -634,8 +647,17 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 - `[x]` ⚠️ **N+1 tuzatildi.** Har bir foydalanuvchi uchun hisob, balans va
   qurilmalar alohida so'ralardi: 50 kishilik sahifa 150 ta qo'shimcha
   so'rov degani edi. Endi uchalasi bitta `in (...)` so'rovi bilan
-- `[x]` **USER admin panelga kira olmaydi** — `canAccessAdminPanel`
-  tekshiruvi `AdminAuthController` da
+- `[x]` **USER admin panelga kira olmaydi** — ТЗ §35 talabi, **IKKI
+  QAVATDA** qo'riqlanadi:
+  1. `SecurityConfig` — `/api/v1/app/admin/**` xodim rolini talab qiladi;
+  2. `hasPermission` — `PlatformRole.USER` ga ruxsat YOZUVI bo'lsa ham
+     `false` qaytaradi, ya'ni oddiy foydalanuvchiga bitta ruxsat berib
+     qo'yish uni panelga kiritib yubormaydi.
+
+  `UserCannotEnterPanelTest` — 5 test, uch yo'l tekshiriladi: admin
+  login, ilova tokeni bilan admin endpointi, ilova tokeni bilan
+  «men kimman». Mutatsiya bilan isbotlangan: bitta qavat buzilsa
+  ikkinchisi ushlaydi, ikkalasi birdan buzilsa test yiqiladi
 
 ## 21. Subscriptions `[x]`
 
@@ -890,7 +912,7 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 | `HomeFeedTest` | 23 | **ТЗ §31** — bosh sahifa backenddan, qator tartibi, N+1 nazorati |
 | `NotificationModuleTest` | 30 | **ТЗ §32/§33** — rejalashtirish, soxta muvaffaqiyat yo'q |
 | `DonationAndPaymentTest` | 9 | **ТЗ §42/§44** — valyutalar qo'shilmaydi, soxta to'lov yo'q |
-| `ModerationAndUsersTest` | 21 | **ТЗ §34/§35/§38** — filtrlar birga, xodimlar ajratilgan, ID qidiruvi |
+| `ModerationAndUsersTest` | 23 | **ТЗ §34/§35/§38** — filtrlar birga, xodimlar ajratilgan, ID qidiruvi |
 | `InternalLinkReuseTest` | 9 | **ТЗ §28** — havola mexanizmi uchala modulda bir xil |
 | `BackendAuthorizationTest` | 10 | **Ikki qavatli avtorizatsiya, 6 xil escalation urinishi** |
 | `BootstrapAccountSecurityTest` | 7 | **Standart parolli master hisob qaytmasin** |
@@ -910,6 +932,7 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 | `PermissionBeforeValidationTest` | 3 | Ruxsat validatsiyadan oldin |
 | `ContentEditRoundTripTest` | 4 | Tahrirlash ma'lumot yo'qotmaydi (barcha media roli) |
 | `PublicCatalogPrivacyTest` | 2 | Ochiq katalogda PD yo'q |
+| `UserCannotEnterPanelTest` | 5 | **ТЗ §35** — USER panelga kira olmaydi, ikki qavat |
 | `OldCastingFrozenTest` | 5 | **Eski casting yo'l, entity, jadval nomi o'zgarmaydi** |
 | `ExistingCastingRegressionTest` | 7 | **Casting oqimi buzilmaydi** — anketa, qabul/rad, bot xabari |
 | `AdminEndpointGuardTest` | 1 | Qo'riqlanmagan endpoint yo'q |
