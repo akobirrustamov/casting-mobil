@@ -844,6 +844,27 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
   admin narx yo'qligini bilishi kerak
 - `[x]` Kurs kasr bo'lishi mumkin, tiyinlar yo'qolmaydi (`BigDecimal`)
 - `[x]` `CurrencyPricingTest` — 9 test, mutatsiya bilan tekshirilgan
+- `[x]` **Admin uchalasini boshqaradi** (ТЗ §41): kurs (sozlama) ·
+  paketlar (CRUD) · faol/nofaol. Nofaol paket ochiq ro'yxatga kirmaydi
+- `[x]` ⚠️ **Sozlama qiymati YOZISHDA tekshiriladi.** Ilgari hech qanday
+  tekshiruv yo'q edi: admin narx maydoniga «uch ming» yozsa — saqlanardi,
+  panelda ko'rinardi va u ishni bajardim deb o'ylardi. Aslida esa o'qishda
+  `getMoney` uni tushuna olmay **0** qaytarardi.
+
+  Oqibati kalitga qarab turlicha:
+  - `currency.*.rate` — paketlar jimgina sotib olinmaydigan bo'lardi;
+  - `pricing.episode.default` — **qism narxi 0 ga aylanardi, ya'ni
+    pullik kontent bepul bo'lib qolardi.**
+
+  Ikkala holatda ham xato yozilgan paytda emas, kimdir oqibatiga duch
+  kelganda bilinardi. Endi `SettingKeys.typeOf` har bir kalitning turini
+  e'lon qiladi (MONEY · INTEGER · ENUM · TEXT) va xato xabari nima
+  kutilayotganini aniq aytadi
+- `[x]` **O'qish yo'li ham chidamli qoldi** — buzuq qiymat bazaga boshqa
+  yo'l bilan tushsa (to'g'ridan-to'g'ri SQL, ma'lumot ko'chirish),
+  `getMoney` baribir yiqilmaydi. Ikki qavat: yozishda aniq xato,
+  o'qishda xavfsiz zaxira
+- `[x]` `SettingValidationTest` — 12 test
 
 ### Balans (§43)
 
@@ -1017,6 +1038,7 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 | `PremiumGiftTest` | 15 | **ТЗ §38** — telefon/email/ID qidiruvi, audit |
 | `PremiumRightsTest` | 4 | **ТЗ §37** — qoida bir joyda, sochilishga to'siq |
 | `TariffModuleTest` | 16 | **ТЗ §36** — BigDecimal, seed narxlari, tarif muddati |
+| `SettingValidationTest` | 12 | **ТЗ §40/§41** — xato narx saqlanmaydi |
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
 | `DonationFlowTest` | 13 | **ТЗ §39** — donat yuborish, nishon, balans |
 | `DonationConcurrencyTest` | 1 | **ТЗ §39** — bir vaqtda ikki donat balansni buzmaydi |

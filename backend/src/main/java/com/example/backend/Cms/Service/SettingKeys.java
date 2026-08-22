@@ -58,6 +58,61 @@ public final class SettingKeys {
     }
 
     /**
+     * Sozlama qiymatining turi — YOZISHDA tekshirish uchun.
+     *
+     * <h2>Nima uchun kerak</h2>
+     * Ilgari qiymat hech qanday tekshiruvsiz saqlanardi. Admin
+     * {@code currency.coin.rate} ga «abc» yozsa — saqlanardi, panelda
+     * ko'rinardi, u kursni belgiladim deb o'ylardi. Aslida esa
+     * {@code getMoney} uni o'qiy olmay 0 qaytarardi va paketlar jimgina
+     * sotib olinmaydigan bo'lib qolardi.
+     *
+     * ⚠️ Narx sozlamalarida bu ancha xavfli: {@code pricing.episode.default}
+     * ga xato yozilsa, qism narxi 0 ga aylanadi — ya'ni <b>pullik kontent
+     * bepul bo'lib qoladi</b>. Xato esa yozilgan paytda emas, kimdir
+     * pulsiz tomosha qilganda bilinadi.
+     *
+     * Shuning uchun tekshiruv YOZISH paytida turadi: admin xatoni darhol
+     * ko'radi.
+     */
+    public enum ValueType {
+        /** Musbat pul qiymati. Nol ham mumkin — «belgilanmagan» degani. */
+        MONEY,
+        /** Butun son. */
+        INTEGER,
+        /** Ro'yxatdagi qiymatlardan biri. */
+        ENUM,
+        /** Ixtiyoriy matn. */
+        TEXT
+    }
+
+    /**
+     * Kalit qanday turdagi qiymat kutadi.
+     *
+     * Noma'lum kalit uchun {@code TEXT} — u baribir {@link #defaultValue}
+     * tekshiruvidan o'tmaydi.
+     */
+    public static ValueType typeOf(String key) {
+        if (key == null) {
+            return ValueType.TEXT;
+        }
+        return switch (key) {
+            case EPISODE_PRICE, PREMIERE_PRICE, STAR_RATE, COIN_RATE -> ValueType.MONEY;
+            case DEVICE_LIMIT, REVENUE_SHARE_PERCENT -> ValueType.INTEGER;
+            case CREATOR_RANKING -> ValueType.ENUM;
+            default -> ValueType.TEXT;
+        };
+    }
+
+    /** {@code ENUM} turidagi kalit uchun ruxsat etilgan qiymatlar. */
+    public static java.util.List<String> allowedValues(String key) {
+        if (CREATOR_RANKING.equals(key)) {
+            return java.util.List.of("MANUAL", "STARS");
+        }
+        return java.util.List.of();
+    }
+
+    /**
      * Kalitning E'LON QILINGAN standart qiymati.
      *
      * <h2>Nima uchun kerak</h2>

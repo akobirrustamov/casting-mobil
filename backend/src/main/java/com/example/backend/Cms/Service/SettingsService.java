@@ -89,10 +89,67 @@ public class SettingsService {
     }
 
     @Transactional
+    /**
+     * Qiymat kalitning turiga mos keladimi.
+     *
+     * @throws BusinessException mos kelmasa — xabar aniq nima kutilayotganini
+     *                           aytadi, «noto'g'ri qiymat» degan umumiy
+     *                           xato admin nimani tuzatishni bilmasligiga
+     *                           olib kelardi
+     */
+    void validateValue(String key, String value) {
+        switch (SettingKeys.typeOf(key)) {
+            case MONEY -> {
+                BigDecimal parsed;
+                try {
+                    parsed = new BigDecimal(value);
+                } catch (NumberFormatException e) {
+                    throw BusinessException.validation(
+                            "«" + key + "» pul qiymati bo'lishi kerak, masalan 3000 "
+                                    + "yoki 1250.50. Kiritilgani: " + value);
+                }
+                if (parsed.compareTo(BigDecimal.ZERO) < 0) {
+                    throw BusinessException.validation(
+                            "«" + key + "» manfiy bo'lishi mumkin emas");
+                }
+            }
+            case INTEGER -> {
+                try {
+                    if (Integer.parseInt(value) < 0) {
+                        throw BusinessException.validation(
+                                "«" + key + "» manfiy bo'lishi mumkin emas");
+                    }
+                } catch (NumberFormatException e) {
+                    throw BusinessException.validation(
+                            "«" + key + "» butun son bo'lishi kerak. Kiritilgani: " + value);
+                }
+            }
+            case ENUM -> {
+                var allowed = SettingKeys.allowedValues(key);
+                if (!allowed.contains(value)) {
+                    throw BusinessException.validation(
+                            "«" + key + "» quyidagilardan biri bo'lishi kerak: "
+                                    + String.join(", ", allowed) + ". Kiritilgani: " + value);
+                }
+            }
+            case TEXT -> {
+                // Cheklov yo'q.
+            }
+        }
+    }
+
     public PlatformSetting update(User actor, String key, String value) {
         if (value == null || value.isBlank()) {
             throw BusinessException.validation("Qiymat bo'sh bo'lishi mumkin emas");
         }
+        // ⚠️ Tekshiruv AYNAN SHU YERDA — yozish paytida.
+        //
+        // Ilgari qiymat hech qanday tekshiruvsiz saqlanardi. Admin narx
+        // maydoniga xato yozsa, u saqlanardi va panelda ko'rinardi —
+        // lekin o'qishda 0 ga aylanardi. Ya'ni PULLIK KONTENT BEPUL
+        // bo'lib qolardi va buni kimdir pulsiz tomosha qilgandagina
+        // bilishardi.
+        validateValue(key, value.trim());
         // Satr bo'lmasa, lekin kalit KODDA E'LON QILINGAN bo'lsa - yaratamiz.
         //
         // ⚠️ Ilgari bu yerda shartsiz 404 turardi. Natijada kodga yangi

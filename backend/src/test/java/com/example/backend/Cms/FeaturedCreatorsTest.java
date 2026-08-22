@@ -11,6 +11,7 @@ import com.example.backend.Cms.Service.HomepageService;
 import com.example.backend.Cms.Service.SettingKeys;
 import com.example.backend.Cms.Service.SettingsService;
 import com.example.backend.Cms.Service.TaxonomyService;
+import com.example.backend.exceptions.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * ТЗ §25 — «Mashhur ijodkorlar» bo'limi.
@@ -50,6 +52,7 @@ class FeaturedCreatorsTest {
     @Autowired private TaxonomyService taxonomyService;
     @Autowired private CreatorRepo creatorRepo;
     @Autowired private SettingsService settingsService;
+    @Autowired private com.example.backend.Cms.Repository.PlatformSettingRepo settingRepo;
 
     private Creator creator(String name, boolean featured, int sortOrder,
                             boolean active, long stars) {
@@ -162,12 +165,36 @@ class FeaturedCreatorsTest {
         @DisplayName("Buzuq sozlama bo'lsa MANUAL ga qaytadi, xato tashlamaydi")
         void brokenSettingFallsBackToManual() {
             Creator featured = creator("Qo'lda", true, 0, true, 0);
-            settingsService.update(null, SettingKeys.CREATOR_RANKING, "ALLAQANDAY");
 
-            // Bosh sahifa buzuq sozlama tufayli bo'sh qolmasligi kerak.
+            // ⚠️ Qiymat REPO orqali yoziladi, servis orqali emas.
+            //
+            // Servis endi bunday qiymatni rad etadi (yozish tekshiruvi) —
+            // bu to'g'ri. Lekin buzuq qiymat baribir bazaga tushishi
+            // mumkin: to'g'ridan-to'g'ri SQL bilan, ma'lumot ko'chirishda
+            // yoki tekshiruv qo'shilishidan oldin yozilgan bo'lsa.
+            //
+            // Bu test aynan O'QISH yo'lining chidamliligini tekshiradi:
+            // bosh sahifa buzuq sozlama tufayli bo'sh qolmasligi kerak.
+            settingRepo.save(com.example.backend.Cms.Entity.PlatformSetting.builder()
+                    .key(SettingKeys.CREATOR_RANKING)
+                    .value("ALLAQANDAY")
+                    .description("sinov")
+                    .build());
+
             assertThat(homepageService.featuredCreators(null))
                     .extracting(Creator::getId)
                     .contains(featured.getId());
+        }
+
+        @Test
+        @DisplayName("Servis buzuq qiymatni YOZISHGA ruxsat bermaydi")
+        void serviceRejectsBrokenValue() {
+            // Ikkinchi qavat: xato yozilgan paytda ko'rinadi, keyinroq
+            // jimgina «MANUAL ga qaytdi» bo'lib qolmaydi.
+            assertThatThrownBy(() -> settingsService.update(
+                    null, SettingKeys.CREATOR_RANKING, "ALLAQANDAY"))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("MANUAL");
         }
     }
 
