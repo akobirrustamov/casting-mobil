@@ -129,4 +129,42 @@ public interface UserRepo extends JpaRepository<User, UUID> {
             )
             """)
     long countStaff();
+
+    /**
+     * Foydalanuvchi o'sishi — kunlik (ТЗ §48 grafigi).
+     *
+     * ⚠️ V17 dan oldin ro'yxatdan o'tganlar bu grafikda YO'Q: ularning
+     * {@code created_at} maydoni bo'sh. Bu to'g'ri — sana bilinmaydi va
+     * taxmin qilinmaydi. Grafik «shu sanadan boshlab» degan ma'noni
+     * bildiradi, «hamma vaqt» degani emas.
+     */
+    @Query("""
+            select cast(u.createdAt as date) as day, count(u) as value
+            from User u
+            where u.createdAt >= :from
+            and not exists (
+                select r from User su join su.roles r
+                where su.id = u.id and r.name <> com.example.backend.Enums.UserRoles.ROLE_USER
+            )
+            group by cast(u.createdAt as date)
+            order by cast(u.createdAt as date)
+            """)
+    List<DayCount> userGrowth(@Param("from") java.time.LocalDateTime from);
+
+    /** Oxirgi ro'yxatdan o'tganlar (ТЗ §48 jadvali). */
+    @Query("""
+            select u from User u
+            where not exists (
+                select r from User su join su.roles r
+                where su.id = u.id and r.name <> com.example.backend.Enums.UserRoles.ROLE_USER
+            )
+            order by u.createdAt desc nulls last, u.id desc
+            """)
+    List<User> findLatestAppUsers(org.springframework.data.domain.Pageable pageable);
+
+    /** Kunlik sanoq — grafik uchun proyeksiya. */
+    interface DayCount {
+        java.time.LocalDate getDay();
+        Long getValue();
+    }
 }

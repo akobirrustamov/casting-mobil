@@ -1006,6 +1006,39 @@ tashlansa maydon baribir ko'rinardi).
 - `[x]` Ko'rsatishsiz CTR — nol, nolga bo'linish yo'q
 - `[x]` `DashboardMetricsTest` — 10 test, mutatsiya bilan tekshirilgan
 
+## 23.9. Dashboard `[x]` — ТЗ §48 (backend qismi)
+
+ТЗ §48 — bu asosan FRONTEND sahifasi, lekin uni **haqiqiy ma'lumot bilan**
+to'ldirish backend ishi. «Faqat real API data ishlat» degani frontend'da
+mock qilishga sabab qolmasligi kerak.
+
+Uchta endpoint, ТЗ ning o'z guruhlariga mos:
+
+| Guruh | Endpoint |
+|---|---|
+| Kartochkalar | `GET /dashboard/summary` (§45) |
+| Grafiklar | `GET /dashboard/charts?days=N` |
+| Jadvallar | `GET /dashboard/tables?limit=N` |
+
+- `[x]` **Nima uchun uchta so'rov**: kartochkalar tez keladi, grafiklar
+  og'irroq va kamroq yangilanadi. Bitta javobga qo'shish sahifaning
+  BIRINCHI ko'rinishini sekinlashtirardi
+- `[x]` Grafiklar: **user growth** · views · **subscription revenue** ·
+  donations. Ikkitasi yangi edi
+- `[x]` Jadvallar: **latest content** · top content · **latest users** ·
+  best ads · top creators. Ikkitasi yangi edi
+- `[x]` ⚠️ **Sovg'a obuna daromad grafigiga TUSHMAYDI.** U grafikni
+  ko'tarib ko'rsatardi, lekin hech qanday pul kelmagan
+- `[x]` ⚠️ **Donatlar valyuta bo'yicha ajratilgan** (`series` maydoni) —
+  STARS va COIN ni qo'shish 10 so'm va 10 dollarni qo'shishday bo'lardi
+- `[x]` ⚠️ **Oxirgi foydalanuvchilar jadvalida TELEFON maydoni yo'q.**
+  Dashboard umumiy ko'rinish; shaxsiy ma'lumot uchun §35 dagi ro'yxat
+  bor va u `USER_VIEW` talab qiladi
+- `[x]` `userGrowth` — V17 dan keyingi ro'yxatdan o'tishlar. Undan
+  oldingilar grafikda yo'q: sana bilinmaydi va taxmin qilinmaydi
+- `[x]` Ma'lumot yo'q bo'lsa — bo'sh qator va bo'sh jadval
+- `[x]` `DashboardMetricsTest` — 18 test, mutatsiya bilan tekshirilgan
+
 ## 24.1. Content analytics `[x]` — ТЗ §46
 
 **Hodisalar:** `CONTENT_VIEW` · `CONTENT_PLAY` · `CONTENT_COMPLETE`
@@ -1196,7 +1229,7 @@ CONTENT_VIEW  →  CONTENT_PLAY  →  CONTENT_COMPLETE
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
 | `ReportFiltersTest` | 10 | **ТЗ §47** — davr va obyekt filtrlari, kesishma |
 | `ContentAnalyticsTest` | 9 | **ТЗ §46** — voronka, har bir kontent uchun hisobot |
-| `DashboardMetricsTest` | 10 | **ТЗ §45** — 20 ko'rsatkich, soxta statistika yo'q |
+| `DashboardMetricsTest` | 18 | **ТЗ §45** — 20 ko'rsatkich, soxta statistika yo'q |
 | `PackagePurchaseTest` | 13 | **ТЗ §44** — ichki balans ishlaydi, soxta to'lov yo'q |
 | `DonationBalanceTest` | 10 | **ТЗ §43** — balans va tarix, boshqaniki ko'rinmaydi |
 | `DonationFlowTest` | 13 | **ТЗ §39** — donat yuborish, nishon, balans |

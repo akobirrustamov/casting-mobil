@@ -16,6 +16,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -55,14 +56,13 @@ public class DashboardController {
     private final com.example.backend.Cms.Repository.AdvertisementRepo advertisementRepo;
     private final com.example.backend.Cms.Repository.NotificationRepo notificationRepo;
     private final com.example.backend.Cms.Repository.DonationRepo donationRepo;
+    private final com.example.backend.Cms.Repository.SubscriptionRepo subscriptionRepo2;
     private final AnalyticsService analyticsService;
     private final PermissionService permissionService;
 
     @GetMapping("/summary")
     public ResponseEntity<DashboardSummary> summary() {
-        if (!permissionService.hasPermission(CurrentUser.get(), Permission.CONTENT_VIEW)) {
-            throw BusinessException.accessDenied("Dashboard uchun ruxsat yo'q");
-        }
+        require(Permission.CONTENT_VIEW);
 
         LocalDate today = LocalDate.now();
         LocalDate monthAgo = today.minusDays(29);
@@ -165,6 +165,165 @@ public class DashboardController {
                                 .build())
                         .toList())
                 .build());
+    }
+
+    /**
+     * Dashboard grafiklari (ТЗ §48).
+     *
+     * <h2>Nima uchun alohida endpoint</h2>
+     * Kartochkalar bitta so'rovda tez keladi, grafiklar esa og'irroq va
+     * kamroq yangilanadi. Ularni bitta javobga qo'shish sahifaning
+     * BIRINCHI ko'rinishini sekinlashtirardi.
+     */
+    @GetMapping("/charts")
+    public ResponseEntity<DashboardCharts> charts(
+            @RequestParam(defaultValue = "30") int days) {
+
+        require(Permission.CONTENT_VIEW);
+        int window = Math.min(Math.max(days, 1), 365);
+        LocalDate to = LocalDate.now();
+        LocalDate from = to.minusDays(window - 1L);
+        LocalDateTime fromTime = from.atStartOfDay();
+
+        return ResponseEntity.ok(DashboardCharts.builder()
+                .from(from)
+                .to(to)
+                .userGrowth(userRepo.userGrowth(fromTime).stream()
+                        .map(d -> ChartPoint.builder()
+                                .day(d.getDay())
+                                .value(BigDecimal.valueOf(d.getValue()))
+                                .build())
+                        .toList())
+                .views(analyticsService.dailySeries(from, to).stream()
+                        .map(p -> ChartPoint.builder()
+                                .day(p.getDay())
+                                .value(BigDecimal.valueOf(p.getViews() == null ? 0 : p.getViews()))
+                                .build())
+                        .toList())
+                .subscriptionRevenue(subscriptionRepo.revenueByDay(fromTime).stream()
+                        .map(d -> ChartPoint.builder()
+                                .day(d.getDay())
+                                .value(nz(d.getValue()))
+                                .build())
+                        .toList())
+                // ⚠️ Donatlar VALYUTA bo'yicha alohida: STARS va COIN ni
+                // qo'shish 10 so'm va 10 dollarni qo'shishday bo'lardi.
+                .donations(donationRepo.dailyTotals(fromTime, to.plusDays(1).atStartOfDay())
+                        .stream()
+                        .map(d -> ChartPoint.builder()
+                                .day(d.getDay())
+                                .series(d.getKind().name())
+                                .value(BigDecimal.valueOf(d.getTotal()))
+                                .build())
+                        .toList())
+                .build());
+    }
+
+    /**
+     * Dashboard jadvallari (ТЗ §48).
+     *
+     * Ma'lumot yo'q bo'lsa — BO'SH ro'yxat. Frontend'da mock qilishga
+     * sabab qolmasligi kerak: «Faqat real API data ishlat».
+     */
+    @GetMapping("/tables")
+    public ResponseEntity<DashboardTables> tables(
+            @RequestParam(defaultValue = "5") int limit) {
+
+        require(Permission.CONTENT_VIEW);
+        int size = Math.min(Math.max(limit, 1), 50);
+        LocalDate today = LocalDate.now();
+        LocalDate monthAgo = today.minusDays(29);
+
+        var contentTotals = analyticsService.contentTotals(monthAgo, today);
+        var adTotals = analyticsService.adTotals(monthAgo, today);
+
+        return ResponseEntity.ok(DashboardTables.builder()
+                .latestContent(contentRepo
+                        .findAllByDeletedAtIsNullOrderByCreatedAtDesc(PageRequest.of(0, size))
+                        .stream()
+                        .map(c -> TableRow.builder()
+                                .id(c.getId())
+                                .name(c.getSlug())
+                                .at(c.getCreatedAt())
+                                .build())
+                        .toList())
+                .topContent(contentTotals.stream().limit(size)
+                        .map(c -> TableRow.builder()
+                                .id(c.getContentId())
+                                .value(c.getViews() == null ? 0L : c.getViews())
+                                .build())
+                        .toList())
+                .latestUsers(userRepo.findLatestAppUsers(PageRequest.of(0, size)).stream()
+                        .map(u -> TableRow.builder()
+                                .name(u.getName())
+                                // ⚠️ Telefon YO'Q: dashboard umumiy ko'rinish,
+                                // shaxsiy ma'lumot uchun §35 dagi ro'yxat bor
+                                .at(u.getCreatedAt())
+                                .build())
+                        .toList())
+                .bestAds(adTotals.stream().limit(size)
+                        .map(a -> TableRow.builder()
+                                .id(a.getAdvertisementId())
+                                .value(a.getClicks() == null ? 0L : a.getClicks())
+                                .build())
+                        .toList())
+                .topCreators(donationRepo.topTargetsOfType(
+                                DonationTargetType.CREATOR, PageRequest.of(0, size)).stream()
+                        .map(r -> TableRow.builder()
+                                .id(r.getTargetId())
+                                .name(r.getKind().name())
+                                .value(r.getTotal())
+                                .build())
+                        .toList())
+                .build());
+    }
+
+    @Data
+    @Builder
+    public static class DashboardCharts {
+        private LocalDate from;
+        private LocalDate to;
+        /** ⚠️ V17 dan oldingi foydalanuvchilar bu grafikda yo'q. */
+        private List<ChartPoint> userGrowth;
+        private List<ChartPoint> views;
+        private List<ChartPoint> subscriptionRevenue;
+        /** Valyuta bo'yicha ajratilgan — `series` maydoni turini aytadi. */
+        private List<ChartPoint> donations;
+    }
+
+    @Data
+    @Builder
+    public static class ChartPoint {
+        private LocalDate day;
+        /** Bir nechta chiziq bo'lsa — qaysi biri (masalan STARS). */
+        private String series;
+        private BigDecimal value;
+    }
+
+    @Data
+    @Builder
+    public static class DashboardTables {
+        private List<TableRow> latestContent;
+        private List<TableRow> topContent;
+        private List<TableRow> latestUsers;
+        private List<TableRow> bestAds;
+        private List<TableRow> topCreators;
+    }
+
+    @Data
+    @Builder
+    public static class TableRow {
+        private Long id;
+        private String name;
+        private Long value;
+        private LocalDateTime at;
+    }
+
+    /** Dashboard uchun ruxsat — uchala endpointda bir xil. */
+    private void require(Permission permission) {
+        if (!permissionService.hasPermission(CurrentUser.get(), permission)) {
+            throw BusinessException.accessDenied("Dashboard uchun ruxsat yo'q");
+        }
     }
 
     private static BigDecimal nz(BigDecimal v) {

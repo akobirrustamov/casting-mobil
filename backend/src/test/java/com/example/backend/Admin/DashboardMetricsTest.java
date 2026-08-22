@@ -1,5 +1,10 @@
 package com.example.backend.Admin;
 
+import com.example.backend.Admin.Controller.DashboardController;
+import com.example.backend.Cms.Entity.Subscription;
+import com.example.backend.Cms.Enums.SubscriptionSource;
+import com.example.backend.Entity.User;
+import java.time.LocalDateTime;
 import com.example.backend.Enums.Permission;
 import com.example.backend.Enums.PlatformRole;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -39,6 +44,9 @@ class DashboardMetricsTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private TestStaffFactory staff;
+    @Autowired private com.example.backend.Repository.UserRepo userRepo;
+    @Autowired private com.example.backend.Repository.RoleRepo roleRepo;
+    @Autowired private com.example.backend.Cms.Repository.SubscriptionRepo subscriptionRepo;
 
     /**
      * Admin tokeni — BIR MARTA yaratiladi.
@@ -47,6 +55,24 @@ class DashboardMetricsTest {
      * UNIQUE cheklovni buzadi.
      */
     private String adminToken;
+
+    /** Ilova foydalanuvchisi — obuna biriktirish uchun. */
+    private User newAppUser(String phone) {
+        com.example.backend.Entity.Role r =
+                roleRepo.findByName(com.example.backend.Enums.UserRoles.ROLE_USER);
+        if (r == null) {
+            int nextId = roleRepo.findAll().stream()
+                    .mapToInt(com.example.backend.Entity.Role::getId).max().orElse(0) + 1;
+            r = roleRepo.save(new com.example.backend.Entity.Role(
+                    nextId, com.example.backend.Enums.UserRoles.ROLE_USER));
+        }
+        User u = new User();
+        u.setPhone(phone);
+        u.setPassword("x");
+        u.setName("Daromad sinovi");
+        u.setRoles(new java.util.ArrayList<>(List.of(r)));
+        return u;
+    }
 
     private JsonNode summary() throws Exception {
         if (adminToken == null) {
@@ -215,6 +241,166 @@ class DashboardMetricsTest {
             assertThat(s.has("singlePurchaseRevenue")).isTrue();
             assertThat(s.has("currencyPackageRevenue")).isTrue();
             assertThat(s.has("subscriptionRevenue")).isTrue();
+        }
+    }
+
+    // ------------------------------------------------------ grafik/jadval
+
+    @Nested
+    @DisplayName("Grafiklar (ТЗ §48)")
+    class Charts {
+
+        private JsonNode charts() throws Exception {
+            if (adminToken == null) {
+                adminToken = staff.tokenForRole("+998900003001", PlatformRole.ADMIN,
+                        EnumSet.of(Permission.CONTENT_VIEW));
+            }
+            String body = mockMvc.perform(get("/api/v1/app/admin/dashboard/charts")
+                            .header("Authorization", "Bearer " + adminToken))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            return objectMapper.readTree(body);
+        }
+
+        @Test
+        @DisplayName("ТЗ dagi to'rtala grafik ham bor")
+        void allFourChartsExist() throws Exception {
+            JsonNode c = charts();
+
+            for (String chart : List.of("userGrowth", "views",
+                    "subscriptionRevenue", "donations")) {
+                assertThat(c.has(chart))
+                        .as("ТЗ §48 da so'ralgan grafik yo'q: " + chart)
+                        .isTrue();
+                assertThat(c.get(chart).isArray()).isTrue();
+            }
+        }
+
+        @Test
+        @DisplayName("Ma'lumot yo'q — BO'SH qator, o'ylab topilgan nuqta emas")
+        void emptyChartsInsteadOfInventedPoints() throws Exception {
+            JsonNode c = charts();
+
+            // «Faqat real API data ishlat» — frontend'da mock qilishga
+            // sabab qolmasligi kerak, lekin bo'sh ham bo'sh qolishi kerak.
+            assertThat(c.get("subscriptionRevenue")).isEmpty();
+            assertThat(c.get("donations")).isEmpty();
+        }
+
+        @Test
+        @DisplayName("⚠️ Daromad grafigi HAQIQIY to'lovni ko'rsatadi")
+        void revenueChartReflectsRealPayments() throws Exception {
+            // ⚠️ Bo'sh grafikni tekshirish YETARLI EMAS: so'rov butunlay
+            // olib tashlansa ham natija bo'sh bo'lardi va test o'tib
+            // ketardi. Shuning uchun haqiqiy to'lov yaratiladi.
+            User payer = userRepo.save(newAppUser("+998900006101"));
+            subscriptionRepo.save(Subscription.builder()
+                    .user(payer)
+                    .startAt(LocalDateTime.now())
+                    .endAt(LocalDateTime.now().plusMonths(1))
+                    .source(SubscriptionSource.PURCHASE)
+                    .paidAmount(new java.math.BigDecimal("24000.00"))
+                    .build());
+
+            JsonNode revenue = charts().get("subscriptionRevenue");
+
+            assertThat(revenue).isNotEmpty();
+            assertThat(revenue.get(0).get("value").decimalValue())
+                    .isEqualByComparingTo("24000.00");
+        }
+
+        @Test
+        @DisplayName("Sovg'a obuna daromad grafigiga TUSHMAYDI")
+        void giftedSubscriptionIsNotRevenue() throws Exception {
+            User gifted = userRepo.save(newAppUser("+998900006102"));
+            subscriptionRepo.save(Subscription.builder()
+                    .user(gifted)
+                    .startAt(LocalDateTime.now())
+                    .endAt(LocalDateTime.now().plusMonths(1))
+                    .source(SubscriptionSource.ADMIN_GIFT)
+                    // Sovg'ada pul harakati yo'q.
+                    .paidAmount(null)
+                    .build());
+
+            // Grafikni ko'tarib ko'rsatardi, lekin hech qanday pul
+            // kelmagan.
+            assertThat(charts().get("subscriptionRevenue")).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Foydalanuvchi o'sishi haqiqiy sanadan hisoblanadi")
+        void userGrowthUsesRealDates() throws Exception {
+            staff.tokenForRole("+998900006001", PlatformRole.USER,
+                    EnumSet.noneOf(Permission.class));
+
+            JsonNode growth = charts().get("userGrowth");
+
+            assertThat(growth).isNotEmpty();
+            assertThat(growth.get(0).get("day").asText()).isNotBlank();
+            assertThat(growth.get(0).get("value").asLong()).isGreaterThanOrEqualTo(1);
+        }
+    }
+
+    @Nested
+    @DisplayName("Jadvallar (ТЗ §48)")
+    class Tables {
+
+        private JsonNode tables() throws Exception {
+            if (adminToken == null) {
+                adminToken = staff.tokenForRole("+998900003001", PlatformRole.ADMIN,
+                        EnumSet.of(Permission.CONTENT_VIEW));
+            }
+            String body = mockMvc.perform(get("/api/v1/app/admin/dashboard/tables")
+                            .header("Authorization", "Bearer " + adminToken))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            return objectMapper.readTree(body);
+        }
+
+        @Test
+        @DisplayName("ТЗ dagi beshta jadval ham bor")
+        void allFiveTablesExist() throws Exception {
+            JsonNode t = tables();
+
+            for (String table : List.of("latestContent", "topContent",
+                    "latestUsers", "bestAds", "topCreators")) {
+                assertThat(t.has(table))
+                        .as("ТЗ §48 da so'ralgan jadval yo'q: " + table)
+                        .isTrue();
+                assertThat(t.get(table).isArray()).isTrue();
+            }
+        }
+
+        @Test
+        @DisplayName("Oxirgi foydalanuvchilar ro'yxatida TELEFON maydoni yo'q")
+        void latestUsersDoNotExposePhones() throws Exception {
+            staff.tokenForRole("+998900006002", PlatformRole.USER,
+                    EnumSet.noneOf(Permission.class));
+
+            JsonNode rows = tables().get("latestUsers");
+            assertThat(rows).isNotEmpty();
+
+            // ⚠️ Matn ichidan «+99890» qidirish YARAMAYDI: test uskunasi
+            // foydalanuvchi ismini «Test +998900006002» qilib qo'yadi va
+            // test o'z uskunasiga yiqilardi. Ism — ism, u nima bo'lishidan
+            // qat'i nazar ko'rsatiladi.
+            //
+            // Haqiqiy invariant TUZILMADA: qatorda telefon MAYDONI
+            // umuman yo'q. Dashboard umumiy ko'rinish; shaxsiy ma'lumot
+            // uchun §35 dagi ro'yxat bor va u USER_VIEW talab qiladi.
+            assertThat(rows.get(0).has("phone")).isFalse();
+            assertThat(rows.get(0).has("email")).isFalse();
+
+            assertThat(java.util.Arrays.stream(
+                            DashboardController.TableRow.class.getDeclaredFields())
+                    .map(java.lang.reflect.Field::getName))
+                    .doesNotContain("phone", "email");
+        }
+
+        @Test
+        @DisplayName("Ma'lumot yo'q jadval BO'SH qaytadi")
+        void emptyTablesStayEmpty() throws Exception {
+            assertThat(tables().get("topCreators")).isEmpty();
         }
     }
 

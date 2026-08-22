@@ -34,4 +34,27 @@ public interface SubscriptionRepo extends JpaRepository<Subscription, Long> {
             """)
     java.math.BigDecimal totalPaidAmountByTariff(
             @org.springframework.data.repository.query.Param("tariffId") Long tariffId);
+
+    /**
+     * Obuna daromadi — kunlik (ТЗ §48 grafigi).
+     *
+     * ⚠️ Sovg'a obunalar ({@code paidAmount is null}) kirmaydi: ular
+     * grafikni ko'tarib ko'rsatardi, lekin hech qanday pul kelmagan.
+     */
+    @org.springframework.data.jpa.repository.Query("""
+            select cast(s.startAt as date) as day, coalesce(sum(s.paidAmount), 0) as value
+            from Subscription s
+            where s.paidAmount is not null and s.revokedAt is null
+              and s.startAt >= :from
+            group by cast(s.startAt as date)
+            order by cast(s.startAt as date)
+            """)
+    List<DayMoney> revenueByDay(
+            @org.springframework.data.repository.query.Param("from") java.time.LocalDateTime from);
+
+    /** Kunlik pul — grafik uchun proyeksiya. */
+    interface DayMoney {
+        java.time.LocalDate getDay();
+        java.math.BigDecimal getValue();
+    }
 }

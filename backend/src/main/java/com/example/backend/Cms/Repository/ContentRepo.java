@@ -102,6 +102,10 @@ public interface ContentRepo extends JpaRepository<Content, Long> {
             """)
     List<Long> findIdsByCreator(@Param("creatorId") Long creatorId);
 
+    /** Oxirgi qo'shilgan kontent (ТЗ §48 jadvali). */
+    @EntityGraph(attributePaths = "translations")
+    List<Content> findAllByDeletedAtIsNullOrderByCreatedAtDesc(Pageable pageable);
+
     /** Sarlavha bo'yicha qidiruv - uchala tilda ham. */
     @Query("""
             select distinct c from Content c
