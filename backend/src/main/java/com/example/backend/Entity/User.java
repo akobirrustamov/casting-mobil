@@ -43,7 +43,23 @@ public class User implements UserDetails {
 
     private String avatarUrl;
 
+    /**
+     * ⚠️ {@code @BatchSize} — ro'yxatlar uchun (N+1).
+     *
+     * Rollar EAGER: Spring Security ularni har bir so'rovda talab qiladi,
+     * shuning uchun bu to'g'ri tanlov va u O'ZGARTIRILMAYDI.
+     *
+     * Lekin admin panelida foydalanuvchilar RO'YXAT bo'lib yuklanadi —
+     * izoh moderatsiyasi (§34), foydalanuvchilar ro'yxati (§35). O'shanda
+     * har bir foydalanuvchining rollari alohida so'rov bilan olinardi:
+     * 10 qatorlik sahifa 10 ta qo'shimcha so'rov degani edi.
+     *
+     * {@code @BatchSize} Hibernate'ga «bittalab emas, elliktalab yukla»
+     * deydi. Bu FAQAT yuklash usuli — jadval, ustun va xatti-harakat
+     * o'zgarmaydi, ya'ni eski casting kodi ta'sirlanmaydi.
+     */
     @ManyToMany(fetch = FetchType.EAGER)
+    @org.hibernate.annotations.BatchSize(size = 50)
     private List<Role> roles;
 
     public User(String phone, String password, String name, List<Role> roles) {

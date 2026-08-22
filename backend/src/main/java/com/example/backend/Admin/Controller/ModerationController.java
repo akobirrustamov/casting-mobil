@@ -71,7 +71,15 @@ public class ModerationController {
         var result = moderationService.comments(status, contentId, userId, from, to,
                 q, reportedOnly,
                 page(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
-        return ResponseEntity.ok(PageResponse.of(result, CommentDto::from));
+        // ⚠️ Telefon raqami — shaxsiy ma'lumot va u boshqa vazifaga
+        // tegishli. Izohni moderatsiya qilish uchun muallifning ismi va
+        // ID'si yetarli. Aks holda faqat COMMENT_VIEW ruxsati berilgan
+        // xodim butun foydalanuvchi bazasining telefonlarini ko'rardi.
+        boolean canSeeUsers = permissionService.hasPermission(
+                CurrentUser.get(), Permission.USER_VIEW);
+
+        return ResponseEntity.ok(PageResponse.of(result,
+                c -> CommentDto.from(c, canSeeUsers)));
     }
 
     /**

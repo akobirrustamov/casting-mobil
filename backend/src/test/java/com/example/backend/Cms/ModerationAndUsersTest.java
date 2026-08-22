@@ -15,6 +15,7 @@ import com.example.backend.Entity.User;
 import com.example.backend.Enums.UserRoles;
 import com.example.backend.Repository.RoleRepo;
 import com.example.backend.Repository.UserRepo;
+import com.example.backend.support.CapturingStatementInspector;
 import com.example.backend.support.Translations;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -50,6 +51,7 @@ class ModerationAndUsersTest {
     @Autowired private RoleRepo roleRepo;
     @Autowired private UserAccountRepo accountRepo;
     @Autowired private ContentService contentService;
+    @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager em;
 
     // -------------------------------------------------------------- §34
 
@@ -164,6 +166,103 @@ class ModerationAndUsersTest {
                     PageRequest.of(0, 20));
 
             assertThat(result.getContent()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("ТЗ §34 ro'yxat maydonlari to'liq")
+        void listFieldsAreComplete() {
+            Content film = content();
+            User author = appUser();
+            Comment c = comment(film, author, CommentStatus.VISIBLE, "izoh matni");
+            c.setReportsCount(2);
+            commentRepo.save(c);
+
+            var dto = com.example.backend.Admin.Dto.CommentDto.from(
+                    commentRepo.findById(c.getId()).orElseThrow());
+
+            // user · content · episode (ixtiyoriy) · comment · createdAt ·
+            // status · reportsCount
+            assertThat(dto.getAuthorId()).isEqualTo(author.getId());
+            assertThat(dto.getAuthorName()).isNotBlank();
+            assertThat(dto.getContentId()).isEqualTo(film.getId());
+            assertThat(dto.getEpisodeId()).isNull();       // ixtiyoriy
+            assertThat(dto.getText()).isEqualTo("izoh matni");
+            assertThat(dto.getCreatedAt()).isNotNull();
+            assertThat(dto.getStatus()).isEqualTo(CommentStatus.VISIBLE);
+            assertThat(dto.getReportsCount()).isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("⚠️ Telefon raqami standart holatda BERILMAYDI")
+        void phoneIsNotExposedByDefault() {
+            Comment c = comment(content(), appUser(), CommentStatus.VISIBLE, "izoh");
+
+            var dto = com.example.backend.Admin.Dto.CommentDto.from(
+                    commentRepo.findById(c.getId()).orElseThrow());
+
+            // Izohni moderatsiya qilish uchun muallifning ismi va ID'si
+            // yetarli. Ilgari telefon har doim qaytarilardi — ya'ni faqat
+            // COMMENT_VIEW ruxsati berilgan xodim butun foydalanuvchi
+            // bazasining telefonlarini ko'rardi.
+            assertThat(dto.getAuthorPhone()).isNull();
+            assertThat(dto.getAuthorId()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("USER_VIEW ruxsati bo'lsa telefon ko'rinadi")
+        void phoneIsShownWithUserView() {
+            User author = appUser();
+            Comment c = comment(content(), author, CommentStatus.VISIBLE, "izoh");
+
+            var dto = com.example.backend.Admin.Dto.CommentDto.from(
+                    commentRepo.findById(c.getId()).orElseThrow(), true);
+
+            assertThat(dto.getAuthorPhone()).isEqualTo(author.getPhone());
+        }
+
+        @Test
+        @DisplayName("Muallifni bloklash izoh ekranidan mumkin")
+        void authorCanBeBlockedFromModeration() {
+            User author = appUser();
+            Comment c = comment(content(), author, CommentStatus.VISIBLE, "qoidabuzar izoh");
+
+            // ТЗ §34: «block user where authorized». Moderator izohdan
+            // muallif ID'sini oladi va uni bloklaydi — ruxsati bo'lsa.
+            var dto = com.example.backend.Admin.Dto.CommentDto.from(
+                    commentRepo.findById(c.getId()).orElseThrow());
+            var blocked = userAdminService.setBlocked(null, dto.getAuthorId(),
+                    true, "Qoidabuzar izoh");
+
+            assertThat(blocked.getStatus()).isEqualTo(UserStatus.BLOCKED);
+        }
+
+        @Test
+        @DisplayName("Ro'yxat N+1 yubormaydi")
+        void listDoesNotIssueNPlusOneQueries() {
+            Content film = content();
+            for (int i = 0; i < 10; i++) {
+                comment(film, appUser(), CommentStatus.VISIBLE, "izoh " + i);
+            }
+
+            // ⚠️ Kontekst tozalanmasa obyektlar allaqachon yuklangan
+            // bo'ladi va so'rov umuman yuborilmaydi — test bo'sh o'tardi.
+            em.flush();
+            em.clear();
+
+            CapturingStatementInspector.clear();
+            var page = moderationService.comments(null, film.getId(), null, null, null,
+                    null, false, PageRequest.of(0, 10));
+            page.getContent().forEach(com.example.backend.Admin.Dto.CommentDto::from);
+
+            int userSelects = CapturingStatementInspector.selectsFrom("users").size();
+
+            assertThat(page.getContent()).hasSize(10);
+            // author, content va episode - dangasa @ManyToOne. join fetch
+            // bo'lmasa 10 qatorlik sahifa 30 tagacha qo'shimcha so'rov
+            // yuborardi.
+            assertThat(userSelects)
+                    .as("Mualliflar uchun yuborilgan so'rovlar: " + userSelects)
+                    .isLessThanOrEqualTo(2);
         }
 
         @Test

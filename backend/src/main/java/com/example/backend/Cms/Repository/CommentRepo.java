@@ -36,9 +36,35 @@ public interface CommentRepo extends JpaRepository<Comment, Long> {
      * <h2>Nima uchun {@code :param is null or ...}</h2>
      * Har bir filtr ixtiyoriy. Berilmagani shartni o'chiradi, berilgani esa
      * qo'shiladi — ya'ni ular VA bilan bog'lanadi.
+     *
+     * <h2>Nima uchun {@code join fetch}</h2>
+     * {@code author}, {@code content} va {@code episode} — dangasa
+     * {@code @ManyToOne}. DTO uchalasiga ham tegadi, ya'ni 20 qatorlik
+     * sahifa 60 tagacha qo'shimcha so'rov yuborardi (N+1).
+     *
+     * ⚠️ Bu yerda {@code join fetch} XAVFSIZ: {@code @ManyToOne} bitta
+     * satrni ko'paytirmaydi, shuning uchun {@code limit} to'g'ri ishlaydi.
+     * To'plamlarda ({@code @OneToMany}) esa aksincha bo'lardi
+     * ({@code HHH90003004}).
+     *
+     * Sanoq so'rovi alohida yozilgan: {@code join fetch} bilan
+     * {@code count} birga ishlamaydi.
      */
-    @Query("""
+    @Query(value = """
             select c from Comment c
+            left join fetch c.author
+            left join fetch c.content
+            left join fetch c.episode
+            where (:status is null or c.status = :status)
+              and (:contentId is null or c.content.id = :contentId)
+              and (:authorId is null or c.author.id = :authorId)
+              and (:from is null or c.createdAt >= :from)
+              and (:to is null or c.createdAt <= :to)
+              and (:reportedOnly = false or c.reportsCount > 0)
+              and (:q is null or lower(c.text) like lower(concat('%', :q, '%')))
+            """,
+            countQuery = """
+            select count(c) from Comment c
             where (:status is null or c.status = :status)
               and (:contentId is null or c.content.id = :contentId)
               and (:authorId is null or c.author.id = :authorId)

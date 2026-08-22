@@ -592,9 +592,27 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
   kodda umuman yo'q edi
 - `[x]` Matn qidiruvi kamida 2 belgi — bitta harf butun bazani
   skanerlashiga arzimaydi
-- `[x]` Foydalanuvchini bloklash — §35 dagi endpoint orqali
-- `[x]` `ModerationAndUsersTest` — 13 test; filtrlar mutatsiya bilan
-  tekshirilgan
+- `[x]` Ro'yxat maydonlari to'liq: `authorId` · `authorName` ·
+  `contentId` · `contentSlug` · `episodeId` (ixtiyoriy) · `text` ·
+  `createdAt` · `status` · `reportsCount`
+- `[x]` **Muallifni bloklash izoh ekranidan** — moderator `authorId` ni
+  ro'yxatdan oladi, bloklash esa `USER_BLOCK` ruxsatini talab qiladi
+  (ТЗ: «block user **where authorized**»)
+- `[x]` ⚠️ **Telefon raqami standart holatda BERILMAYDI.** Ilgari u har
+  doim qaytarilardi — ya'ni faqat `COMMENT_VIEW` ruxsati berilgan xodim
+  ham har bir izoh muallifining telefonini ko'rardi. Izoh moderatsiyasi
+  butun foydalanuvchi bazasining telefon raqamlariga ochiq eshik bo'lardi.
+  Endi u faqat `USER_VIEW` ruxsati bilan ko'rinadi
+- `[x]` ⚠️ **N+1 tuzatildi.** `author`, `content` va `episode` — dangasa
+  `@ManyToOne`, DTO uchalasiga ham tegadi. Ustiga `User.roles` **EAGER**
+  edi va har bir muallif uchun alohida so'rov ketardi: 10 qatorlik sahifa
+  11 ta ortiqcha so'rov yuborardi. `join fetch` + `User.roles` ga
+  `@BatchSize(50)` — endi 2 ta.
+  ⚠️ `@BatchSize` faqat YUKLASH usulini o'zgartiradi: jadval, ustun va
+  xatti-harakat o'zgarmaydi, ya'ni eski casting kodi ta'sirlanmaydi
+  (`OldCastingFrozenTest` o'tadi)
+- `[x]` `ModerationAndUsersTest` — 21 test; filtrlar, maxfiylik va N+1
+  mutatsiya bilan tekshirilgan
 - `[ ]` Izoh yozish (klient endpointi) — hozir faqat moderatsiya
 
 ## 20.1. User management `[x]` — ТЗ §35 to'liq
@@ -872,7 +890,7 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 | `HomeFeedTest` | 23 | **ТЗ §31** — bosh sahifa backenddan, qator tartibi, N+1 nazorati |
 | `NotificationModuleTest` | 30 | **ТЗ §32/§33** — rejalashtirish, soxta muvaffaqiyat yo'q |
 | `DonationAndPaymentTest` | 9 | **ТЗ §42/§44** — valyutalar qo'shilmaydi, soxta to'lov yo'q |
-| `ModerationAndUsersTest` | 16 | **ТЗ §34/§35/§38** — filtrlar birga, xodimlar ajratilgan, ID qidiruvi |
+| `ModerationAndUsersTest` | 21 | **ТЗ §34/§35/§38** — filtrlar birga, xodimlar ajratilgan, ID qidiruvi |
 | `InternalLinkReuseTest` | 9 | **ТЗ §28** — havola mexanizmi uchala modulda bir xil |
 | `BackendAuthorizationTest` | 10 | **Ikki qavatli avtorizatsiya, 6 xil escalation urinishi** |
 | `BootstrapAccountSecurityTest` | 7 | **Standart parolli master hisob qaytmasin** |
