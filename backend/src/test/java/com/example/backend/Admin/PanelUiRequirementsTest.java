@@ -264,4 +264,49 @@ class PanelUiRequirementsTest {
             }
         }
     }
+
+    // ------------------------------------------------------- modal fokusi
+
+    @Nested
+    @DisplayName("Modal fokusi (ТЗ §97)")
+    class ModalFocus {
+
+        /**
+         * ⚠️ Bu ilgari faqat IZOHDA yozilgan edi: «fokus ichida qoladi
+         * (§97)». Kodda esa hech qanday fokus boshqaruvi yo'q edi.
+         *
+         * Natijada klaviatura bilan ishlaydigan foydalanuvchi modal
+         * ochilganda orqadagi sahifada qolib ketardi va Tab bosib
+         * ko'rinmaydigan tugmalar bo'ylab yurardi — modal ochiq
+         * turgani holda.
+         */
+        @Test
+        @DisplayName("Modal fokusni ichkariga oladi va tuzoqda ushlaydi")
+        void modalTrapsFocus() throws java.io.IOException {
+            String src = java.nio.file.Files.readString(java.nio.file.Path.of(
+                    "../frontend/src/adminpanel/components/Modal.jsx"));
+
+            assertThat(src)
+                    .as("ochilganda fokus ichkariga ko'chirilsin")
+                    .contains(".focus()");
+            assertThat(src)
+                    .as("Tab bosilganda oxirgidan birinchisiga qaytsin")
+                    .contains("e.key !== 'Tab'");
+            assertThat(src)
+                    .as("yopilgach fokus ochgan tugmaga qaytsin")
+                    .contains("returnFocusRef");
+            assertThat(src)
+                    .as("dialog elementiga ref kerak")
+                    .contains("ref={dialogRef}");
+        }
+
+        @Test
+        @DisplayName("Ijobiy nazorat: detektor haqiqatan matnni o'qiydi")
+        void detectorReadsTheFile() throws java.io.IOException {
+            String src = java.nio.file.Files.readString(java.nio.file.Path.of(
+                    "../frontend/src/adminpanel/components/Modal.jsx"));
+            assertThat(src).hasSizeGreaterThan(500);
+            assertThat(src).contains("aria-modal");
+        }
+    }
 }
