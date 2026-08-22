@@ -793,7 +793,34 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 
 ### Valyutalar (§39–§41)
 
-- `[x]` Ikkita virtual valyuta: `STARS` · `COIN`
+- `[x]` Ikkita virtual valyuta: `STARS` · **`UZCASTING_COIN`** (V20).
+  Ilgari shunchaki `COIN` edi — bu ТЗ bilan kod o'rtasida doimiy tarjima
+  qatlamini yaratardi. Nom aynan hozir o'zgartirildi: donat endpointi
+  endigina qo'shildi, ya'ni ishlab chiqarishda hali bitta ham moliyaviy
+  yozuv yo'q
+- `[x]` ⚠️ **DONAT YUBORISH ENDPOINTI (yangi).** Ma'lumot modeli va admin
+  hisoboti bor edi, lekin foydalanuvchi donat YUBORADIGAN yo'l yo'q edi —
+  `cms_donation` satrlari faqat dev ma'lumotlari bilan to'lardi.
+  `POST /api/v1/app/donations`
+- `[x]` `GET /api/v1/app/donations/balance` — ТЗ §43 talab qilgan
+  «backend/data model tayyor bo'lsin»
+- `[x]` Balansdan yechish va yozuvni saqlash **bitta tranzaksiyada** —
+  ajralsa, birinchisi bajarilib ikkinchisi yiqilganda pul yo'qolardi
+- `[x]` ⚠️ **Manfiy va nol miqdor rad etiladi.** Tekshirilmasa, manfiy
+  miqdor ayirish o'rniga QO'SHARDI — ya'ni pul yaratish usuli bo'lardi
+- `[x]` **Nishon mavjudligi tekshiriladi** — nofaol ijodkor va nashr
+  qilinmagan kontent rad etiladi. Aks holda balansdan yechilib, hisobotda
+  hech qayerda ko'rinmasdi
+- `[x]` Bloklangan foydalanuvchi donat yubora olmaydi
+- `[x]` ⚠️ **Bir vaqtda yuborilgan donatlar** — `UserBalance.@Version`.
+  Usiz ikkala oqim ham eski balansni o'qib, ikkalasi ham yechardi:
+  100 ta yulduzi bor odam 120 ta yulduzlik donat qilardi.
+  `DonationConcurrencyTest` — `@Transactional` EMAS (bitta tranzaksiya
+  ichida poyga umuman yuzaga kelmaydi) va ortidan tozalaydi
+- `[x]` «actor» va «actress» alohida nishon EMAS: §24 ga ko'ra kasb —
+  ROL, shaxs esa `Creator`. Ularni ajratish bir odamning donatini ikki
+  joyga bo'lib yuborardi
+- `[x]` `DonationFlowTest` (13) + `DonationConcurrencyTest` (1)
 - `[x]` Nishonlar: **ijodkor** va **kontent** — har biri bo'yicha alohida
   hisoblanadi
 - `[x]` Paketlar boshqariladi: miqdor · narx · faol/nofaol · tartib
@@ -974,6 +1001,8 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 | `PremiumGiftTest` | 15 | **ТЗ §38** — telefon/email/ID qidiruvi, audit |
 | `PremiumRightsTest` | 4 | **ТЗ §37** — qoida bir joyda, sochilishga to'siq |
 | `TariffModuleTest` | 16 | **ТЗ §36** — BigDecimal, seed narxlari, tarif muddati |
+| `DonationFlowTest` | 13 | **ТЗ §39** — donat yuborish, nishon, balans |
+| `DonationConcurrencyTest` | 1 | **ТЗ §39** — bir vaqtda ikki donat balansni buzmaydi |
 | `DonationAndPaymentTest` | 9 | **ТЗ §42/§44** — valyutalar qo'shilmaydi, soxta to'lov yo'q |
 | `ModerationAndUsersTest` | 23 | **ТЗ §34/§35/§38** — filtrlar birga, xodimlar ajratilgan, ID qidiruvi |
 | `InternalLinkReuseTest` | 9 | **ТЗ §28** — havola mexanizmi uchala modulda bir xil |

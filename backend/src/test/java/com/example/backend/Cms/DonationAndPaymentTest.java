@@ -58,7 +58,7 @@ class DonationAndPaymentTest {
         void currenciesAreNotSummedTogether() {
             User sender = user();
             donate(sender, DonationTargetType.CREATOR, 1L, CurrencyKind.STARS, 100);
-            donate(sender, DonationTargetType.CREATOR, 1L, CurrencyKind.COIN, 5);
+            donate(sender, DonationTargetType.CREATOR, 1L, CurrencyKind.UZCASTING_COIN, 5);
 
             DonationReportDto report = monetizationService.donationReport(20, 30);
 
@@ -67,7 +67,7 @@ class DonationAndPaymentTest {
             assertThat(report.getByKind()).hasSize(2);
             assertThat(report.getByKind())
                     .extracting(DonationReportDto.KindTotal::getKind)
-                    .containsExactlyInAnyOrder(CurrencyKind.STARS, CurrencyKind.COIN);
+                    .containsExactlyInAnyOrder(CurrencyKind.STARS, CurrencyKind.UZCASTING_COIN);
             assertThat(report.getByKind()).filteredOn(k -> k.getKind() == CurrencyKind.STARS)
                     .first().extracting(DonationReportDto.KindTotal::getTotal).isEqualTo(100L);
         }

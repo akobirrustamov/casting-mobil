@@ -9,5 +9,12 @@ public enum CurrencyKind {
     STARS,
 
     /** UZCASTING Coin — ichki tanga. */
-    COIN
+    /**
+     * ТЗ §39 dagi nom bilan bir xil.
+     *
+     * Ilgari shunchaki {@code COIN} edi. Farq kichik ko'rinadi, lekin u
+     * doimiy tarjima qatlamini yaratardi: ТЗ va hisobotlarda bir nom,
+     * kodda va API javobida boshqa nom.
+     */
+    UZCASTING_COIN
 }

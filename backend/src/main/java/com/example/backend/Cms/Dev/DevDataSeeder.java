@@ -719,7 +719,7 @@ public class DevDataSeeder implements CommandLineRunner {
                     .sender(sender)
                     .targetType(DonationTargetType.CONTENT)
                     .targetId(contents.get(i).getId())
-                    .kind(CurrencyKind.COIN)
+                    .kind(CurrencyKind.UZCASTING_COIN)
                     .amount(100L * (4 - i))
                     .createdAt(LocalDateTime.now().minusDays(i))
                     .build());
