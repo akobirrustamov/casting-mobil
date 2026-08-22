@@ -1006,6 +1006,53 @@ tashlansa maydon baribir ko'rinardi).
 - `[x]` Ko'rsatishsiz CTR — nol, nolga bo'linish yo'q
 - `[x]` `DashboardMetricsTest` — 10 test, mutatsiya bilan tekshirilgan
 
+## 23.1. Database qoidalari `[x]` — ТЗ §56
+
+- `[x]` PostgreSQL · Flyway migratsiyalari (V1–V22) · `ddl-auto=none`
+- `[x]` **Buzuvchi migratsiya YO'Q** — `drop table`, `truncate`,
+  `delete from`, `drop column` birortasi ham ishlatilmagan. Yagona
+  `drop index` — ortiqcha indekslarni olib tashlash, u ma'lumotga
+  tegmaydi
+- `[x]` 55 ta FK cheklovi joyida
+
+### ⚠️ 27 ta indekssiz FK topildi
+
+PostgreSQL FK uchun **avtomatik indeks yaratmaydi** (MySQL dan farqli).
+Lekin hammasiga indeks qo'yilmadi — ТЗ: «Sababsiz har bir fieldga index
+qo'yma». Tanlov so'rov naqshiga qarab:
+
+- `[x]` ⚠️ **`users_roles(user_id)` — eng issiq yo'l.** `User.roles`
+  EAGER: Spring Security uni **har bir autentifikatsiyalangan so'rovda**
+  yuklaydi. Indekssiz bu jadvalni har safar to'liq skanerlash edi —
+  500 000 foydalanuvchida har bir API chaqiruvi 500 000 satrni ko'rib
+  chiqardi
+- `[x]` `users_roles(roles_id)` — xodim va ilova foydalanuvchisini
+  ajratish shu yo'nalishda
+- `[x]` `cms_content_genre(genre_id)` — **faqat u**. `content_id` uchun
+  kompozit birlamchi kalit allaqachon xizmat qiladi
+- `[x]` `cms_subscription(tariff_id)` · `cms_comment(episode_id)`
+- `[x]` Media ishlatilishi tekshiruvi uchun **faqat o'sadigan
+  jadvallarda**: `cms_content_media` va `cms_episode_video`. Reklama va
+  ijodkor jadvallari yuzlab satrdan oshmaydi — ularga indeks qo'yish
+  yozuv tezligini bekorga sekinlashtirardi
+
+### ⚠️ Beshta tarjima jadvalida cheklov tartibi teskari edi
+
+Ko'pchilikda `UNIQUE(parent_id, locale)` — to'g'ri, prefiks qoidasi
+bo'yicha u `where parent_id = ?` so'roviga ham xizmat qiladi.
+
+Lekin beshtasida `UNIQUE(locale, parent_id)`. Unikallik ikkala tartibda
+ham to'g'ri ishlaydi, **lekin indeks ishlatilmaydi**: birinchi ustun
+`locale` va unda atigi uchta xil qiymat bor.
+
+Tarjimalar esa doimiy yuklanadi — har bir kontent ro'yxati, har bir
+muharrir ochilishi, har bir bosh sahifa.
+
+- `[x]` Beshta jadvalga `parent_id` bo'yicha indeks qo'shildi. Cheklovning
+  o'zi o'zgartirilmadi: u to'g'ri ishlayapti va uni qayta qurish mavjud
+  ma'lumotni qayta yozishni talab qilardi
+- `[x]` `DatabaseRulesTest` — 7 test, uch mutatsiya bilan tekshirilgan
+
 ## 23.2. Search `[x]` — ТЗ §55
 
 ТЗ so'ragan oltala qidiruv ishlaydi: kontent sarlavhasi · ijodkor ·
@@ -1509,6 +1556,7 @@ CONTENT_VIEW  →  CONTENT_PLAY  →  CONTENT_COMPLETE
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
 | `ReportFiltersTest` | 10 | **ТЗ §47** — davr va obyekt filtrlari, kesishma |
 | `ContentAnalyticsTest` | 9 | **ТЗ §46** — voronka, har bir kontent uchun hisobot |
+| `DatabaseRulesTest` | 7 | **ТЗ §56** — buzuvchi migratsiya yo'q, indekslar naqshga qarab |
 | `SearchIndexTest` | 4 | **ТЗ §55** — qidiruv indekslari, sxemaga moslik |
 | `CreatorSelectionTest` | 10 | **ТЗ §54** — qidirish, joyida yaratish, biriktirish |
 | `ContentEditorStructureTest` | 7 | **ТЗ §53** — komponentlarga ajratish, rejalashtirish |
