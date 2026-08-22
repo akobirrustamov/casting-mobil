@@ -8,6 +8,7 @@ import com.example.backend.Cms.Entity.Notification;
 import com.example.backend.Cms.Entity.NotificationTranslation;
 import com.example.backend.Cms.Enums.Locale;
 import com.example.backend.Cms.Enums.AnalyticsEventType;
+import com.example.backend.Cms.Enums.NotificationAudience;
 import com.example.backend.Cms.Enums.NotificationStatus;
 import com.example.backend.Cms.Repository.MediaAssetRepo;
 import com.example.backend.Cms.Repository.AnalyticsEventRepo;
@@ -40,6 +41,7 @@ public class NotificationAdminService {
     private final NotificationRepo notificationRepo;
     private final InternalLinkValidator linkValidator;
     private final AnalyticsEventRepo eventRepo;
+    private final com.example.backend.Repository.UserRepo userRepo;
     private final MediaAssetRepo mediaAssetRepo;
     private final AuditService auditService;
 
@@ -252,27 +254,60 @@ public class NotificationAdminService {
         Notification n = notificationRepo.findById(id)
                 .orElseThrow(() -> BusinessException.notFound("Notification", id));
 
-        boolean wasSent = n.getStatus() == NotificationStatus.SENT;
-        boolean wasFailed = n.getStatus() == NotificationStatus.FAILED;
+        // Qabul qiluvchilar bo'yicha ko'rsatkichlar uchun har bir odam
+        // bo'yicha yozuv kerak. Bunday jadval yo'q va u push provayderi
+        // ulangandan keyin paydo bo'ladi.
+        String needsProvider = "Qabul qiluvchilar bo'yicha yozuv yo'q. "
+                + PROVIDER_NOT_CONFIGURED;
 
         return NotificationReportDto.builder()
                 .notificationId(n.getId())
+                // Xabarning O'Z holati — bu voronka ko'rsatkichi EMAS.
                 .status(n.getStatus().name())
                 .scheduledAt(n.getScheduledAt())
                 .sentAt(n.getSentAt())
                 .failureReason(n.getFailureReason())
-                .sent(NotificationReportDto.Metric.of(wasSent ? 1 : 0))
-                .failed(NotificationReportDto.Metric.of(wasFailed ? 1 : 0))
+
+                // Auditoriya hajmi — HAQIQIY son, bazadan hisoblanadi.
+                .audienceSize(NotificationReportDto.Metric.of(audienceSize(n.getAudience())))
+
+                // ⚠️ Ilgari bu yerda `sent = 1` turardi, ya'ni «holati SENT».
+                // Bu voronkani ma'nosiz qilardi: 1 kishiga yuborilgan
+                // xabarni 250 kishi ochgan bo'lib chiqardi.
+                .sent(NotificationReportDto.Metric.unavailable(needsProvider))
+                .failed(NotificationReportDto.Metric.unavailable(needsProvider))
+                .delivered(NotificationReportDto.Metric.unavailable(
+                        "Yetkazish kvitansiyasi push provayderidan keladi. "
+                                + PROVIDER_NOT_CONFIGURED))
+
+                // Bular HAQIQIY: klient analitika hodisasini yuboradi.
                 .opened(NotificationReportDto.Metric.of(
                         eventRepo.countByTypeAndTargetId(AnalyticsEventType.NOTIFICATION_OPEN, id),
                         eventRepo.countUniquesForTarget(AnalyticsEventType.NOTIFICATION_OPEN, id)))
                 .clicked(NotificationReportDto.Metric.of(
                         eventRepo.countByTypeAndTargetId(AnalyticsEventType.NOTIFICATION_CLICK, id),
                         eventRepo.countUniquesForTarget(AnalyticsEventType.NOTIFICATION_CLICK, id)))
-                .delivered(NotificationReportDto.Metric.unavailable(
-                        "Yetkazish kvitansiyasi push provayderidan keladi. "
-                                + PROVIDER_NOT_CONFIGURED))
                 .build();
+    }
+
+    /**
+     * Nishon auditoriyasining hozirgi hajmi.
+     *
+     * ⚠️ Bu «yuborildi» EMAS — hech narsa yuborilmagan bo'lsa ham son
+     * chiqadi. U {@code opened} ni talqin qilish uchun kerak: 250 ta
+     * ochilish ko'p ham, oz ham bo'lishi mumkin — auditoriya 300 kishimi
+     * yoki 300 000 kishimi, usiz bilinmaydi.
+     *
+     * Xodimlar hisobga olinmaydi — ular ilova foydalanuvchisi emas va
+     * push xabar olmaydi.
+     */
+    private long audienceSize(NotificationAudience audience) {
+        long all = userRepo.countAppUsers();
+        if (audience == null || audience == NotificationAudience.ALL) {
+            return all;
+        }
+        long premium = userRepo.countPremiumAppUsers(LocalDateTime.now());
+        return audience == NotificationAudience.PREMIUM_ONLY ? premium : all - premium;
     }
 
     private static boolean isBlank(String s) {

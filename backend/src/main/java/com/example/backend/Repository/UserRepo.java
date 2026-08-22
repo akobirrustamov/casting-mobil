@@ -68,4 +68,38 @@ public interface UserRepo extends JpaRepository<User, UUID> {
     Page<User> findAppUsers(@Param("q") String q,
                             @Param("exactId") UUID exactId,
                             Pageable pageable);
+
+    /**
+     * Ilova foydalanuvchilari SONI — bildirishnoma auditoriyasi uchun (§33).
+     *
+     * Xodimlar chiqarib tashlanadi: ular ilova foydalanuvchisi emas va
+     * push xabar olmaydi.
+     */
+    @Query("""
+            select count(u) from User u
+            where not exists (
+                select r from User su join su.roles r
+                where su.id = u.id and r.name <> com.example.backend.Enums.UserRoles.ROLE_USER
+            )
+            """)
+    long countAppUsers();
+
+    /**
+     * Faol premiumga ega ilova foydalanuvchilari soni.
+     *
+     * Premium muddati {@code UserAccount} da saqlanadi. Hisobi yo'q
+     * foydalanuvchi premiumsiz hisoblanadi.
+     */
+    @Query("""
+            select count(u) from User u
+            where not exists (
+                select r from User su join su.roles r
+                where su.id = u.id and r.name <> com.example.backend.Enums.UserRoles.ROLE_USER
+            )
+            and exists (
+                select a from UserAccount a
+                where a.user.id = u.id and a.premiumUntil > :moment
+            )
+            """)
+    long countPremiumAppUsers(@Param("moment") java.time.LocalDateTime moment);
 }

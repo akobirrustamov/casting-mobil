@@ -531,21 +531,49 @@ Entity/ Repository/ Services/   ESKI casting
 ТЗ: «Mavjud infrastructure qaysi metricni real berishi mumkinligini
 aniqlab ishlat. Real ma'lumot bo'lmasa fake statistic yaratma.»
 
+**Beshta ko'rsatkich — bu QABUL QILUVCHILAR bo'yicha voronka:**
+
+```
+sent → delivered → opened → clicked
+     ↘ failed
+```
+
+Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
+
 | Ko'rsatkich | Manba | Holat |
 |---|---|---|
-| `sent` | bizning yozuvimiz (status) | ✅ real |
-| `failed` | bizning yozuvimiz (status) | ✅ real |
+| `audienceSize` | bazadagi foydalanuvchilar soni | ✅ real |
+| `sent` | push provayderi | ❌ **o'lchanmaydi** |
+| `delivered` | provayder kvitansiyasi | ❌ **o'lchanmaydi** |
+| `failed` | push provayderi | ❌ **o'lchanmaydi** |
 | `opened` | klient hodisasi `NOTIFICATION_OPEN` | ✅ real, unikal bilan |
 | `clicked` | klient hodisasi `NOTIFICATION_CLICK` | ✅ real, unikal bilan |
-| `delivered` | push provayderi kvitansiyasi | ❌ **o'lchanmaydi** |
 
-- `[x]` Har bir ko'rsatkichda `available` bayrog'i bor. `delivered` uchun
-  **nol emas, `null` + sabab** qaytadi: nol ko'rsatilsa admin «hech kimga
-  yetib bormadi» deb o'ylardi, aslida biz shunchaki BILMAYMIZ
-- `[x]` `NOTIFICATION_CLICK` hodisa turi qo'shildi — odam xabarni ochib,
-  havolani bosmasligi mumkin; ikkalasi bitta hodisa bo'lsa «clicked»
-  «opened» ning nusxasi bo'lib qolardi
-- `[ ]` Yetkazish kvitansiyasi — FCM ulangach
+- `[x]` ⚠️ **`sent` ham «o'lchanmaydi» ga o'tkazildi.** Ilgari u
+  `1` qaytarardi — «bu xabarning holati SENT». Bu voronkani ma'nosiz
+  qilardi: 1 kishiga yuborilgan xabarni 250 kishi ochgan bo'lib chiqardi.
+  Raqam o'ylab topilmagan, lekin u **boshqa narsani** o'lchaydi va qo'shni
+  ustunlar bilan solishtirib bo'lmaydi — bu ham soxta statistika, faqat
+  nozikroq turi
+- `[x]` Xabarning O'Z holati yo'qolmadi — u `status` va `failureReason`
+  maydonlarida, o'z joyida turadi
+- `[x]` Har bir ko'rsatkichda `available` bayrog'i. O'lchanmasa **nol
+  emas, `null` + sabab**: nol «bo'lmadi» degani, bilmaslik esa boshqa
+  narsa. `delivered = 0` ko'rsatilsa admin «hech kimga yetib bormadi» deb
+  o'ylab, butunlay boshqa muammoni qidirardi
+- `[x]` **`audienceSize` qo'shildi** — nishon auditoriyasining hozirgi
+  hajmi. Usiz `opened` ni umuman talqin qilib bo'lmaydi: 250 ta ochilish
+  ko'p ham, oz ham bo'lishi mumkin — auditoriya 300 kishimi yoki
+  300 000 kishimi, bilinmaydi. ⚠️ Bu «yuborildi» EMAS, va xodimlar
+  sanalmaydi
+- `[x]` `NOTIFICATION_CLICK` hodisa turi — odam xabarni ochib, havolani
+  bosmasligi mumkin; ikkalasi bitta hodisa bo'lsa «clicked» «opened» ning
+  nusxasi bo'lib qolardi
+- `[x]` `NotificationModuleTest$Report` — 10 test, mutatsiya bilan
+  tekshirilgan
+- `[ ]` Qabul qiluvchilar bo'yicha yozuv (`notification_delivery`) — FCM
+  ulangandan keyin. Shundan keyin `sent`, `delivered` va `failed` real
+  bo'ladi
 
 ## 20. Comments `[x]` — ТЗ §34 to'liq
 
@@ -842,7 +870,7 @@ aniqlab ishlat. Real ma'lumot bo'lmasa fake statistic yaratma.»
 | `AdStatisticsEndpointTest` | 6 | **ТЗ §29** — har bir reklama uchun statistika |
 | `PremiereModuleTest` | 20 | **ТЗ §30** — maydonlar, havola, BARCHA matnlar uch tilda |
 | `HomeFeedTest` | 23 | **ТЗ §31** — bosh sahifa backenddan, qator tartibi, N+1 nazorati |
-| `NotificationModuleTest` | 24 | **ТЗ §32/§33** — rejalashtirish, soxta muvaffaqiyat yo'q |
+| `NotificationModuleTest` | 30 | **ТЗ §32/§33** — rejalashtirish, soxta muvaffaqiyat yo'q |
 | `DonationAndPaymentTest` | 9 | **ТЗ §42/§44** — valyutalar qo'shilmaydi, soxta to'lov yo'q |
 | `ModerationAndUsersTest` | 16 | **ТЗ §34/§35/§38** — filtrlar birga, xodimlar ajratilgan, ID qidiruvi |
 | `InternalLinkReuseTest` | 9 | **ТЗ §28** — havola mexanizmi uchala modulda bir xil |

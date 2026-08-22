@@ -55,6 +55,8 @@ class NotificationModuleTest {
     @Autowired private ContentService contentService;
     @Autowired private com.example.backend.Cms.Repository.NotificationRepo notificationRepo;
     @Autowired private com.example.backend.Admin.TestStaffFactory staff;
+    @Autowired private com.example.backend.Repository.UserRepo userRepo;
+    @Autowired private com.example.backend.Repository.RoleRepo roleRepo;
 
     // ------------------------------------------------------------ yaratish
 
@@ -359,17 +361,64 @@ class NotificationModuleTest {
     class Report {
 
         @Test
-        @DisplayName("O'lchanmaydigan ko'rsatkich NOL emas — «mavjud emas»")
-        void deliveredIsNotFakedAsZero() {
+        @DisplayName("⚠️ `sent` ham o'lchanmaydi — u 0/1 holat EMAS")
+        void sentIsRecipientCountNotStatus() {
+            Notification n = notificationService.save(null, null, translated());
+            notificationService.send(null, n.getId());
+
+            NotificationReportDto report = notificationService.report(n.getId());
+
+            // Ilgari bu yerda `sent = 1` qaytarilardi, ya'ni «holati SENT».
+            // Voronka ma'nosiz bo'lardi: 1 kishiga yuborilgan xabarni
+            // 250 kishi ochgan bo'lib chiqardi. Raqam o'ylab topilmagan,
+            // lekin u BOSHQA narsani o'lchaydi — bu ham soxta statistika.
+            assertThat(report.getSent().getAvailable()).isFalse();
+            assertThat(report.getSent().getValue()).isNull();
+            assertThat(report.getSent().getUnavailableReason()).isNotBlank();
+        }
+
+        @Test
+        @DisplayName("Xabarning O'Z holati alohida maydonda qoladi")
+        void notificationStatusStaysItsOwnField() {
+            Notification n = notificationService.save(null, null, translated());
+            notificationService.send(null, n.getId());
+
+            NotificationReportDto report = notificationService.report(n.getId());
+
+            // Voronka ko'rsatkichi bo'lmasa ham, urinish natijasi
+            // yo'qolmaydi — u o'z joyida turadi.
+            assertThat(report.getStatus()).isEqualTo(NotificationStatus.FAILED.name());
+            assertThat(report.getFailureReason()).contains("FCM");
+        }
+
+        @Test
+        @DisplayName("`delivered` va `failed` ham nol emas — «mavjud emas»")
+        void deliveredAndFailedAreNotFakedAsZero() {
             Notification n = notificationService.save(null, null, request());
 
             NotificationReportDto report = notificationService.report(n.getId());
 
-            // Nol qaytarilsa admin «hech kimga yetib bormadi» deb
-            // o'ylardi. Aslida biz shunchaki BILMAYMIZ.
+            // Nol «bo'lmadi» degani, bilmaslik esa boshqa narsa.
             assertThat(report.getDelivered().getAvailable()).isFalse();
             assertThat(report.getDelivered().getValue()).isNull();
-            assertThat(report.getDelivered().getUnavailableReason()).isNotBlank();
+            assertThat(report.getFailed().getAvailable()).isFalse();
+            assertThat(report.getFailed().getValue()).isNull();
+        }
+
+        @Test
+        @DisplayName("Har bir o'lchanmaydigan ko'rsatkich SABABINI aytadi")
+        void everyUnavailableMetricExplainsWhy() {
+            Notification n = notificationService.save(null, null, request());
+            NotificationReportDto report = notificationService.report(n.getId());
+
+            // Admin nima uchun raqam yo'qligini bilishi kerak, aks holda
+            // u buni xato deb o'ylab, muammoni boshqa joydan qidirardi.
+            for (NotificationReportDto.Metric m : List.of(
+                    report.getSent(), report.getFailed(), report.getDelivered())) {
+                assertThat(m.getUnavailableReason())
+                        .as("o'lchanmaydigan ko'rsatkich sababsiz qolmasin")
+                        .isNotBlank();
+            }
         }
 
         @Test
@@ -414,16 +463,73 @@ class NotificationModuleTest {
         }
 
         @Test
-        @DisplayName("Hodisasiz hisobot nol — bu haqiqiy nol")
+        @DisplayName("Hodisasiz ochilish noli — bu HAQIQIY nol")
         void zeroEventsIsARealZero() {
             Notification n = notificationService.save(null, null, request());
 
             NotificationReportDto report = notificationService.report(n.getId());
 
             // Bu yerda nol TO'G'RI: biz hodisalarni yozamiz va ular yo'q.
-            // «delivered» dan farqi shu — u bizga umuman ko'rinmaydi.
+            // `delivered` dan farqi shu — u bizga umuman ko'rinmaydi.
             assertThat(report.getOpened().getAvailable()).isTrue();
             assertThat(report.getOpened().getValue()).isZero();
+        }
+
+        @Test
+        @DisplayName("Auditoriya hajmi HAQIQIY — ochilishni talqin qilish uchun")
+        void audienceSizeIsReal() {
+            appUser();
+            appUser();
+            Notification n = notificationService.save(null, null, request());
+
+            NotificationReportDto report = notificationService.report(n.getId());
+
+            // Usiz `opened` ni talqin qilib bo'lmaydi: 250 ta ochilish
+            // ko'p ham, oz ham bo'lishi mumkin.
+            assertThat(report.getAudienceSize().getAvailable()).isTrue();
+            assertThat(report.getAudienceSize().getValue())
+                    .isGreaterThanOrEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("Auditoriya hajmi xodimlarni SANAMAYDI")
+        void audienceExcludesStaff() {
+            appUser();
+            long beforeStaff = notificationService.report(
+                    notificationService.save(null, null, request()).getId())
+                    .getAudienceSize().getValue();
+
+            staff.tokenForRole("+998900000501", PlatformRole.ADMIN,
+                    EnumSet.of(Permission.NOTIFICATION_VIEW));
+
+            long afterStaff = notificationService.report(
+                    notificationService.save(null, null, request()).getId())
+                    .getAudienceSize().getValue();
+
+            // Xodim ilova foydalanuvchisi emas va push xabar olmaydi.
+            assertThat(afterStaff).isEqualTo(beforeStaff);
+        }
+
+        @Test
+        @DisplayName("PREMIUM_ONLY auditoriyasi kichikroq")
+        void premiumAudienceIsSmaller() {
+            appUser();
+            appUser();
+
+            NotificationSaveRequest hamma = request();
+            hamma.setAudience(NotificationAudience.ALL);
+            NotificationSaveRequest faqatPremium = request();
+            faqatPremium.setAudience(NotificationAudience.PREMIUM_ONLY);
+
+            long all = notificationService.report(
+                    notificationService.save(null, null, hamma).getId())
+                    .getAudienceSize().getValue();
+            long premium = notificationService.report(
+                    notificationService.save(null, null, faqatPremium).getId())
+                    .getAudienceSize().getValue();
+
+            // Premiumi yo'q foydalanuvchilar yaratildi.
+            assertThat(premium).isLessThan(all);
         }
     }
 
@@ -476,6 +582,24 @@ class NotificationModuleTest {
         // sana bazada to'g'ridan-to'g'ri suriladi — xuddi vaqt o'tgandek.
         n.setScheduledAt(LocalDateTime.now().minusMinutes(1));
         return notificationRepo.save(n);
+    }
+
+    /** Ilova foydalanuvchisi — auditoriya sanog'i uchun. */
+    private com.example.backend.Entity.User appUser() {
+        com.example.backend.Entity.Role r =
+                roleRepo.findByName(com.example.backend.Enums.UserRoles.ROLE_USER);
+        if (r == null) {
+            int nextId = roleRepo.findAll().stream()
+                    .mapToInt(com.example.backend.Entity.Role::getId).max().orElse(0) + 1;
+            r = roleRepo.save(new com.example.backend.Entity.Role(
+                    nextId, com.example.backend.Enums.UserRoles.ROLE_USER));
+        }
+        com.example.backend.Entity.User u = new com.example.backend.Entity.User();
+        u.setPhone("+99890" + (9100000 + SEQ.incrementAndGet()));
+        u.setPassword("x");
+        u.setName("Auditoriya " + SEQ.get());
+        u.setRoles(new java.util.ArrayList<>(List.of(r)));
+        return userRepo.save(u);
     }
 
     private Content content() {

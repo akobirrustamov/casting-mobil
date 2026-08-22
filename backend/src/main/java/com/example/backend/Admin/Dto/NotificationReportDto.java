@@ -12,14 +12,29 @@ import java.time.LocalDateTime;
  * ТЗ: «Mavjud infrastructure qaysi metricni real berishi mumkinligini
  * aniqlab ishlat. Real ma'lumot bo'lmasa fake statistic yaratma.»
  *
- * Ba'zi ko'rsatkichlarni biz O'ZIMIZ bilamiz (yuborildi, xato — bu bizning
- * yozuvimiz). Ba'zilari klientdan keladi (ochildi, bosildi — analitika
- * hodisasi). {@code delivered} esa FAQAT push provayderi kvitansiyasidan
- * kelishi mumkin, u hozir ulanmagan.
+ * <h2>Beshta ko'rsatkich — bu QABUL QILUVCHILAR bo'yicha voronka</h2>
+ * <pre>
+ *   sent → delivered → opened → clicked
+ *        ↘ failed
+ * </pre>
+ * Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
  *
- * Agar {@code delivered} nol deb ko'rsatilsa, admin «hech kimga yetib
- * bormadi» deb o'ylardi — bu YOLG'ON. Shuning uchun raqam emas, «o'lchanmaydi»
- * degan holat va uning sababi qaytariladi.
+ * <h2>Nima uchun {@code sent} ham «o'lchanmaydi»</h2>
+ * Ilgari bu yerda {@code sent = 1} qaytarilardi: «bu xabarning holati
+ * SENT». Bu voronkani ma'nosiz qilardi — 1 kishiga yuborilgan xabarni
+ * 250 kishi ochgan bo'lib chiqardi. Bu ham soxta statistika, faqat
+ * nozikroq turi: raqam o'ylab topilmagan, lekin u BOSHQA narsani
+ * o'lchaydi va qo'shni ustunlar bilan solishtirib bo'lmaydi.
+ *
+ * Qabul qiluvchilar sonini bilish uchun har bir odam bo'yicha yozuv kerak
+ * ({@code notification_delivery}), u esa push provayderi ulangandan keyin
+ * paydo bo'ladi. Xabarning O'Z holati esa {@link #status} va
+ * {@link #failureReason} da — o'z joyida turadi.
+ *
+ * <h2>Nima uchun nol emas, {@code null}</h2>
+ * Nol «bo'lmadi» degani. Bilmaslik esa boshqa narsa. {@code delivered = 0}
+ * ko'rsatilsa admin «hech kimga yetib bormadi» deb o'ylardi va butunlay
+ * boshqa muammoni qidirardi.
  */
 @Data
 @Builder
@@ -31,8 +46,26 @@ public class NotificationReportDto {
     private LocalDateTime sentAt;
     private String failureReason;
 
-    /** Bizning yozuvimiz: xabar yuborishga urinildimi va natija qanday. */
+    /**
+     * Auditoriya HAJMI — nechta foydalanuvchi bu xabarni olishi kerak.
+     *
+     * ⚠️ Bu «yuborildi» EMAS. Bu nishon auditoriyasining hozirgi hajmi.
+     * Usiz {@code opened} ni umuman talqin qilib bo'lmaydi: 250 ta ochilish
+     * ko'p ham, oz ham bo'lishi mumkin — auditoriya 300 kishimi yoki
+     * 300 000 kishimi, bilinmaydi.
+     */
+    private Metric audienceSize;
+
+    /**
+     * Yuborilgan QABUL QILUVCHILAR soni.
+     *
+     * ⚠️ Bu «bu xabar yuborildimi» degan 0/1 EMAS — u {@link #status} da
+     * turadi. Bu yerda odamlar soni kerak, uni esa faqat push provayderi
+     * bera oladi.
+     */
     private Metric sent;
+
+    /** Yuborib bo'lmagan qabul qiluvchilar soni — provayderdan keladi. */
     private Metric failed;
 
     /** Klient hodisalari: analitika endpointidan keladi. */
