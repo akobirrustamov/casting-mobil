@@ -1,0 +1,25 @@
+-- ==========================================================================
+--  V18 — TARIF TAVSIFI
+-- ==========================================================================
+--
+--  ТЗ §36 maydonlar ro'yxatida IKKITASI bor:
+--
+--      description
+--      features
+--
+--  Kodda esa bittasi edi: `features`. `TranslationDto` qayta ishlatilgani
+--  uchun DTO'ning `description` maydoni `features` ustuniga yozilardi,
+--  ya'ni ikki tushuncha bitta katakka qo'shib yuborilgan edi.
+--
+--  Ular boshqa-boshqa narsa:
+--
+--      description — nasriy izoh («Oilaviy tomosha uchun eng ommabop tarif»)
+--      features    — nima kirishi ro'yxati («4K · 4 qurilma · reklamasiz»)
+--
+--  Bittasiga ikkalasini sig'dirish admin panelida bitta katta matn
+--  maydoniga aylanardi va mobil ilova ularni alohida ko'rsata olmasdi.
+--
+--  ⚠️ Ustun QO'SHILADI, mavjud `features` ma'lumoti tegilmaydi.
+-- ==========================================================================
+
+alter table cms_tariff_translation add column description varchar(1000);

@@ -10,11 +10,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Tarif saqlash.
+ * Tarif saqlash (ТЗ §36).
  *
- * {@code TranslationDto} qayta ishlatiladi: {@code title} = tarif nomi,
- * {@code shortDescription} = bejak («ENG FOYDALI TARIF»),
- * {@code description} = imkoniyatlar ro'yxati.
+ * Matnlar {@link TariffTextDto} da: nom · bejak · tavsif · imkoniyatlar.
+ * Ilgari umumiy {@code TranslationDto} ishlatilardi va unda uchta maydon
+ * bo'lgani uchun ТЗ dagi {@code description} bilan {@code features} bitta
+ * katakka qo'shib yuborilgan edi.
  */
 @Data
 public class TariffSaveRequest {
@@ -35,5 +36,5 @@ public class TariffSaveRequest {
     private Integer sortOrder = 0;
 
     @NotNull(message = "Nomlar kiritilmagan")
-    private Map<Locale, TranslationDto> translations = new LinkedHashMap<>();
+    private Map<Locale, TariffTextDto> translations = new LinkedHashMap<>();
 }

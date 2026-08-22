@@ -36,4 +36,22 @@ public class TariffTranslation {
     /** Har bir qator alohida — klient ro'yxat qilib chizadi. */
     @Column(length = 2000)
     private String features;
+
+    /**
+     * Nasriy izoh (ТЗ §36, V18).
+     *
+     * <h2>{@code features} dan farqi</h2>
+     * <ul>
+     *   <li>{@code description} — izoh: «Oilaviy tomosha uchun eng
+     *       ommabop tarif»;</li>
+     *   <li>{@code features} — nima kirishi ro'yxati: «4K · 4 qurilma ·
+     *       reklamasiz».</li>
+     * </ul>
+     *
+     * Ilgari ikkalasi bitta ustunga yozilardi — admin panelida bitta
+     * katta matn maydoniga aylanardi va mobil ilova ularni alohida
+     * ko'rsata olmasdi.
+     */
+    @Column(length = 1000)
+    private String description;
 }

@@ -2,6 +2,7 @@ package com.example.backend.Cms.Service;
 
 import com.example.backend.Admin.Dto.TariffSaveRequest;
 import com.example.backend.Admin.Dto.CurrencyPackageSaveRequest;
+import com.example.backend.Admin.Dto.TariffTextDto;
 import com.example.backend.Cms.Entity.CurrencyPackage;
 import com.example.backend.Cms.Entity.Tariff;
 import com.example.backend.Cms.Entity.TariffTranslation;
@@ -54,10 +55,11 @@ public class MonetizationService {
         if (request.getPrice() == null || request.getPrice().compareTo(BigDecimal.ZERO) < 0) {
             throw BusinessException.validation("Narx manfiy bo'lishi mumkin emas");
         }
-        var uz = request.getTranslations().get(Locale.UZ);
-        if (uz == null || uz.getTitle() == null || uz.getTitle().isBlank()) {
-            throw BusinessException.validation("O'zbekcha nom majburiy - u asosiy til");
-        }
+        // Tarif foydalanuvchiga ko'rinadi va u pul to'laydi — nomi
+        // tarjimasiz qolsa, rus tilidagi ekranda o'zbekcha tarif turardi.
+        TranslationRules.require(request.getTranslations(),
+                TariffTextDto::getName, "Tarif nomi",
+                !Boolean.FALSE.equals(request.getActive()));
 
         Tariff tariff = id == null ? new Tariff()
                 : tariffRepo.findById(id).orElseThrow(() -> BusinessException.notFound("Tariff", id));
@@ -86,7 +88,7 @@ public class MonetizationService {
         tariff.getTranslations().forEach(t -> existing.put(t.getLocale(), t));
         Set<Locale> keep = new HashSet<>();
         request.getTranslations().forEach((locale, dto) -> {
-            if (dto == null || dto.getTitle() == null || dto.getTitle().isBlank()) {
+            if (dto == null || dto.getName() == null || dto.getName().isBlank()) {
                 return;
             }
             keep.add(locale);
@@ -95,9 +97,12 @@ public class MonetizationService {
                 row = TariffTranslation.builder().locale(locale).build();
                 tariff.addTranslation(row);
             }
-            row.setName(dto.getTitle().trim());
-            row.setBadge(dto.getShortDescription());
-            row.setFeatures(dto.getDescription());
+            row.setName(dto.getName().trim());
+            row.setBadge(dto.getBadge());
+            // ⚠️ Tavsif va imkoniyatlar ALOHIDA (ТЗ §36). Ilgari ikkalasi
+            // bitta ustunga yozilardi.
+            row.setDescription(dto.getDescription());
+            row.setFeatures(dto.getFeatures());
         });
         tariff.getTranslations().removeIf(t -> !keep.contains(t.getLocale()));
 

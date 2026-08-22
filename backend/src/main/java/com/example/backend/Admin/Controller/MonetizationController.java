@@ -9,6 +9,7 @@ import com.example.backend.Admin.Dto.PageResponse;
 import com.example.backend.Admin.Dto.CurrencyPackageSaveRequest;
 import com.example.backend.Admin.Dto.PlatformSettingDto;
 import com.example.backend.Admin.Dto.TariffSaveRequest;
+import com.example.backend.Admin.Dto.TariffTextDto;
 import com.example.backend.Admin.Dto.TranslationDto;
 import com.example.backend.Cms.Entity.CurrencyPackage;
 import com.example.backend.Cms.Entity.PlatformSetting;
@@ -212,15 +213,16 @@ public class MonetizationController {
         private Boolean active;
         private Boolean highlighted;
         private Integer sortOrder;
-        private Map<Locale, TranslationDto> translations;
+        private Map<Locale, TariffTextDto> translations;
 
         static TariffDto from(Tariff t) {
-            Map<Locale, TranslationDto> tr = new LinkedHashMap<>();
+            Map<Locale, TariffTextDto> tr = new LinkedHashMap<>();
             for (TariffTranslation x : t.getTranslations()) {
-                tr.put(x.getLocale(), TranslationDto.builder()
-                        .title(x.getName())
-                        .shortDescription(x.getBadge())
-                        .description(x.getFeatures())
+                tr.put(x.getLocale(), TariffTextDto.builder()
+                        .name(x.getName())
+                        .badge(x.getBadge())
+                        .description(x.getDescription())
+                        .features(x.getFeatures())
                         .build());
             }
             return TariffDto.builder()

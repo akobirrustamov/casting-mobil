@@ -679,7 +679,32 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 **Entity:** `Tariff` + `TariffTranslation` · **Migratsiya:** V5
 
 - `[x]` Maydonlar: id · code · `durationMonths` · price · currency ·
-  active · sortOrder · uch tilli nom, tavsif, badge va **features**
+  active · sortOrder · uch tilli **nom · bejak · tavsif · imkoniyatlar**
+- `[x]` ⚠️ **`description` va `features` ALOHIDA (V18).** Ilgari umumiy
+  `TranslationDto` ishlatilardi — unda uchta maydon bor, tarifga esa
+  to'rttasi kerak. Natijada ТЗ dagi ikki tushuncha bitta ustunga qo'shib
+  yuborilgan edi: `description` — nasriy izoh, `features` — nima kirishi
+  ro'yxati. Bittasiga ikkalasini sig'dirish admin panelida bitta katta
+  matn maydoniga aylanardi va mobil ilova ularni alohida ko'rsata olmasdi
+- `[x]` `TariffTextDto` — tarifning o'z DTO'si
+- `[x]` Faol tarif nomi uch tilda majburiy — foydalanuvchi PUL to'laydi
+- `[x]` ⚠️ **`durationMonths` bezak edi.** Premium berishda u umuman
+  o'qilmasdi: muddat faqat `months` parametridan kelardi. Admin
+  «12 oy — 159 900» tarifini tanlab `months=1` yuborsa, foydalanuvchi
+  1 oy olardi, obuna yozuvida esa 12 oylik tarif turardi — hisobot yolg'on
+  ko'rsatardi. Endi tarif o'z muddatini belgilaydi, `months` esa faqat
+  tarifsiz erkin sovg'a uchun
+- `[x]` Mavjud bo'lmagan tarif ID rad etiladi (ilgari `orElse(null)` —
+  noto'g'ri ID jimgina e'tiborsiz qolardi)
+- `[x]` ⚠️ **V19: seed qilingan jadvallarning ketma-ketligi tuzatildi.**
+  V5 tarif, tarjima va valyuta paketlarini ANIQ ID bilan qo'shadi, lekin
+  ketma-ketlikni oldinga surmagan. Natijada admin panelida **birinchi
+  yangi tarif yaratish `duplicate key` bilan yiqilardi** — ya'ni §36 ning
+  asosiy talabi («admin panel orqali o'zgartirilishi shart») amalda
+  bajarilmasdi.
+  Java migratsiya: sintaksis portativ emas (PostgreSQL — `setval`,
+  H2 — `alter column ... restart with`), V5 ning o'zi tahrirlanmadi —
+  u bajarilgan va nazorat summasi buzilardi
 - `[x]` ⚠️ **Narx `BigDecimal`** — floating point pul uchun yaramaydi
   (0.1 + 0.2 ≠ 0.3). Buyurtmachi talabi
 - `[x]` **Narxlar kodda hardcoded emas** — barchasi bazada, admin panel
@@ -692,6 +717,8 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
   admin nimani to'ldirmaganini bilmasdi
 - `[x]` `PlatformSetting` ham DTO orqali qaytadi — API baza sxemasiga
   bog'lanib qolmasin
+- `[x]` `TariffModuleTest` — 16 test; pul turi, seed narxlari, tarif
+  muddati va ketma-ketlik tuzatishi mutatsiya bilan tekshirilgan
 
 ## 22.2. Premium huquqlari va sovg'a `[x]` — ТЗ §37, §38
 
@@ -911,6 +938,7 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 | `PremiereModuleTest` | 20 | **ТЗ §30** — maydonlar, havola, BARCHA matnlar uch tilda |
 | `HomeFeedTest` | 23 | **ТЗ §31** — bosh sahifa backenddan, qator tartibi, N+1 nazorati |
 | `NotificationModuleTest` | 30 | **ТЗ §32/§33** — rejalashtirish, soxta muvaffaqiyat yo'q |
+| `TariffModuleTest` | 16 | **ТЗ §36** — BigDecimal, seed narxlari, tarif muddati |
 | `DonationAndPaymentTest` | 9 | **ТЗ §42/§44** — valyutalar qo'shilmaydi, soxta to'lov yo'q |
 | `ModerationAndUsersTest` | 23 | **ТЗ §34/§35/§38** — filtrlar birga, xodimlar ajratilgan, ID qidiruvi |
 | `InternalLinkReuseTest` | 9 | **ТЗ §28** — havola mexanizmi uchala modulda bir xil |

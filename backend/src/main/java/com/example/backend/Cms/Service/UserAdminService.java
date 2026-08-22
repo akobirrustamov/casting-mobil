@@ -143,8 +143,29 @@ public class UserAdminService {
      */
     @Transactional
     public UserAccount grantPremium(User actor, UUID userId, Integer months, Long tariffId) {
-        if (months == null || months <= 0) {
-            throw BusinessException.validation("Muddat oylarda va noldan katta bo'lishi kerak");
+        // ⚠️ Tarif tanlangan bo'lsa, MUDDAT O'SHANDAN olinadi.
+        //
+        // Ilgari muddat faqat `months` parametridan kelardi va tarifning
+        // `durationMonths` maydoni umuman o'qilmasdi — u bezak edi.
+        // Natijada admin «12 oy — 159 900» tarifini tanlab `months=1`
+        // yuborsa, foydalanuvchi 1 oy olardi, obuna yozuvida esa 12 oylik
+        // tarif turardi. Hisobotda bu tarif «12 oylik» bo'lib ko'rinardi.
+        //
+        // Endi tarif o'z muddatini belgilaydi; `months` esa faqat tarifsiz
+        // erkin sovg'a uchun.
+        Tariff tariff = tariffId == null ? null : tariffRepo.findById(tariffId)
+                .orElseThrow(() -> BusinessException.notFound("Tariff", tariffId));
+
+        Integer effectiveMonths = months;
+        if (tariff != null && tariff.getDurationMonths() != null
+                && tariff.getDurationMonths() > 0) {
+            effectiveMonths = tariff.getDurationMonths();
+        }
+
+        if (effectiveMonths == null || effectiveMonths <= 0) {
+            throw BusinessException.validation(
+                    "Muddat oylarda va noldan katta bo'lishi kerak "
+                            + "(yoki muddati belgilangan tarif tanlansin)");
         }
 
         User user = userRepo.findById(userId)
@@ -154,9 +175,7 @@ public class UserAdminService {
         // Mavjud obuna ustiga qo'shiladi, boshidan boshlanmaydi
         LocalDateTime from = account.hasActivePremium()
                 ? account.getPremiumUntil() : LocalDateTime.now();
-        LocalDateTime until = from.plusMonths(months);
-
-        Tariff tariff = tariffId == null ? null : tariffRepo.findById(tariffId).orElse(null);
+        LocalDateTime until = from.plusMonths(effectiveMonths);
 
         subscriptionRepo.save(Subscription.builder()
                 .user(user)
@@ -172,7 +191,9 @@ public class UserAdminService {
         UserAccount saved = accountRepo.save(account);
 
         auditService.log(actor, AuditAction.PREMIUM_GRANTED, "User", userId, null,
-                Map.of("months", months, "until", until.toString()));
+                Map.of("months", effectiveMonths,
+                        "tariff", tariff == null ? "—" : tariff.getCode(),
+                        "until", until.toString()));
         return saved;
     }
 
