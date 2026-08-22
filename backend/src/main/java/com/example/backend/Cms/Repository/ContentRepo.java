@@ -79,6 +79,29 @@ public interface ContentRepo extends JpaRepository<Content, Long> {
     List<Content> findAllByDeletedAtIsNullAndOrientationAndStatus(
             ContentOrientation orientation, PublicationStatus status);
 
+    // ---------------------------------------------------- hisobot filtrlari
+    //
+    // ТЗ §47: hisobotlar kontent, kategoriya va ijodkor bo'yicha
+    // filtrlansin. Faqat ID'lar qaytariladi — hisobot ularni kunlik
+    // jamlanma ustidan filtr sifatida ishlatadi, ya'ni butun entity
+    // yuklanmaydi.
+
+    @Query("select c.id from Content c where c.category.id = :categoryId and c.deletedAt is null")
+    List<Long> findIdsByCategory(@Param("categoryId") Long categoryId);
+
+    /**
+     * Ijodkor qatnashgan kontent.
+     *
+     * ⚠️ {@code distinct} SHART: bitta odam bitta kinoda ham aktyor, ham
+     * rejissyor bo'lishi mumkin (§24) — u holda kontent ikki marta
+     * chiqardi va hisobotda ikki barobar ko'rinardi.
+     */
+    @Query("""
+            select distinct cc.content.id from ContentCredit cc
+            where cc.creator.id = :creatorId and cc.content.deletedAt is null
+            """)
+    List<Long> findIdsByCreator(@Param("creatorId") Long creatorId);
+
     /** Sarlavha bo'yicha qidiruv - uchala tilda ham. */
     @Query("""
             select distinct c from Content c

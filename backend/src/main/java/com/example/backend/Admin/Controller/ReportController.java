@@ -18,7 +18,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -54,6 +56,7 @@ public class ReportController {
     private final com.example.backend.Cms.Repository.ContentDailyStatisticRepo contentStatRepo;
     private final AdvertisementRepo advertisementRepo;
     private final ContentRepo contentRepo;
+    private final com.example.backend.Cms.Repository.SubscriptionRepo subscriptionRepo;
     private final PermissionService permissionService;
 
     private void require(Permission permission) {
@@ -68,20 +71,80 @@ public class ReportController {
      * Nomlangan oraliqlar (§47): today, yesterday, last7, last30.
      * Aniq sanalar berilsa — o'shalar ishlatiladi.
      */
+    /**
+     * Davr oralig'i (ТЗ §47).
+     *
+     * <h2>Nima uchun noma'lum davr XATO beradi</h2>
+     * Ilgari {@code default} tarmog'i ham «last30» ni, ham NOMA'LUM
+     * qiymatni qamrardi. Ya'ni panel {@code period=last90} yuborsa,
+     * hisobot 30 kunlik ma'lumot qaytarardi va buni hech kim sezmasdi —
+     * admin 90 kunlik hisobotni ko'rdim deb o'ylardi.
+     *
+     * <h2>Yarim to'ldirilgan custom davr ham xato</h2>
+     * Faqat {@code from} berilsa, ilgari u jimgina e'tiborsiz qolib
+     * «last30» ishlardi.
+     */
     private LocalDate[] range(String period, LocalDate from, LocalDate to) {
         LocalDate today = LocalDate.now();
-        if (from != null && to != null) {
+
+        if (from != null || to != null) {
+            if (from == null || to == null) {
+                throw BusinessException.validation(
+                        "Maxsus davr uchun ikkala sana ham kerak: from va to");
+            }
             if (to.isBefore(from)) {
-                throw BusinessException.validation("Tugash sanasi boshlanishdan oldin bo'lishi mumkin emas");
+                throw BusinessException.validation(
+                        "Tugash sanasi boshlanishdan oldin bo'lishi mumkin emas");
             }
             return new LocalDate[]{from, to};
         }
+
         return switch (period == null ? "last30" : period) {
             case "today" -> new LocalDate[]{today, today};
             case "yesterday" -> new LocalDate[]{today.minusDays(1), today.minusDays(1)};
             case "last7" -> new LocalDate[]{today.minusDays(6), today};
-            default -> new LocalDate[]{today.minusDays(29), today};
+            case "last30" -> new LocalDate[]{today.minusDays(29), today};
+            default -> throw BusinessException.validation(
+                    "Noma'lum davr: " + period
+                            + ". Mumkin: today, yesterday, last7, last30 "
+                            + "yoki from/to sanalari");
         };
+    }
+
+    /**
+     * Kontent filtrlarini bitta ID to'plamiga keltiradi (ТЗ §47).
+     *
+     * <h2>Nima uchun kesishma</h2>
+     * Bir nechta filtr birga berilsa, ular BIRGA ishlashi kerak: «shu
+     * ijodkor + shu kategoriya» = ikkalasiga ham mos kontent. Birlashma
+     * bo'lsa filtr qo'shgan sari natija KENGAYARDI, bu esa kutilganiga
+     * teskari.
+     *
+     * @return null — filtr yo'q; bo'sh to'plam — mos kontent yo'q
+     */
+    private Set<Long> resolveContentFilter(Long contentId, Long categoryId, Long creatorId) {
+        if (contentId == null && categoryId == null && creatorId == null) {
+            return null;
+        }
+        Set<Long> result = null;
+        if (contentId != null) {
+            result = new HashSet<>(List.of(contentId));
+        }
+        if (categoryId != null) {
+            result = intersect(result, contentRepo.findIdsByCategory(categoryId));
+        }
+        if (creatorId != null) {
+            result = intersect(result, contentRepo.findIdsByCreator(creatorId));
+        }
+        return result;
+    }
+
+    private Set<Long> intersect(Set<Long> current, List<Long> next) {
+        if (current == null) {
+            return new HashSet<>(next);
+        }
+        current.retainAll(new HashSet<>(next));
+        return current;
     }
 
     /**
@@ -146,18 +209,52 @@ public class ReportController {
         return whole == 0 ? 0d : Math.round(part * 10000.0 / whole) / 100.0;
     }
 
+    /**
+     * Umumiy hisobot (ТЗ §45, §47).
+     *
+     * <h2>Filtrlar (§47)</h2>
+     * Davr: {@code today} · {@code yesterday} · {@code last7} ·
+     * {@code last30} yoki {@code from}/{@code to}.
+     *
+     * Obyekt: kontent · kategoriya · ijodkor · tarif · reklama. Ular
+     * BIRGA ishlaydi — masalan «shu kategoriya, oxirgi 7 kun».
+     */
     @GetMapping("/overview")
     public ResponseEntity<ReportOverview> overview(
             @RequestParam(required = false) String period,
             @RequestParam(required = false) LocalDate from,
-            @RequestParam(required = false) LocalDate to) {
+            @RequestParam(required = false) LocalDate to,
+            @RequestParam(required = false) Long contentId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long creatorId,
+            @RequestParam(required = false) Long tariffId,
+            @RequestParam(required = false) Long advertisementId) {
 
         require(Permission.REPORT_VIEW);
         LocalDate[] r = range(period, from, to);
 
-        var series = analyticsService.dailySeries(r[0], r[1]);
-        var adTotals = analyticsService.adTotals(r[0], r[1]);
-        var contentTotals = analyticsService.contentTotals(r[0], r[1]);
+        // Kontent filtrlari bitta ID to'plamiga keltiriladi: uchalasi ham
+        // oxir-oqibat «qaysi kontent hisobga olinsin» degan savolga
+        // javob beradi.
+        Set<Long> contentFilter = resolveContentFilter(contentId, categoryId, creatorId);
+
+        // ⚠️ Filtr qo'llanganda GRAFIK ham torayishi shart. Aks holda
+        // ro'yxat torayib, grafik va umumiy son butun platformaniki
+        // bo'lib qolardi — hisobot o'z-o'ziga zid bo'lardi.
+        var series = contentFilter == null
+                ? analyticsService.dailySeries(r[0], r[1])
+                : (contentFilter.isEmpty()
+                        // Mos kontent yo'q — bo'sh grafik, soxta qator emas.
+                        ? List.<com.example.backend.Cms.Repository.ContentDailyStatisticRepo.DailyPoint>of()
+                        : contentStatRepo.dailySeriesForContents(r[0], r[1], contentFilter));
+
+        var adTotals = analyticsService.adTotals(r[0], r[1]).stream()
+                .filter(a -> advertisementId == null
+                        || advertisementId.equals(a.getAdvertisementId()))
+                .toList();
+        var contentTotals = analyticsService.contentTotals(r[0], r[1]).stream()
+                .filter(c -> contentFilter == null || contentFilter.contains(c.getContentId()))
+                .toList();
 
         long views = series.stream().mapToLong(p -> nz(p.getViews())).sum();
         long plays = series.stream().mapToLong(p -> nz(p.getPlays())).sum();
@@ -171,8 +268,22 @@ public class ReportController {
         Map<Long, String> contentNames = contentRepo.findAll()
                 .stream().collect(Collectors.toMap(c -> c.getId(), c -> c.getSlug(), (a, b) -> a));
 
+        // Tarif filtri (ТЗ §47) — obuna daromadi shu tarif bo'yicha.
+        java.math.BigDecimal subscriptionRevenue = tariffId == null
+                ? subscriptionRepo.totalPaidAmount()
+                : subscriptionRepo.totalPaidAmountByTariff(tariffId);
+
         return ResponseEntity.ok(ReportOverview.builder()
                 .from(r[0]).to(r[1])
+                .subscriptionRevenue(subscriptionRevenue == null
+                        ? java.math.BigDecimal.ZERO : subscriptionRevenue)
+                .appliedFilters(AppliedFilters.builder()
+                        .contentId(contentId)
+                        .categoryId(categoryId)
+                        .creatorId(creatorId)
+                        .tariffId(tariffId)
+                        .advertisementId(advertisementId)
+                        .build())
                 .totalViews(views).totalPlays(plays).totalCompletes(completes)
                 .completionRate(plays == 0 ? 0d : completes * 100d / plays)
                 .adImpressions(impressions).adClicks(clicks)
@@ -207,6 +318,19 @@ public class ReportController {
     @Data
     @Builder
     public static class ReportOverview {
+
+        /**
+         * Qaysi filtrlar qo'llanganini javobning O'ZI aytadi (ТЗ §47).
+         *
+         * Usiz admin «bu son butun platformanikimi yoki filtrlanganmi»
+         * degan savolga javob topa olmasdi — ayniqsa saqlangan yoki
+         * ulashilgan havolada.
+         */
+        private AppliedFilters appliedFilters;
+
+        /** Obuna daromadi — tarif filtri qo'llansa, faqat o'sha tarif. */
+        private java.math.BigDecimal subscriptionRevenue;
+
         private LocalDate from;
         private LocalDate to;
         private Long totalViews;
@@ -221,6 +345,17 @@ public class ReportController {
         private List<DailyPoint> series;
         private List<ContentRow> topContent;
         private List<AdRow> topAds;
+    }
+
+    /** Qo'llangan filtrlar — javobda qaytariladi. */
+    @Data
+    @Builder
+    public static class AppliedFilters {
+        private Long contentId;
+        private Long categoryId;
+        private Long creatorId;
+        private Long tariffId;
+        private Long advertisementId;
     }
 
     @Data

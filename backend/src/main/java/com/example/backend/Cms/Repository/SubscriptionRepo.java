@@ -25,4 +25,13 @@ public interface SubscriptionRepo extends JpaRepository<Subscription, Long> {
             "select coalesce(sum(s.paidAmount), 0) from Subscription s "
                     + "where s.paidAmount is not null and s.revokedAt is null")
     java.math.BigDecimal totalPaidAmount();
+
+    /** Bitta tarif bo'yicha daromad (ТЗ §47 filtri). */
+    @org.springframework.data.jpa.repository.Query("""
+            select coalesce(sum(s.paidAmount), 0) from Subscription s
+            where s.paidAmount is not null and s.revokedAt is null
+              and s.tariff.id = :tariffId
+            """)
+    java.math.BigDecimal totalPaidAmountByTariff(
+            @org.springframework.data.repository.query.Param("tariffId") Long tariffId);
 }

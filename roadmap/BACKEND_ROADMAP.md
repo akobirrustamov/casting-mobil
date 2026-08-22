@@ -1038,15 +1038,42 @@ CONTENT_VIEW  →  CONTENT_PLAY  →  CONTENT_COMPLETE
 - `[x]` Mobil UI yozilmadi (ТЗ shunday deydi)
 - `[x]` `ContentAnalyticsTest` — 9 test, mutatsiya bilan tekshirilgan
 
-## 25. Reports `[~]`
+## 25. Reports `[x]` — ТЗ §47 to'liq
 
-- `[x]` `GET /reports/overview` — `REPORT_VIEW`
-- `[x]` `GET /dashboard/summary` — asosiy ko'rsatkichlar
-- `[x]` **Ma'lumot yo'q bo'lsa bo'sh holat** — soxta raqam chiqarilmaydi
-- `[ ]` Sana oralig'i bo'yicha filtr
-- `[ ]` CSV / Excel eksport
-- `[ ]` Daromad hisoboti (obuna + xarid + donat bo'yicha ajratilgan)
-- `[ ]` Kontent bo'yicha batafsil hisobot
+**Endpoint:** `GET /api/v1/app/admin/reports/overview`
+
+### Davr filtri
+
+`today` · `yesterday` · `last7` · `last30` · maxsus (`from`/`to`).
+
+- `[x]` ⚠️ **Noma'lum davr endi XATO beradi.** Ilgari `default` tarmog'i
+  ham «last30» ni, ham noma'lum qiymatni qamrardi: panel
+  `period=last90` yuborsa hisobot 30 kunlik ma'lumot qaytarardi va
+  **admin 90 kunlik hisobotni ko'rdim deb o'ylardi**
+- `[x]` ⚠️ **Yarim to'ldirilgan maxsus davr ham xato.** Faqat `from`
+  berilsa u jimgina e'tiborsiz qolib «last30» ishlardi
+
+### Obyekt filtri
+
+`contentId` · `categoryId` · `creatorId` · `tariffId` · `advertisementId`
+
+- `[x]` ⚠️ **Filtr JAMLANMANI ham toraytiradi.** Faqat ro'yxatni
+  filtrlash yetarli emas edi: admin bitta kategoriyani tanlaganda
+  ro'yxat torayib, umumiy son va grafik BUTUN platformaniki bo'lib
+  qolardi — hisobot o'z-o'ziga zid bo'lardi va sabab ekranda
+  ko'rinmasdi
+- `[x]` **Filtrlar KESISHADI, birlashmaydi.** «Shu ijodkor + shu
+  kategoriya» = ikkalasiga ham mos kontent. Birlashma bo'lsa filtr
+  qo'shgan sari natija KENGAYARDI — kutilganiga teskari
+- `[x]` Ijodkor bo'yicha filtrda `distinct` SHART: bitta odam bitta
+  kinoda ham aktyor, ham rejissyor bo'lishi mumkin (§24) — u holda
+  kontent ikki marta chiqib, hisobotda ikki barobar ko'rinardi
+- `[x]` Mos kontent yo'q — **bo'sh grafik**, soxta qator emas
+- `[x]` **Qo'llangan filtrlar javobda qaytariladi** (`appliedFilters`).
+  Usiz admin «bu son butun platformanikimi yoki filtrlanganmi» degan
+  savolga javob topa olmasdi — ayniqsa saqlangan yoki ulashilgan
+  havolada
+- `[x]` `ReportFiltersTest` — 10 test, uch mutatsiya bilan tekshirilgan
 
 ## 26. Audit logs `[x]`
 
@@ -1167,6 +1194,7 @@ CONTENT_VIEW  →  CONTENT_PLAY  →  CONTENT_COMPLETE
 | `FinancialHistoryImmutableTest` | 5 | **ТЗ §42** — moliyaviy tarix o'chirilmaydi |
 | `SettingValidationTest` | 12 | **ТЗ §40/§41** — xato narx saqlanmaydi |
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
+| `ReportFiltersTest` | 10 | **ТЗ §47** — davr va obyekt filtrlari, kesishma |
 | `ContentAnalyticsTest` | 9 | **ТЗ §46** — voronka, har bir kontent uchun hisobot |
 | `DashboardMetricsTest` | 10 | **ТЗ §45** — 20 ko'rsatkich, soxta statistika yo'q |
 | `PackagePurchaseTest` | 13 | **ТЗ §44** — ichki balans ishlaydi, soxta to'lov yo'q |

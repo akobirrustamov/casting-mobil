@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,6 +38,30 @@ public interface ContentDailyStatisticRepo extends JpaRepository<ContentDailySta
             order by sum(s.views) desc
             """)
     List<ContentTotals> totalsBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    /**
+     * FILTRLANGAN kunlik qator (ТЗ §47).
+     *
+     * <h2>Nima uchun kerak</h2>
+     * Filtr qo'llanganda grafik ham torayishi shart. Aks holda admin
+     * bitta kategoriyani tanlaydi, ro'yxat torayadi — lekin grafik va
+     * umumiy son BUTUN platformaniki bo'lib qoladi. Ya'ni hisobot
+     * o'z-o'ziga zid bo'lardi va bunga sabab ekranda ko'rinmasdi.
+     */
+    @Query("""
+            select s.statDate as day,
+                   sum(s.views) as views,
+                   sum(s.plays) as plays,
+                   sum(s.completes) as completes
+            from ContentDailyStatistic s
+            where s.statDate between :from and :to
+              and s.contentId in :contentIds
+            group by s.statDate
+            order by s.statDate
+            """)
+    List<DailyPoint> dailySeriesForContents(@Param("from") LocalDate from,
+                                            @Param("to") LocalDate to,
+                                            @Param("contentIds") Collection<Long> contentIds);
 
     /** Kunlik qator — grafik uchun. */
     @Query("""
