@@ -102,7 +102,7 @@ export default function AdminLayout() {
             style={{
               width: 34, height: 34, borderRadius: 10,
               background: 'linear-gradient(135deg, var(--p-primary), var(--p-accent))',
-              color: '#fff', fontSize: 15,
+              color: 'var(--on-brand)', fontSize: 15,
             }}
             aria-hidden="true"
           >
@@ -143,7 +143,7 @@ export default function AdminLayout() {
           className="flex items-center justify-between gap-4 px-4 sm:px-6 sticky top-0 z-40"
           style={{
             height: 'var(--p-header)',
-            background: 'rgba(7, 14, 32, 0.86)',
+            background: 'var(--scrim)',
             backdropFilter: 'blur(10px)',
             borderBottom: '1px solid var(--p-border-soft)',
           }}

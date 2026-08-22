@@ -118,15 +118,15 @@ export default function NotificationsPage() {
 
       {/* Provayder ulanmagani ochiq aytiladi — admin nima bo'layotganini bilsin */}
       <div className="mb-4 px-4 py-3"
-           style={{ borderRadius: 'var(--p-radius)', background: 'rgba(251,191,36,.10)',
-                    border: '1px solid rgba(251,191,36,.35)', color: 'var(--p-warning)', fontSize: 13 }}>
+           style={{ borderRadius: 'var(--p-radius)', background: 'var(--warning-soft)',
+                    border: '1px solid var(--warning-border)', color: 'var(--p-warning)', fontSize: 13 }}>
         {t('nt.providerWarning')}
       </div>
 
       {actionError && (
         <div role="alert" className="mb-4 px-4 py-3"
-             style={{ borderRadius: 'var(--p-radius)', background: 'rgba(248,113,113,.10)',
-                      border: '1px solid rgba(248,113,113,.35)', color: 'var(--p-danger)', fontSize: 13 }}>
+             style={{ borderRadius: 'var(--p-radius)', background: 'var(--danger-soft)',
+                      border: '1px solid var(--danger-border)', color: 'var(--p-danger)', fontSize: 13 }}>
           {actionError.message}
         </div>
       )}

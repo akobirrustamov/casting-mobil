@@ -112,7 +112,7 @@ export function LanguageSwitcher() {
             fontSize: 12,
             background: locale === l ? 'var(--p-primary)' : 'transparent',
             borderColor: locale === l ? 'var(--p-primary)' : 'var(--p-border)',
-            color: locale === l ? '#fff' : 'var(--p-muted)',
+            color: locale === l ? 'var(--on-brand)' : 'var(--p-muted)',
           }}
         >
           {l.toUpperCase()}

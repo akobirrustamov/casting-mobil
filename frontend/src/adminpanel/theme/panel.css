@@ -1,48 +1,122 @@
 /* ==========================================================================
-   UZCASTING Admin Panel - dizayn tokenlari
+   UZCASTING Admin Panel - dizayn tokenlari (ТЗ §50)
    --------------------------------------------------------------------------
-   Gamma: TO'Q KO'K (buyurtmachi qarori, 19.08.2026).
+   ⚠️ RANGLAR FAQAT SHU YERDA. Komponentlarga hex yozilmaydi.
 
-   Bu mobil ilovaning palitrasi EMAS. Mobil ilovada ТЗ V2 (18-bet) bo'yicha
-   tasdiqlangan to'q binafsha/qora gamma qoladi va u o'zgartirilmaydi.
-   Admin panel - alohida mahsulot yuzasi, shuning uchun ziddiyat yo'q.
+   Buyurtmachi talabi: «Exact color aniqlanmagan bo'lsa kodning hamma
+   joyiga hex rang tarqatib yuborma.» Shuning uchun butun palitra shu
+   blokda: gammani almashtirish uchun faqat SHU qiymatlarni o'zgartirish
+   kifoya, birorta komponentga tegilmaydi.
 
-   Ranglar faqat SHU YERDA. Komponentlarga hex yozilmaydi (§50).
+   --------------------------------------------------------------------------
+   GAMMA: TO'Q BORDO + TO'Q ZAYTUN (Miro konsepsiyasi, ТЗ §50)
+
+   ⚠️ ANIQ HEX QIYMATLAR BERILMAGAN. Quyidagilar konsepsiyaga mos
+   tanlangan ORALIQ qiymatlar. Miro'dan aniq ranglar kelganda faqat
+   `--brand-primary` va `--brand-secondary` almashtiriladi.
+
+   ⚠️ Bu mobil ilovaning palitrasi EMAS. Mobil ilovada ТЗ V2 (18-bet)
+   bo'yicha tasdiqlangan gamma qoladi. Admin panel - alohida mahsulot
+   yuzasi, shuning uchun ziddiyat yo'q.
    ========================================================================== */
 
 .uz-panel {
-    /* Fon qatlamlari - eng chuqurdan yuzagacha */
-    --p-bg:          #070E20;
-    --p-surface:     #0C1730;
-    --p-surface-2:   #12203F;
-    --p-surface-3:   #1A2B52;
-    --p-border:      #1E3163;
-    --p-border-soft: #16254A;
+    /* ---------------------------------------------------------------- brend */
 
-    /* Asosiy rang */
-    --p-primary:       #2F6BFF;
-    --p-primary-hover: #1D4ED8;
-    --p-primary-soft:  rgba(47, 107, 255, 0.14);
+    /* To'q bordo - asosiy harakat rangi. */
+    --brand-primary:       #7B1E2B;
+    --brand-primary-hover: #5E1621;
+    --brand-primary-soft:  rgba(123, 30, 43, 0.18);
 
-    /* Yordamchi ranglar */
-    --p-accent:  #38BDF8;
-    --p-gold:    #F5C542;
-    --p-success: #34D399;
-    --p-warning: #FBBF24;
-    --p-danger:  #F87171;
+    /* To'q zaytun - ikkilamchi urg'u. */
+    --brand-secondary:      #4A5A2B;
+    --brand-secondary-soft: rgba(74, 90, 43, 0.20);
 
-    /* Matn */
-    --p-text:     #E9EFFB;
-    --p-muted:    #8FA3C8;
-    --p-disabled: #566C99;
+    /* Brend rangi ustidagi matn - kontrast uchun. */
+    --on-brand: #FFFFFF;
 
-    /* O'lchamlar */
-    --p-radius:    12px;
-    --p-radius-lg: 18px;
-    --p-sidebar:   264px;
-    --p-header:    64px;
+    /* ------------------------------------------------------------- yuzalar */
 
-    --p-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    --background:  #14090B;
+    --surface:     #1E1013;
+    --surface-2:   #2A171B;
+    --surface-3:   #382025;
+    --border:      #46282E;
+    --border-soft: #331D22;
+
+    /* --------------------------------------------------------------- matn */
+
+    --text:     #F2E9E6;
+    --muted:    #B29A96;
+    --disabled: #7A6360;
+
+    /* ------------------------------------------------------------- holatlar
+       Bu uchtasi brenddan MUSTAQIL: xato qizil, ogohlantirish sariq,
+       muvaffaqiyat yashil bo'lib qolishi kerak. Brend rangiga
+       moslashtirilsa, «xato» va «asosiy tugma» bir xil ko'rinardi va
+       ogohlantirish o'z kuchini yo'qotardi. */
+
+    --danger:  #E5686A;
+    --warning: #E0A93B;
+    --success: #6FBF8B;
+
+    /* Holat xabarlari uchun yumshoq fon va chegara.
+       Ular ALOHIDA token: ilgari komponentlarga `rgba(248,113,113,.10)`
+       ko'rinishida qotirilgan edi va gamma almashganda eski qizil
+       bo'lib qolardi. */
+    --danger-soft:    rgba(229, 104, 106, 0.10);
+    --danger-border:  rgba(229, 104, 106, 0.35);
+    --warning-soft:   rgba(224, 169, 59, 0.10);
+    --warning-border: rgba(224, 169, 59, 0.35);
+
+    /* Mobil menyu ochilganda orqa fon pardasi. */
+    --scrim: rgba(20, 9, 11, 0.86);
+
+    /* Oltin urg'u - tanlangan/premium belgilar uchun. */
+    --gold: #D9A441;
+
+    /* -------------------------------------------------------------- o'lcham */
+
+    --radius:    12px;
+    --radius-lg: 18px;
+    --sidebar:   264px;
+    --header:    64px;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+
+    /* ======================================================================
+       ESKI NOMLAR - moslik uchun.
+
+       Panel CSS'i `--p-*` nomlarini ishlatadi. Ularni bir yo'la
+       almashtirish katta va xavfli tahrir bo'lardi, shuning uchun ular
+       yuqoridagi tokenlardan OLINADI. Ya'ni manba bitta, nomi ikkita.
+       ====================================================================== */
+
+    --p-bg:          var(--background);
+    --p-surface:     var(--surface);
+    --p-surface-2:   var(--surface-2);
+    --p-surface-3:   var(--surface-3);
+    --p-border:      var(--border);
+    --p-border-soft: var(--border-soft);
+
+    --p-primary:       var(--brand-primary);
+    --p-primary-hover: var(--brand-primary-hover);
+    --p-primary-soft:  var(--brand-primary-soft);
+
+    --p-accent:  var(--brand-secondary);
+    --p-gold:    var(--gold);
+    --p-success: var(--success);
+    --p-warning: var(--warning);
+    --p-danger:  var(--danger);
+
+    --p-text:     var(--text);
+    --p-muted:    var(--muted);
+    --p-disabled: var(--disabled);
+
+    --p-radius:    var(--radius);
+    --p-radius-lg: var(--radius-lg);
+    --p-sidebar:   var(--sidebar);
+    --p-header:    var(--header);
+    --p-shadow:    var(--shadow);
 
     background: var(--p-bg);
     color: var(--p-text);

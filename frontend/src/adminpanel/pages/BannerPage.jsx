@@ -169,8 +169,8 @@ export default function BannerPage({ kind }) {
 
       {saveError && !open && (
         <div role="alert" className="mb-4 px-4 py-3"
-             style={{ borderRadius: 'var(--p-radius)', background: 'rgba(248,113,113,.10)',
-                      border: '1px solid rgba(248,113,113,.35)', color: 'var(--p-danger)', fontSize: 13 }}>
+             style={{ borderRadius: 'var(--p-radius)', background: 'var(--danger-soft)',
+                      border: '1px solid var(--danger-border)', color: 'var(--p-danger)', fontSize: 13 }}>
           {saveError.message}
         </div>
       )}

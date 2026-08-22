@@ -1006,6 +1006,32 @@ tashlansa maydon baribir ko'rinardi).
 - `[x]` Ko'rsatishsiz CTR — nol, nolga bo'linish yo'q
 - `[x]` `DashboardMetricsTest` — 10 test, mutatsiya bilan tekshirilgan
 
+## 23.7. Brend va dizayn tokenlari `[x]` — ТЗ §50
+
+ТЗ: «Exact color aniqlanmagan bo'lsa kodning hamma joyiga hex rang
+tarqatib yuborma.»
+
+- `[x]` ТЗ so'ragan **to'qqizta token** e'lon qilingan: `brand-primary` ·
+  `brand-secondary` · `background` · `surface` · `text` · `muted` ·
+  `danger` · `warning` · `success`
+- `[x]` Eski `--p-*` nomlari **yangi tokenlardan olinadi** — ular panel
+  CSS'ida keng ishlatiladi va bir yo'la almashtirish katta, xavfli tahrir
+  bo'lardi. Nomi ikkita, **manba bitta**
+- `[x]` ⚠️ **Holat ranglari brenddan MUSTAQIL.** Xato qizil, ogohlantirish
+  sariq, muvaffaqiyat yashil bo'lib qolishi kerak. Brendga moslashtirilsa
+  «xato» va «asosiy tugma» bir xil ko'rinardi va ogohlantirish o'z
+  kuchini yo'qotardi
+- `[x]` ⚠️ **Tarqoq ranglar yig'ib olindi.** Test 10 ta faylda qotirilgan
+  qiymat topdi: `rgba(248,113,113,.10)` — eski qizil, 9 joyda;
+  `rgba(7,14,32,.86)` — eski to'q ko'k pardasi. Gamma almashtirilganda
+  ular **eski rangda qolib ketardi**: panel yarmi yangi, yarmi eski
+  bo'lardi va sabab ekranda ko'rinmasdi
+- `[x]` `DesignTokensTest` — 7 test. Hex va `rgba()` komponentga
+  qaytsa yiqiladi; ijobiy nazorat detektorning o'zini tekshiradi
+- `[ ]` ⚠️ **Aniq hex qiymatlar Miro'dan kutilmoqda.** Hozirgilar
+  konsepsiyaga mos ORALIQ qiymatlar. Kelganda faqat `--brand-primary` va
+  `--brand-secondary` almashtiriladi
+
 ## 23.8. Admin sidebar `[x]` — ТЗ §49
 
 ТЗ: «Role/permissionga qarab menu yashirilsin. **Lekin backend
@@ -1258,6 +1284,7 @@ CONTENT_VIEW  →  CONTENT_PLAY  →  CONTENT_COMPLETE
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
 | `ReportFiltersTest` | 10 | **ТЗ §47** — davr va obyekt filtrlari, kesishma |
 | `ContentAnalyticsTest` | 9 | **ТЗ §46** — voronka, har bir kontent uchun hisobot |
+| `DesignTokensTest` | 7 | **ТЗ §50** — ranglar bir joyda, holat ranglari mustaqil |
 | `SidebarPermissionsTest` | 3 | **ТЗ §49** — menyu va backend bir xil ruxsat nomlari |
 | `DashboardMetricsTest` | 18 | **ТЗ §45** — 20 ko'rsatkich, soxta statistika yo'q |
 | `PackagePurchaseTest` | 13 | **ТЗ §44** — ichki balans ishlaydi, soxta to'lov yo'q |

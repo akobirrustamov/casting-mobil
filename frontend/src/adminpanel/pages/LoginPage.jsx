@@ -56,7 +56,7 @@ export default function LoginPage() {
               style={{
                 width: 42, height: 42, borderRadius: 12,
                 background: 'linear-gradient(135deg, var(--p-primary), var(--p-accent))',
-                color: '#fff',
+                color: 'var(--on-brand)',
               }}
               aria-hidden="true"
             >
@@ -124,8 +124,8 @@ export default function LoginPage() {
                 className="mb-4 px-4 py-3"
                 style={{
                   borderRadius: 'var(--p-radius)',
-                  background: 'rgba(248,113,113,.10)',
-                  border: '1px solid rgba(248,113,113,.35)',
+                  background: 'var(--danger-soft)',
+                  border: '1px solid var(--danger-border)',
                   color: 'var(--p-danger)',
                   fontSize: 13,
                 }}

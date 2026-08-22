@@ -63,8 +63,8 @@ export default function ReportsPage() {
           {/* Kechikish ochiq ko'rsatiladi — raqamlar «jonli» emasligini admin bilsin */}
           {data.pendingEvents > 0 && (
             <div className="mb-4 px-4 py-3"
-                 style={{ borderRadius: 'var(--p-radius)', background: 'rgba(251,191,36,.10)',
-                          border: '1px solid rgba(251,191,36,.35)', color: 'var(--p-warning)',
+                 style={{ borderRadius: 'var(--p-radius)', background: 'var(--warning-soft)',
+                          border: '1px solid var(--warning-border)', color: 'var(--p-warning)',
                           fontSize: 13 }}>
               {t('rp.pending')}: <strong>{n(data.pendingEvents)}</strong> — {t('rp.pendingHint')}
             </div>
