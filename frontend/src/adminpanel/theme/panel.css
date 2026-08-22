@@ -613,3 +613,53 @@
 .uz-icon-btn:hover:not(:disabled) { border-color: var(--p-accent); }
 .uz-icon-btn:disabled { opacity: .35; cursor: not-allowed; }
 .uz-icon-btn-danger:hover:not(:disabled) { border-color: var(--p-danger); color: var(--p-danger); }
+
+
+/* --------------------------------------------------------------------------
+   Qidiruvli tanlash (ТЗ §53)
+   -------------------------------------------------------------------------- */
+
+.uz-select-button {
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.uz-dropdown {
+    position: absolute;
+    z-index: 40;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    padding: 8px;
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+
+.uz-dropdown-list {
+    /* Uzun ro'yxat sahifani cho'zib yubormasin. */
+    max-height: 240px;
+    overflow-y: auto;
+    margin-top: 8px;
+}
+
+.uz-dropdown-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.uz-dropdown-item:hover { background: var(--surface-3); }
+.uz-dropdown-item.selected { background: var(--brand-primary-soft); }
+
+.uz-select-button.invalid { border-color: var(--danger); }

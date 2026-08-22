@@ -1,21 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFieldErrors } from '../api/useFieldErrors';
+import AccessTab from './editor/AccessTab';
+import BasicTab from './editor/BasicTab';
+import CreditsTab from './editor/CreditsTab';
+import MediaTab from './editor/MediaTab';
+import PublishTab from './editor/PublishTab';
+import TextTab from './editor/TextTab';
 import { adminApi } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
-import LocaleTabs from '../components/LocaleTabs';
-import MediaField from '../components/MediaField';
-import GalleryField from '../components/GalleryField';
 import Modal from '../components/Modal';
-import { LOCALES, toBackendLocale, usePanelI18n } from '../i18n';
+import { usePanelI18n } from '../i18n';
 import EpisodesTab from './EpisodesTab';
 
-const TYPES = ['MOVIE', 'SERIES', 'MINI_SERIES', 'SHORT_FILM', 'PODCAST', 'SHOW', 'INTERVIEW', 'STREAM', 'CLIP', 'OTHER'];
-const STRUCTURES = ['SINGLE', 'EPISODIC', 'SEASONAL'];
-const ORIENTATIONS = ['LANDSCAPE', 'VERTICAL'];
-const STATUSES = ['DRAFT', 'IN_REVIEW', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED'];
-const POLICIES = ['FREE', 'PREMIUM_ONLY', 'PURCHASE_ONLY', 'PREMIUM_OR_PURCHASE'];
-const PROFESSIONS = ['ACTOR', 'ACTRESS', 'DIRECTOR', 'MODEL', 'PRODUCER', 'SCREENWRITER', 'OPERATOR', 'HOST', 'CREATOR', 'OTHER'];
 
 const emptyForm = () => ({
   slug: '',
@@ -30,6 +27,7 @@ const emptyForm = () => ({
   ageRating: '',
   durationMinutes: '',
   premiereDate: '',
+  publicationDate: '',
   featured: false,
   popular: false,
   translations: { UZ: {}, RU: {}, EN: {} },
@@ -63,7 +61,6 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
   const [categories, setCategories] = useState([]);
   const [genres, setGenres] = useState([]);
   const [creators, setCreators] = useState([]);
-  const [creatorQuery, setCreatorQuery] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [dirty, setDirty] = useState(false);
@@ -129,6 +126,7 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
           categoryId: c.categoryId ?? '',
           ageRating: c.ageRating || '',
           premiereDate: c.premiereDate ? c.premiereDate.slice(0, 16) : '',
+          publicationDate: c.publicationDate ? c.publicationDate.slice(0, 16) : '',
           featured: Boolean(c.featured),
           popular: Boolean(c.popular),
           translations: { UZ: {}, RU: {}, EN: {}, ...(c.translations || {}) },
@@ -141,23 +139,6 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
       })
       .catch(setError);
   }, [open, contentId]);
-
-  const filteredCreators = useMemo(() => {
-    const q = creatorQuery.trim().toLowerCase();
-    if (!q) return creators.slice(0, 12);
-    return creators
-      .filter((c) =>
-        Object.values(c.translations || {}).some((tr) =>
-          (tr.displayName || '').toLowerCase().includes(q)
-        )
-      )
-      .slice(0, 12);
-  }, [creators, creatorQuery]);
-
-  const creatorName = (c) => {
-    const tr = c.translations || {};
-    return tr[locale]?.displayName || tr.UZ?.displayName || c.slug;
-  };
 
   const uzTitleMissing = !form.translations?.UZ?.title?.trim();
 
@@ -197,6 +178,7 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
       ageRating: form.ageRating || null,
       durationMinutes: form.durationMinutes === '' ? null : Number(form.durationMinutes),
       premiereDate: form.premiereDate ? `${form.premiereDate}:00` : null,
+      publicationDate: form.publicationDate ? `${form.publicationDate}:00` : null,
       featured: form.featured,
       popular: form.popular,
       translations: form.translations,
@@ -304,225 +286,25 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
 
       {/* ---------------------------------------------------------- ASOSIY */}
       {tab === 'basic' && (
-        <div className="uz-row">
-          <div className="uz-col">
-            <label className="uz-label" htmlFor="ct">{t('editor.type')}</label>
-            <select id="ct" className="uz-select" value={form.contentType}
-                    onChange={(e) => set({ contentType: e.target.value })}>
-              {TYPES.map((x) => <option key={x} value={x}>{x.replace(/_/g, ' ')}</option>)}
-            </select>
-          </div>
-          <div className="uz-col">
-            <label className="uz-label" htmlFor="st">{t('editor.structure')}</label>
-            <select id="st" className="uz-select" value={form.structureType}
-                    onChange={(e) => set({ structureType: e.target.value })}>
-              {STRUCTURES.map((x) => <option key={x} value={x}>{x}</option>)}
-            </select>
-          </div>
-          <div className="uz-col">
-            <label className="uz-label" htmlFor="or">{t('editor.orientation')}</label>
-            <select id="or" className="uz-select" value={form.orientation}
-                    onChange={(e) => set({ orientation: e.target.value })}>
-              {ORIENTATIONS.map((x) => (
-                <option key={x} value={x}>
-                  {x === 'VERTICAL' ? t('content.vertical') : t('content.landscape')}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="uz-col" style={{ flexBasis: '100%' }}>
-            <label className="uz-label" htmlFor="cat">{t('editor.category')}</label>
-            <select id="cat" className="uz-select" value={form.categoryId}
-                    onChange={(e) => set({ categoryId: e.target.value })}>
-              <option value="">{t('common.none')}</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.translations?.[locale]?.title || c.translations?.UZ?.title || c.slug}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={{ flexBasis: '100%' }}>
-            <label className="uz-label">{t('editor.genres')}</label>
-            <div className="flex gap-2 flex-wrap">
-              {genres.map((g) => {
-                const on = form.genreIds.includes(g.id);
-                return (
-                  <button key={g.id} type="button"
-                          className={`uz-chip ${on ? 'selected' : ''}`}
-                          aria-pressed={on}
-                          onClick={() => set({
-                            genreIds: on ? form.genreIds.filter((x) => x !== g.id)
-                                         : [...form.genreIds, g.id],
-                          })}>
-                    {g.translations?.[locale]?.title || g.translations?.UZ?.title || g.slug}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="uz-col">
-            <label className="uz-label" htmlFor="ar">{t('editor.ageRating')}</label>
-            <input id="ar" className="uz-input" value={form.ageRating} placeholder="16+"
-                   onChange={(e) => set({ ageRating: e.target.value })} />
-          </div>
-          <div className="uz-col">
-            <label className="uz-label" htmlFor="du">{t('editor.duration')}</label>
-            <input id="du" className="uz-input" type="number" min="0" value={form.durationMinutes}
-                   onChange={(e) => set({ durationMinutes: e.target.value })} />
-          </div>
-        </div>
+        <BasicTab form={form} set={set} t={t} locale={locale}
+                  categories={categories} genres={genres}
+                  categoryError={fields.errorOf('categoryId')} />
       )}
 
-      {/* --------------------------------------------------------- MATNLAR */}
       {tab === 'text' && (
-        <>
-          <LocaleTabs
-            active={locale}
-            onChange={setLocale}
-            isFilled={(code) => Boolean(form.translations?.[code]?.title?.trim())}
-          />
-          <div className="mb-4">
-            <label className="uz-label" htmlFor="ti">
-              {t('editor.title')}
-              {locale === 'UZ' && <span style={{ color: 'var(--p-danger)' }}> *</span>}
-            </label>
-            <input id="ti" className="uz-input"
-                   value={form.translations?.[locale]?.title || ''}
-                   aria-invalid={Boolean(titleError) || (locale === 'UZ' && uzTitleMissing)}
-                   onChange={(e) => setTranslation('title', e.target.value)} />
-            {/* Avval BACKEND xatosi: u haqiqiy rad etish sababi va
-                aniqroq (masalan «RU, EN tillarida to'ldirilmagan»).
-                Klient tekshiruvi esa yuborishdan oldingi ogohlantirish. */}
-            {titleError ? (
-              <div className="uz-field-error">{titleError}</div>
-            ) : locale === 'UZ' && uzTitleMissing ? (
-              <div className="uz-field-error">{t('editor.uzRequired')}</div>
-            ) : null}
-          </div>
-          <div className="mb-4">
-            <label className="uz-label" htmlFor="sd">{t('editor.shortDesc')}</label>
-            <input id="sd" className="uz-input"
-                   value={form.translations?.[locale]?.shortDescription || ''}
-                   onChange={(e) => setTranslation('shortDescription', e.target.value)} />
-          </div>
-          <div>
-            <label className="uz-label" htmlFor="de">{t('editor.desc')}</label>
-            <textarea id="de" className="uz-input" rows={5} style={{ resize: 'vertical' }}
-                      value={form.translations?.[locale]?.description || ''}
-                      onChange={(e) => setTranslation('description', e.target.value)} />
-          </div>
-        </>
+        <TextTab form={form} t={t} locale={locale} setLocale={setLocale}
+                 setTranslation={setTranslation}
+                 uzTitleMissing={uzTitleMissing} titleError={titleError} />
       )}
 
-      {/* ----------------------------------------------------------- MEDIA */}
       {tab === 'media' && (
-        <>
-          <div className="uz-row mb-5">
-            <div className="uz-col">
-              <MediaField
-                label={`${t('editor.poster')} — ${t('editor.posterDefault')}`}
-                value={form.posterDefault}
-                onChange={(id) => set({ posterDefault: id })}
-              />
-            </div>
-            <div className="uz-col">
-              <MediaField label={t('editor.cover')} value={form.cover}
-                          onChange={(id) => set({ cover: id })} />
-            </div>
-          </div>
-
-          <div className="uz-card p-4 mb-5">
-            <GalleryField
-              value={form.gallery}
-              onChange={(gallery) => set({ gallery })}
-            />
-          </div>
-
-          <div className="uz-card p-4">
-            <div className="uz-h2 mb-1" style={{ fontSize: 15 }}>{t('editor.posterForLocale')}</div>
-            <p className="uz-muted mb-4" style={{ fontSize: 12 }}>
-              {t('editor.posterDefault')} — {t('common.none').toLowerCase()}
-            </p>
-            <div className="uz-row">
-              {LOCALES.map((l) => {
-                const code = toBackendLocale(l);
-                return (
-                  <div className="uz-col" key={l}>
-                    <MediaField
-                      label={l.toUpperCase()}
-                      value={form.posterByLocale[code] || null}
-                      onChange={(id) =>
-                        set({ posterByLocale: { ...form.posterByLocale, [code]: id } })}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </>
+        <MediaTab form={form} set={set} t={t} locale={locale} />
       )}
 
-      {/* ------------------------------------------------------- IJODKORLAR */}
       {tab === 'creators' && (
-        <>
-          <input className="uz-input mb-4" placeholder={t('editor.searchCreator')}
-                 value={creatorQuery} onChange={(e) => setCreatorQuery(e.target.value)} />
-
-          <div className="flex gap-2 flex-wrap mb-5">
-            {filteredCreators.map((c) => (
-              <button key={c.id} type="button" className="uz-chip"
-                      onClick={() => set({
-                        credits: [...form.credits,
-                                  { creatorId: c.id, profession: 'ACTOR', characterName: '',
-                                    sortOrder: form.credits.length }],
-                      })}>
-                + {creatorName(c)}
-              </button>
-            ))}
-          </div>
-
-          {form.credits.length === 0 ? (
-            <p className="uz-muted" style={{ fontSize: 13 }}>{t('empty.body')}</p>
-          ) : (
-            form.credits.map((cr, i) => {
-              const creator = creators.find((c) => c.id === cr.creatorId);
-              return (
-                <div key={i} className="uz-row mb-3 items-center">
-                  <div className="uz-col" style={{ flex: '0 0 180px', fontWeight: 600, fontSize: 14 }}>
-                    {creator ? creatorName(creator) : `#${cr.creatorId}`}
-                  </div>
-                  <div className="uz-col">
-                    <select className="uz-select" value={cr.profession} aria-label={t('editor.profession')}
-                            onChange={(e) => {
-                              const next = [...form.credits];
-                              next[i] = { ...cr, profession: e.target.value };
-                              set({ credits: next });
-                            }}>
-                      {PROFESSIONS.map((p) => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                  </div>
-                  <div className="uz-col">
-                    <input className="uz-input" placeholder={t('editor.characterName')}
-                           value={cr.characterName || ''}
-                           onChange={(e) => {
-                             const next = [...form.credits];
-                             next[i] = { ...cr, characterName: e.target.value };
-                             set({ credits: next });
-                           }} />
-                  </div>
-                  <button type="button" className="uz-btn uz-btn-danger" style={{ minHeight: 40 }}
-                          onClick={() => set({ credits: form.credits.filter((_, x) => x !== i) })}>
-                    {t('common.remove')}
-                  </button>
-                </div>
-              );
-            })
-          )}
-        </>
+        <CreditsTab form={form} set={set} t={t} locale={locale} creators={creators} />
       )}
 
-      {/* ------------------------------------------------- FASL VA QISMLAR */}
       {tab === 'episodes' && (
         <EpisodesTab
           contentId={contentId}
@@ -532,63 +314,13 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
       )}
 
       {/* ---------------------------------------------------- MONETIZATSIYA */}
+
       {tab === 'access' && (
-        <div className="uz-row">
-          <div className="uz-col">
-            <label className="uz-label" htmlFor="ap">{t('editor.accessPolicy')}</label>
-            <select id="ap" className="uz-select" value={form.accessPolicy}
-                    onChange={(e) => set({ accessPolicy: e.target.value })}>
-              {POLICIES.map((x) => <option key={x} value={x}>{x.replace(/_/g, ' ')}</option>)}
-            </select>
-          </div>
-          <div className="uz-col">
-            <label className="uz-label" htmlFor="pp">{t('editor.premierePrice')}</label>
-            <input id="pp" className="uz-input" type="number" min="0" step="1000"
-                   value={form.premierePrice} disabled={form.accessPolicy === 'FREE'}
-                   onChange={(e) => set({ premierePrice: e.target.value })} />
-          </div>
-        </div>
+        <AccessTab form={form} set={set} t={t} />
       )}
 
-      {/* ----------------------------------------------------------- NASHR */}
       {tab === 'publish' && (
-        <div className="uz-row">
-          <div className="uz-col">
-            <label className="uz-label" htmlFor="stt">{t('editor.status')}</label>
-            <select id="stt" className="uz-select" value={form.status}
-                    onChange={(e) => set({ status: e.target.value })}>
-              {STATUSES.map((x) => (
-                <option key={x} value={x}
-                        disabled={x === 'PUBLISHED' && !can('CONTENT_PUBLISH')}>
-                  {x.replace(/_/g, ' ')}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="uz-col">
-            <label className="uz-label" htmlFor="pd">{t('editor.premiereDate')}</label>
-            <input id="pd" className="uz-input" type="datetime-local" value={form.premiereDate}
-                   onChange={(e) => set({ premiereDate: e.target.value })} />
-          </div>
-          <div className="uz-col" style={{ flexBasis: '100%' }}>
-            <label className="uz-label" htmlFor="sl">{t('editor.slug')}</label>
-            <input id="sl" className="uz-input" value={form.slug} placeholder="auto"
-                   onChange={(e) => set({ slug: e.target.value })} />
-            <p className="uz-muted mt-1" style={{ fontSize: 11 }}>{t('editor.slugHint')}</p>
-          </div>
-          <div style={{ flexBasis: '100%' }} className="flex gap-5 flex-wrap">
-            <label className="uz-check">
-              <input type="checkbox" checked={form.featured}
-                     onChange={(e) => set({ featured: e.target.checked })} />
-              {t('editor.featured')}
-            </label>
-            <label className="uz-check">
-              <input type="checkbox" checked={form.popular}
-                     onChange={(e) => set({ popular: e.target.checked })} />
-              {t('editor.popular')}
-            </label>
-          </div>
-        </div>
+        <PublishTab form={form} set={set} t={t} can={can} />
       )}
 
       <ConfirmDialog {...confirmer.props} />

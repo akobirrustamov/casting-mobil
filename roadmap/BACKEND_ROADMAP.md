@@ -1006,6 +1006,52 @@ tashlansa maydon baribir ko'rinardi).
 - `[x]` Ko'rsatishsiz CTR — nol, nolga bo'linish yo'q
 - `[x]` `DashboardMetricsTest` — 10 test, mutatsiya bilan tekshirilgan
 
+## 23.4. Content editor UX `[x]` — ТЗ §53
+
+### Komponentlarga ajratildi
+
+ТЗ: «Content form 100 ta inputli bitta giant component bo'lmasin.»
+
+Muharrir **597 qator** edi va yettala bo'lim bitta faylda turardi.
+
+| Fayl | Qator |
+|---|---|
+| `ContentEditor.jsx` (holat va saqlash) | 329 |
+| `editor/BasicTab.jsx` | 96 |
+| `editor/CreditsTab.jsx` | 88 |
+| `editor/MediaTab.jsx` · `TextTab` · `PublishTab` · `AccessTab` | 26–62 |
+| `editor/constants.js` | ro'yxatlar BITTA joyda |
+
+- `[x]` Ijodkor qidiruvi holati **o'z bo'limiga** ko'chirildi — ilgari u
+  muharrirning umumiy holatida turardi va har bosishda BARCHA bo'limlar
+  qayta chizilardi
+- `[x]` Ro'yxatlar (`TYPES`, `STATUSES`…) `constants.js` da: nusxa
+  ko'chirilsa vaqt o'tib chetga chiqardi — yangi kontent turi bittasida
+  paydo bo'lib, ikkinchisida yo'q bo'lardi
+
+### Yetishmagan talablar qo'shildi
+
+- `[x]` ⚠️ **`publicationDate` — rejalashtirish amalda ishlamasdi.**
+  Admin `SCHEDULED` holatini tanlay olardi, lekin kontent QACHON
+  chiqishini belgilay olmasdi: maydon backend DTO'sida bor edi, panelda
+  esa yo'q. §32 dagi bildirishnoma bilan bir xil naqsh
+- `[x]` **`SearchableSelect`** — kategoriya uchun. Ro'yxat cheklanmagan
+  va oddiy `<select>` da kerakligini topish uchun uni aylantirib chiqish
+  kerak bo'lardi
+- `[x]` Rejalashtirilgan kontentda sana bo'sh bo'lsa — maydon yonida
+  ogohlantirish
+
+### Allaqachon bor edi
+
+- `[x]` Bo'limlar (7 ta) · saqlanmagan o'zgarish ogohlantirishi (§51 da) ·
+  yuklash progressi (`MediaPicker`) · rasm oldindan ko'rish
+  (`MediaField`) · galereyada tartib (`GalleryField`) · janr ko'p
+  tanlovli (chip'lar) · ijodkor qidiruvi
+- `[x]` `ContentEditorStructureTest` — 7 test. Fayl chegarasi
+  **tendensiya nazorati**: muharrir yana o'sib ketmasin. Chegaraga
+  yetganda yangi bo'limni alohida faylga chiqarish kerak, chegarani
+  oshirish emas
+
 ## 23.5. Form validation `[x]` — ТЗ §52
 
 ### Xato formati
@@ -1380,6 +1426,7 @@ CONTENT_VIEW  →  CONTENT_PLAY  →  CONTENT_COMPLETE
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
 | `ReportFiltersTest` | 10 | **ТЗ §47** — davr va obyekt filtrlari, kesishma |
 | `ContentAnalyticsTest` | 9 | **ТЗ §46** — voronka, har bir kontent uchun hisobot |
+| `ContentEditorStructureTest` | 7 | **ТЗ §53** — komponentlarga ajratish, rejalashtirish |
 | `ValidationFormatTest` | 6 | **ТЗ §52** — xato formati, maydon xatolari |
 | `PanelUiRequirementsTest` | 7 | **ТЗ §51** — holatlar va tasdiqlash |
 | `DesignTokensTest` | 7 | **ТЗ §50** — ranglar bir joyda, holat ranglari mustaqil |
