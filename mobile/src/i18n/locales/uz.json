@@ -30,7 +30,9 @@
     "locked": "Yopiq",
     "purchased": "Olingan",
     "premiere": "Premyera",
-    "years": "{{count}} yosh"
+    "years": "{{count}} yosh",
+    "premium": "Premium",
+    "free": "Bepul"
   },
   "splash": {
     "subtitle": "Ijodkorlar uchun platforma"
@@ -81,7 +83,10 @@
     "premiumBody": "Eksklyuziv premyeralarni birinchi bo'lib ko'ring",
     "premiumCta": "Premiumga o'tish",
     "heroSubtitle": "Bugun faqat UzCasting'da",
-    "unlock": "Ochish"
+    "unlock": "Ochish",
+    "castingCreators": "Casting ijodkorlari",
+    "feedUnavailableTitle": "Bosh sahifa yuklanmadi",
+    "feedUnavailableBody": "Server bosh sahifa bo'limlarini bermayapti."
   },
   "casting": {
     "title": "Casting e'lonlari",
@@ -96,7 +101,8 @@
     "tabsAll": "Barchasi",
     "tabsSeries": "Seriallar",
     "tabsShows": "Ko'rsatuvlar",
-    "tabsMovies": "Filmlar"
+    "tabsMovies": "Filmlar",
+    "emptyByTab": "Bu bo'limda hozircha kontent yo'q."
   },
   "profile": {
     "title": "Profil",

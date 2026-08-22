@@ -54,3 +54,17 @@ api.interceptors.request.use((config) => {
 export function fileUrl(id: string): string {
   return `${BASE_URL}/api/v1/file/getFile/${id}`;
 }
+
+/**
+ * Медиа новой платформы — другой namespace, чем `fileUrl`.
+ *
+ * `fileUrl` — вложения старого кастингового модуля (`Attachment`, UUID),
+ * здесь — `MediaAsset` нового бэкенда (числовой id). Это разные хранилища,
+ * перепутать нельзя: id из фида в `fileUrl` даст 404.
+ *
+ * Картинки отдаются без токена, видео проверяет entitlement и на отказ
+ * возвращает 404 — поэтому в постерах достаточно обычного URL.
+ */
+export function mediaUrl(id: number | null | undefined): string | undefined {
+  return id == null ? undefined : `${BASE_URL}/api/v1/app/media/${id}/raw`;
+}
