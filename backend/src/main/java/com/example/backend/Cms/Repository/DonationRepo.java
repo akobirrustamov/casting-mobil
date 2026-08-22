@@ -16,6 +16,22 @@ public interface DonationRepo extends JpaRepository<DonationTransaction, Long> {
     Page<DonationTransaction> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     /**
+     * Foydalanuvchining O'Z donatlari (ТЗ §43).
+     *
+     * <h2>Nima uchun kerak</h2>
+     * Profilda balans ko'rinadi. Lekin bitta son savolga javob bermaydi:
+     * «50 yulduzim bor edi, endi 20 ta — qolgani qayerga ketdi?»
+     * Tarixsiz foydalanuvchi buni bila olmaydi va balansga ishonchi
+     * yo'qoladi.
+     *
+     * ⚠️ Filtr JO'NATUVCHI bo'yicha — chaqiruvchi faqat o'zinikini
+     * ko'radi.
+     */
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = "sender")
+    Page<DonationTransaction> findAllBySenderIdOrderByCreatedAtDesc(
+            java.util.UUID senderId, Pageable pageable);
+
+    /**
      * Nishonlar bo'yicha jamlanma — reyting uchun.
      * Har bir nishon va valyuta juftligi uchun bitta qator.
      */

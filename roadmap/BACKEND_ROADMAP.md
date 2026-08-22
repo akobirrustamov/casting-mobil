@@ -869,7 +869,22 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 ### Balans (§43)
 
 - `[x]` `UserBalance`: `starsBalance` · `coinBalance` · `moneyBalance`
-- `[x]` Mobil UI yozilmadi (ТЗ shunday deydi), lekin ma'lumot modeli tayyor
+- `[x]` ⚠️ **Yulduz va tanga — BUTUN son.** «Yarim yulduz» degan tushuncha
+  yo'q; `BigDecimal` ishlatilsa «0.5 yulduz» yozib qo'yish mumkin bo'lardi.
+  Pul balansi esa `BigDecimal` — u bo'linadi
+- `[x]` `@Version` — ikki oqim balansni ikki marta yechmaydi
+- `[x]` `GET /api/v1/app/donations/balance`
+- `[x]` ⚠️ **`GET /api/v1/app/donations/my` — tarix.** Balans endpointi
+  yolg'iz o'zi yetarli emas edi: profil ikkita savolga javob berishi
+  kerak — «qancha bor» va «qayerga ketdi». Ikkinchisisiz birinchi son
+  ishonchsiz bo'lib qoladi: «50 yulduzim bor edi, endi 20 ta — qolgani
+  qayerga ketdi?»
+- `[x]` ⚠️ **Ikkala endpointda ham ID parametri YO'Q.** Kimning ma'lumoti
+  ko'rsatilishi TOKENDAN olinadi. ID parametri bo'lsa, uni almashtirib
+  boshqa odamning balansi va donatlarini o'qish mumkin bo'lardi
+- `[x]` Mobil UI yozilmadi (ТЗ shunday deydi), lekin backend tayyor
+- `[x]` `DonationBalanceTest` — 10 test
+- `[ ]` Balansni TO'LDIRISH — to'lov provayderiga bog'liq (§44)
 
 ### Hisobot (§42)
 
@@ -1060,6 +1075,7 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 | `FinancialHistoryImmutableTest` | 5 | **ТЗ §42** — moliyaviy tarix o'chirilmaydi |
 | `SettingValidationTest` | 12 | **ТЗ §40/§41** — xato narx saqlanmaydi |
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
+| `DonationBalanceTest` | 10 | **ТЗ §43** — balans va tarix, boshqaniki ko'rinmaydi |
 | `DonationFlowTest` | 13 | **ТЗ §39** — donat yuborish, nishon, balans |
 | `DonationConcurrencyTest` | 1 | **ТЗ §39** — bir vaqtda ikki donat balansni buzmaydi |
 | `DonationAndPaymentTest` | 9 | **ТЗ §42/§44** — valyutalar qo'shilmaydi, soxta to'lov yo'q |

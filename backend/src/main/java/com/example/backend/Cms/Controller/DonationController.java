@@ -3,6 +3,7 @@ package com.example.backend.Cms.Controller;
 import com.example.backend.Admin.CurrentUser;
 import com.example.backend.Admin.Dto.CurrencyPackageDto;
 import com.example.backend.Admin.Dto.DonationTransactionDto;
+import com.example.backend.Admin.Dto.PageResponse;
 import com.example.backend.Cms.Enums.CurrencyKind;
 import com.example.backend.Cms.Enums.DonationTargetType;
 import com.example.backend.Cms.Service.DonationService;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -37,6 +39,7 @@ public class DonationController {
 
     private final DonationService donationService;
     private final UserBalanceRepo balanceRepo;
+    private final com.example.backend.Cms.Repository.DonationRepo donationRepo;
     private final com.example.backend.Cms.Service.MonetizationService monetizationService;
     private final com.example.backend.Cms.Service.CurrencyPricingService currencyPricingService;
 
@@ -78,6 +81,31 @@ public class DonationController {
      * kirmaydi. Admin panelida esa ular ko'rinadi — admin narx
      * yo'qligini bilishi kerak.
      */
+    /**
+     * Foydalanuvchining O'Z donat tarixi (ТЗ §43).
+     *
+     * <h2>Nima uchun balansning yonida</h2>
+     * Profilda «Stars balance» va «Coin balance» ko'rinadi. Bitta son
+     * esa savolga javob bermaydi: «50 yulduzim bor edi, endi 20 ta —
+     * qolgani qayerga ketdi?» Tarixsiz foydalanuvchi buni bila olmaydi.
+     *
+     * <h2>Nima uchun ID parametri YO'Q</h2>
+     * Kimning tarixi ko'rsatilishi tokendan olinadi. ID parametri bo'lsa,
+     * uni almashtirib boshqa odamning donatlarini o'qish mumkin bo'lardi.
+     */
+    @GetMapping("/my")
+    public ResponseEntity<PageResponse<DonationTransactionDto>> myDonations(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        var result = donationRepo.findAllBySenderIdOrderByCreatedAtDesc(
+                CurrentUser.get().getId(),
+                org.springframework.data.domain.PageRequest.of(Math.max(page, 0), safeSize));
+
+        return ResponseEntity.ok(PageResponse.of(result, DonationTransactionDto::from));
+    }
+
     @GetMapping("/packages")
     public ResponseEntity<List<CurrencyPackageDto>> packages() {
         return ResponseEntity.ok(monetizationService.packages().stream()
