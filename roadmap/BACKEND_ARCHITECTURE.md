@@ -48,8 +48,21 @@ Paket nomlari bosh harfli (nostandart, lekin izchil — saqlanadi):
 ## 3. Authentication
 
 - **JWT** (jjwt 0.11.5, HS256). Subject — `User.id` (UUID).
-- Access token default 6 000 000 ms, refresh 24 soat. `app.jwt.*` orqali sozlanadi.
-- **BCrypt** parol xeshlash (`SecurityConfig.passwordEncoder`).
+- **Token turi ajratilgan** (§61): `typ` da'vosi — `access` yoki `refresh`.
+  `MyFilter` refresh tokenni API kaliti sifatida rad etadi. Ilgari ikkalasi
+  bir xil edi va o'g'irlangan refresh token bilan butun API ochiq edi.
+- Access token **15 daqiqa** (`app.jwt.access-token-ms`, ilgari 100 daqiqa),
+  refresh 24 soat.
+- **Refresh token ro'yxati** — `refresh_token` jadvali (V25). Rotatsiya: har
+  yangilashda eskisi bekor qilinadi. Bekor qilingan token qayta kelsa —
+  o'g'rilik belgisi, foydalanuvchining butun zanjiri yopiladi.
+  Token matni saqlanmaydi, faqat `jti`.
+- **Chiqish** — `POST /api/v1/app/admin/auth/logout`, token serverda bekor qilinadi.
+- Refresh token **httpOnly + Secure + SameSite=Strict cookie**da, javob tanasida emas.
+- **Muvaffaqiyatsiz kirish himoyasi** — `LoginAttemptService`: hisob bo'yicha
+  5 xatodan keyin 15 daqiqa. IP bo'yicha rate limit (`RateLimitFilter`) alohida.
+- **BCrypt** parol xeshlash (`SecurityConfig.passwordEncoder`). `User.password`
+  `WRITE_ONLY` — hash javobda hech qachon chiqmaydi.
 - **Google login** — `POST /api/v1/auth/google`, `GoogleTokenVerifier` ID-token'ni tekshiradi,
   `googleSub` bo'yicha user topiladi/yaratiladi.
 - `MyFilter` (`OncePerRequestFilter`) — `Authorization` header'dan token oladi, tekshiradi,
@@ -57,8 +70,10 @@ Paket nomlari bosh harfli (nostandart, lekin izchil — saqlanadi):
 
 `User implements UserDetails`; `getUsername()` — telefon, yo'q bo'lsa email.
 
-⚠️ **Texnik qarz:** JWT secret'ning default qiymati kodda; DB paroli
-`application.properties`da commit qilingan. Ikkalasi ham env'ga ko'chiriladi.
+**Vaqt mintaqasi:** `app.timezone=Asia/Tashkent` (§68). Kodda 310 dan
+ortiq `LocalDateTime` bor va u mintaqani saqlamaydi — sozlamasiz
+konteynerdagi UTC tufayli rejalashtirilgan premyera besh soat kech
+chiqardi.
 
 ---
 

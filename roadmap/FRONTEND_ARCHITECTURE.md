@@ -62,10 +62,24 @@ ikkala variantni ham qabul qiladi.
 bunday route yo'q. Haqiqiy admin sahifalar `/aadmin/*` — ya'ni `checkSecurity()`
 hech qachon ishga tushmaydi va admin sahifalar frontendda qo'riqlanmagan.
 
-**Qurildi:** `AuthContext` — token, user, rol, ruxsatlar. Sahifa yangilanganda
-`/api/v1/app/admin/auth/me` bilan profil serverdan tiklanadi (rol yoki ruxsat
-o'zgargan bo'lishi mumkin — `localStorage` nusxasiga ishonilmaydi).
-Token kaliti alohida: `uzpanel.access_token` — sayt admini bilan aralashmaydi.
+**Qurildi:** `AuthContext` — token, user, rol, ruxsatlar.
+
+⚠️ **Token saqlash o'zgardi (§61).** Access token endi **xotirada**,
+`localStorage` da emas: uni sahifadagi har qanday JavaScript o'qiy oladi
+va bitta XSS uzoq muddatli kirish berardi. Refresh token esa `httpOnly`
+cookie'da — JavaScript uni umuman ko'rmaydi.
+
+Sahifa yangilanganda access token yo'qoladi va sessiya
+`POST /auth/refresh` orqali cookie'dan tiklanadi, keyin profil
+`/auth/me` bilan serverdan olinadi (rol yoki ruxsat o'zgargan bo'lishi
+mumkin). `localStorage` da faqat profil qoladi — u maxfiy emas, faqat
+menyuni darhol chizish uchun.
+
+401 kelganda `api/client.js` bir marta yangilab, so'rovni qaytaradi.
+Bir vaqtda ketgan bir nechta so'rov **bitta** yangilashni bo'lishadi —
+aks holda har biri o'z rotatsiyasini boshlab, bir-birining tokenini
+bekor qilardi va foydalanuvchi «o'g'rilik aniqlandi» sababi bilan
+chiqib ketardi.
 
 Frontend guard — faqat UX. **Haqiqiy himoya backendda**: brauzerda tekshirildi,
 WORKER `/app/panel/staff` ga kirsa backend `403 ACCESS_DENIED` qaytaradi.

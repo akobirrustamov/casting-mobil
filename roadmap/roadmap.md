@@ -185,6 +185,59 @@ React 18.3 + CRA 5, **JavaScript** (TypeScript emas).
 **Public sahifalar:** `/` (Home), `/models`, `/bot/:userId`, `/data-form/:userId`,
 `/history/:userId`, `/appeal/:userId`.
 
+
+### 2.6. Eski casting moduli — aniq ro'yxat (ТЗ §75)
+
+**Bu modul ISHLAYAPTI va o'chirilmaydi.** Yangi UZCASTING platformasi
+uning yonida quriladi: yangi backend yo'llari `/api/v1/app/**`, yangi
+panel `/app/panel/**`. Eski yo'llarning birortasi ham o'zgartirilmagan.
+
+| Entity | Jadval | Controller | API yo'li | Frontend sahifasi |
+|---|---|---|---|---|
+| `User` | `users`, `users_roles` | `AuthController`, `SecurityController` | `/api/v1/auth/*`, `/api/v1/security` | `/aadmin/login`, `/admin/*` login |
+| `Role` | `roles` | — | — | — |
+| `CastingUser` | `casting_user` | `CastingUserController` | `/api/v1/casting-user/*` | `/aadmin/casting-users/web`, `/aadmin/casting-users/:id`, `/admin/casting-users`, `/admin/accepted` |
+| `News` | `news` | `NewsController` | `/api/v1/news` | `/admin/news` |
+| `Message` | `message` | — | — | Telegram bot oqimi |
+| `Attachment` | `attachment` | `AttachmentController` | `/api/v1/file/*` | barcha rasm ko'rsatuvchi sahifalar |
+| — | — | `AdminController` | `/api/v1/admin/statistic` | `/admin/home` |
+
+**Public sahifalar:** `/`, `/models`, `/bot/:userId`, `/data-form/:userId`,
+`/history/:userId`, `/appeal/:userId`.
+
+**Integratsiya nuqtalari** (yangi platforma eskisini qayta ishlatadi,
+nusxalamaydi — ТЗ §89):
+
+- `User` va `Role` **umumiy** — yangi RBAC shu jadvallar ustiga qurildi
+  (`user_permission` qo'shildi, dublikat `User` yaratilmadi)
+- `JwtService` va `MyFilter` **umumiy** — §61 tuzatishlari ikkala
+  modulga ham tegishli
+- Kasting anketasiga havola qilish yangi kontentdan mumkin
+  (`InternalTargetType.CASTING`, §28)
+- Kasting bildirishnomalari yangi bildirishnoma moduliga ulangan (§32)
+
+**Regressiya qo'riqchilari:** `ExistingCastingRegressionTest` (7 test) va
+`OldCastingFrozenTest` — eski endpointlar va jadvallar o'zgarmaganini
+tekshiradi.
+
+
+## 2.7. Qabul mezonlari — ТЗ §78–§83
+
+| ТЗ | Mezon | Qayerda tekshiriladi |
+|---|---|---|
+| §78 | 8 ta RBAC bandi | `AcceptanceCriteriaTest` — raqamlangan, bandma-band |
+| §78 | chuqur tekshiruv | `HyperAdminHierarchyTest`, `StaffManagementTest`, `RbacIntegrationTest`, `BackendAuthorizationTest`, `UserCannotEnterPanelTest`, `SidebarPermissionsTest` |
+| §79 | 5 ta kontent turi + barcha maydonlar | `ContentStructureTest`, `ContentEditRoundTripTest`, `ContentClassificationTest` |
+| §80 | Serial / mini serial tuzilishi | `ContentStructureTest` (SEASONAL fasl bilan, EPISODIC fasilsiz) |
+| §81 | Reklama + CTR hisoboti | `AdAnalyticsTest`, `AdStatisticsEndpointTest`, `AdvertisementModuleTest` |
+| §82 | Ijodkor yaratish, qidirish, biriktirish | `CreatorSelectionTest`, `ContentEditRoundTripTest` |
+| §83 | Premium berish/bekor qilish + audit | `PremiumGiftTest`, `PremiumLifecycleTest`, `TariffModuleTest` |
+
+⚠️ §78 uchun alohida fayl ochildi: har bir band boshqa testlarda
+qamrab olingan edi, lekin **raqamlangan ro'yxat sifatida** hech qayerda
+yig'ilmagandi. Buyurtmachi «shu sakkiztasi test qilinsin» deganda javob
+bitta joydan ko'rinishi kerak.
+
 ### 2.4. Baseline build/test — kod o'zgartirishdan OLDIN
 
 | Buyruq | Natija |
@@ -548,7 +601,7 @@ Til tanlovi `localStorage` da saqlanadi va kontent tarjimasiga ham ta'sir qiladi
 | 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma: rejalashtirish ishlaydi, hisobot halol (ТЗ §32–§33). FCM ulanmagan |
 | 7 | Users & Monetization — tariffs, premium, Stars, Coin | `[x]` foydalanuvchi, tarif, balans, qurilma, donat |
 | 8 | Analytics — events, aggregation, dashboard, reports | `[x]` ikki qatlamli: xom hodisa + kunlik jamlanma |
-| 9 | Hardening — tests, performance, security, indexes | `[~]` 671 test; migratsiyalar V1–V26 |
+| 9 | Hardening — tests, performance, security, indexes | `[~]` 679 test; migratsiyalar V1–V26 |
 
 ---
 
