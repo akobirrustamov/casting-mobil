@@ -270,6 +270,16 @@ export const adminApi = {
   blockUser: (id, reason) => api.post(`/api/v1/app/admin/users/${id}/block`, { reason }),
   unblockUser: (id) => api.post(`/api/v1/app/admin/users/${id}/unblock`),
   grantPremium: (id, body) => api.post(`/api/v1/app/admin/users/${id}/premium`, body),
+
+  // --- Donatlar (ТЗ §42) ---
+  donationReport: (params) => api.get('/api/v1/app/admin/donations/report', params),
+  donationTransactions: (params) =>
+    api.get('/api/v1/app/admin/donations/transactions', params),
+
+  // --- Eski casting moduli (ТЗ §49) ---
+  // ⚠️ Yo'l ATAYLAB eski: `/api/v1/casting-user/web`. Eski tizim
+  // o'zgartirilmaydi, panel unga shunchaki murojaat qiladi.
+  castingApplications: (params) => api.get('/api/v1/casting-user/web', params),
   revokePremium: (id) => api.del(`/api/v1/app/admin/users/${id}/premium`),
   userDevices: (id) => api.get(`/api/v1/app/admin/users/${id}/devices`),
   revokeDevice: (id, rowId) => api.del(`/api/v1/app/admin/users/${id}/devices/${rowId}`),

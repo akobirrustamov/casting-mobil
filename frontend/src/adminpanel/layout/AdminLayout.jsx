@@ -64,6 +64,14 @@ export default function AdminLayout() {
       items: [
         { to: '/app/panel/users', icon: '👤', label: t('nav.users'), show: can('USER_VIEW') },
         { to: '/app/panel/tariffs', icon: '👑', label: t('nav.tariffs'), show: can('TARIFF_VIEW') },
+        { to: '/app/panel/donations', icon: '✨', label: t('nav.donations'), show: can('DONATION_VIEW') },
+      ],
+    },
+    {
+      label: t('nav.casting'),
+      items: [
+        // Eski casting moduli — o'chirilmaydi va o'zgartirilmaydi (ТЗ §4).
+        { to: '/app/panel/casting', icon: '🎭', label: t('nav.castingList'), show: can('CONTENT_VIEW') },
       ],
     },
     {

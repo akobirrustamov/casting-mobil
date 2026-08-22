@@ -1006,6 +1006,35 @@ tashlansa maydon baribir ko'rinardi).
 - `[x]` Ko'rsatishsiz CTR — nol, nolga bo'linish yo'q
 - `[x]` `DashboardMetricsTest` — 10 test, mutatsiya bilan tekshirilgan
 
+## 23.8. Admin sidebar `[x]` — ТЗ §49
+
+ТЗ: «Role/permissionga qarab menu yashirilsin. **Lekin backend
+authorization baribir majburiy.**»
+
+- `[x]` **Menyu `/me` dan kelgan ruxsatlarga tayanadi** — backend nimani
+  tekshirsa, menyu ham o'shani ishlatadi. Ikkita manba bo'lsa ular vaqt
+  o'tib chetga chiqardi
+- `[x]` `can()` frontendda backenddagi `hasPermission` bilan bir xil
+  mantiqda: ADMIN+ ga hammasi, WORKER ga aniq berilganlari
+- `[x]` ⚠️ **`SidebarPermissionsTest` — ruxsat nomlari mosligini
+  tekshiradi.** Menyuda nom xato yozilsa (`ADVERTISMENT_VIEW`) hech
+  qanday xato chiqmaydi:
+  - Worker uchun `can()` doim `false` → band **hech qachon ko'rinmaydi**;
+  - Admin uchun rol qisqa yo'li ishlaydi → band **har doim ko'rinadi**.
+
+  Ya'ni admin sinov qilganda hammasi joyida ko'rinadi, xato faqat Worker
+  shikoyat qilganda bilinadi — va sabab menyuda ekanligi hech kimning
+  xayoliga kelmaydi
+- `[x]` **Donatlar** va **Kasting** modullari qo'shildi — ТЗ ro'yxatida
+  bor edi, menyuda yo'q edi
+- `[x]` Eski casting moduli faqat KO'RISH: yo'l ham (`/api/v1/casting-user/web`),
+  javob shakli ham ataylab eski. Buyurtmachi talabi — casting regressiyaga
+  uchramasin (§4)
+- `[x]` Uchala tilda tarjima
+- `[x]` ⚠️ **Menyu yashirilishi xavfsizlik EMAS** — backend himoyasi
+  `AdminEndpointGuardTest` da alohida tekshiriladi va u har bir admin
+  endpointida ruxsat yoki rol nazorati borligini talab qiladi
+
 ## 23.9. Dashboard `[x]` — ТЗ §48 (backend qismi)
 
 ТЗ §48 — bu asosan FRONTEND sahifasi, lekin uni **haqiqiy ma'lumot bilan**
@@ -1229,6 +1258,7 @@ CONTENT_VIEW  →  CONTENT_PLAY  →  CONTENT_COMPLETE
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
 | `ReportFiltersTest` | 10 | **ТЗ §47** — davr va obyekt filtrlari, kesishma |
 | `ContentAnalyticsTest` | 9 | **ТЗ §46** — voronka, har bir kontent uchun hisobot |
+| `SidebarPermissionsTest` | 3 | **ТЗ §49** — menyu va backend bir xil ruxsat nomlari |
 | `DashboardMetricsTest` | 18 | **ТЗ §45** — 20 ko'rsatkich, soxta statistika yo'q |
 | `PackagePurchaseTest` | 13 | **ТЗ §44** — ichki balans ishlaydi, soxta to'lov yo'q |
 | `DonationBalanceTest` | 10 | **ТЗ §43** — balans va tarix, boshqaniki ko'rinmaydi |

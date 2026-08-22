@@ -24,6 +24,8 @@ import BannerPage from './pages/BannerPage';
 import CommentsPage from './pages/CommentsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import UsersPage from './pages/UsersPage';
+import DonationsPage from './pages/DonationsPage';
+import CastingPage from './pages/CastingPage';
 import TariffsPage from './pages/TariffsPage';
 import SettingsPage from './pages/SettingsPage';
 import ReportsPage from './pages/ReportsPage';
@@ -130,6 +132,27 @@ export default function PanelApp() {
               element={
                 <RequirePermission permission="USER_VIEW">
                   <UsersPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="donations"
+              element={
+                <RequirePermission permission="DONATION_VIEW">
+                  <DonationsPage />
+                </RequirePermission>
+              }
+            />
+            {/*
+              Eski casting moduli (ТЗ §49). Ruxsat CONTENT_VIEW: eski
+              tizimda alohida ruxsat yo'q va uni qo'shish eski kodga
+              tegishni talab qilardi — buyurtmachi buni taqiqlagan.
+            */}
+            <Route
+              path="casting"
+              element={
+                <RequirePermission permission="CONTENT_VIEW">
+                  <CastingPage />
                 </RequirePermission>
               }
             />
