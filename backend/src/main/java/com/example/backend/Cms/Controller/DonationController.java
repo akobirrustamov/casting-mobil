@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -40,6 +41,7 @@ public class DonationController {
     private final DonationService donationService;
     private final UserBalanceRepo balanceRepo;
     private final com.example.backend.Cms.Repository.DonationRepo donationRepo;
+    private final com.example.backend.Cms.Service.PackagePurchaseService packagePurchaseService;
     private final com.example.backend.Cms.Service.MonetizationService monetizationService;
     private final com.example.backend.Cms.Service.CurrencyPricingService currencyPricingService;
 
@@ -114,6 +116,50 @@ public class DonationController {
                 .map(p -> CurrencyPackageDto.from(p,
                         currencyPricingService.effectivePrice(p), true))
                 .toList());
+    }
+
+    /**
+     * Paketni sotib olish (ТЗ §44).
+     *
+     * <h2>Ikki yo'l</h2>
+     * <ul>
+     *   <li>{@code INTERNAL_BALANCE} — ichki hisobdan. BUGUN ishlaydi;</li>
+     *   <li>{@code PAYMENT_SYSTEM} — tashqi provayder. Ulanmagan, 503.</li>
+     * </ul>
+     *
+     * Soxta «to'landi» javobi berilmaydi: foydalanuvchi yulduz olardi,
+     * pul esa hech qayerdan kelmasdi.
+     */
+    @PostMapping("/packages/{id}/purchase")
+    public ResponseEntity<PurchaseDto> purchasePackage(
+            @PathVariable Long id, @Valid @RequestBody PurchaseRequest request) {
+
+        var purchase = packagePurchaseService.buy(
+                CurrentUser.get(), id, request.getSource());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(PurchaseDto.builder()
+                .purchaseId(purchase.getId())
+                .packageId(purchase.getTargetId())
+                .amountPaid(purchase.getAmount())
+                .currency(purchase.getCurrency())
+                .createdAt(purchase.getCreatedAt())
+                .build());
+    }
+
+    @Data
+    public static class PurchaseRequest {
+        @NotNull(message = "To'lov usuli tanlanmagan")
+        private com.example.backend.Cms.Enums.FundingSource source;
+    }
+
+    @Data
+    @Builder
+    public static class PurchaseDto {
+        private Long purchaseId;
+        private Long packageId;
+        private java.math.BigDecimal amountPaid;
+        private String currency;
+        private java.time.LocalDateTime createdAt;
     }
 
     @Data

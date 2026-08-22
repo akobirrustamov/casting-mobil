@@ -918,8 +918,36 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
   yozuv emas)
 - `[x]` `DonationAndPaymentTest` — 9 test
 
-### To'lov (§44)
+### Paket sotib olish (§44)
 
+ТЗ ikki yo'lni sanaydi va ular bir xil emas:
+
+| Yo'l | Holat |
+|---|---|
+| `INTERNAL_BALANCE` | ✅ **bugun ishlaydi** — pul allaqachon hisobda |
+| `PAYMENT_SYSTEM` | ❌ provayder ulanmagan, 503 |
+
+- `[x]` `POST /api/v1/app/donations/packages/{id}/purchase`
+- `[x]` `PurchaseType.CURRENCY_PACKAGE` — migratsiya kerak emas: enum
+  ustunlarida CHECK cheklovlari ataylab yo'q (V3 qarori), aynan shu
+  sabab — yangi qiymat qo'shilganda eski cheklov INSERT ni yiqitardi
+- `[x]` Pulni yechish, valyutani qo'shish va yozuvni saqlash **bitta
+  tranzaksiyada** — oradagi nosozlik foydalanuvchini pulsiz ham,
+  yulduzsiz ham qoldirardi
+- `[x]` ⚠️ **Narxi belgilanmagan paket BEPUL berilmaydi** — V5 barcha
+  paketlarni `0.00` narx bilan qo'shgan, tekshirilmasa ular tekinga
+  ketardi
+- `[x]` Paketning o'z narxi kursdan ustun (chegirma)
+- `[x]` ⚠️ **Muvaffaqiyatsiz to'lovda xarid YOZUVI ham yaratilmaydi** —
+  to'lanmagan xarid tarixda turishi kerak emas
+- `[x]` Nofaol paket, bloklangan foydalanuvchi va anonim rad etiladi
+- `[x]` `PackagePurchaseTest` — 13 test, mutatsiya bilan tekshirilgan
+
+### To'lov provayderi (§44)
+
+- `[x]` **Audit natijasi**: loyihada hech qanday to'lov integratsiyasi
+  TOPILMADI — na eski casting kodida, na yangi modulda. ТЗ «mavjud
+  bo'lsa reuse qil» deydi; reuse qiladigan narsa yo'q
 - `[x]` `PaymentProvider` interfeysi — chegara belgilangan, qaysi
   provayder ulansa ham qolgan kod o'zgarmaydi
 - `[x]` Provayder nomi **konfiguratsiyadan** (`app.payment.provider`),
@@ -1075,6 +1103,7 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 | `FinancialHistoryImmutableTest` | 5 | **ТЗ §42** — moliyaviy tarix o'chirilmaydi |
 | `SettingValidationTest` | 12 | **ТЗ §40/§41** — xato narx saqlanmaydi |
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
+| `PackagePurchaseTest` | 13 | **ТЗ §44** — ichki balans ishlaydi, soxta to'lov yo'q |
 | `DonationBalanceTest` | 10 | **ТЗ §43** — balans va tarix, boshqaniki ko'rinmaydi |
 | `DonationFlowTest` | 13 | **ТЗ §39** — donat yuborish, nishon, balans |
 | `DonationConcurrencyTest` | 1 | **ТЗ §39** — bir vaqtda ikki donat balansni buzmaydi |

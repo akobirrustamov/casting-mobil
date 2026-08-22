@@ -16,5 +16,14 @@ public enum PurchaseType {
      * paytida mavjud bo'lgan va keyin qo'shilgan qismlarga ham tarqaladi;
      * javob kelgach {@code coversFutureEpisodes} bilan cheklash mumkin.
      */
-    PREMIERE
+    PREMIERE,
+
+    /**
+     * Yulduz yoki tanga paketi (ТЗ §44).
+     *
+     * {@code targetId} — paket identifikatori. Migratsiya kerak emas:
+     * enum ustunlarida CHECK cheklovlari ataylab yo'q, aynan shu sabab —
+     * yangi qiymat qo'shilganda eski cheklov INSERT ni yiqitardi.
+     */
+    CURRENCY_PACKAGE
 }
