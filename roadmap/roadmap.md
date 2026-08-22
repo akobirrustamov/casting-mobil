@@ -1329,6 +1329,53 @@ Yangi papka: `src/adminpanel/`, route prefiksi `/app/panel/*`.
 
 ---
 
+**D12 — Vaqt mintaqasi `Asia/Tashkent`, UTC ga to'liq o'tilmadi (§68).**
+ТЗ «imkon qadar UTC» deydi. Loyihada 310 dan ortiq `LocalDateTime` bor;
+`Instant` ga ko'chirish panelning har bir sana maydonini ham o'girishni
+talab qilardi. **Yarim bajarilgan o'tish umuman qilmaslikdan yomonroq**:
+bir qism qiymat UTC, bir qismi mahalliy bo'lib qolardi va ularni
+farqlashning yo'li yo'q edi. UTC talab qilinishining asosiy sababi —
+yozgi vaqt; O'zbekiston 1996 yildan beri UTC+5 da qat'iy turadi, ya'ni
+takrorlanadigan yoki tushib qoladigan soat yo'q. Sozlamasiz esa
+konteynerdagi UTC tufayli rejalashtirilgan premyera besh soat kech
+chiqardi. Ko'p mintaqali kengayish bo'lsa `Instant` ga o'tish yo'li
+`TimeZoneConfig` izohida yozilgan.
+
+**D13 — Access token xotirada, refresh token `httpOnly` cookie'da (§61).**
+ТЗ «localStorage'ga tashlashdan oldin xavfsizlikni hisobga ol» deydi.
+`localStorage` ni sahifadagi har qanday JavaScript o'qiy oladi — bitta
+XSS (masalan buzilgan npm paketi) uzoq muddatli kirish beradi. Cookie'ni
+esa JavaScript umuman ko'rmaydi. Narxi: sahifa yangilanganda access
+token yo'qoladi va bitta qo'shimcha `/auth/refresh` chaqiruvi bo'ladi.
+
+**D14 — Eski, turi ko'rsatilmagan tokenlar access sifatida qabul qilinadi (§61).**
+`typ` da'vosi qo'shilganda eski tokenlarni darhol rad etish mumkin edi,
+lekin bu joriy etilgan zahoti **barcha ishlab turgan foydalanuvchilarni
+tizimdan chiqarib yuborardi**. Eski tokenlar 24 soat ichida o'z-o'zidan
+eskiradi va muammo yo'qoladi.
+
+**D15 — Server-state kutubxonasi qo'shilmadi (§70).**
+TanStack Query yoki shunga o'xshash kutubxona loyihada yo'q. Mavjud
+`useApi` hook keshsiz, lekin panel uchun yetarli: ro'yxatlar
+sahifalangan, har o'tishda yangi ma'lumot kerak. ТЗ «yangi bog'liqlik
+real muammoni hal qilsin» deydi — bu yerda hal qilinadigan muammo hali
+ko'rinmadi.
+
+**D16 — springdoc-openapi qo'shildi (§106).**
+Yangi bog'liqlik, lekin real muammoni hal qiladi: mobil va frontend
+jamoasi endpointni backend kodini o'qimasdan ishlata olishi kerak.
+Mavjud annotatsiyalardan hujjat hosil qiladi, qo'shimcha kod talab
+qilmaydi. **Ishlab chiqarishda yopiq** — hujjat API'ning butun
+xaritasini beradi.
+
+**D17 — `@testing-library` qo'shilmadi, testlar sof Jest'da (§86).**
+Kutubxona o'rnatilmagan va faqat test uchun uchta yangi bog'liqlik
+qo'shish §70 ga zid bo'lardi. Eng xavfli mantiq — 401 da tokenni
+yangilash oqimi — DOM talab qilmaydi va sof Jest bilan sinaladi.
+Komponent renderini talab qiladigan testlar kerak bo'lsa, o'shanda
+qo'shiladi.
+
+
 ## 14. Next Exact Steps
 
 > ⚠️ **23.08.2026 holati.** ТЗ §29–§83 va §93–§106 ko'rib chiqildi.
