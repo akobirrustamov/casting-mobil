@@ -43,11 +43,12 @@ public class HomeFeedService {
     private final CategoryRepo categoryRepo;
     private final ContentRepo contentRepo;
     private final AccessService accessService;
+    private final com.example.backend.Cms.Repository.UserAccountRepo userAccountRepo;
     private final HomepageService homepageService;
 
     @Transactional(readOnly = true)
     public HomeFeedDto build(User user, Locale locale) {
-        Locale lang = locale == null ? Locale.UZ : locale;
+        Locale lang = resolveLanguage(user, locale);
         boolean showAds = accessService.shouldShowAds(user);
         LocalDateTime now = LocalDateTime.now();
 
@@ -110,6 +111,29 @@ public class HomeFeedService {
         // Bo'sh bo'lim klientda sarlavhasi bor, ichi yo'q qator bo'lib
         // chiqardi. Shuning uchun umuman qaytarilmaydi.
         return empty ? null : b.build();
+    }
+
+    /**
+     * Til tanlash tartibi (mobil 3 tilli talabi):
+     * so'rovdagi til → foydalanuvchi profilidagi til → UZ.
+     *
+     * Ilgari o'rtadagi qadam yo'q edi: so'rovda til ko'rsatilmasa
+     * ruscha so'zlashuvchi foydalanuvchi ham o'zbekcha bosh sahifani
+     * olardi, garchi u tilni allaqachon tanlagan bo'lsa ham.
+     */
+    private Locale resolveLanguage(User user, Locale requested) {
+        if (requested != null) {
+            return requested;
+        }
+        if (user != null) {
+            Locale stored = userAccountRepo.findByUserId(user.getId())
+                    .map(a -> a.getLanguage())
+                    .orElse(null);
+            if (stored != null) {
+                return stored;
+            }
+        }
+        return Locale.UZ;
     }
 
     private List<HomeFeedDto.BannerCard> ads(Locale lang, boolean showAds,

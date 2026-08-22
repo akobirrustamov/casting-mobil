@@ -58,7 +58,12 @@ class AdminEndpointGuardTest {
     private static final Map<String, String> INTENTIONALLY_OPEN = Map.of(
             "login", "Kirish nuqtasi - token hali yo'q. Rol tekshiruvi metod ichida: "
                     + "USER admin panelga kira olmaydi.",
-            "me", "O'z profilini o'qish. Rol tekshiruvi metod ichida."
+            "me", "O'z profilini o'qish. Rol tekshiruvi metod ichida.",
+            "refresh", "Access token muddati tugagach chaqiriladi - ta'rifi bo'yicha "
+                    + "yaroqli access token YO'Q. Huquq refresh token orqali tekshiriladi "
+                    + "va metod ichida rol hamda bloklanish qayta ko'riladi (§61).",
+            "logout", "Chiqish hech qachon rad etilmasligi kerak: aks holda yaroqsiz "
+                    + "token bilan qolgan foydalanuvchi sessiyasini yopa olmasdi."
     );
 
     private static final Pattern MAPPING =

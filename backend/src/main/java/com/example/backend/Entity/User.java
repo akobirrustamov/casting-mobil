@@ -32,6 +32,16 @@ public class User implements UserDetails {
     @Column(unique = true)
     private String phone;
 
+    /**
+     * BCrypt hash (§62).
+     *
+     * {@code WRITE_ONLY}: hash javobda hech qachon chiqmaydi. Ilgari buni
+     * bitta qo'lda yozilgan {@code setPassword("")} qatori ushlab
+     * turardi — yangi endpoint qo'shilsa hash sizib ketardi. Hash parol
+     * emas, lekin uni oflayn buzishga urinish mumkin.
+     */
+    @com.fasterxml.jackson.annotation.JsonProperty(
+            access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
     private String password;
     private String name;
 

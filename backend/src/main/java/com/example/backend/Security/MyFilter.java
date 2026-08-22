@@ -47,6 +47,13 @@ public class MyFilter extends OncePerRequestFilter {
             if (!jwtService.validateToken(token)) {
                 return;
             }
+            // ⚠️ Refresh token — API kaliti EMAS (§61). Ilgari ikkalasi
+            // bir xil tuzilishda edi va o'g'irlangan refresh token bilan
+            // 24 soat davomida hamma narsa qilish mumkin edi.
+            if (jwtService.isRefreshToken(token)) {
+                log.debug("Refresh token API so'roviga ishlatilmoqda - rad etildi");
+                return;
+            }
             String subject = jwtService.extractSubjectFromJwt(token);
             Optional<User> user = userRepo.findById(UUID.fromString(subject));
             if (user.isEmpty()) {

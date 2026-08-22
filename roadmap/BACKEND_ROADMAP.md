@@ -1680,6 +1680,71 @@ yozildi va xususiyatni qo'riqlaydigan test qoldirildi.
 | Balans | `@Version` (§39, optimistik qulf bilan qayta urinish) |
 | Kategoriya, janr, ijodkor, tarif, reklama | qamralmagan — kichik formalar, bir nechta maydon |
 
+## 27.2. Autentifikatsiya `[x]` — ТЗ §61, §62
+
+### Audit xulosasi: qayta yozish kerak emas edi
+
+Mavjud auth asosi sog'lom: **BCrypt**, kalit faqat `APP_JWT_SECRET`
+environment'dan, IP bo'yicha rate limit (10/60s), Spring Security
+filtri. ТЗ «yaxshi bo'lsa rewrite qilma» deydi — shuning uchun
+almashtirilmadi, nuqsonlar nuqtali tuzatildi.
+
+### Topilgan uchta jiddiy kamchilik
+
+**1. Access va refresh token bir xil edi.** Ikkalasi ham faqat `sub` va
+`exp` bilan imzolangan JWT. Ya'ni o'g'irlangan refresh token bilan 24
+soat davomida butun API ochiq edi — qisqa muddatli access tokenning
+ma'nosi yo'q edi. Undan yomoni: eski `/auth/refresh` har qanday yaroqli
+tokenni qabul qilgani uchun o'g'irlangan **access** token muddatsiz
+uzaytirilardi. Endi `typ` da'vosi bor va filtr refresh tokenni rad etadi.
+
+**2. Bekor qilish imkoni yo'q edi.** JWT o'z-o'zidan tekshiriladi —
+server uni to'xtata olmaydi. «Chiqish» faqat klient tomonida edi.
+**V25** da `refresh_token` jadvali qo'shildi: rotatsiya (bitta token bir
+marta ishlaydi), bekor qilish, va qayta ishlatish aniqlanganda butun
+zanjirni yopish.
+
+**3. Hisob bo'yicha himoya yo'q edi.** IP limiti yuzta IP'dan bitta
+hisobga qaratilgan hujumni to'xtatmaydi. `LoginAttemptService`
+qo'shildi: 5 xatodan keyin 15 daqiqa.
+
+### Boshqa tuzatishlar
+
+- `[x]` Access token **100 daqiqa → 15 daqiqa**
+- `[x]` Refresh token URL query'da emas, `httpOnly` cookie'da
+  (query parametri server va proxy loglariga tushardi)
+- `[x]` Yangilashda rol va bloklanish **qayta tekshiriladi** — aks holda
+  bo'shatilgan xodim rotatsiya tufayli muddatsiz ishlayverardi
+- `[x]` Panelda access token **xotirada**, `localStorage` da emas
+- `[x]` 401 da bitta joyda avtomatik yangilash + qayta urinish
+- `[x]` Bir vaqtda ketgan so'rovlar bitta yangilashni bo'lishadi
+
+### ⚠️ Test topgan nuqson
+
+O'g'rilik aniqlanganda zanjir bekor qilinar, keyin xato tashlanardi —
+**xato tranzaksiyani orqaga qaytarib, bekor qilishni bekor qilardi**.
+Himoya ishlagandek ko'rinib, aslida hech narsa qilmasdi.
+`noRollbackFor = BusinessException.class` bilan tuzatildi.
+
+### §62 — parol
+
+Auditda **shifrlanmagan parol topilmadi**: barcha yozuvlar
+`passwordEncoder.encode()` orqali, solishtirish BCrypt bilan. Izchillik
+saqlandi (Argon2 ga o'tilmadi).
+
+- `[x]` `User.password` endi `WRITE_ONLY` — hash javobda chiqmaydi.
+  Ilgari buni bitta qo'lda yozilgan `setPassword("")` ushlab turardi
+- `[x]` Qo'riqchi test: `setPassword(...)` faqat encoder bilan
+- `[ ]` BCrypt kuchi default (10). 12 ga ko'tarish mumkin, lekin bu ТЗ
+  talabi emas — qaror buyurtmachiga qoldirildi
+
+### Foydalanuvchi tili (mobil 3 tilli talabi)
+
+`UserAccount.language` qo'shildi (**V26**). Ilgari foydalanuvchining
+tili hech qayerda saqlanmasdi: bosh sahifa uni so'rov parametridan
+olardi, push xabar esa umuman hech qayerdan — FCM ulangach **barcha
+foydalanuvchiga o'zbekcha** matn ketardi.
+
 ## 28. Indexes `[x]`
 
 - `[x]` **59 indeks** (61 yaratilgan − 2 ortiqchasi olib tashlangan) —

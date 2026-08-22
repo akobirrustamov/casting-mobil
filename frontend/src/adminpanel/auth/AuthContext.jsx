@@ -20,9 +20,17 @@ const ROLE_LEVEL = {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => tokenStore.getUser());
-  const [restoring, setRestoring] = useState(Boolean(tokenStore.get()));
+  // ⚠️ Access token endi xotirada — sahifa yangilanishida u YO'Q (§61).
+  // Shuning uchun tiklash tokenning borligiga emas, saqlangan profilga
+  // qarab boshlanadi: refresh cookie'si bo'lsa sessiya tiklanadi.
+  const [restoring, setRestoring] = useState(Boolean(tokenStore.getUser()));
 
   const signOut = useCallback(() => {
+    // Serverga ham aytamiz: aks holda refresh token muddati tugaguncha
+    // amal qilaverardi va «chiqish» faqat ko'rinish bo'lardi.
+    adminApi.logout().catch(() => {
+      /* tarmoq yo'q bo'lsa ham klient tomonda chiqamiz */
+    });
     tokenStore.clear();
     setUser(null);
   }, []);
@@ -38,13 +46,16 @@ export function AuthProvider({ children }) {
   // Sahifa yangilanganda profilni serverdan tiklaymiz: rol yoki ruxsat
   // o'zgargan bo'lishi mumkin, localStorage'dagi nusxaga ishonib bo'lmaydi.
   useEffect(() => {
-    if (!tokenStore.get()) {
+    if (!tokenStore.getUser()) {
       setRestoring(false);
       return;
     }
     let cancelled = false;
+    // Avval access tokenni cookie orqali tiklaymiz, keyin profilni
+    // serverdan olamiz: rol yoki ruxsat o'zgargan bo'lishi mumkin.
     adminApi
-      .me()
+      .refreshSession()
+      .then(() => adminApi.me())
       .then((fresh) => {
         if (cancelled) return;
         tokenStore.setUser(fresh);

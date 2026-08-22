@@ -1,5 +1,6 @@
 package com.example.backend.Cms.Entity;
 
+import com.example.backend.Cms.Enums.Locale;
 import com.example.backend.Cms.Enums.UserStatus;
 import com.example.backend.Entity.User;
 import jakarta.persistence.*;
@@ -53,6 +54,25 @@ public class UserAccount {
      */
     @Column(name = "premium_until")
     private LocalDateTime premiumUntil;
+
+    /**
+     * Foydalanuvchi tanlagan til (§32, §61 qo'shimchasi).
+     *
+     * <h2>Nega kerak</h2>
+     * Kontent, bildirishnoma va reklama uch tilda saqlanadi, lekin
+     * FOYDALANUVCHINING tili hech qayerda yozilmasdi. Bosh sahifa uni
+     * so'rov parametridan olardi ({@code ?lang=RU}), push xabar esa
+     * umuman hech qayerdan — ya'ni FCM ulangach barcha foydalanuvchiga
+     * o'zbekcha matn ketardi. Ruscha so'zlashuvchi foydalanuvchi
+     * tushunmaydigan xabar oladi.
+     *
+     * Default UZ: bu «bilmayman» degani emas, davlat tili — mobil ilova
+     * birinchi ochilishda uni yuboradi va qiymat aniqlashadi.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "language", length = 8, nullable = false)
+    @Builder.Default
+    private Locale language = Locale.UZ;
 
     @Column(name = "last_active_at")
     private LocalDateTime lastActiveAt;

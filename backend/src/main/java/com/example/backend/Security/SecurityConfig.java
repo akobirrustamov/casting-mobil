@@ -81,6 +81,11 @@ public class SecurityConfig {
                         // Admin panelga kirish. Faqat LOGIN ochiq - /auth/me token talab qiladi.
                         // Rol tekshiruvi controller ichida: USER admin panelga kira olmaydi.
                         .requestMatchers(HttpMethod.POST, "/api/v1/app/admin/auth/login").permitAll()
+                        // Refresh va logout Bearer token TALAB QILMAYDI: ular
+                        // httpOnly cookie bilan ishlaydi. Access token muddati
+                        // o'tgach yangilash aynan shu holatda kerak bo'ladi (§61).
+                        .requestMatchers(HttpMethod.POST, "/api/v1/app/admin/auth/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/app/admin/auth/logout").permitAll()
 
                         // --- Yangiliklar: o'qish ochiq, yozish yopiq ---
                         .requestMatchers(HttpMethod.GET, "/api/v1/news").permitAll()

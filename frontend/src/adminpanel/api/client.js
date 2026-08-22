@@ -12,14 +12,31 @@ import axios from 'axios';
 
 export const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
-const TOKEN_KEY = 'uzpanel.access_token';
 const USER_KEY = 'uzpanel.user';
 
+/**
+ * ⚠️ Access token XOTIRADA saqlanadi, `localStorage` da emas (§61).
+ *
+ * `localStorage` ni sahifadagi har qanday JavaScript o'qiy oladi —
+ * bitta XSS (masalan buzilgan npm paketi) tokenni o'g'irlaydi. Xotiradagi
+ * qiymat esa sahifa yopilishi bilan yo'qoladi va boshqa vkladkaga
+ * ko'chmaydi.
+ *
+ * Sahifa yangilanganda token yo'qoladi — bu muammo emas: refresh token
+ * `httpOnly` cookie'da turadi va `/auth/refresh` yangi access token
+ * beradi. Cookie'ni JavaScript umuman ko'rmaydi.
+ *
+ * Profil (`USER_KEY`) `localStorage` da qoladi: u maxfiy emas, faqat
+ * sahifa yangilanishida menyuni darhol chizish uchun kerak. Haqiqiy
+ * huquq baribir backendda tekshiriladi.
+ */
+let accessToken = null;
+
 export const tokenStore = {
-  get: () => localStorage.getItem(TOKEN_KEY),
-  set: (token) => localStorage.setItem(TOKEN_KEY, token),
+  get: () => accessToken,
+  set: (token) => { accessToken = token; },
   clear: () => {
-    localStorage.removeItem(TOKEN_KEY);
+    accessToken = null;
     localStorage.removeItem(USER_KEY);
   },
   getUser: () => {
@@ -34,7 +51,8 @@ export const tokenStore = {
   setUser: (user) => localStorage.setItem(USER_KEY, JSON.stringify(user)),
 };
 
-const http = axios.create({ baseURL: BASE_URL, timeout: 20000 });
+// withCredentials: refresh cookie'si so'rovlarga qo'shilishi uchun.
+const http = axios.create({ baseURL: BASE_URL, timeout: 20000, withCredentials: true });
 
 http.interceptors.request.use((config) => {
   const token = tokenStore.get();
@@ -74,13 +92,48 @@ function normalizeError(error) {
   };
 }
 
-async function request(method, url, { data, params } = {}) {
+/**
+ * Bir vaqtda ketayotgan bir nechta so'rov 401 olsa, faqat BITTA
+ * yangilash bo'lishi kerak. Aks holda har biri o'z rotatsiyasini
+ * boshlab, bir-birining tokenini bekor qilardi va foydalanuvchi
+ * «o'g'rilik aniqlandi» degan sababdan tizimdan chiqib ketardi.
+ */
+let refreshing = null;
+
+function refreshAccessToken() {
+  if (!refreshing) {
+    refreshing = http
+      .post('/api/v1/app/admin/auth/refresh')
+      .then((res) => {
+        tokenStore.set(res.data.accessToken);
+        if (res.data.user) tokenStore.setUser(res.data.user);
+        return res.data.accessToken;
+      })
+      .finally(() => { refreshing = null; });
+  }
+  return refreshing;
+}
+
+async function request(method, url, { data, params, retried } = {}) {
   try {
     const res = await http.request({ method, url, data, params });
     return res.data;
   } catch (error) {
     const normalized = normalizeError(error);
-    // Token muddati tugagan yoki yaroqsiz - bitta joyda hal qilinadi.
+
+    // Access token muddati tugagan bo'lsa — bir marta yangilab ko'ramiz.
+    // Yangilash oqimining o'zi qayta urinmaydi (`retried`), aks holda
+    // cheksiz halqa hosil bo'lardi.
+    const isAuthCall = url.startsWith('/api/v1/app/admin/auth/');
+    if (normalized.status === 401 && !retried && !isAuthCall) {
+      try {
+        await refreshAccessToken();
+        return await request(method, url, { data, params, retried: true });
+      } catch {
+        // Yangilash ham o'tmadi — sessiya haqiqatan tugagan.
+      }
+    }
+
     if (normalized.status === 401 && onUnauthorized) {
       onUnauthorized();
     }
@@ -93,6 +146,10 @@ export const api = {
   post: (url, data) => request('post', url, { data }),
   put: (url, data) => request('put', url, { data }),
   del: (url) => request('delete', url),
+  /** Chiqish — token serverda ham bekor qilinadi (§61). */
+  logout: () => request('post', '/api/v1/app/admin/auth/logout'),
+  /** Sahifa yangilangach sessiyani tiklash. */
+  refresh: () => refreshAccessToken(),
 };
 
 /** Media faylining to'liq manzili. */
@@ -210,6 +267,8 @@ async function uploadFile(file, folder = 'content', onProgress) {
 
 export const adminApi = {
   login: (phone, password) => api.post('/api/v1/app/admin/auth/login', { phone, password }),
+  logout: () => api.logout(),
+  refreshSession: () => api.refresh(),
   me: () => api.get('/api/v1/app/admin/auth/me'),
   dashboard: () => api.get('/api/v1/app/admin/dashboard/summary'),
 

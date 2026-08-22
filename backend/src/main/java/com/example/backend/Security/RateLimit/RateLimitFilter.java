@@ -45,6 +45,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
             // Login: brute-force'ga qarshi qattiq cheklov
             new Rule("/api/v1/auth/login", 10, 60),
             new Rule("/api/v1/app/admin/auth/login", 10, 60),
+            // Yangilash ham cheklanadi: aks holda o'g'irlangan cookie bilan
+            // cheksiz token yasash mumkin bo'lardi (§61).
+            new Rule("/api/v1/app/admin/auth/refresh", 30, 60),
             // Bot anketasi va rasm yuklash - anonim yozish
             new Rule("/api/v1/casting-user", 20, 60),
             new Rule("/api/v1/file/upload", 30, 60)
