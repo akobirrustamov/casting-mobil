@@ -10,6 +10,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -60,16 +64,66 @@ public class AuditServiceImpl implements AuditService {
         }
     }
 
+    /**
+     * Maxfiy deb hisoblanadigan maydon nomlari (§59).
+     *
+     * Solishtirish kichik harfda va «ichida bor» tamoyili bilan:
+     * {@code passwordHash}, {@code newPassword}, {@code refreshToken},
+     * {@code apiKey} — hammasi tushadi.
+     */
+    private static final List<String> SECRET_HINTS = List.of(
+            "password", "token", "secret", "apikey", "api_key",
+            "credential", "authorization", "otp", "pin");
+
     private String toJson(Object value) {
         if (value == null) {
             return null;
         }
         try {
-            return objectMapper.writeValueAsString(value);
+            return objectMapper.writeValueAsString(redact(value));
         } catch (Exception e) {
             log.warn("Audit uchun JSON'ga o'girib bo'lmadi: {}", value.getClass().getSimpleName());
             return null;
         }
+    }
+
+    /**
+     * Maxfiy qiymatlarni jurnalga tushishdan oldin o'chiradi.
+     *
+     * <b>Nega kerak.</b> {@code toJson} istalgan obyektni seriyalashtiradi.
+     * Bugun barcha chaqiruv joylari qo'lda tanlangan {@code Map.of(...)}
+     * uzatadi, lekin ertaga kimdir butun so'rov DTO'sini uzatishi mumkin —
+     * u yerda esa {@code password} bor. Audit jadvali odatda uzoq
+     * saqlanadi va ko'p odam o'qiydi, ya'ni parol eng noqulay joyga
+     * tushadi. ТЗ buni to'g'ridan-to'g'ri taqiqlaydi.
+     *
+     * <b>Nega o'chirilmaydi, balki belgilanadi.</b> Maydonni butunlay
+     * tashlab yuborsak, «parol o'zgardimi?» degan savolga javob
+     * qolmasdi. {@code ***} esa voqeani ko'rsatadi, qiymatni emas.
+     */
+    private Object redact(Object value) {
+        Object tree = objectMapper.convertValue(value, Object.class);
+        return redactNode(tree);
+    }
+
+    private Object redactNode(Object node) {
+        if (node instanceof Map<?, ?> map) {
+            Map<String, Object> clean = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> e : map.entrySet()) {
+                String key = String.valueOf(e.getKey());
+                clean.put(key, isSecret(key) ? "***" : redactNode(e.getValue()));
+            }
+            return clean;
+        }
+        if (node instanceof List<?> list) {
+            return list.stream().map(this::redactNode).toList();
+        }
+        return node;
+    }
+
+    private boolean isSecret(String key) {
+        String lower = key.toLowerCase();
+        return SECRET_HINTS.stream().anyMatch(lower::contains);
     }
 
     private String currentIp() {

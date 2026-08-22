@@ -11,6 +11,7 @@ import com.example.backend.Repository.UserRepo;
 import com.example.backend.Security.JwtService;
 import com.example.backend.Services.AuditService.AuditService;
 import com.example.backend.Services.PermissionService.PermissionService;
+import com.example.backend.Services.AuditService.AuditAction;
 import com.example.backend.exceptions.BusinessException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -68,7 +69,7 @@ public class AdminAuthController {
         }
 
         staffService.recordLogin(user);
-        auditService.log(user, "ADMIN_LOGIN", "User", user.getId());
+        auditService.log(user, AuditAction.ADMIN_LOGIN, "User", user.getId());
 
         return ResponseEntity.ok(new AdminLoginResponse(
                 jwtService.generateJwtToken(user),

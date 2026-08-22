@@ -164,7 +164,7 @@ public class MonetizationService {
         p.setSortOrder(incoming.getSortOrder() == null ? 0 : incoming.getSortOrder());
 
         CurrencyPackage saved = packageRepo.save(p);
-        auditService.log(actor, id == null ? "PACKAGE_CREATED" : "PACKAGE_UPDATED",
+        auditService.log(actor, id == null ? AuditAction.PACKAGE_CREATED : AuditAction.PACKAGE_UPDATED,
                 "CurrencyPackage", saved.getId(), null,
                 Map.of("kind", saved.getKind(), "amount", saved.getAmount(),
                         "price", saved.getPrice().toPlainString()));
@@ -186,7 +186,7 @@ public class MonetizationService {
         }
 
         packageRepo.delete(p);
-        auditService.log(actor, "PACKAGE_DELETED", "CurrencyPackage", id);
+        auditService.log(actor, AuditAction.PACKAGE_DELETED, "CurrencyPackage", id);
     }
 
     // ---------------------------------------------------------------- donat

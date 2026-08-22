@@ -12,6 +12,7 @@ import com.example.backend.Entity.User;
 import com.example.backend.Services.AuditService.AuditService;
 import com.example.backend.Cms.Enums.PurchaseType;
 import com.example.backend.Cms.Repository.PurchaseRepo;
+import com.example.backend.Services.AuditService.AuditAction;
 import com.example.backend.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -91,7 +92,7 @@ public class EpisodeService {
         mergeSeasonTranslations(season, request.getTranslations());
 
         Season saved = seasonRepo.save(season);
-        auditService.log(actor, seasonId == null ? "SEASON_CREATED" : "SEASON_UPDATED",
+        auditService.log(actor, seasonId == null ? AuditAction.SEASON_CREATED : AuditAction.SEASON_UPDATED,
                 "Season", saved.getId(), null,
                 Map.of("contentId", contentId, "number", saved.getSeasonNumber(), "title", uzTitle));
         return saved;
@@ -114,7 +115,7 @@ public class EpisodeService {
         }
 
         seasonRepo.delete(season);
-        auditService.log(actor, "SEASON_DELETED", "Season", seasonId);
+        auditService.log(actor, AuditAction.SEASON_DELETED, "Season", seasonId);
     }
 
     // ---------------------------------------------------------------- qismlar
@@ -179,7 +180,7 @@ public class EpisodeService {
         replaceVideos(episode, request.getVideos());
 
         Episode saved = episodeRepo.save(episode);
-        auditService.log(actor, episodeId == null ? "EPISODE_CREATED" : "EPISODE_UPDATED",
+        auditService.log(actor, episodeId == null ? AuditAction.EPISODE_CREATED : AuditAction.EPISODE_UPDATED,
                 "Episode", saved.getId(), null,
                 Map.of("contentId", contentId, "number", saved.getEpisodeNumber(), "title", uzTitle));
         return saved;
@@ -204,7 +205,7 @@ public class EpisodeService {
         }
 
         episodeRepo.delete(episode);
-        auditService.log(actor, "EPISODE_DELETED", "Episode", episodeId);
+        auditService.log(actor, AuditAction.EPISODE_DELETED, "Episode", episodeId);
     }
 
     // ------------------------------------------------------------------ ichki

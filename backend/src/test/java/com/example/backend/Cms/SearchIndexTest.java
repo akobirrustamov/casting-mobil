@@ -43,6 +43,14 @@ class SearchIndexTest {
 
     private static final Path MIGRATION = Path.of(
             "src/main/java/db/migration/V21__Search_indexes.java");
+
+    /**
+     * Qidiruv indekslari bitta migratsiyada emas: V21 dan keyin qo'shilgan
+     * qidiruvlar o'z migratsiyasini talab qiladi (ishlab turgan bazada
+     * eski migratsiya qayta ishga tushmaydi). Shuning uchun ro'yxat
+     * hammasidan yig'iladi.
+     */
+    private static final Path MIGRATION_DIR = Path.of("src/main/java/db/migration");
     private static final Path REPOS = Path.of(
             "src/main/java/com/example/backend");
 
@@ -50,12 +58,15 @@ class SearchIndexTest {
 
     /** V21 dagi {@code new String[]{"jadval", "ustun"}} juftliklari. */
     private List<String[]> declaredTargets() throws IOException {
-        String src = Files.readString(MIGRATION);
         Pattern p = Pattern.compile("new String\\[]\\{\"(\\w+)\", \"(\\w+)\"}");
-        Matcher m = p.matcher(src);
         List<String[]> out = new ArrayList<>();
-        while (m.find()) {
-            out.add(new String[]{m.group(1), m.group(2)});
+        try (java.util.stream.Stream<Path> files = Files.list(MIGRATION_DIR)) {
+            for (Path f : files.filter(x -> x.toString().endsWith(".java")).toList()) {
+                Matcher m = p.matcher(Files.readString(f));
+                while (m.find()) {
+                    out.add(new String[]{m.group(1), m.group(2)});
+                }
+            }
         }
         return out;
     }

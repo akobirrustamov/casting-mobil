@@ -15,6 +15,7 @@ import com.example.backend.Cms.Repository.UserAccountRepo;
 import com.example.backend.Cms.Repository.UserBalanceRepo;
 import com.example.backend.Entity.User;
 import com.example.backend.Services.AuditService.AuditService;
+import com.example.backend.Services.AuditService.AuditAction;
 import com.example.backend.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -169,7 +170,7 @@ public class PackagePurchaseService {
                 .createdAt(LocalDateTime.now())
                 .build());
 
-        auditService.log(buyer, "CURRENCY_PACKAGE_PURCHASED",
+        auditService.log(buyer, AuditAction.CURRENCY_PACKAGE_PURCHASED,
                 "CurrencyPackage", pack.getId(), null,
                 Map.of("kind", pack.getKind(),
                         "amount", String.valueOf(pack.getAmount()),

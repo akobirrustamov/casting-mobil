@@ -4,6 +4,7 @@ import com.example.backend.Cms.Entity.PlatformSetting;
 import com.example.backend.Cms.Repository.PlatformSettingRepo;
 import com.example.backend.Entity.User;
 import com.example.backend.Services.AuditService.AuditService;
+import com.example.backend.Services.AuditService.AuditAction;
 import com.example.backend.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -175,7 +176,7 @@ public class SettingsService {
         s.setUpdatedBy(actor == null ? null : actor.getId());
         PlatformSetting saved = repo.save(s);
 
-        auditService.log(actor, "SETTING_CHANGED", "PlatformSetting", key,
+        auditService.log(actor, AuditAction.SETTING_CHANGED, "PlatformSetting", key,
                 Map.of("value", before), Map.of("value", saved.getValue()));
         return saved;
     }

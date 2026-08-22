@@ -159,7 +159,7 @@ public class NotificationAdminService {
         n.getTranslations().removeIf(t -> !keep.contains(t.getLocale()));
 
         Notification saved = notificationRepo.save(n);
-        auditService.log(actor, id == null ? "NOTIFICATION_CREATED" : "NOTIFICATION_UPDATED",
+        auditService.log(actor, id == null ? AuditAction.NOTIFICATION_CREATED : AuditAction.NOTIFICATION_UPDATED,
                 "Notification", saved.getId(), null,
                 Map.of("type", saved.getType(), "audience", saved.getAudience(),
                         "status", saved.getStatus()));
@@ -248,7 +248,7 @@ public class NotificationAdminService {
         }
         n.setStatus(NotificationStatus.CANCELLED);
         notificationRepo.save(n);
-        auditService.log(actor, "NOTIFICATION_CANCELLED", "Notification", id);
+        auditService.log(actor, AuditAction.NOTIFICATION_CANCELLED, "Notification", id);
     }
 
     /**

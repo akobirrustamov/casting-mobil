@@ -199,7 +199,14 @@ public class StaffController {
                     request.getPermissions() == null ? Set.of() : request.getPermissions());
         }
 
-        auditService.log(actor, AuditAction.STAFF_CREATED, "User", created.getId(),
+        // ТЗ §59 admin va worker yaratilishini alohida action sifatida
+        // ko'rsatadi: rol faqat afterState ichida qolsa, «kimga admin
+        // huquqi berildi?» degan savolga filtr bilan javob topilmasdi.
+        String action = request.getRole() == PlatformRole.WORKER
+                ? AuditAction.WORKER_CREATED
+                : AuditAction.ADMIN_CREATED;
+
+        auditService.log(actor, action, "User", created.getId(),
                 null, java.util.Map.of("role", request.getRole(), "phone", phone));
 
         return ResponseEntity.ok(mapper.toDto(created));

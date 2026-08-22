@@ -1522,18 +1522,70 @@ foydalanuvchi emas, ruxsat qatori.
 ⚠️ Mutatsiya bilan tekshirildi: to'rtala tuzatish ham qaytarib ko'rildi,
 har safar tegishli testlar yiqildi.
 
-## 26. Audit logs `[x]`
 
-**Entity:** `AuditLog` · **Migratsiya:** V2
+**Entity:** `AuditLog` · **Migratsiya:** V2 · **Indeks:** V9, V23
 
 - `[x]` `GET /audit-logs` — rol ≥ ADMIN, filtrlar bilan
-- `[x]` `AuditService` — 29 joydan chaqiriladi
-- `[x]` Eski/yangi qiymat, aktor, IP, vaqt
-- `[x]` **Parol va token yozilmaydi** — chaqiruvlar aniq maydonlar beradi
+- `[x]` `AuditService` — 37 joydan chaqiriladi
+- `[x]` Eski/yangi qiymat, aktor, IP, qurilma, vaqt
+- `[x]` **Parol va token yozilmaydi** — ikki qatlam: chaqiruvlar aniq
+  maydonlar beradi + `AuditServiceImpl` maxfiy nomlarni `***` qiladi
 - `[x]` O'zgartirish/o'chirish endpointi **yo'q** — jurnal faqat qo'shiladi
-- `[x]` Indekslar: `actor+created`, `entity+created` (V9)
-- `[ ]` «Maxfiy ma'lumot yozilmaydi» degan **avtomatik test** yo'q
-- `[ ]` Saqlash muddati siyosati (eski yozuvlarni arxivlash)
+- `[x]` «Maxfiy ma'lumot yozilmaydi» avtomatik testi — `AuditLogTest`
+- `[ ]` Saqlash muddati siyosati (eski yozuvlarni arxivlash) — jurnal
+  hech qachon tozalanmaydi, ya'ni cheksiz o'sadi
+
+## 26. Audit logs `[x]` — ТЗ §59
+
+### Auditning o'ziga xosligi
+
+Oddiy ro'yxatda noto'g'ri filtr — noqulaylik. Audit jurnalida esa
+**noto'g'ri xulosa**: tergovchi «bunday hodisa bo'lmagan» deb o'ylaydi,
+aslida filtr uni ko'rsatmagan.
+
+### Topilgan va tuzatilgan
+
+- `[x]` **Filtrlar bir-birini istisno qilardi** — ichma-ich ternary'da
+  faqat bittasi ishlardi. «PREMIUM_GRANTED + aktyor X» so'rovi action'ni
+  jimgina tashlab, X ning BARCHA amallarini qaytarardi (§34 dagi izohlar
+  bilan bir xil xato). Endi bitta so'rov, barcha shartlar birga
+- `[x]` **Panel qidiruvi hech narsa topmasdi** — maydon qidiruv darchasi
+  ko'rinishida, backend esa aniq tenglik bilan izlardi. «content» degan
+  admin bo'sh ro'yxat ko'rardi. Endi qismiy moslik
+- `[x]` **Sana oralig'i yo'q edi** — audit tabiatan vaqtga bog'liq
+- `[x]` `ADMIN_CREATED` / `WORKER_CREATED` ajratildi — ilgari ikkalasi
+  ham `STAFF_CREATED` edi va «kimga admin huquqi berildi?» degan savolga
+  filtr bilan javob topib bo'lmasdi (rol faqat `afterState` JSON'ida)
+- `[x]` `userAgent` DTO'ga qo'shildi — entity yozardi, API qaytarmasdi
+- `[x]` `beforeState` / `afterState` panelda ko'rsatiladi (yig'iladigan qator)
+- `[x]` **28 ta xom satr** konstantaga o'tkazildi
+
+### Maxfiy qiymatlar
+
+`toJson` istalgan obyektni seriyalashtiradi. Bugun barcha chaqiruv
+joylari qo'lda tanlangan `Map.of(...)` uzatadi, lekin ertaga kimdir butun
+so'rov DTO'sini uzatishi mumkin — u yerda `password` bor.
+
+- `[x]` `password`, `token`, `secret`, `apiKey`, `otp`, `pin` va shunga
+  o'xshash nomli maydonlar `***` bilan almashtiriladi (ichma-ich ham)
+- `[x]` Butunlay tashlab yuborilmaydi: aks holda «parol o'zgardimi?»
+  degan savolga javob qolmasdi. `***` voqeani ko'rsatadi, qiymatni emas
+
+### O'chirishdan himoya
+
+- `[x]` Controllerda faqat `@GetMapping` — yozuv endpointi ataylab yo'q
+- `[x]` Ro'yxatni ko'rish `ADMIN` va undan yuqori rolga cheklangan
+- `[x]` Qo'riqchi test `auditLogRepo.delete*` / `saveAll` chaqirig'ini
+  va controllerda `@Delete/@Put/@PostMapping` paydo bo'lishini taqiqlaydi
+
+### Indeks
+
+`action` bo'yicha qidiruv `like '%q%'` ga o'zgargani uchun **V23**
+trigram indeksi qo'shildi. Audit jadvali eng tez o'sadiganlardan biri va
+hech qachon tozalanmaydi — indekssiz har filtr butun tarixni skanerlardi.
+
+⚠️ Buni §55 da yozilgan `SearchIndexTest` o'zi ushladi. O'sha test endi
+bitta migratsiya emas, butun `db/migration` papkasini o'qiydi.
 
 ## 27. Database migrations `[x]`
 

@@ -132,7 +132,7 @@ public class HomepageService {
         // bog'langan, yozuv yo'qolsa hisobotda egasiz raqamlar qolardi.
         ad.setStatus(PublicationStatus.ARCHIVED);
         advertisementRepo.save(ad);
-        auditService.log(actor, "ADVERTISEMENT_ARCHIVED", "Advertisement", id);
+        auditService.log(actor, AuditAction.ADVERTISEMENT_ARCHIVED, "Advertisement", id);
     }
 
     // --------------------------------------------------------------- premyera
@@ -245,7 +245,7 @@ public class HomepageService {
         p.getTranslations().removeIf(t -> !keep.contains(t.getLocale()));
 
         Premiere saved = premiereRepo.save(p);
-        auditService.log(actor, id == null ? "PREMIERE_CREATED" : "PREMIERE_UPDATED",
+        auditService.log(actor, id == null ? AuditAction.PREMIERE_CREATED : AuditAction.PREMIERE_UPDATED,
                 "Premiere", saved.getId(), null,
                 Map.of("name", saved.getName(), "status", saved.getStatus()));
         return saved;
@@ -259,7 +259,7 @@ public class HomepageService {
         // o'chsa, to'lov tarixi nima uchun to'langanini ko'rsatolmay qolardi.
         p.setStatus(PublicationStatus.ARCHIVED);
         premiereRepo.save(p);
-        auditService.log(actor, "PREMIERE_ARCHIVED", "Premiere", id);
+        auditService.log(actor, AuditAction.PREMIERE_ARCHIVED, "Premiere", id);
     }
 
     // ------------------------------------------------------------ bosh sahifa
@@ -327,7 +327,7 @@ public class HomepageService {
         s.getTranslations().removeIf(t -> !keep.contains(t.getLocale()));
 
         HomepageSection saved = homepageSectionRepo.save(s);
-        auditService.log(actor, "HOMEPAGE_SECTION_UPDATED", "HomepageSection", id, null,
+        auditService.log(actor, AuditAction.HOMEPAGE_SECTION_UPDATED, "HomepageSection", id, null,
                 Map.of("type", saved.getType(), "enabled", saved.getEnabled(),
                         "sortOrder", saved.getSortOrder()));
         return saved;
@@ -416,7 +416,7 @@ public class HomepageService {
         // BOG'LANISHNI yo'q qiladi - kontentning o'ziga tegmaydi.
         existing.values().forEach(sectionItemRepo::delete);
 
-        auditService.log(actor, "HOMEPAGE_SECTION_ITEMS_UPDATED",
+        auditService.log(actor, AuditAction.HOMEPAGE_SECTION_ITEMS_UPDATED,
                 "HomepageSection", sectionId, null,
                 Map.of("type", section.getType(), "count", result.size()));
         return result;
@@ -467,7 +467,7 @@ public class HomepageService {
             }
         }
 
-        auditService.log(actor, "HOMEPAGE_SECTIONS_REORDERED", "HomepageSection", null, null,
+        auditService.log(actor, AuditAction.HOMEPAGE_SECTIONS_REORDERED, "HomepageSection", null, null,
                 Map.of("count", seen.size()));
         return homepageSectionRepo.findAllByOrderBySortOrderAscIdAsc();
     }

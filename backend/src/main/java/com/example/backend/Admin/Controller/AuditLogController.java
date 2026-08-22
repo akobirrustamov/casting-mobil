@@ -11,7 +11,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,26 +40,35 @@ public class AuditLogController {
             @RequestParam(required = false) String action,
             @RequestParam(required = false) UUID actorId,
             @RequestParam(required = false) String entityType,
-            @RequestParam(required = false) String entityId) {
+            @RequestParam(required = false) String entityId,
+            @org.springframework.format.annotation.DateTimeFormat(iso =
+                    org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            @RequestParam(required = false) java.time.LocalDate from,
+            @org.springframework.format.annotation.DateTimeFormat(iso =
+                    org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            @RequestParam(required = false) java.time.LocalDate to) {
 
         PlatformRole role = permissionService.roleOf(CurrentUser.get());
         if (role == null || !role.isAtLeast(PlatformRole.ADMIN)) {
             throw BusinessException.accessDenied("Audit jurnali uchun ruxsat yo'q");
         }
 
-        var pageable = PageRequest.of(Math.max(0, page), Math.min(Math.max(1, size), 200),
-                Sort.by(Sort.Direction.DESC, "createdAt"));
+        var pageable = PageRequest.of(Math.max(0, page), Math.min(Math.max(1, size), 200));
 
-        var result = actorId != null
-                ? auditLogRepo.findAllByActorIdOrderByCreatedAtDesc(actorId, pageable)
-                : (entityType != null && entityId != null
-                    ? auditLogRepo.findAllByEntityTypeAndEntityIdOrderByCreatedAtDesc(
-                            entityType, entityId, pageable)
-                    : (action != null
-                        ? auditLogRepo.findAllByActionOrderByCreatedAtDesc(action, pageable)
-                        : auditLogRepo.findAll(pageable)));
+        // Kun oxirigacha: «to = 15-avgust» deganda 15-avgustdagi yozuvlar
+        // ham kirsin, yarim tundan keyingisi emas.
+        var result = auditLogRepo.search(
+                blankToNull(action), actorId, blankToNull(entityType), blankToNull(entityId),
+                from == null ? null : from.atStartOfDay(),
+                to == null ? null : to.atTime(java.time.LocalTime.MAX),
+                pageable);
 
         return ResponseEntity.ok(PageResponse.of(result, AuditLogDto::from));
+    }
+
+    /** Bo'sh satr «filtrsiz» degani — aks holda hech narsa topilmasdi. */
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 
     @Data
@@ -75,6 +83,7 @@ public class AuditLogController {
         private String beforeState;
         private String afterState;
         private String ip;
+        private String userAgent;
         private LocalDateTime createdAt;
 
         static AuditLogDto from(AuditLog a) {
@@ -88,6 +97,7 @@ public class AuditLogController {
                     .beforeState(a.getBeforeState())
                     .afterState(a.getAfterState())
                     .ip(a.getIp())
+                    .userAgent(a.getUserAgent())
                     .createdAt(a.getCreatedAt())
                     .build();
         }

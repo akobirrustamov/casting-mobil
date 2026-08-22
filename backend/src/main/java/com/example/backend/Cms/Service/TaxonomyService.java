@@ -7,6 +7,7 @@ import com.example.backend.Cms.Enums.Locale;
 import com.example.backend.Cms.Repository.*;
 import com.example.backend.Entity.User;
 import com.example.backend.Services.AuditService.AuditService;
+import com.example.backend.Services.AuditService.AuditAction;
 import com.example.backend.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -74,7 +75,7 @@ public class TaxonomyService {
         category.getTranslations().removeIf(t -> !keepCat.contains(t.getLocale()));
 
         Category saved = categoryRepo.save(category);
-        auditService.log(actor, id == null ? "CATEGORY_CREATED" : "CATEGORY_UPDATED",
+        auditService.log(actor, id == null ? AuditAction.CATEGORY_CREATED : AuditAction.CATEGORY_UPDATED,
                 "Category", saved.getId());
         return saved;
     }
@@ -115,7 +116,7 @@ public class TaxonomyService {
         genre.getTranslations().removeIf(t -> !keepGenre.contains(t.getLocale()));
 
         Genre saved = genreRepo.save(genre);
-        auditService.log(actor, id == null ? "GENRE_CREATED" : "GENRE_UPDATED",
+        auditService.log(actor, id == null ? AuditAction.GENRE_CREATED : AuditAction.GENRE_UPDATED,
                 "Genre", saved.getId());
         return saved;
     }
@@ -182,7 +183,7 @@ public class TaxonomyService {
         creator.getTranslations().removeIf(t -> !keepCr.contains(t.getLocale()));
 
         Creator saved = creatorRepo.save(creator);
-        auditService.log(actor, id == null ? "CREATOR_CREATED" : "CREATOR_UPDATED",
+        auditService.log(actor, id == null ? AuditAction.CREATOR_CREATED : AuditAction.CREATOR_UPDATED,
                 "Creator", saved.getId());
         return saved;
     }

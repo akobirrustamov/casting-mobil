@@ -276,8 +276,8 @@ class PremiumGiftTest {
         }
 
         private List<AuditLog> auditFor(UUID userId) {
-            return auditLogRepo.findAllByEntityTypeAndEntityIdOrderByCreatedAtDesc(
-                    "User", userId.toString(), PageRequest.of(0, 50)).getContent();
+            return auditLogRepo.search(null, null, "User", userId.toString(),
+                    null, null, PageRequest.of(0, 50)).getContent();
         }
     }
 
