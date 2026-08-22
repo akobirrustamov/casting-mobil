@@ -114,6 +114,10 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
       .then((c) => {
         setForm({
           ...emptyForm(),
+          // ⚠️ §60: versiyasiz saqlash boshqa adminning ishini indamay
+          // bosib ketardi — backend tekshiruvi `null` da o'tkazib
+          // yuborilardi. Endi u majburiy.
+          version: c.version ?? null,
           slug: c.slug || '',
           contentType: c.contentType,
           structureType: c.structureType,

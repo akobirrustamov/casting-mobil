@@ -97,6 +97,24 @@ public class Episode {
     @Version
     private Long version;
 
+    /**
+     * Oxirgi tahrir vaqti.
+     *
+     * ⚠️ Bu maydon optimistik qulf uchun ham kerak (§60). Hibernate
+     * egasining {@code @Version} ini faqat uning O'Z ustuni o'zgarganda
+     * oshiradi. Qism matni esa tarjima jadvalida joyida tahrirlanadi —
+     * qism qatori o'zgarmaydi. Shu sababli tahrirdan keyin ham versiya
+     * eski qolib, ikki admin bir-birining matnini indamay bosib
+     * ketaverardi.
+     */
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    /** Qatorni «o'zgargan» deb belgilaydi — versiya shundagina oshadi. */
+    public void touch() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void addTranslation(EpisodeTranslation t) {
         t.setEpisode(this);
         this.translations.add(t);

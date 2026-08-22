@@ -145,6 +145,7 @@ class ContentVisibilityTest {
             update.setStatus(PublicationStatus.PUBLISHED);
             update.setVisibility(null);   // klient bu maydonni yubormadi
             update.setTranslations(Translations.all("Faqat sarlavha o'zgardi"));
+            update.setVersion(contentRepo.findById(content.getId()).orElseThrow().getVersion());
             contentService.update(null, content.getId(), update);
 
             Content after = contentRepo.findById(content.getId()).orElseThrow();

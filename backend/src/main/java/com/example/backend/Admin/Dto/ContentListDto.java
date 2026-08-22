@@ -23,6 +23,18 @@ import java.util.*;
 public class ContentListDto {
 
     private Long id;
+
+    /**
+     * Optimistik qulf versiyasi (§60).
+     *
+     * ⚠️ Bu maydonsiz butun himoya o'lik edi: entity'da {@code @Version}
+     * bor, servisda tekshiruv bor, panel formasida {@code version}
+     * maydoni bor — lekin API uni QAYTARMAGANI uchun forma doim
+     * {@code null} yuborardi va tekshiruv har safar o'tkazib
+     * yuborilardi. Ikki admin bir-birining ishini indamay bosib ketardi.
+     */
+    private Long version;
+
     private String slug;
     private ContentType contentType;
     private StructureType structureType;
@@ -141,6 +153,7 @@ public class ContentListDto {
 
         return ContentListDto.builder()
                 .id(c.getId())
+                .version(c.getVersion())
                 .slug(c.getSlug())
                 .contentType(c.getContentType())
                 .structureType(c.getStructureType())

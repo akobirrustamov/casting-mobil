@@ -156,6 +156,7 @@ class ContentClassificationTest {
             update.setStatus(PublicationStatus.DRAFT);
             update.setCategoryId(comedy.getId());
             update.setTranslations(Translations.all("Kategoriya almashdi"));
+            update.setVersion(contentRepo.findById(content.getId()).orElseThrow().getVersion());
             contentService.update(null, content.getId(), update);
 
             Content after = contentRepo.findById(content.getId()).orElseThrow();

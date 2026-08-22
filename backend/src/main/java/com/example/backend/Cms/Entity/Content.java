@@ -208,6 +208,17 @@ public class Content {
         updatedAt = LocalDateTime.now();
     }
 
+    /**
+     * Qatorni «o'zgargan» deb belgilaydi (§60).
+     *
+     * {@code @PreUpdate} bu ishni bajarmaydi: u Hibernate qatorni
+     * allaqachon iflos deb topgandan KEYIN ishlaydi. Faqat tarjima
+     * o'zgarganda esa kontent qatori toza qoladi va versiya oshmasdi.
+     */
+    public void touch() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void addTranslation(ContentTranslation t) {
         t.setContent(this);
         this.translations.add(t);

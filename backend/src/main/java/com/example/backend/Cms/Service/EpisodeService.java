@@ -147,11 +147,7 @@ public class EpisodeService {
             if (!episode.getContent().getId().equals(contentId)) {
                 throw BusinessException.validation("Bu qism boshqa kontentga tegishli");
             }
-            if (request.getVersion() != null && !request.getVersion().equals(episode.getVersion())) {
-                throw new BusinessException("CONCURRENT_MODIFICATION",
-                        "Bu qismni boshqa foydalanuvchi o'zgartirdi. Sahifani yangilang.",
-                        HttpStatus.CONFLICT);
-            }
+            ConcurrencyGuard.check(request.getVersion(), episode.getVersion(), "Qism");
         }
 
         requireFreeEpisodeNumber(contentId, episodeId, season, request.getEpisodeNumber());
@@ -175,6 +171,10 @@ public class EpisodeService {
                 && episode.getPublicationDate() == null) {
             episode.setPublicationDate(java.time.LocalDateTime.now());
         }
+
+        // Qatorni iflos qiladi — aks holda faqat tarjima o'zgarganda
+        // versiya oshmasdi (§60).
+        episode.touch();
 
         mergeEpisodeTranslations(episode, request.getTranslations());
         replaceVideos(episode, request.getVideos());

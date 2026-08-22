@@ -62,11 +62,19 @@ public class ContentService {
 
         // Ikki admin bir vaqtda tahrirlaganda ikkinchisi birinchisining ishini
         // indamay bosib ketmasligi kerak (§60).
-        if (request.getVersion() != null && !request.getVersion().equals(content.getVersion())) {
-            throw new BusinessException("CONCURRENT_MODIFICATION",
-                    "Bu kontentni boshqa foydalanuvchi o'zgartirdi. Sahifani yangilang.",
-                    org.springframework.http.HttpStatus.CONFLICT);
-        }
+        ConcurrencyGuard.check(request.getVersion(), content.getVersion(), "Kontent");
+
+        // Qatorni ataylab «o'zgargan» deb belgilaymiz.
+        //
+        // ⚠️ HOZIR bu ortiqcha: `apply()` har safar `media.clear()` va
+        // `credits.clear()` chaqiradi, kolleksiya iflos bo'ladi va
+        // Hibernate egasining versiyasini o'zi oshiradi. Ya'ni himoya
+        // TASODIFAN ishlayapti. Kimdir `apply()` ni optimallashtirsa
+        // («ro'yxat o'zgarmagan bo'lsa tegmaymiz»), versiya oshmay
+        // qolardi va ikki admin bir-birini indamay bosib ketardi —
+        // xuddi qismda bo'lgani kabi (u yerda buzuq edi, §60 da
+        // tuzatildi). Shuning uchun niyat aniq yozib qo'yiladi.
+        content.touch();
 
         PublicationStatus before = content.getStatus();
         if (request.getSlug() != null && !request.getSlug().isBlank()) {

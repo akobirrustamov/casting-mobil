@@ -1619,6 +1619,67 @@ bitta migratsiya emas, butun `db/migration` papkasini o'qiydi.
 - `[ ]` Orqaga qaytarish (rollback) skriptlari yo'q
 - `[ ]` Katta jadval uchun `CONCURRENTLY` indeks strategiyasi
 
+## 27.1. Bir vaqtda tahrirlash `[x]` — ТЗ §60
+
+### Nega `@Version` o'zi yetarli emas
+
+`@Version` bitta tranzaksiya ichidagi to'qnashuvni ushlaydi. Panel
+tahriri esa boshqacha ketma-ketlik:
+
+```
+09:55  admin A formani ochadi   (versiya 3)
+09:57  admin B formani ochadi   (versiya 3)
+10:00  B saqlaydi               (3 → 4)
+10:01  A saqlaydi               ← shu yerda to'xtatilishi kerak
+```
+
+A ning so'rovi qatorni bazadan **yangi** holida o'qiydi, ustiga eskirgan
+forma ma'lumotini yozadi va muvaffaqiyatli saqlaydi. Hibernate uchun
+to'qnashuv yo'q — B ning ishi shunchaki yo'qoladi. Klient formani
+ochgandagi versiyani qaytarib yuborishi shart.
+
+### Topilganlar
+
+- `[x]` **Kontentda butun zanjir uzilgan edi.** Entity'da `@Version`,
+  servisda tekshiruv, panel formasida `version` maydoni bor edi — lekin
+  `ContentListDto` uni **qaytarmasdi**. Forma doim `null` yuborar,
+  tekshiruv `!= null` shartida har safar o'tkazib yuborilardi. Himoya
+  to'liq o'lik edi
+- `[x]` **Qismda versiya oshmasdi.** `mergeEpisodeTranslations` mavjud
+  qatorlarni **joyida** tahrirlaydi (`row.setTitle(...)`), kolleksiyaga
+  element qo'shmaydi. Hibernate egasining versiyasini faqat kolleksiya
+  **tarkibi** o'zgarganda oshiradi — ya'ni matn tahririda to'qnashuv
+  hech qachon aniqlanmasdi. **V24** da `cms_episode.updated_at` qo'shildi
+- `[x]` **Versiya endi majburiy.** `!= null` sharti himoyani ixtiyoriy
+  qilardi: versiyani yubormagan klient ogohlantirishsiz bosib ketaverardi.
+  ТЗ esa aynan «indamay overwrite qilmasin» deydi
+- `[x]` To'qnashuv `409 CONCURRENT_MODIFICATION`, versiyasizlik `422`
+
+### ⚠️ `OPTIMISTIC_FORCE_INCREMENT` ishlatilmadi
+
+Birinchi urinishim `em.lock(entity, OPTIMISTIC_FORCE_INCREMENT)` edi. U
+versiyani **commit paytida** oshiradi, ya'ni javob DTO'si eskirgan
+versiya bilan qaytardi va panel keyingi saqlashda soxta to'qnashuv
+olardi. O'rniga qator haqiqiy ma'lumot bilan «iflos» qilinadi
+(`touch()` → `updatedAt`).
+
+### ⚠️ Kontentda `touch()` hozir ortiqcha
+
+Mutatsiya buni ko'rsatdi: `content.touch()` ni olib tashlasam testlar
+o'tib ketdi. Sabab — `apply()` har safar `media.clear()` va
+`credits.clear()` chaqiradi, kolleksiya iflos bo'ladi va versiya o'zi
+oshadi. Ya'ni kontentda himoya **tasodifan** ishlayapti. `apply()`
+optimallashtirilsa u jimgina yo'qolardi, shuning uchun niyat aniq
+yozildi va xususiyatni qo'riqlaydigan test qoldirildi.
+
+### Qamrov
+
+| Tur | Holat |
+|---|---|
+| Kontent, qism | `@Version` + klient versiyasi solishtiriladi |
+| Balans | `@Version` (§39, optimistik qulf bilan qayta urinish) |
+| Kategoriya, janr, ijodkor, tarif, reklama | qamralmagan — kichik formalar, bir nechta maydon |
+
 ## 28. Indexes `[x]`
 
 - `[x]` **59 indeks** (61 yaratilgan − 2 ortiqchasi olib tashlangan) —
