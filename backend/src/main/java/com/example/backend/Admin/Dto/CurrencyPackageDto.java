@@ -30,7 +30,30 @@ public class CurrencyPackageDto {
     private Boolean active;
     private Integer sortOrder;
 
+    /**
+     * Haqiqiy narx: paketning o'z narxi, bo'lmasa kurs × miqdor (ТЗ §40).
+     *
+     * {@code null} — narx ham, kurs ham belgilanmagan.
+     */
+    private BigDecimal effectivePrice;
+
+    /**
+     * ⚠️ Sotib olish mumkinmi.
+     *
+     * V5 barcha paketlarni {@code 0.00} narx bilan qo'shgan (buyurtmachi
+     * kursni hali aytmagan) va ular {@code active = true}. Bu bayroqsiz
+     * ro'yxatda «1000 yulduz — 0 so'm» bo'lib ko'rinardi, ya'ni bepul
+     * yulduz taklifiday.
+     */
+    private Boolean purchasable;
+
     public static CurrencyPackageDto from(CurrencyPackage p) {
+        return from(p, null, false);
+    }
+
+    public static CurrencyPackageDto from(CurrencyPackage p,
+                                          BigDecimal effectivePrice,
+                                          boolean purchasable) {
         return CurrencyPackageDto.builder()
                 .id(p.getId())
                 .kind(p.getKind())
@@ -38,6 +61,8 @@ public class CurrencyPackageDto {
                 .price(p.getPrice())
                 .active(p.getActive())
                 .sortOrder(p.getSortOrder())
+                .effectivePrice(effectivePrice)
+                .purchasable(purchasable)
                 .build();
     }
 }

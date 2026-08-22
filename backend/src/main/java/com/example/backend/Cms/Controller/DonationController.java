@@ -1,6 +1,7 @@
 package com.example.backend.Cms.Controller;
 
 import com.example.backend.Admin.CurrentUser;
+import com.example.backend.Admin.Dto.CurrencyPackageDto;
 import com.example.backend.Admin.Dto.DonationTransactionDto;
 import com.example.backend.Cms.Enums.CurrencyKind;
 import com.example.backend.Cms.Enums.DonationTargetType;
@@ -20,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * Donat yuborish va balansni ko'rish (ТЗ §39, §43).
  *
@@ -34,6 +37,8 @@ public class DonationController {
 
     private final DonationService donationService;
     private final UserBalanceRepo balanceRepo;
+    private final com.example.backend.Cms.Service.MonetizationService monetizationService;
+    private final com.example.backend.Cms.Service.CurrencyPricingService currencyPricingService;
 
     @PostMapping
     public ResponseEntity<DonationTransactionDto> donate(@Valid @RequestBody DonateRequest request) {
@@ -58,6 +63,29 @@ public class DonationController {
                         .build())
                 // Hisob hali yaratilmagan — nol, bu haqiqiy nol.
                 .orElse(BalanceDto.builder().starsBalance(0L).coinBalance(0L).build()));
+    }
+
+    /**
+     * Sotib olish mumkin bo'lgan paketlar (ТЗ §40, §41).
+     *
+     * <h2>Nima uchun faqat sotib olinadiganlari</h2>
+     * V5 barcha paketlarni {@code 0.00} narx bilan qo'shgan — buyurtmachi
+     * kursni hali aytmagan. Ular {@code active = true} bo'lgani uchun
+     * ro'yxatda «1000 yulduz — 0 so'm» bo'lib chiqardi, ya'ni BEPUL
+     * yulduz taklifiday ko'rinardi.
+     *
+     * Shuning uchun narxi belgilanmagan paket ochiq ro'yxatga umuman
+     * kirmaydi. Admin panelida esa ular ko'rinadi — admin narx
+     * yo'qligini bilishi kerak.
+     */
+    @GetMapping("/packages")
+    public ResponseEntity<List<CurrencyPackageDto>> packages() {
+        return ResponseEntity.ok(monetizationService.packages().stream()
+                .filter(p -> !Boolean.FALSE.equals(p.getActive()))
+                .filter(currencyPricingService::isPurchasable)
+                .map(p -> CurrencyPackageDto.from(p,
+                        currencyPricingService.effectivePrice(p), true))
+                .toList());
     }
 
     @Data

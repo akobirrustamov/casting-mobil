@@ -824,10 +824,26 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 - `[x]` Nishonlar: **ijodkor** va **kontent** — har biri bo'yicha alohida
   hisoblanadi
 - `[x]` Paketlar boshqariladi: miqdor · narx · faol/nofaol · tartib
+- `[x]` Boshlang'ich paketlar ТЗ ga aynan mos: **10 · 50 · 100 · 500 ·
+  1000** (ikkala valyuta uchun ham)
 - `[x]` **Kurs sozlamada, kodda emas**: `currency.star.rate`,
   `currency.coin.rate`
-- `[x]` ⚠️ Kurs **0** — buyurtmachi hali aytmagan. Soxta kurs yozilmadi:
-  0 «belgilanmagan» degani va so'mdagi ekvivalent umuman hisoblanmaydi
+- `[x]` ⚠️ **Kurs BEZAK edi.** Sozlama bor edi, admin uni tahrirlay ham
+  olardi — lekin uni **hech qayerda o'qilmasdi**: admin qiymatni
+  o'zgartirardi va hech narsa o'zgarmasdi. `CurrencyPricingService`
+  qo'shildi, ТЗ §40 talabi endi haqiqatan bajariladi
+- `[x]` **Narx ikki manbadan, aniq tartibda**: paketning o'z narxi ustun
+  (paketlarda chegirma bo'ladi — 1000 ta yulduz 10 tasidan arzonroq, buni
+  kurs bilan ifodalab bo'lmaydi), bo'lmasa kurs × miqdor
+- `[x]` ⚠️ **Ikkalasi ham 0 bo'lsa — paket SOTIB OLINMAYDI.** V5 barcha
+  paketlarni `0.00` narx bilan va `active = true` qilib qo'shgan
+  (buyurtmachi kursni aytmagan). Bayroqsiz ro'yxatda «1000 yulduz —
+  0 so'm» bo'lib chiqardi, ya'ni **bepul yulduz taklifiday**
+- `[x]` `GET /api/v1/app/donations/packages` — ochiq ro'yxatda faqat
+  narxi belgilangan paketlar. Admin panelida esa hammasi ko'rinadi —
+  admin narx yo'qligini bilishi kerak
+- `[x]` Kurs kasr bo'lishi mumkin, tiyinlar yo'qolmaydi (`BigDecimal`)
+- `[x]` `CurrencyPricingTest` — 9 test, mutatsiya bilan tekshirilgan
 
 ### Balans (§43)
 
@@ -1001,6 +1017,7 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 | `PremiumGiftTest` | 15 | **ТЗ §38** — telefon/email/ID qidiruvi, audit |
 | `PremiumRightsTest` | 4 | **ТЗ §37** — qoida bir joyda, sochilishga to'siq |
 | `TariffModuleTest` | 16 | **ТЗ §36** — BigDecimal, seed narxlari, tarif muddati |
+| `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
 | `DonationFlowTest` | 13 | **ТЗ §39** — donat yuborish, nishon, balans |
 | `DonationConcurrencyTest` | 1 | **ТЗ §39** — bir vaqtda ikki donat balansni buzmaydi |
 | `DonationAndPaymentTest` | 9 | **ТЗ §42/§44** — valyutalar qo'shilmaydi, soxta to'lov yo'q |

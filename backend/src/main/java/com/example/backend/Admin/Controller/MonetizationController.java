@@ -47,6 +47,7 @@ public class MonetizationController {
 
     private final MonetizationService monetizationService;
     private final SettingsService settingsService;
+    private final com.example.backend.Cms.Service.CurrencyPricingService currencyPricingService;
     private final PermissionService permissionService;
 
     private void require(Permission permission) {
@@ -87,7 +88,10 @@ public class MonetizationController {
     public ResponseEntity<List<CurrencyPackageDto>> packages() {
         require(Permission.DONATION_VIEW);
         return ResponseEntity.ok(monetizationService.packages().stream()
-                .map(CurrencyPackageDto::from).toList());
+                .map(p -> CurrencyPackageDto.from(p,
+                        currencyPricingService.effectivePrice(p),
+                        currencyPricingService.isPurchasable(p)))
+                .toList());
     }
 
     /**
