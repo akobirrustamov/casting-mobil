@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 
-import { Badge } from './Badge';
+import { Badge, type BadgeTone } from './Badge';
 import { Button } from './Button';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -18,9 +18,12 @@ const CARD_WIDTH = SCREEN_WIDTH - 32;
 export type HeroItem = {
   id: string;
   title: string;
-  subtitle: string;
-  badgeLabel: string;
-  ctaLabel: string;
+  /** Всё, кроме заголовка, необязательно: баннеры приходят с сервера
+   *  и заполнены по-разному — у рекламы нет подзаголовка, у части
+   *  премьер выключена кнопка (`buttonEnabled = false`). */
+  subtitle?: string;
+  badgeLabel?: string;
+  ctaLabel?: string;
   imageUrl?: string;
 };
 
@@ -30,9 +33,13 @@ export type HeroItem = {
  */
 export function HeroCarousel({
   items,
+  /** Розовый бейдж «ПРЕМЬЕРА» из ТЗ — только для премьер.
+   *  Рекламный баннер тем же тоном выдавал бы себя за премьеру. */
+  badgeTone = 'premiere',
   onPressItem,
 }: {
   items: HeroItem[];
+  badgeTone?: BadgeTone;
   onPressItem?: (item: HeroItem) => void;
 }) {
   const [index, setIndex] = useState(0);
@@ -72,20 +79,26 @@ export function HeroCarousel({
             <View className="absolute inset-0 bg-ink/55" />
 
             <View className="gap-2">
-              <Badge tone="premiere">{item.badgeLabel}</Badge>
+              {item.badgeLabel ? (
+                <Badge tone={badgeTone}>{item.badgeLabel}</Badge>
+              ) : null}
               <Text numberOfLines={2} className="text-h1 text-text">
                 {item.title}
               </Text>
-              <Text numberOfLines={1} className="text-caption text-text-muted">
-                {item.subtitle}
-              </Text>
-              <Button
-                variant="premium"
-                className="mt-1 self-start"
-                onPress={() => onPressItem?.(item)}
-              >
-                {item.ctaLabel}
-              </Button>
+              {item.subtitle ? (
+                <Text numberOfLines={1} className="text-caption text-text-muted">
+                  {item.subtitle}
+                </Text>
+              ) : null}
+              {item.ctaLabel ? (
+                <Button
+                  variant="premium"
+                  className="mt-1 self-start"
+                  onPress={() => onPressItem?.(item)}
+                >
+                  {item.ctaLabel}
+                </Button>
+              ) : null}
             </View>
           </View>
         ))}

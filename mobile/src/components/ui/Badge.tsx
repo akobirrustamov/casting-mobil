@@ -4,7 +4,8 @@ import { Text, View } from 'react-native';
  * Бейджи из мокапов ТЗ: розовый «ПРЕМЬЕРА», золотой verified,
  * зелёный «куплено», серый locked.
  */
-type Tone = 'premiere' | 'verified' | 'purchased' | 'locked' | 'info';
+export type BadgeTone = 'premiere' | 'verified' | 'purchased' | 'locked' | 'info';
+type Tone = BadgeTone;
 
 const TONE: Record<Tone, { bg: string; fg: string }> = {
   premiere: { bg: 'bg-magenta', fg: 'text-white' },

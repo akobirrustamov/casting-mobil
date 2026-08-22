@@ -6,46 +6,43 @@ import { Pressable, Text, View } from 'react-native';
 import { ScreenState } from '@/components/states/ScreenState';
 import { Button } from '@/components/ui/Button';
 import { CategoryTile } from '@/components/ui/CategoryTile';
-import { HeroCarousel, type HeroItem } from '@/components/ui/HeroCarousel';
-import { PosterCard } from '@/components/ui/PosterCard';
 import { Rail } from '@/components/ui/Rail';
 import { Screen } from '@/components/ui/Screen';
-import { SkeletonRail } from '@/components/ui/Skeleton';
+import { Skeleton, SkeletonRail } from '@/components/ui/Skeleton';
 import { StoryCircle } from '@/components/ui/StoryCircle';
 import { Wordmark } from '@/components/ui/Wordmark';
 import { CATEGORIES } from '@/features/catalog/categories';
 import { useCreators, withPhotos } from '@/features/creators/api';
+import { HomeFeedUnavailableError, useHomeFeed } from '@/features/home/api';
+import { HomeSectionView } from '@/features/home/sections';
 import { useIsOffline } from '@/lib/network';
-import { CASTINGS, EPISODE_PRICE, PREMIERES } from '@/lib/placeholder';
+import { CASTINGS } from '@/lib/placeholder';
 import { colors } from '@/theme/tokens';
 
 /**
- * Главная. Состав блоков — строго по ТЗ (V2 стр. 4 «HOME — БОШ САҲИФА»):
- * hero premiere carousel · bugungi premyeralar · mashhur ijodkorlar ·
- * casting e'lonlari · premium CTA · search.
+ * Главная.
  *
- * Устройство блоков (рельсы с «Barchasini ko'rish», круглые аватары,
- * плитки направлений) — по Yangi.TV, см. docs/STRUCTURE.md.
+ * <h2>Состав блоков решает сервер</h2>
+ * ТЗ §31: «Mobil app bosh sahifani backenddan oladi, homepage hardcoded
+ * bo'lmasin». Верхняя часть экрана — это `GET /api/v1/app/home`: какие ряды
+ * есть, в каком порядке и как называются, задаёт админ-панель. Добавить ряд
+ * или переставить его местами можно без релиза в стор.
  *
- * «Mashhur ijodkorlar» работает на боевом API сайта.
- * Премьеры и кастинги — временные данные, эндпоинтов пока нет.
+ * <h2>Что НЕ приходит из фида</h2>
+ * Ниже идут блоки кастинга — это старый продукт на боевом API сайта:
+ * 10 направлений (ведут в каталог анкет) и популярные анкеты. Фид про них
+ * не знает, поэтому они собраны здесь.
+ *
+ * Объявления о кастинге — единственные оставшиеся временные данные:
+ * эндпоинта для них нет ни в старом API, ни в новом (`src/lib/placeholder.ts`).
  */
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
+  const feed = useHomeFeed();
   const creators = useCreators();
   const isOffline = useIsOffline();
 
   const isRu = i18n.language === 'ru';
-  const price = t('common.price', { amount: EPISODE_PRICE.toLocaleString('ru-RU') });
-
-  const heroItems: HeroItem[] = PREMIERES.slice(0, 3).map((p) => ({
-    id: p.id,
-    title: p.title,
-    subtitle: `${p.episode} • ${t('home.heroSubtitle')}`,
-    badgeLabel: t('common.premiere'),
-    ctaLabel: p.purchased ? t('common.watch') : price,
-  }));
-
   const popular = withPhotos(creators.data).slice(0, 12);
 
   return (
@@ -57,8 +54,11 @@ export default function HomeScreen() {
           <Wordmark />
         </View>
       }
-      onRefresh={() => creators.refetch()}
-      refreshing={creators.isRefetching}
+      onRefresh={() => {
+        void feed.refetch();
+        void creators.refetch();
+      }}
+      refreshing={feed.isRefetching || creators.isRefetching}
     >
       {/* Поиск: по ТЗ это строка на главной, а не отдельная вкладка */}
       <Pressable
@@ -70,19 +70,7 @@ export default function HomeScreen() {
         <Text className="text-body text-text-muted">{t('common.search')}</Text>
       </Pressable>
 
-      <HeroCarousel items={heroItems} />
-
-      <Rail title={t('home.todayPremieres')} onSeeAll={() => {}}>
-        {PREMIERES.map((p) => (
-          <PosterCard
-            key={p.id}
-            title={p.title}
-            subtitle={p.episode}
-            badge={p.purchased ? 'purchased' : 'locked'}
-            badgeLabel={p.purchased ? t('common.purchased') : price}
-          />
-        ))}
-      </Rail>
+      <HomeFeedBlock feed={feed} isOffline={isOffline} />
 
       <Rail title={t('home.categories')} onSeeAll={() => router.push('/catalog/all')}>
         {CATEGORIES.map((c) => (
@@ -95,11 +83,11 @@ export default function HomeScreen() {
         ))}
       </Rail>
 
-      {/* Единственный блок на боевых данных */}
+      {/* Анкеты кастинга — боевой API сайта */}
       <View className="gap-3">
         {creators.isPending ? (
           <View className="gap-3">
-            <Text className="text-h2 text-text">{t('home.popularCreators')}</Text>
+            <Text className="text-h2 text-text">{t('home.castingCreators')}</Text>
             {/* Круглые аватары — поэтому и заглушки круглые */}
             <View className="-mx-4">
               <SkeletonRail count={5} width={64} height={64} />
@@ -115,7 +103,7 @@ export default function HomeScreen() {
           </View>
         ) : (
           <Rail
-            title={t('home.popularCreators')}
+            title={t('home.castingCreators')}
             onSeeAll={() => router.push('/catalog/all')}
           >
             {popular.map((c) => (
@@ -160,5 +148,65 @@ export default function HomeScreen() {
         </Button>
       </View>
     </Screen>
+  );
+}
+
+/**
+ * Серверная часть главной со всеми состояниями.
+ *
+ * Ошибка фида не уносит весь экран: блоки кастинга работают на другом
+ * бэкенде и продолжают показывать реальные данные. Придумывать премьеры
+ * вместо неприехавших нельзя — вместо них состояние с «повторить».
+ */
+function HomeFeedBlock({
+  feed,
+  isOffline,
+}: {
+  feed: ReturnType<typeof useHomeFeed>;
+  isOffline: boolean;
+}) {
+  const { t } = useTranslation();
+
+  if (feed.isPending) {
+    return (
+      <View className="gap-4">
+        {/* Скелетон повторяет раскладку: сверху hero, под ним ряд постеров */}
+        <Skeleton height={210} radius={22} />
+        <View className="-mx-4">
+          <SkeletonRail count={3} />
+        </View>
+      </View>
+    );
+  }
+
+  if (feed.isError) {
+    // Эндпоинта нет на этом сервере — «проверьте соединение» увело бы не туда.
+    const unavailable = feed.error instanceof HomeFeedUnavailableError;
+    return (
+      <View className="h-64">
+        <ScreenState
+          kind={isOffline ? 'offline' : 'error'}
+          title={unavailable ? t('home.feedUnavailableTitle') : undefined}
+          body={unavailable ? t('home.feedUnavailableBody') : undefined}
+          onRetry={() => feed.refetch()}
+        />
+      </View>
+    );
+  }
+
+  if (feed.data.sections.length === 0) {
+    return (
+      <View className="h-48">
+        <ScreenState kind="empty" />
+      </View>
+    );
+  }
+
+  return (
+    <View className="gap-4">
+      {feed.data.sections.map((section) => (
+        <HomeSectionView key={section.id} section={section} />
+      ))}
+    </View>
   );
 }

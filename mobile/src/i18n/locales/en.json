@@ -30,7 +30,9 @@
     "locked": "Locked",
     "purchased": "Purchased",
     "premiere": "Premiere",
-    "years": "{{count}} y.o."
+    "years": "{{count}} y.o.",
+    "premium": "Premium",
+    "free": "Free"
   },
   "splash": {
     "subtitle": "A platform for creators"
@@ -81,7 +83,10 @@
     "premiumBody": "Be the first to watch exclusive premieres",
     "premiumCta": "Get Premium",
     "heroSubtitle": "Today only on UzCasting",
-    "unlock": "Unlock"
+    "unlock": "Unlock",
+    "castingCreators": "Casting talent",
+    "feedUnavailableTitle": "Home feed unavailable",
+    "feedUnavailableBody": "The server does not provide home sections."
   },
   "casting": {
     "title": "Casting calls",
@@ -96,7 +101,8 @@
     "tabsAll": "All",
     "tabsSeries": "Series",
     "tabsShows": "Shows",
-    "tabsMovies": "Films"
+    "tabsMovies": "Films",
+    "emptyByTab": "No content in this tab yet."
   },
   "profile": {
     "title": "Profile",
