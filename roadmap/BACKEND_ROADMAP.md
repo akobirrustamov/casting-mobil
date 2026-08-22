@@ -960,19 +960,51 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 - `[ ]` ⚠️ **Haqiqiy integratsiya yo'q** — Payme / Click / Uzum merchant
   ma'lumotlari berilmagan. Buyurtmachi provayderni tanlashi kerak (§44)
 
-## 24. Analytics `[x]`
+## 24. Analytics `[x]` — ТЗ §45 to'liq
 
-**Entity:** `AnalyticsEvent` · `ContentDailyStatistic` · `AdDailyStatistic` ·
-**Migratsiya:** V6
+**Endpoint:** `GET /api/v1/app/admin/dashboard/summary`
 
-- `[x]` `POST /api/v1/app/analytics/events` — ochiq, partiya (≤50 hodisa)
-- `[x]` Ikki qavatli model: xom hodisa → `@Scheduled` agregatsiya → kunlik
-- `[x]` `AnalyticsEventType` — ko'rish, tugatish, reklama, donat …
-- `[x]` `idx_event_agg (event_date, type, processed)`
-- `[x]` Rate limiting 60/daqiqa (B14) — soxta ko'rsatkichga qarshi
-- `[ ]` Hodisa dublikatini aniqlash (bir xil sessiyadan takroriy)
-- `[ ]` Eski xom hodisalarni arxivlash/tozalash
-- `[ ]` Voronka (qancha boshladi → qancha tugatdi)
+ТЗ dagi yigirmata ko'rsatkich. Har biri javobda bor va **qiymati
+hisoblangan** — test faqat maydon nomini emas, qiymatini ham tekshiradi
+(Jackson `null` maydonlarni ham JSON'ga qo'shadi, ya'ni hisoblash olib
+tashlansa maydon baribir ko'rinardi).
+
+### ⚠️ Tuzatilgan xatolar
+
+- `[x]` **«Xodimlar» soni BARCHA foydalanuvchilarni sanardi.**
+  `totalStaff` maydoniga `userRepo.count()` yozilgan edi — ya'ni 100 000
+  ta ilova foydalanuvchisi bo'lsa, dashboard «100 000 xodim» deb
+  ko'rsatardi
+- `[x]` **Obuna daromadi TIYINLARNI tashlab yuborardi.**
+  `subscriptionRevenue(...longValue())` — 49 999.50 so'm 49 999 bo'lib
+  chiqardi va xato har bir obuna bilan yig'ilardi. Endi `BigDecimal`
+- `[x]` **Ikkita to'liq jadval skani.** `userRepo.findAll()` va
+  `subscriptionRepo.findAll()` — har bir dashboard ochilishida butun
+  foydalanuvchilar va obunalar jadvali xotiraga tortilardi. Endi sanoq
+  va jamlanma bazada
+
+### Qo'shilgan ko'rsatkichlar
+
+- `[x]` `activeUsers` (oxirgi 30 kun) · `newUsers` (V17 dan keyingilar)
+- `[x]` `totalSubscriptions` · `totalAds` · `totalNotifications`
+- `[x]` `topViewedContent` · `topCreators`
+- `[x]` `singlePurchaseRevenue` va `currencyPackageRevenue` — **alohida**.
+  Kontent xaridi, valyuta paketi va obuna uch xil daromad; ularni qo'shish
+  qaysi ko'rsatkich nimani anglatishini chalkashtirardi
+
+### Soxta statistika yo'q
+
+- `[x]` ⚠️ **Donat daromadi so'mda O'LCHANMAYDI.** Donatlar STARS va COIN
+  da hisoblanadi, ularni so'mga o'girish uchun kurs kerak — u esa hali
+  belgilanmagan. Taxminiy kurs bilan o'girish soxta raqam bo'lardi;
+  **nol qaytarish esa «donat yo'q» degan ma'noni** berardi. Shuning uchun
+  `null` + `available: false` + SABAB
+- `[x]` **Donatlar valyuta bo'yicha esa ko'rsatiladi** — so'mga o'girib
+  bo'lmasa ham, yulduz va tanga sonini ko'rsatish mumkin: bu haqiqiy
+  ma'lumot
+- `[x]` Ma'lumot yo'q bo'lsa **bo'sh ro'yxat**, o'ylab topilgan qator emas
+- `[x]` Ko'rsatishsiz CTR — nol, nolga bo'linish yo'q
+- `[x]` `DashboardMetricsTest` — 10 test, mutatsiya bilan tekshirilgan
 
 ## 25. Reports `[~]`
 
@@ -1103,6 +1135,7 @@ Ya'ni har biri ODAMLAR sonini bildiradi, xabarning o'z holatini emas.
 | `FinancialHistoryImmutableTest` | 5 | **ТЗ §42** — moliyaviy tarix o'chirilmaydi |
 | `SettingValidationTest` | 12 | **ТЗ §40/§41** — xato narx saqlanmaydi |
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
+| `DashboardMetricsTest` | 10 | **ТЗ §45** — 20 ko'rsatkich, soxta statistika yo'q |
 | `PackagePurchaseTest` | 13 | **ТЗ §44** — ichki balans ishlaydi, soxta to'lov yo'q |
 | `DonationBalanceTest` | 10 | **ТЗ §43** — balans va tarix, boshqaniki ko'rinmaydi |
 | `DonationFlowTest` | 13 | **ТЗ §39** — donat yuborish, nishon, balans |

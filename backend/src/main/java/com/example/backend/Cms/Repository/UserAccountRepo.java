@@ -17,4 +17,7 @@ public interface UserAccountRepo extends JpaRepository<UserAccount, Long> {
     List<UserAccount> findAllByUserIdIn(Collection<UUID> userIds);
 
     long countByPremiumUntilAfter(LocalDateTime moment);
+
+    /** Berilgan sanadan keyin faol bo'lganlar (§45 «Active users»). */
+    long countByLastActiveAtAfter(LocalDateTime moment);
 }

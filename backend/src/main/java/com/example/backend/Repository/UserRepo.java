@@ -102,4 +102,31 @@ public interface UserRepo extends JpaRepository<User, UUID> {
             )
             """)
     long countPremiumAppUsers(@Param("moment") java.time.LocalDateTime moment);
+
+    /**
+     * Berilgan sanadan keyin ro'yxatdan o'tgan ilova foydalanuvchilari (§45).
+     *
+     * ⚠️ V17 dan oldin ro'yxatdan o'tganlarda {@code created_at} bo'sh —
+     * ular bu sanoqqa kirmaydi. Bu TO'G'RI: ular qachon qo'shilganini
+     * bilmaymiz va taxmin qilmaymiz.
+     */
+    @Query("""
+            select count(u) from User u
+            where u.createdAt >= :since
+            and not exists (
+                select r from User su join su.roles r
+                where su.id = u.id and r.name <> com.example.backend.Enums.UserRoles.ROLE_USER
+            )
+            """)
+    long countAppUsersCreatedAfter(@Param("since") java.time.LocalDateTime since);
+
+    /** Xodimlar soni — ilova foydalanuvchilaridan tashqari (§45). */
+    @Query("""
+            select count(u) from User u
+            where exists (
+                select r from User su join su.roles r
+                where su.id = u.id and r.name <> com.example.backend.Enums.UserRoles.ROLE_USER
+            )
+            """)
+    long countStaff();
 }

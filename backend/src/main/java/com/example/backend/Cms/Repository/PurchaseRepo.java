@@ -20,4 +20,29 @@ public interface PurchaseRepo extends JpaRepository<Purchase, Long> {
     List<Purchase> findAllByUserIdOrderByCreatedAtDesc(UUID userId);
 
     long countByTypeAndRefundedAtIsNull(PurchaseType type);
+
+    /**
+     * Bir martalik kontent xaridlari daromadi (§45).
+     *
+     * Qaytarilganlar chiqarib tashlanadi — qaytarilgan pul daromad emas.
+     *
+     * ⚠️ Valyuta paketlari BU YERGA KIRMAYDI: ular alohida hisoblanadi.
+     * «Single purchase revenue» kontent xaridini bildiradi, paket esa
+     * pulni virtual valyutaga o'girish — ikkalasini qo'shish qaysi
+     * ko'rsatkich nimani anglatishini chalkashtirardi.
+     */
+    @org.springframework.data.jpa.repository.Query("""
+            select coalesce(sum(p.amount), 0) from Purchase p
+            where p.refundedAt is null
+              and p.type <> com.example.backend.Cms.Enums.PurchaseType.CURRENCY_PACKAGE
+            """)
+    java.math.BigDecimal contentPurchaseRevenue();
+
+    /** Valyuta paketlari daromadi — alohida ko'rsatkich (§45). */
+    @org.springframework.data.jpa.repository.Query("""
+            select coalesce(sum(p.amount), 0) from Purchase p
+            where p.refundedAt is null
+              and p.type = com.example.backend.Cms.Enums.PurchaseType.CURRENCY_PACKAGE
+            """)
+    java.math.BigDecimal currencyPackageRevenue();
 }
