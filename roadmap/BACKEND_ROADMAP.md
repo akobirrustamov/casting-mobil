@@ -1028,9 +1028,14 @@ tarqatib yuborma.»
   bo'lardi va sabab ekranda ko'rinmasdi
 - `[x]` `DesignTokensTest` — 7 test. Hex va `rgba()` komponentga
   qaytsa yiqiladi; ijobiy nazorat detektorning o'zini tekshiradi
-- `[ ]` ⚠️ **Aniq hex qiymatlar Miro'dan kutilmoqda.** Hozirgilar
-  konsepsiyaga mos ORALIQ qiymatlar. Kelganda faqat `--brand-primary` va
-  `--brand-secondary` almashtiriladi
+- `[x]` ⚠️ **Gamma: TO'Q KO'K.** ТЗ §50 Miro konsepsiyasidagi bordo va
+  zaytun ranglarni sanaydi, lekin buyurtmachi 22.08.2026 da aniq
+  tasdiqladi: **19.08.2026 dagi to'q ko'k qarori kuchda qoladi**.
+  Miro ranglari qo'llanmaydi.
+
+  Ikkala qaror ham `panel.css` sarlavhasida yozib qo'yilgan — ziddiyat
+  keyinroq yana savol tug'dirishi mumkin va o'shanda qaysi biri yangiroq
+  ekanini eslashning iloji bo'lmasdi
 
 ## 23.8. Admin sidebar `[x]` — ТЗ §49
 

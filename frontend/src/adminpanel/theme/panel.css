@@ -9,11 +9,15 @@
    kifoya, birorta komponentga tegilmaydi.
 
    --------------------------------------------------------------------------
-   GAMMA: TO'Q BORDO + TO'Q ZAYTUN (Miro konsepsiyasi, ТЗ §50)
+   GAMMA: TO'Q KO'K
 
-   ⚠️ ANIQ HEX QIYMATLAR BERILMAGAN. Quyidagilar konsepsiyaga mos
-   tanlangan ORALIQ qiymatlar. Miro'dan aniq ranglar kelganda faqat
-   `--brand-primary` va `--brand-secondary` almashtiriladi.
+   ⚠️ ТЗ §50 Miro konsepsiyasidagi bordo va zaytun ranglarni sanaydi.
+   Buyurtmachi 22.08.2026 da AYNIQ tasdiqladi: 19.08.2026 dagi to'q ko'k
+   qarori KUCHDA qoladi. Miro ranglari qo'llanmaydi.
+
+   Ikkalasi ham yozib qo'yilgan, chunki ziddiyat keyinroq yana savol
+   tug'dirishi mumkin — va o'shanda qaysi qaror yangiroq ekanini
+   eslashning iloji bo'lmasdi.
 
    ⚠️ Bu mobil ilovaning palitrasi EMAS. Mobil ilovada ТЗ V2 (18-bet)
    bo'yicha tasdiqlangan gamma qoladi. Admin panel - alohida mahsulot
@@ -23,32 +27,31 @@
 .uz-panel {
     /* ---------------------------------------------------------------- brend */
 
-    /* To'q bordo - asosiy harakat rangi. */
-    --brand-primary:       #7B1E2B;
-    --brand-primary-hover: #5E1621;
-    --brand-primary-soft:  rgba(123, 30, 43, 0.18);
+    --brand-primary:       #2F6BFF;
+    --brand-primary-hover: #1D4ED8;
+    --brand-primary-soft:  rgba(47, 107, 255, 0.14);
 
-    /* To'q zaytun - ikkilamchi urg'u. */
-    --brand-secondary:      #4A5A2B;
-    --brand-secondary-soft: rgba(74, 90, 43, 0.20);
+    /* Ikkilamchi urg'u - och ko'k. */
+    --brand-secondary:      #38BDF8;
+    --brand-secondary-soft: rgba(56, 189, 248, 0.16);
 
     /* Brend rangi ustidagi matn - kontrast uchun. */
     --on-brand: #FFFFFF;
 
     /* ------------------------------------------------------------- yuzalar */
 
-    --background:  #14090B;
-    --surface:     #1E1013;
-    --surface-2:   #2A171B;
-    --surface-3:   #382025;
-    --border:      #46282E;
-    --border-soft: #331D22;
+    --background:  #070E20;
+    --surface:     #0C1730;
+    --surface-2:   #12203F;
+    --surface-3:   #1A2B52;
+    --border:      #1E3163;
+    --border-soft: #16254A;
 
     /* --------------------------------------------------------------- matn */
 
-    --text:     #F2E9E6;
-    --muted:    #B29A96;
-    --disabled: #7A6360;
+    --text:     #E9EFFB;
+    --muted:    #8FA3C8;
+    --disabled: #566C99;
 
     /* ------------------------------------------------------------- holatlar
        Bu uchtasi brenddan MUSTAQIL: xato qizil, ogohlantirish sariq,
@@ -56,24 +59,24 @@
        moslashtirilsa, «xato» va «asosiy tugma» bir xil ko'rinardi va
        ogohlantirish o'z kuchini yo'qotardi. */
 
-    --danger:  #E5686A;
-    --warning: #E0A93B;
-    --success: #6FBF8B;
+    --danger:  #F87171;
+    --warning: #FBBF24;
+    --success: #34D399;
 
     /* Holat xabarlari uchun yumshoq fon va chegara.
        Ular ALOHIDA token: ilgari komponentlarga `rgba(248,113,113,.10)`
-       ko'rinishida qotirilgan edi va gamma almashganda eski qizil
-       bo'lib qolardi. */
-    --danger-soft:    rgba(229, 104, 106, 0.10);
-    --danger-border:  rgba(229, 104, 106, 0.35);
-    --warning-soft:   rgba(224, 169, 59, 0.10);
-    --warning-border: rgba(224, 169, 59, 0.35);
+       ko'rinishida qotirilgan edi va gamma almashganda eski rangda
+       qolib ketardi. */
+    --danger-soft:    rgba(248, 113, 113, 0.10);
+    --danger-border:  rgba(248, 113, 113, 0.35);
+    --warning-soft:   rgba(251, 191, 36, 0.10);
+    --warning-border: rgba(251, 191, 36, 0.35);
 
     /* Mobil menyu ochilganda orqa fon pardasi. */
-    --scrim: rgba(20, 9, 11, 0.86);
+    --scrim: rgba(7, 14, 32, 0.86);
 
     /* Oltin urg'u - tanlangan/premium belgilar uchun. */
-    --gold: #D9A441;
+    --gold: #F5C542;
 
     /* -------------------------------------------------------------- o'lcham */
 
@@ -81,7 +84,7 @@
     --radius-lg: 18px;
     --sidebar:   264px;
     --header:    64px;
-    --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 
     /* ======================================================================
        ESKI NOMLAR - moslik uchun.
