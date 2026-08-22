@@ -1745,6 +1745,53 @@ tili hech qayerda saqlanmasdi: bosh sahifa uni so'rov parametridan
 olardi, push xabar esa umuman hech qayerdan — FCM ulangach **barcha
 foydalanuvchiga o'zbekcha** matn ketardi.
 
+## 28.1. DTO, N+1 va vaqt `[x]` — ТЗ §65, §66, §68
+
+### §65 DTO qoidasi — bajarilgan
+
+Yangi modulda birorta endpoint entity qaytarmaydi; hammasi `...Dto`.
+Yagona istisno — eski castingdagi `SecurityServiceImpl` (u `User`
+qaytaradi, lekin hash endi `WRITE_ONLY`).
+
+### §66 N+1 — ⚠️ ma'lumot yo'qolishi topildi
+
+Ro'yxat so'rovi allaqachon ikki bosqichli (id'lar sahifalanadi →
+`@EntityGraph` bilan bitta so'rovda to'ldiriladi), `@BatchSize(50)`
+tarjima va mediada bor. Bu qism sog'lom edi.
+
+Lekin tekshirish paytida undan **jiddiyroq** narsa chiqdi:
+`ContentListDto` da `genreIds` ham, `credits` ham **yo'q** edi, panel
+esa saqlashda ikkalasini ham yuboradi va `apply()` ularni **shartsiz**
+almashtiradi.
+
+Ya'ni sarlavhadagi bitta harfni tuzatgan admin kontentning **barcha
+janrlarini va biriktirilgan ijodkorlarini** jimgina o'chirardi. §54 dagi
+butun ijodkor ishi bitta tahrirda yo'qolardi. Hech qanday xato
+chiqmasdi.
+
+- `[x]` `genreIds` va `credits` DTO'ga qo'shildi
+- `[x]` Panel muharriri ikkalasini ham yuklaydi
+- `[x]` `ContentEditRoundTripTest` kengaytirildi (media uchun bor edi —
+  aynan shu sababli nuqson uzoq yashadi)
+
+### §68 Vaqt — ⚠️ besh soatlik siljish
+
+310 dan ortiq joyda `LocalDateTime` va **vaqt mintaqasi sozlamasi
+umuman yo'q** edi. `LocalDateTime.now()` JVM mintaqasini oladi,
+konteynerlarda esa sukut bo'yicha UTC. Admin «21:00» deb qo'ygan
+premyera Toshkentda 02:00 da chiqardi — reklama oynasi, rejalashtirilgan
+bildirishnoma, kunlik hisobot chegaralari ham shu xatoga uchrardi.
+
+- `[x]` `app.timezone=Asia/Tashkent` — aniq va deterministik
+
+**Nega UTC ga to'liq o'tilmadi:** 310 ta joyni `Instant` ga ko'chirish
+va panelning har bir sana maydonini o'girish kerak bo'lardi. Yarim
+bajarilgan o'tish esa umuman qilmaslikdan yomonroq — bir qism qiymat
+UTC, bir qismi mahalliy bo'lib qolardi va ularni farqlash imkoni yo'q
+edi. UTC talab qilinishining asosiy sababi — yozgi vaqt; O'zbekiston
+1996 yildan beri UTC+5 da qat'iy turadi, ya'ni takrorlanadigan yoki
+tushib qoladigan soat yo'q.
+
 ## 28. Indexes `[x]`
 
 - `[x]` **59 indeks** (61 yaratilgan − 2 ortiqchasi olib tashlangan) —

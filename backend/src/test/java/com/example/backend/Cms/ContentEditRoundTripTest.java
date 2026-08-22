@@ -19,6 +19,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.backend.Cms.Entity.Genre;
+import com.example.backend.Cms.Entity.Creator;
+import com.example.backend.Cms.Enums.CreatorProfession;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +58,9 @@ class ContentEditRoundTripTest {
     @Autowired private ContentService contentService;
     @Autowired private CategoryRepo categoryRepo;
     @Autowired private MediaAssetRepo mediaAssetRepo;
+    @Autowired private com.example.backend.Cms.Repository.GenreRepo genreRepo;
+    @Autowired private com.example.backend.Cms.Repository.ContentRepo contentRepo;
+    @Autowired private com.example.backend.Cms.Service.TaxonomyService taxonomyService;
 
     private MediaAsset image(String name) {
         return mediaAssetRepo.save(MediaAsset.builder()
@@ -222,5 +228,134 @@ class ContentEditRoundTripTest {
         // null emas, BO'SH ro'yxat - klientda .map() xatosi chiqmasin.
         assertThat(dto.getGallery()).isNotNull().isEmpty();
         assertThat(dto.getMedia()).isNotNull().isEmpty();
+    }
+
+    // ------------------------------------------------- janr va ijodkorlar
+
+    /**
+     * ⚠️ Bu ikkisi yuqoridagi media testida QAMRALMAGAN edi va aynan shu
+     * sababli nuqson uzoq yashadi: {@code ContentListDto} da
+     * {@code genreIds} ham, {@code credits} ham yo'q edi.
+     *
+     * {@code apply()} esa ikkala ro'yxatni ham SHARTSIZ almashtiradi.
+     * Ya'ni panel ularni yuklolmagani uchun bo'sh ro'yxat qaytib kelardi
+     * va sarlavhadagi bitta harfni tuzatgan admin kontentning barcha
+     * janrlarini hamda §54 da biriktirilgan ijodkorlarini jimgina
+     * yo'qotardi. Hech qanday xato chiqmasdi.
+     */
+    @Test
+    @DisplayName("Janrlar DTO'da qaytadi va tahrirdan omon qoladi")
+    void genresSurviveEdit() {
+        Genre genre = genre();
+
+        ContentSaveRequest req = base("Janrli kontent");
+        req.setGenreIds(java.util.Set.of(genre.getId()));
+        Content created = contentService.create(null, req);
+
+        ContentListDto loaded = ContentListDto.from(
+                contentRepo.findById(created.getId()).orElseThrow());
+        assertThat(loaded.getGenreIds())
+                .as("DTO janrlarni qaytarmasa, muharrir ularni bo'sh saqlab yuborardi")
+                .containsExactly(genre.getId());
+
+        // Panel aynan shunday ishlaydi: o'qiydi, bitta maydonni
+        // o'zgartiradi, hammasini qaytarib yuboradi.
+        ContentSaveRequest edit = base("Sarlavha o'zgardi");
+        edit.setVersion(loaded.getVersion());
+        edit.setGenreIds(new java.util.LinkedHashSet<>(loaded.getGenreIds()));
+        contentService.update(null, created.getId(), edit);
+
+        assertThat(contentRepo.findById(created.getId()).orElseThrow().getGenres())
+                .as("faqat sarlavha o'zgardi - janrlar tegilmasligi kerak")
+                .hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Ijodkorlar DTO'da qaytadi va tahrirdan omon qoladi")
+    void creditsSurviveEdit() {
+        Creator creator = creator();
+
+        ContentSaveRequest req = base("Ijodkorli kontent");
+        req.setCredits(List.of(credit(creator.getId())));
+        Content created = contentService.create(null, req);
+
+        ContentListDto loaded = ContentListDto.from(
+                contentRepo.findById(created.getId()).orElseThrow());
+        assertThat(loaded.getCredits()).hasSize(1);
+        assertThat(loaded.getCredits().get(0).getCreatorId()).isEqualTo(creator.getId());
+        assertThat(loaded.getCredits().get(0).getProfession())
+                .isEqualTo(CreatorProfession.ACTOR);
+
+        ContentSaveRequest edit = base("Sarlavha o'zgardi");
+        edit.setVersion(loaded.getVersion());
+        edit.setCredits(loaded.getCredits().stream().map(cr -> {
+            ContentSaveRequest.CreditLink l = new ContentSaveRequest.CreditLink();
+            l.setCreatorId(cr.getCreatorId());
+            l.setProfession(cr.getProfession());
+            l.setCharacterName(cr.getCharacterName());
+            l.setSortOrder(cr.getSortOrder());
+            return l;
+        }).toList());
+        contentService.update(null, created.getId(), edit);
+
+        assertThat(contentRepo.findById(created.getId()).orElseThrow().getCredits())
+                .hasSize(1);
+    }
+
+    /**
+     * Backend to'g'ri qaytarsa ham, panel formaga ko'chirmasa ma'lumot
+     * baribir yo'qoladi. JSX ni reflection bilan ko'rib bo'lmaydi —
+     * shuning uchun manba matni tekshiriladi.
+     */
+    @Test
+    @DisplayName("Panel muharriri ikkala ro'yxatni ham yuklaydi")
+    void editorLoadsBothLists() throws java.io.IOException {
+        String src = java.nio.file.Files.readString(java.nio.file.Path.of(
+                "../frontend/src/adminpanel/pages/ContentEditor.jsx"));
+
+        assertThat(src).contains("genreIds: Array.isArray(c.genreIds)");
+        assertThat(src).contains("credits: Array.isArray(c.credits)");
+    }
+
+    private ContentSaveRequest base(String title) {
+        ContentSaveRequest r = new ContentSaveRequest();
+        r.setContentType(ContentType.MOVIE);
+        r.setStructureType(StructureType.SINGLE);
+        r.setAccessPolicy(AccessPolicy.FREE);
+        r.setStatus(PublicationStatus.DRAFT);
+        r.setTranslations(Translations.all(title + " " + SEQ.incrementAndGet()));
+        return r;
+    }
+
+    private ContentSaveRequest.CreditLink credit(Long creatorId) {
+        ContentSaveRequest.CreditLink l = new ContentSaveRequest.CreditLink();
+        l.setCreatorId(creatorId);
+        l.setProfession(CreatorProfession.ACTOR);
+        l.setSortOrder(0);
+        return l;
+    }
+
+    private Genre genre() {
+        int n = SEQ.incrementAndGet();
+        Genre g = new Genre();
+        g.setSlug("janr-" + n);
+        g.setActive(true);
+        g.setSortOrder(n);
+        return genreRepo.save(g);
+    }
+
+    private Creator creator() {
+        var r = new com.example.backend.Admin.Dto.CreatorSaveRequest();
+        r.setActive(true);
+        int n = SEQ.incrementAndGet();
+        var tr = new java.util.LinkedHashMap<Locale,
+                com.example.backend.Admin.Dto.CreatorSaveRequest.NameDto>();
+        for (Locale loc : Locale.values()) {
+            var name = new com.example.backend.Admin.Dto.CreatorSaveRequest.NameDto();
+            name.setDisplayName("Ijodkor " + loc + " " + n);
+            tr.put(loc, name);
+        }
+        r.setTranslations(tr);
+        return taxonomyService.saveCreator(null, null, r);
     }
 }

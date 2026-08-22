@@ -77,6 +77,18 @@ public class ContentListDto {
      * tuzatgan bo'lsa ham.
      */
     private Long categoryId;
+
+    /**
+     * ⚠️ Janrlar va ijodkorlar bu yerda BO'LMAGANI uchun muharrir ularni
+     * yuklolmasdi va formadagi bo'sh ro'yxatni saqlab yuborardi.
+     * {@code apply()} esa ularni shartsiz almashtiradi — natijada
+     * sarlavhadagi bitta harfni tuzatgan admin kontentning BARCHA
+     * janrlarini va biriktirilgan ijodkorlarini jimgina o'chirardi.
+     * §54 dagi butun ijodkor ishi bitta tahrirda yo'qolardi.
+     */
+    private List<Long> genreIds;
+
+    private List<CreditDto> credits;
     private Long coverMediaId;
     private List<Long> gallery;
 
@@ -154,6 +166,13 @@ public class ContentListDto {
         return ContentListDto.builder()
                 .id(c.getId())
                 .version(c.getVersion())
+                .genreIds(c.getGenres() == null ? List.of()
+                        : c.getGenres().stream().map(g -> g.getId()).toList())
+                .credits(c.getCredits() == null ? List.of()
+                        : c.getCredits().stream()
+                            .sorted(java.util.Comparator.comparing(
+                                    cr -> cr.getSortOrder() == null ? 0 : cr.getSortOrder()))
+                            .map(CreditDto::from).toList())
                 .slug(c.getSlug())
                 .contentType(c.getContentType())
                 .structureType(c.getStructureType())
@@ -181,6 +200,38 @@ public class ContentListDto {
     }
 
     /** Bitta media bog'lanishi — saqlashdagi {@code MediaLink} bilan bir xil shakl. */
+    /** Kontentga biriktirilgan ijodkor (§54). */
+    @Data
+    @Builder
+    public static class CreditDto {
+        private Long creatorId;
+        private String creatorName;
+        private com.example.backend.Cms.Enums.CreatorProfession profession;
+        private String characterName;
+        private Integer sortOrder;
+
+        static CreditDto from(com.example.backend.Cms.Entity.ContentCredit c) {
+            return CreditDto.builder()
+                    .creatorId(c.getCreator() == null ? null : c.getCreator().getId())
+                    .creatorName(displayName(c))
+                    .profession(c.getProfession())
+                    .characterName(c.getCharacterName())
+                    .sortOrder(c.getSortOrder())
+                    .build();
+        }
+
+        /** Panelda ko'rsatish uchun - tarjimalardan birinchi topilgani. */
+        private static String displayName(com.example.backend.Cms.Entity.ContentCredit c) {
+            if (c.getCreator() == null || c.getCreator().getTranslations() == null) {
+                return null;
+            }
+            return c.getCreator().getTranslations().stream()
+                    .map(t -> t.getDisplayName())
+                    .filter(n -> n != null && !n.isBlank())
+                    .findFirst().orElse(null);
+        }
+    }
+
     @Data
     @Builder
     public static class MediaLinkDto {

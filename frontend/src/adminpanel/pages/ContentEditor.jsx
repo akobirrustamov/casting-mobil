@@ -128,6 +128,12 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
           // ⚠️ B17: bu uch maydon YUKLANMASA, saqlashda o'chib ketadi -
           // backend media ro'yxatini butunlay almashtiradi.
           categoryId: c.categoryId ?? '',
+          // ⚠️ Bu ikkisi YUKLANMASA, saqlashda o'chib ketadi: backend
+          // janr va ijodkor ro'yxatini shartsiz almashtiradi. Sarlavhadagi
+          // bitta harfni tuzatgan admin barcha janrlarni va §54 da
+          // biriktirilgan ijodkorlarni jimgina yo'qotardi.
+          genreIds: Array.isArray(c.genreIds) ? c.genreIds : [],
+          credits: Array.isArray(c.credits) ? c.credits : [],
           ageRating: c.ageRating || '',
           premiereDate: c.premiereDate ? c.premiereDate.slice(0, 16) : '',
           publicationDate: c.publicationDate ? c.publicationDate.slice(0, 16) : '',
