@@ -15,6 +15,16 @@ public interface ContentDailyStatisticRepo extends JpaRepository<ContentDailySta
 
     List<ContentDailyStatistic> findAllByStatDateBetweenOrderByStatDateAsc(LocalDate from, LocalDate to);
 
+    /**
+     * BITTA kontentning kunlik ko'rsatkichlari (ТЗ §46).
+     *
+     * Umumiy hisobotda faqat top-10 chiqadi — 200 ta filmi bor admin
+     * 150-chisining raqamlarini umuman ko'ra olmasdi. Reklamada bu
+     * bo'shliq §29 da tuzatilgan edi, kontentda esa qolib ketgan.
+     */
+    List<ContentDailyStatistic> findAllByContentIdAndStatDateBetweenOrderByStatDateAsc(
+            Long contentId, LocalDate from, LocalDate to);
+
     @Query("""
             select s.contentId as contentId,
                    sum(s.views) as views,

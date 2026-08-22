@@ -1,6 +1,8 @@
 package com.example.backend.Admin.Controller;
 
 import com.example.backend.Admin.CurrentUser;
+import com.example.backend.Admin.Dto.ContentStatisticsDto;
+import com.example.backend.Cms.Entity.ContentDailyStatistic;
 import com.example.backend.Cms.Repository.AdDailyStatisticRepo;
 import com.example.backend.Cms.Repository.ContentDailyStatisticRepo;
 import com.example.backend.Cms.Repository.AdvertisementRepo;
@@ -49,6 +51,7 @@ import java.util.stream.Collectors;
 public class ReportController {
 
     private final AnalyticsService analyticsService;
+    private final com.example.backend.Cms.Repository.ContentDailyStatisticRepo contentStatRepo;
     private final AdvertisementRepo advertisementRepo;
     private final ContentRepo contentRepo;
     private final PermissionService permissionService;
@@ -79,6 +82,68 @@ public class ReportController {
             case "last7" -> new LocalDate[]{today.minusDays(6), today};
             default -> new LocalDate[]{today.minusDays(29), today};
         };
+    }
+
+    /**
+     * Bitta kontentning statistikasi (ТЗ §46).
+     *
+     * <h2>Nima uchun alohida endpoint</h2>
+     * Umumiy hisobotda faqat top-10 chiqadi. 200 ta filmi bor admin
+     * 150-chisining raqamlarini umuman ko'ra olmasdi. Reklamada bu
+     * bo'shliq §29 da tuzatilgan, kontentda esa qolib ketgan edi.
+     *
+     * <h2>Nima uchun tez</h2>
+     * Ma'lumot kunlik jamlanmadan olinadi — millionlab xom hodisa
+     * skanerlanmaydi.
+     */
+    @GetMapping("/content/{id}/statistics")
+    public ResponseEntity<ContentStatisticsDto> contentStatistics(
+            @PathVariable Long id,
+            @RequestParam(required = false) Integer days) {
+
+        require(Permission.REPORT_VIEW);
+        int window = (days == null || days <= 0) ? 30 : Math.min(days, 365);
+        LocalDate to = LocalDate.now();
+        LocalDate from = to.minusDays(window - 1L);
+
+        List<ContentDailyStatistic> daily = contentStatRepo
+                .findAllByContentIdAndStatDateBetweenOrderByStatDateAsc(id, from, to);
+
+        long views = daily.stream().mapToLong(d -> z(d.getViews())).sum();
+        long plays = daily.stream().mapToLong(d -> z(d.getPlays())).sum();
+        long completes = daily.stream().mapToLong(d -> z(d.getCompletes())).sum();
+        long uniques = daily.stream().mapToLong(d -> z(d.getUniqueViewers())).sum();
+
+        return ResponseEntity.ok(ContentStatisticsDto.builder()
+                .contentId(id)
+                .from(from)
+                .to(to)
+                .views(views)
+                .plays(plays)
+                .completes(completes)
+                .uniqueViewers(uniques)
+                // ⚠️ Bo'luvchi nol bo'lsa nol qaytariladi — bo'linish
+                // xatosi butun hisobotni yiqitardi.
+                .playRate(percent(plays, views))
+                .completionRate(percent(completes, plays))
+                .daily(daily.stream().map(d -> ContentStatisticsDto.DayRow.builder()
+                        .date(d.getStatDate())
+                        .views(z(d.getViews()))
+                        .plays(z(d.getPlays()))
+                        .completes(z(d.getCompletes()))
+                        .uniqueViewers(z(d.getUniqueViewers()))
+                        .completionRate(d.completionRate())
+                        .build()).toList())
+                .build());
+    }
+
+    private static long z(Long value) {
+        return value == null ? 0L : value;
+    }
+
+    /** Foizda, ikki xonagacha. Bo'luvchi nol bo'lsa — nol. */
+    private static double percent(long part, long whole) {
+        return whole == 0 ? 0d : Math.round(part * 10000.0 / whole) / 100.0;
     }
 
     @GetMapping("/overview")

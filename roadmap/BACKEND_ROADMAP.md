@@ -1006,6 +1006,38 @@ tashlansa maydon baribir ko'rinardi).
 - `[x]` Ko'rsatishsiz CTR — nol, nolga bo'linish yo'q
 - `[x]` `DashboardMetricsTest` — 10 test, mutatsiya bilan tekshirilgan
 
+## 24.1. Content analytics `[x]` — ТЗ §46
+
+**Hodisalar:** `CONTENT_VIEW` · `CONTENT_PLAY` · `CONTENT_COMPLETE`
+
+```
+CONTENT_VIEW  →  CONTENT_PLAY  →  CONTENT_COMPLETE
+(sahifa ochildi)  (o'ynatildi)     (oxirigacha ko'rildi)
+```
+
+- `[x]` `POST /api/v1/app/analytics/events` — yengil ingestion, mobil
+  klient uchun. Anonim ham yubora oladi (klient tokensiz bo'lishi mumkin)
+- `[x]` Uchala bosqich **ALOHIDA** sanaladi. Ularni bitta «ko'rishlar»
+  soniga qo'shish muhim farqni yo'q qilardi:
+  - `view → play` pastligi — afisha yoki tavsif qiziqtirmayapti;
+  - `play → complete` pastligi — kontentning O'ZI ushlab turolmayapti
+- `[x]` ⚠️ **Tugatish foizi O'YNATISHDAN hisoblanadi, ochishdan emas.**
+  Ochib ham o'ynatmaganlar kontentni «tugatmagan» deb hisoblanmasligi
+  kerak — ular uni umuman boshlamagan. Ochishdan hisoblansa har qanday
+  kontent yomon ko'rinardi
+- `[x]` Unikal tomoshabin qayta hisoblanadi (§29 dagi tuzatish shu yerga
+  ham tegishli)
+- `[x]` ⚠️ **`GET /reports/content/{id}/statistics` (yangi).** Umumiy
+  hisobotda faqat top-10 chiqardi — 200 ta filmi bor admin 150-chisining
+  raqamlarini umuman ko'ra olmasdi. Reklamada bu bo'shliq §29 da
+  tuzatilgan, kontentda esa qolib ketgan edi
+- `[x]` `playRate` va `completionRate` — bo'luvchi nol bo'lsa nol,
+  bo'linish xatosi butun hisobotni yiqitardi
+- `[x]` Ma'lumot kunlik jamlanmadan olinadi — millionlab xom hodisa
+  skanerlanmaydi
+- `[x]` Mobil UI yozilmadi (ТЗ shunday deydi)
+- `[x]` `ContentAnalyticsTest` — 9 test, mutatsiya bilan tekshirilgan
+
 ## 25. Reports `[~]`
 
 - `[x]` `GET /reports/overview` — `REPORT_VIEW`
@@ -1135,6 +1167,7 @@ tashlansa maydon baribir ko'rinardi).
 | `FinancialHistoryImmutableTest` | 5 | **ТЗ §42** — moliyaviy tarix o'chirilmaydi |
 | `SettingValidationTest` | 12 | **ТЗ §40/§41** — xato narx saqlanmaydi |
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
+| `ContentAnalyticsTest` | 9 | **ТЗ §46** — voronka, har bir kontent uchun hisobot |
 | `DashboardMetricsTest` | 10 | **ТЗ §45** — 20 ko'rsatkich, soxta statistika yo'q |
 | `PackagePurchaseTest` | 13 | **ТЗ §44** — ichki balans ishlaydi, soxta to'lov yo'q |
 | `DonationBalanceTest` | 10 | **ТЗ §43** — balans va tarix, boshqaniki ko'rinmaydi |
