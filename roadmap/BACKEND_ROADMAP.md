@@ -1006,6 +1006,45 @@ tashlansa maydon baribir ko'rinardi).
 - `[x]` Ko'rsatishsiz CTR — nol, nolga bo'linish yo'q
 - `[x]` `DashboardMetricsTest` — 10 test, mutatsiya bilan tekshirilgan
 
+## 23.3. Creator selection `[x]` — ТЗ §54
+
+Oqim: **qidirish → topilmasa joyida yaratish → darhol biriktirish**.
+
+- `[x]` ⚠️ **Joyida yaratish qo'shildi.** Ilgari admin kerakli ijodkorni
+  topolmasa, muharrirni tark etib «Ijodkorlar» bo'limiga o'tishi, u
+  yerda yaratishi va qaytishi kerak edi — va **saqlanmagan
+  o'zgarishlarini yo'qotardi**
+- `[x]` Taklif faqat qidiruvda natija bo'lmaganda chiqadi — aks holda u
+  mavjud ijodkorlar ro'yxatini to'sib turardi
+- `[x]` Qidiruv matni yangi ijodkorning o'zbekcha ismiga **oldindan
+  qo'yiladi**: admin uni ikkinchi marta yozmaydi
+- `[x]` ТЗ dagi oltala maydon: rasm · ism · familiya · otasining ismi ·
+  ko'rinadigan ism · kasb
+- `[x]` **Yaratilgach DARHOL biriktiriladi** — admin yangi yaratgan
+  odamini ro'yxatdan qayta qidirmaydi
+- `[x]` Biriktirilganlar taklif ro'yxatida **takrorlanmaydi**
+
+### ⚠️ Nima uchun uchala til so'raladi
+
+Backend FAOL ijodkor uchun ismni uchala tilda talab qiladi: u kontent
+sahifasida va «Mashhur ijodkorlar» bo'limida chiqadi.
+
+Faqat o'zbekchasini so'rab, ijodkorni NOFAOL yaratish ham mumkin edi —
+lekin u holda kontentga biriktirilgan ijodkor **hech qayerda
+ko'rinmasdi** va admin buning sababini tushunmasdi. Uch qisqa maydon
+so'rash shundan yaxshiroq.
+
+- `[x]` Yetishmagan tillar **tugmani bosishdan OLDIN** ko'rsatiladi:
+  aks holda admin formani to'ldirib, saqlashga bosgandan keyin xato
+  ko'rardi va qaysi tabga qaytishni o'zi topishi kerak bo'lardi
+
+### Kasb qayerda saqlanadi
+
+- `[x]` Kasb **IJODKORDA emas, BOG'LANISHDA**. ТЗ §24: bitta odam bir
+  kinoda aktyor, boshqasida rejissyor bo'lishi mumkin — kasb ijodkorda
+  saqlansa, uni har kino uchun o'zgartirib bo'lmasdi
+- `[x]` `CreatorSelectionTest` — 10 test, mutatsiya bilan tekshirilgan
+
 ## 23.4. Content editor UX `[x]` — ТЗ §53
 
 ### Komponentlarga ajratildi
@@ -1426,6 +1465,7 @@ CONTENT_VIEW  →  CONTENT_PLAY  →  CONTENT_COMPLETE
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
 | `ReportFiltersTest` | 10 | **ТЗ §47** — davr va obyekt filtrlari, kesishma |
 | `ContentAnalyticsTest` | 9 | **ТЗ §46** — voronka, har bir kontent uchun hisobot |
+| `CreatorSelectionTest` | 10 | **ТЗ §54** — qidirish, joyida yaratish, biriktirish |
 | `ContentEditorStructureTest` | 7 | **ТЗ §53** — komponentlarga ajratish, rejalashtirish |
 | `ValidationFormatTest` | 6 | **ТЗ §52** — xato formati, maydon xatolari |
 | `PanelUiRequirementsTest` | 7 | **ТЗ §51** — holatlar va tasdiqlash |

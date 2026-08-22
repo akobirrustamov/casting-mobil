@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import CreatorQuickCreate from '../../components/CreatorQuickCreate';
 import { PROFESSIONS } from './constants';
 /**
  * Ijodkorlar va ularning kasblari (ТЗ §24).
@@ -6,11 +7,12 @@ import { PROFESSIONS } from './constants';
  * ⚠️ Bitta odam bir kinoda aktyor, boshqasida rejissyor bo'lishi mumkin —
  * shuning uchun kasb IJODKORDA emas, shu bog'lanishda saqlanadi.
  */
-export default function CreditsTab({ form, set, t, locale, creators }) {
+export default function CreditsTab({ form, set, t, locale, creators, onCreatorCreated }) {
   // ⚠️ Bu holat AYNAN shu bo'limga tegishli va u bilan birga ko'chirildi.
   // Ilgari u muharrirning umumiy holatida turardi — ya'ni ijodkor
   // qidiruvi boshqa bo'limlarni ham qayta chizishga majbur qilardi.
   const [creatorQuery, setCreatorQuery] = useState('');
+  const [quickOpen, setQuickOpen] = useState(false);
 
   const filteredCreators = useMemo(() => {
     const q = creatorQuery.trim().toLowerCase();
@@ -29,22 +31,51 @@ export default function CreditsTab({ form, set, t, locale, creators }) {
     return tr[locale]?.displayName || tr.UZ?.displayName || c.slug;
   };
 
+  /**
+   * Ijodkorni kontentga biriktiradi.
+   *
+   * ⚠️ Kasb IJODKORDA emas, shu BOG'LANISHDA saqlanadi: bitta odam bir
+   * kinoda aktyor, boshqasida rejissyor bo'lishi mumkin (ТЗ §24).
+   */
+  const attach = (creatorId) => set({
+    credits: [...form.credits, {
+      creatorId,
+      profession: 'ACTOR',
+      characterName: '',
+      sortOrder: form.credits.length,
+    }],
+  });
+
+  // Allaqachon biriktirilganlar ro'yxatda takror chiqmasin.
+  const attachedIds = new Set(form.credits.map((c) => c.creatorId));
+  const suggestions = filteredCreators.filter((c) => !attachedIds.has(c.id));
+
   return (
       <>
         <input className="uz-input mb-4" placeholder={t('editor.searchCreator')}
                value={creatorQuery} onChange={(e) => setCreatorQuery(e.target.value)} />
 
         <div className="flex gap-2 flex-wrap mb-5">
-          {filteredCreators.map((c) => (
+          {suggestions.map((c) => (
             <button key={c.id} type="button" className="uz-chip"
-                    onClick={() => set({
-                      credits: [...form.credits,
-                                { creatorId: c.id, profession: 'ACTOR', characterName: '',
-                                  sortOrder: form.credits.length }],
-                    })}>
+                    onClick={() => attach(c.id)}>
               + {creatorName(c)}
             </button>
           ))}
+
+          {/* ⚠️ Topilmasa — JOYIDA yaratish (ТЗ §54).
+              Ilgari admin muharrirni tark etib, «Ijodkorlar» bo'limiga
+              o'tib, yaratib, qaytishi kerak edi — va saqlanmagan
+              o'zgarishlarini yo'qotardi. */}
+          {suggestions.length === 0 && (
+            <button type="button" className="uz-chip"
+                    style={{ borderStyle: 'dashed' }}
+                    onClick={() => setQuickOpen(true)}>
+              + {creatorQuery.trim()
+                  ? t('cr.createNamed', { name: creatorQuery.trim() })
+                  : t('cr.quickCreate')}
+            </button>
+          )}
         </div>
 
         {form.credits.length === 0 ? (
@@ -84,6 +115,18 @@ export default function CreditsTab({ form, set, t, locale, creators }) {
             );
           })
         )}
+
+        <CreatorQuickCreate
+          open={quickOpen}
+          initialName={creatorQuery.trim()}
+          onClose={() => setQuickOpen(false)}
+          onCreated={(created) => {
+            // Ro'yxat yangilanadi VA ijodkor darhol biriktiriladi.
+            if (onCreatorCreated) onCreatorCreated(created);
+            attach(created.id);
+            setCreatorQuery('');
+          }}
+        />
       </>
   );
 }

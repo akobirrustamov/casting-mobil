@@ -302,7 +302,8 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
       )}
 
       {tab === 'creators' && (
-        <CreditsTab form={form} set={set} t={t} locale={locale} creators={creators} />
+        <CreditsTab form={form} set={set} t={t} locale={locale} creators={creators}
+                    onCreatorCreated={(c) => setCreators((prev) => [c, ...prev])} />
       )}
 
       {tab === 'episodes' && (
