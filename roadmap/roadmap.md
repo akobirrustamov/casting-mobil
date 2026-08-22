@@ -1331,35 +1331,73 @@ Yangi papka: `src/adminpanel/`, route prefiksi `/app/panel/*`.
 
 ## 14. Next Exact Steps
 
-### PHASE 9 — mustahkamlash (§99): bajarilgani
+> ⚠️ **23.08.2026 holati.** ТЗ §29–§83 va §93–§106 ko'rib chiqildi.
+> Build yashil: backend **679 test**, frontend **5 test**, migratsiyalar
+> **V1–V26**.
 
-1. ✅ Rate limiting (B14) — `RateLimiter` + `RateLimitFilter`, Spring Security
-   zanjiridan OLDIN. Login 10/daqiqa, analitika 60/daqiqa. Ishlayotgani
-   amalda tasdiqlandi (429 qaytdi).
-2. ✅ `AccessService.canWatch` — entitlement 4 manbadan (§37), 17 ta test.
-3. ✅ `@RequirePermission` annotation + `PermissionAspect`.
-4. ✅ **`WatchController`** — `GET /api/v1/app/watch/{episodeId}`. Bu bo'lmasa
-   `AccessService` hech kim chaqirmaydigan o'lik kod edi.
-5. ✅ **Pullik video teshigi yopildi.** `/api/v1/app/media/*/raw` butunlay ochiq
-   edi — VIDEO ham. Ya'ni id ni terib pullik qismni yuklab olish mumkin edi va
-   entitlement butunlay ma'nosiz bo'lardi. Endi rasm ochiq, video esa
-   `AccessService.canReadMedia` ga bo'ysunadi.
-6. ✅ **Video `Range` (seek)** — 206 Partial Content. Shusiz pleyer har safar
-   butun faylni tortardi va oldinga o'tkazish ishlamasdi.
-7. ✅ Dev seeder: entitlement holatlari (Premium / muddati o'tgan / xaridor /
-   bloklangan / bepul) — §15 dagi jadval.
+### Keyingi aniq qadamlar
 
-**Amalda tekshirilgan zanjir** (ishlab turgan server, haqiqiy tokenlar):
+1. **Ijodkor kartochkasini `ContentEditor` da ko'rsatish.**
+   Backend `credits` ni endi qaytaradi (`ContentListDto.CreditDto` —
+   `creatorId`, `creatorName`, `profession`, `characterName`,
+   `sortOrder`), lekin `CreditsTab.jsx` uni faqat saqlash uchun
+   ishlatadi. Yuklangan ro'yxatni ism bilan ko'rsatish kerak.
 
-| Kim | Pullik qism | Fayl (`/media/{id}/raw`) |
-|---|---|---|
-| Anonim | ❌ `SIGN_IN`, havola yo'q | 404 |
-| Premium | ✅ `PREMIUM`, reklamasiz | 200 |
-| Muddati o'tgan | ❌ `PAYMENT_REQUIRED` | 404 |
-| Xaridor — o'z qismi | ✅ `EPISODE_PURCHASE` | 200 |
-| Xaridor — boshqa qism | ❌ `PAYMENT_REQUIRED` | 404 (`Range` bilan ham) |
-| Bloklangan | ❌ `USER_BLOCKED` | 404 |
-| Panel xodimi | — | 200 (tahrirlash uchun) |
+2. **`UserAccount.language` ni panelga chiqarish.**
+   Maydon va migratsiya (V26) tayyor, `HomeFeedService` uni o'qiydi.
+   Yetishmagani: `UsersPage` da ustun va `NotificationsPage` da
+   «qaysi tilda nechta foydalanuvchi bor» ko'rsatkichi.
+
+3. **Bildirishnoma yuborishda oluvchi tilini tanlash.**
+   `NotificationDispatcher` hozir barcha tarjimani saqlaydi, lekin
+   yuborishda tilni tanlash mantig'i FCM ulanmagani uchun yozilmagan.
+   Ulanganda: `UserAccount.language` bo'yicha tarjimani tanlash.
+
+4. **`AdminAuthController` ni bo'lish.**
+   §61 dan keyin u 220 qatordan oshdi (login, refresh, logout, me,
+   cookie yordamchilari). `AuthCookieService` ajratilsin.
+
+5. **Eski `/api/v1/auth/refresh` ni cookie'ga o'tkazish.**
+   Yangi modul tuzatildi, eski modul hali refresh tokenni **URL query
+   parametrida** qabul qiladi va u loglarga tushadi. Eski frontend ham
+   birga o'zgartirilishi kerak.
+
+6. **`ContentService.apply()` dagi shartsiz `clear()`.**
+   `media.clear()` va `credits.clear()` har saqlashda chaqiriladi. Bu
+   §60 versiyasini tasodifan oshirib turibdi va §66 da ortiqcha yozuv
+   hosil qiladi. O'zgarmagan ro'yxatga tegmaslik kerak — lekin avval
+   `ConcurrentEditTest` dagi `touch()` ishonchli ishlashini tasdiqlash.
+
+### Qaror kutilayotgan (kod yozilmaydi)
+
+1. **Video arxitekturasi** — `tz/roadmap for bunny stream*.md` hozirgi
+   lokal saqlash yechimiga zid («server — turniket, quvur emas»).
+   Uch marta so'raldi, javob yo'q. Video kodiga tegilmagan.
+2. **To'lov provayderi** — Payme / Click / Uzum + test hisob ma'lumoti.
+3. **Star va Coin kurslari** — hozir 0, ya'ni paketlar sotib olinmaydi.
+4. **FCM kaliti** — bildirishnoma yoziladi, yuborilmaydi (503, soxta
+   «yuborildi» yozilmaydi).
+5. **§49 submenyulari** — Kontent (Film/Mini serial/Serial/Podkast) va
+   Xodimlar (Super admin/Admin/Worker) alohida menyu bandimi yoki
+   sahifa filtrimi?
+
+### Bajarilgani — 23.08.2026 sessiyasi
+
+| ТЗ | Nima qilindi |
+|---|---|
+| §58 | Soft delete — reklama/premyera arxivlanadi, sotilgan qism/paket o'chirilmaydi |
+| §59 | Audit filtrlari bir-birini istisno qilardi; maxfiy qiymatlar `***` |
+| §60 | Optimistik qulf ikki joyda ham o'lik edi |
+| §61 | Token turi, rotatsiya, bekor qilish, hisob bo'yicha blok |
+| §62 | Parol hash'i javobda chiqmaydi |
+| §65 | DTO qoidasi — tekshirildi, buzilish yo'q |
+| §66 | Tahrirda janr va ijodkorlar o'chib ketardi |
+| §68 | Vaqt mintaqasi — besh soatlik siljish |
+| §75 | Eski casting moduli aniq ro'yxati |
+| §76/§77 | `backend/FUTURE_MOBILE_API.md` |
+| §78 | Sakkizta qabul mezoni — raqamlangan test |
+| §86 | Frontend testi — 401 da yangilash oqimi |
+| §106 | OpenAPI (prod'da yopiq) |
 
 ### Qolgan ishlar
 

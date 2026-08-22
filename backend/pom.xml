@@ -151,6 +151,20 @@
             <version>0.11.5</version>
             <scope>runtime</scope>
         </dependency>
+        <!--
+            OpenAPI (ТЗ §106). Mobil va frontend jamoasi endpointni backend
+            kodini o'qimasdan ishlata olishi kerak.
+
+            Yangi bog'liqlik ataylab: mavjud annotatsiyalardan hujjat
+            hosil qiladi, qo'shimcha kod talab qilmaydi va Spring Boot
+            uchun standart yechim (ТЗ §70 - "real muammoni hal qilsin").
+        -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.2.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>
