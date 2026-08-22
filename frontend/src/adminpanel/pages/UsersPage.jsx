@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
 import { useApi } from '../api/useApi';
 import { useAuth } from '../auth/AuthContext';
+import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
 import Modal from '../components/Modal';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, SearchInput, TableWrap } from '../components/Ui';
@@ -17,6 +18,9 @@ export default function UsersPage() {
   const { t } = usePanelI18n();
   const { can } = useAuth();
   const [q, setQ] = useState('');
+  // Tasdiqlash oqimi — barcha xavfli amallar shu yerdan o'tadi (§51).
+  const confirmer = useConfirm(() => reload());
+
   const { data, error, loading, reload } = useApi(
     () => adminApi.users({ q: q || undefined, limit: 100 }), [q]);
 
@@ -119,10 +123,11 @@ export default function UsersPage() {
                             <button type="button" className="uz-btn uz-btn-ghost"
                                     style={{ minHeight: 30, padding: '0 10px', fontSize: 12, marginLeft: 6 }}
                                     disabled={busy}
-                                    onClick={() => {
-                                      if (!window.confirm(`${u.phone} — ${t('us.revokePremium')}?`)) return;
-                                      run(() => adminApi.revokePremium(u.id));
-                                    }}>
+                                    onClick={() => confirmer.ask({
+                                      message: `${u.phone} — ${t('us.revokePremium')}?`,
+                                      confirmLabel: t('us.revokePremium'),
+                                      run: () => adminApi.revokePremium(u.id),
+                                    })}>
                               − {t('us.premium')}
                             </button>
                           )}
@@ -140,11 +145,12 @@ export default function UsersPage() {
                           <button type="button" className="uz-btn uz-btn-danger"
                                   style={{ minHeight: 30, padding: '0 10px', fontSize: 12, marginLeft: 6 }}
                                   disabled={busy}
-                                  onClick={() => {
-                                    const reason = window.prompt(t('us.blockReason'));
-                                    if (reason === null) return;
-                                    run(() => adminApi.blockUser(u.id, reason));
-                                  }}>
+                                  onClick={() => confirmer.ask({
+                                    message: `${u.phone} — ${t('confirm.blockUser')}`,
+                                    confirmLabel: t('us.block'),
+                                    input: { label: t('us.blockReason'), required: false },
+                                    run: (reason) => adminApi.blockUser(u.id, reason),
+                                  })}>
                             {t('us.block')}
                           </button>
                         )
@@ -222,11 +228,15 @@ export default function UsersPage() {
               {d.active && can('USER_DEVICE_MANAGE') && (
                 <button type="button" className="uz-btn uz-btn-danger"
                         style={{ minHeight: 30, padding: '0 10px', fontSize: 12 }}
-                        onClick={async () => {
-                          await adminApi.revokeDevice(devicesFor.id, d.id);
-                          setDevices(await adminApi.userDevices(devicesFor.id));
-                          reload();
-                        }}>
+                        onClick={() => confirmer.ask({
+                          message: `${d.deviceName || d.platform || d.deviceId} — `
+                            + t('confirm.revokeDevice'),
+                          confirmLabel: t('us.revokeDevice'),
+                          run: async () => {
+                            await adminApi.revokeDevice(devicesFor.id, d.id);
+                            setDevices(await adminApi.userDevices(devicesFor.id));
+                          },
+                        })}>
                   {t('us.revokeDevice')}
                 </button>
               )}
@@ -234,6 +244,8 @@ export default function UsersPage() {
           ))
         )}
       </Modal>
+
+      <ConfirmDialog {...confirmer.props} />
     </>
   );
 }

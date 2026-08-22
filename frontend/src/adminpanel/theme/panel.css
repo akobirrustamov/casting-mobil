@@ -212,7 +212,7 @@
 .uz-btn-ghost:hover:not(:disabled) { background: var(--p-surface-2); }
 
 .uz-btn-danger { background: transparent; border-color: var(--p-danger); color: var(--p-danger); }
-.uz-btn-danger:hover:not(:disabled) { background: rgba(248, 113, 113, 0.12); }
+.uz-btn-danger:hover:not(:disabled) { background: var(--danger-soft); }
 
 .uz-btn:disabled { opacity: .45; cursor: not-allowed; }
 

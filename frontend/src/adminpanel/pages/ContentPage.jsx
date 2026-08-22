@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { adminApi, mediaUrl } from '../api/client';
+import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
 import { useApi } from '../api/useApi';
 import { useAuth } from '../auth/AuthContext';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
@@ -19,6 +20,8 @@ export default function ContentPage() {
   const [status, setStatus] = useState('');
   const [type, setType] = useState('');
   const [q, setQ] = useState('');
+
+  const confirmer = useConfirm(() => reload());
 
   const { data, error, loading, reload } = useApi(
     () => adminApi.content({ page, size: 20, status: status || undefined, type: type || undefined, q: q || undefined }),
@@ -168,12 +171,11 @@ export default function ContentPage() {
                             type="button"
                             className="uz-btn uz-btn-danger"
                             style={{ minHeight: 34, padding: '0 12px', fontSize: 13, marginLeft: 8 }}
-                            onClick={async () => {
-                              // Qaytarib bo'lmaydigan ko'rinadigan amal - tasdiq so'raladi (§51)
-                              if (!window.confirm(`${item.slug} — ${t('common.remove')}?`)) return;
-                              await adminApi.archiveContent(item.id);
-                              reload();
-                            }}
+                            onClick={() => confirmer.ask({
+                                message: `${item.slug} — ${t('common.remove')}?`,
+                                confirmLabel: t('common.remove'),
+                                run: () => adminApi.archiveContent(item.id),
+                              })}
                           >
                             {t('common.remove')}
                           </button>
@@ -199,6 +201,7 @@ export default function ContentPage() {
         onClose={() => setEditorOpen(false)}
         onSaved={reload}
       />
+      <ConfirmDialog {...confirmer.props} />
     </>
   );
 }

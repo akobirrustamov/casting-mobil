@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { adminApi } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
+import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
 import LocaleTabs from '../components/LocaleTabs';
 import MediaField from '../components/MediaField';
 import GalleryField from '../components/GalleryField';
@@ -51,6 +52,9 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
 
   const [tab, setTab] = useState('basic');
   const [locale, setLocale] = useState('UZ');
+  // Tasdiqlash oqimi — saqlanmagan o'zgarish uchun (§51).
+  const confirmer = useConfirm();
+
   const [form, setForm] = useState(emptyForm);
   const [categories, setCategories] = useState([]);
   const [genres, setGenres] = useState([]);
@@ -203,8 +207,19 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
   }
 
   function requestClose() {
-    if (dirty && !window.confirm(t('common.unsaved'))) return;
-    onClose();
+    // Saqlanmagan o'zgarish bo'lsa tasdiqlash so'raladi. Bu buzuvchi
+    // amal emas — shuning uchun tugma qizil bo'lmaydi (`danger: false`).
+    if (!dirty) {
+      onClose();
+      return;
+    }
+    confirmer.ask({
+      title: t('common.unsaved'),
+      message: t('editor.unsavedBody'),
+      confirmLabel: t('editor.discard'),
+      danger: false,
+      run: async () => onClose(),
+    });
   }
 
   // Fasl/qism bo'limi faqat ko'p qismli tuzilishda ma'noga ega
@@ -550,6 +565,8 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
           </div>
         </div>
       )}
+
+      <ConfirmDialog {...confirmer.props} />
     </Modal>
   );
 }

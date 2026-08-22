@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { adminApi, mediaUrl } from '../api/client';
+import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
 import { useApi } from '../api/useApi';
 import { useAuth } from '../auth/AuthContext';
 import LinkFields from '../components/LinkFields';
@@ -41,6 +42,8 @@ export default function BannerPage({ kind }) {
   const bl = locale.toUpperCase();
 
   const perm = isAd ? 'ADVERTISEMENT' : 'PREMIERE';
+  const confirmer = useConfirm(() => reload());
+
   const { data, error, loading, reload } = useApi(
     () => (isAd ? adminApi.advertisements() : adminApi.premieres()),
     [kind]
@@ -145,15 +148,18 @@ export default function BannerPage({ kind }) {
     }
   };
 
-  const remove = async (row) => {
-    if (!window.confirm(`${row.name} — ${t('common.remove')}?`)) return;
-    try {
-      await (isAd ? adminApi.deleteAd(row.id) : adminApi.deletePremiere(row.id));
-      reload();
-    } catch (err) {
-      setSaveError(err);
-    }
-  };
+  const remove = (row) => confirmer.ask({
+    message: `${row.name} — ${t('common.remove')}?`,
+    confirmLabel: t('common.remove'),
+    run: async () => {
+      try {
+        await (isAd ? adminApi.deleteAd(row.id) : adminApi.deletePremiere(row.id));
+      } catch (err) {
+        setSaveError(err);
+        throw err;
+      }
+    },
+  });
 
   return (
     <>
@@ -405,6 +411,7 @@ export default function BannerPage({ kind }) {
           </div>
         </div>
       </Modal>
+      <ConfirmDialog {...confirmer.props} />
     </>
   );
 }

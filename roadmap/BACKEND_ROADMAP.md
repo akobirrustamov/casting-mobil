@@ -1006,6 +1006,30 @@ tashlansa maydon baribir ko'rinardi).
 - `[x]` Ko'rsatishsiz CTR — nol, nolga bo'linish yo'q
 - `[x]` `DashboardMetricsTest` — 10 test, mutatsiya bilan tekshirilgan
 
+## 23.6. Panel UI talablari `[x]` — ТЗ §51
+
+- `[x]` **Yuklash, bo'sh va xato holati** — barcha ro'yxat sahifalarida
+  bor edi; test endi buni qo'riqlaydi
+- `[x]` **Xato holatida qayta urinish** — tarmoq uzilishi vaqtinchalik
+  bo'ladi, foydalanuvchi butun sahifani yangilashga majbur bo'lmasin
+- `[x]` ⚠️ **`ConfirmDialog` qo'shildi, `window.confirm` olib
+  tashlandi.** Brauzer oynasi TARJIMA QILINMAYDI — «OK / Cancel»
+  foydalanuvchi tilida emas, brauzer tilida chiqadi. U panel dizayniga
+  ham mos kelmaydi (§50) va xavfli amalni oddiy amaldan farqlay olmaydi
+- `[x]` ⚠️ **Ikki amal UMUMAN tasdiqlanmasdi**: `blockUser`
+  (foydalanuvchini butunlay kesib qo'yadi) va `revokeDevice`. Bloklashda
+  sabab `window.prompt` orqali so'ralardi — u ham brauzer oynasi
+- `[x]` Xavfli amalda tugma QIZIL va nima o'chirilayotgani nomi bilan
+  ko'rsatiladi: «Ha» tugmasini bosishdan oldin odam aynan nimani
+  tasdiqlayotganini ko'rishi kerak
+- `[x]` `useConfirm` hooki — har bir sahifada «qaysi element
+  tasdiqlanmoqda» holatini qo'lda saqlash takrorlanish edi va bitta
+  joyda unutilsa amal tasdiqsiz bajarilardi
+- `[x]` `PanelUiRequirementsTest` — 5 test, mutatsiya bilan tekshirilgan
+- `[ ]` Qidiruv va sahifalash ba'zi ro'yxatlarda yo'q (`MediaPage`,
+  `StaffPage`, `TaxonomyPage`, `TariffsPage`, `HomepagePage`,
+  `CreatorsPage`) — backend qo'llab-quvvatlaydi, panel qismi qoldi
+
 ## 23.7. Brend va dizayn tokenlari `[x]` — ТЗ §50
 
 ТЗ: «Exact color aniqlanmagan bo'lsa kodning hamma joyiga hex rang
@@ -1289,6 +1313,7 @@ CONTENT_VIEW  →  CONTENT_PLAY  →  CONTENT_COMPLETE
 | `CurrencyPricingTest` | 9 | **ТЗ §40/§41** — kurs haqiqatan ishlaydi, bepul paket yo'q |
 | `ReportFiltersTest` | 10 | **ТЗ §47** — davr va obyekt filtrlari, kesishma |
 | `ContentAnalyticsTest` | 9 | **ТЗ §46** — voronka, har bir kontent uchun hisobot |
+| `PanelUiRequirementsTest` | 5 | **ТЗ §51** — holatlar va tasdiqlash |
 | `DesignTokensTest` | 7 | **ТЗ §50** — ranglar bir joyda, holat ranglari mustaqil |
 | `SidebarPermissionsTest` | 3 | **ТЗ §49** — menyu va backend bir xil ruxsat nomlari |
 | `DashboardMetricsTest` | 18 | **ТЗ §45** — 20 ko'rsatkich, soxta statistika yo'q |

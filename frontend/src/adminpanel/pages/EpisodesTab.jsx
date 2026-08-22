@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { adminApi, mediaUrl } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
+import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
 import LocaleTabs from '../components/LocaleTabs';
 import MediaField from '../components/MediaField';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
@@ -39,6 +40,15 @@ export default function EpisodesTab({ contentId, structureType, contentAccessPol
   const bl = toBackendLocale(locale);
   const isSeasonal = structureType === 'SEASONAL';
 
+  // ⚠️ Hook komponent BOSHIDA: React hooklari har renderda bir xil
+  // tartibda chaqirilishi shart. Erta `return` dan keyin qo'yilsa,
+  // shart bajarilmaydi va React holatlarni aralashtirib yuboradi.
+  //
+  // `load` quyiroqda e'lon qilingan — shuning uchun uni to'g'ridan-to'g'ri
+  // emas, ref orqali chaqiramiz.
+  const reloadRef = useRef(null);
+  const confirmer = useConfirm(() => reloadRef.current && reloadRef.current());
+
   const [view, setView] = useState('list');
   const [seasons, setSeasons] = useState([]);
   const [episodes, setEpisodes] = useState([]);
@@ -71,6 +81,10 @@ export default function EpisodesTab({ contentId, structureType, contentAccessPol
       .finally(() => setLoading(false));
   }, [contentId, structureType, isSeasonal]);
 
+
+  // `load` e'lon qilingandan keyin ref to'ldiriladi: tasdiqlash oynasi
+  // amal bajarilgach ro'yxatni yangilashi kerak.
+  reloadRef.current = load;
   useEffect(() => { load(); }, [load]);
 
   const titleOf = (row) =>
@@ -432,25 +446,31 @@ export default function EpisodesTab({ contentId, structureType, contentAccessPol
     setView('episode');
   };
 
-  const removeSeason = async (s) => {
-    if (!window.confirm(`${s.seasonNumber}. ${titleOf(s)} — ${t('ep.deleteSeason')}?`)) return;
-    try {
-      await adminApi.deleteSeason(contentId, s.id);
-      load();
-    } catch (err) {
-      setError(err);
-    }
-  };
+  const removeSeason = (s) => confirmer.ask({
+    message: `${s.seasonNumber}. ${titleOf(s)} — ${t('ep.deleteSeason')}?`,
+    confirmLabel: t('common.remove'),
+    run: async () => {
+      try {
+        await adminApi.deleteSeason(contentId, s.id);
+      } catch (err) {
+        setError(err);
+        throw err;
+      }
+    },
+  });
 
-  const removeEpisode = async (e) => {
-    if (!window.confirm(`${e.episodeNumber}. ${titleOf(e)} — ${t('ep.deleteEpisode')}?`)) return;
-    try {
-      await adminApi.deleteEpisode(contentId, e.id);
-      load();
-    } catch (err) {
-      setError(err);
-    }
-  };
+  const removeEpisode = (e) => confirmer.ask({
+    message: `${e.episodeNumber}. ${titleOf(e)} — ${t('ep.deleteEpisode')}?`,
+    confirmLabel: t('common.remove'),
+    run: async () => {
+      try {
+        await adminApi.deleteEpisode(contentId, e.id);
+      } catch (err) {
+        setError(err);
+        throw err;
+      }
+    },
+  });
 
   const EpisodeRow = ({ e }) => (
     <div className="flex items-center gap-3 py-2 flex-wrap"
@@ -586,6 +606,8 @@ export default function EpisodesTab({ contentId, structureType, contentAccessPol
           )}
         </>
       )}
+
+      <ConfirmDialog {...confirmer.props} />
     </>
   );
 }
@@ -613,6 +635,7 @@ function FormHeader({ title, onBack, onSave, saving, error }) {
           {error.message}
         </div>
       )}
+
     </>
   );
 }
