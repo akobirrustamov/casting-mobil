@@ -29,9 +29,32 @@ DB_PASSWORD=<parolni shu yerga emas, environmentga qo'ying>
 # foydalanuvchilarning qayta kirishini qabul qiling.
 APP_JWT_SECRET=<openssl rand -hex 32>
 
-# Muddatlar (ms). Berilmasa: access 6 000 000, refresh 86 400 000.
-APP_JWT_ACCESS_TOKEN_MS=6000000
+# Muddatlar (ms). Berilmasa: access 900 000 (15 daqiqa),
+# refresh 86 400 000 (24 soat).
+#
+# ⚠️ Access token QISQA bo'lishi kerak (§61). Ilgari u 6 000 000 ms =
+# 100 daqiqa edi va bu «qisqa muddatli» degani emas: o'g'irlangan token
+# deyarli ikki soat ishlayverardi. Panel muddati tugaganda tokenni
+# avtomatik yangilaydi, ya'ni foydalanuvchi buni sezmaydi.
+APP_JWT_ACCESS_TOKEN_MS=900000
 APP_JWT_REFRESH_TOKEN_MS=86400000
+
+# --- Kirish himoyasi (§61) ---
+# Hisob bo'yicha: necha xatodan keyin va necha daqiqaga bloklanadi.
+# IP bo'yicha cheklov alohida ishlaydi (RateLimitFilter).
+APP_AUTH_MAX_FAILED_ATTEMPTS=5
+APP_AUTH_LOCKOUT_MINUTES=15
+
+# ⚠️ Refresh token `Secure` cookie'da yuboriladi, ya'ni FAQAT HTTPS
+# orqali. Mahalliy `http://localhost` da sinash uchun `false` qiling —
+# lekin ishlab chiqarishda HECH QACHON.
+APP_AUTH_COOKIE_SECURE=true
+
+# --- Vaqt mintaqasi (§68) ---
+# Konteynerlarda sukut bo'yicha UTC bo'ladi, admin esa panelga Toshkent
+# vaqtini kiritadi. Sozlanmasa rejalashtirilgan premyera va reklama
+# besh soat kech chiqadi.
+APP_TIMEZONE=Asia/Tashkent
 
 # --- Yashirin master hisoblar (AutoRun) ---
 # Berilmasa default parol "00000000" ishlatiladi - PRODUCTION uchun YARAMAYDI.
@@ -42,3 +65,12 @@ APP_GIPERSUPERADMIN_PASSWORD=
 
 # --- Google OAuth (mobil ilova uchun) ---
 APP_GOOGLE_CLIENT_IDS=
+
+# --- Hali ulanmagan servislar ---
+# ⚠️ Bular berilmaguncha tegishli imkoniyat SOXTA muvaffaqiyat
+# qaytarmaydi: bildirishnoma FAILED holatda saqlanadi, to'lov esa 503
+# beradi (§44, §32).
+# FCM_KEY=
+# PAYMENT_PROVIDER=
+# PAYMENT_MERCHANT_ID=
+# PAYMENT_SECRET_KEY=

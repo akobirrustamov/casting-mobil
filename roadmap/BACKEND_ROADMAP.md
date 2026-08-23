@@ -1929,6 +1929,53 @@ yozishdan voz kechildi**:
 - **310 ta `LocalDateTime`** — `Instant` ga ko'chirish o'rniga vaqt
   mintaqasi aniq belgilandi (§68)
 
+## 28.5. Sirlar, loglar va xato javoblari `[x]` — ТЗ §92, §93, §94
+
+Uchalasi bitta savolga javob beradi: **server o'zi haqida ortiqcha nima
+aytib qo'yadi?** Sir kodda qolsa — repozitoriyni o'qigan biladi; parol
+logga tushsa — logni ko'rgan biladi; stacktrace javobga tushsa —
+istalgan foydalanuvchi biladi.
+
+### §92 — audit toza
+
+Qotirilgan sir yo'q, git tarixida ham iz yo'q, `ddl` va `jwt` kalitlari
+environmentdan. `APP_JWT_SECRET` berilmasa ilova **ishga tushmaydi** —
+bu to'g'ri xatti-harakat (fail-closed).
+
+⚠️ **Namuna fayl eskirgan edi:** unda `APP_JWT_ACCESS_TOKEN_MS=6000000`
+(100 daqiqa) yozib qo'yilgandi — §61 da default 15 daqiqaga
+tushirilgandan keyin ham. Shu bo'yicha sozlagan odam qisqa muddatli
+token himoyasini **bilmasdan bekor qilardi**. Yangilandi va §61, §68
+sozlamalari ham qo'shildi.
+
+### §93 — audit toza
+
+Loglarga maxfiy qiymat uzatilmaydi, ishlab chiqarishda SQL loglanmaydi,
+so'rov tanasi hech qayerda yozilmaydi.
+
+Bitta **ataylab ruxsat etilgan** chaqiruv bor va sababi yozilgan:
+`BootstrapPasswordPolicy.rejectionReason(password)` — parol funksiyaga
+kiradi, lekin qaytgan qiymat faqat sabab turi («parol 8 belgidan
+qisqa»), parolning o'zi matnga qo'shilmaydi.
+
+### §94 — bitta teshik yopildi
+
+Global handler joyida: kutilmagan xatoda umumiy xabar qaytadi,
+tafsilot faqat logga. Kodlar ТЗ dagidek.
+
+⚠️ Lekin handler **yetib bormaydigan** holatlar bor: filtr zanjiridagi
+xato, `Error` (masalan `StackOverflowError`), topilmagan yo'l. Ular
+Spring'ning o'z xato sahifasiga tushadi va u sukut sozlamalariga
+tayanardi. Sukut qiymat Spring versiyasi bilan **jimgina o'zgarishi**
+mumkin, shuning uchun aniq yozildi:
+
+```
+server.error.include-stacktrace=never
+server.error.include-message=never
+server.error.include-binding-errors=never
+server.error.include-exception=false
+```
+
 ## 28. Indexes `[x]`
 
 - `[x]` **59 indeks** (61 yaratilgan − 2 ortiqchasi olib tashlangan) —
