@@ -421,3 +421,26 @@ hozircha qo'lda tekshiriladi.
 `login` va `forbidden route` — xavfsizlik bilan bog'liq va jimgina
 buziladigan yagona oqimlar; qolganlari buzilsa admin darhol ko'radi.
 
+---
+
+## Pul va sanoq formatlash `[x]` — ТЗ §103, §104
+
+`utils/format.js` — `money()` va `count()`.
+
+⚠️ **Nega markazlashtirildi.** Bu mantiq **to'rtta sahifada** qo'lda
+takrorlangan edi (`ReportsPage`, `TariffsPage`, `UsersPage`,
+`SubscriptionsPage`) va har biri `null` bilan **boshqacha** ishlardi:
+uchtasi uni nolga aylantirardi, bittasi chiziqcha ko'rsatardi.
+
+Farq bezak emas. Sovg'a obunada to'lov summasi `null` —
+«sotilmagan». Uni «0 so'm» deb ko'rsatish «bepul sotildi» degan
+**boshqa ma'noni** beradi (§45, §71).
+
+| Funksiya | `null` | `0` | Nega |
+|---|---|---|---|
+| `money()` | `—` | `0` | Pulda nol va noaniqlik boshqa narsa |
+| `count()` | `0` | `0` | Sanoqda nol haqiqiy: «hech kim ko'rmagan» |
+
+`toLocaleString` endi panelda **hech qayerda to'g'ridan-to'g'ri
+chaqirilmaydi**.
+

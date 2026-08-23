@@ -4,6 +4,7 @@ import { useApi } from '../api/useApi';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, SearchInput, TableWrap } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
+import { money } from '../utils/format';
 
 /**
  * Obunalar ro'yxati (ТЗ §71, §107).
@@ -37,11 +38,6 @@ export default function SubscriptionsPage() {
     }),
     [page, q, active, source]
   );
-
-  const money = (value) =>
-    // ⚠️ null — «sotilmagan» (sovg'a), nol esa «bepul sotilgan».
-    // Ikkalasini bir xil ko'rsatish hisobotni chalkashtirardi.
-    value == null ? '—' : value;
 
   return (
     <>

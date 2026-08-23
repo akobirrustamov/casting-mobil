@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthContext';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, SearchInput, StatusBadge, TableWrap } from '../components/Ui';
 import { toBackendLocale, usePanelI18n } from '../i18n';
+import { count, money } from '../utils/format';
 import ContentEditor from './ContentEditor';
 
 const STATUSES = ['PUBLISHED', 'DRAFT', 'SCHEDULED', 'IN_REVIEW', 'ARCHIVED', 'BLOCKED'];
@@ -148,12 +149,12 @@ export default function ContentPage() {
                           : String(item.accessPolicy).replace(/_/g, ' ')}
                         {item.premierePrice && (
                           <div style={{ color: 'var(--p-gold)', fontWeight: 600 }}>
-                            {Number(item.premierePrice).toLocaleString()} {t('common.currency')}
+                            {money(item.premierePrice)} {t('common.currency')}
                           </div>
                         )}
                       </td>
                       <td className="uz-mono" style={{ textAlign: 'right' }}>
-                        {Number(item.viewCount || 0).toLocaleString()}
+                        {count(item.viewCount)}
                       </td>
                       <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                         {can('CONTENT_EDIT') && (

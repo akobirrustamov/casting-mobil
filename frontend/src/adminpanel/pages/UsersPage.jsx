@@ -7,6 +7,7 @@ import Modal from '../components/Modal';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, SearchInput, TableWrap } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
+import { count, money } from '../utils/format';
 
 /**
  * Mobil ilova foydalanuvchilari.
@@ -58,7 +59,6 @@ export default function UsersPage() {
     }
   };
 
-  const money = (v) => Number(v || 0).toLocaleString();
 
   return (
     <>

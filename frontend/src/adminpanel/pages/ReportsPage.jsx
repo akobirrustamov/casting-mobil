@@ -5,6 +5,7 @@ import TrendChart from '../components/TrendChart';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { PageHeader, TableWrap } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
+import { count, money } from '../utils/format';
 
 const PERIODS = ['today', 'yesterday', 'last7', 'last30'];
 
@@ -35,7 +36,6 @@ export default function ReportsPage() {
   const { data, error, loading, reload } = useApi(
     () => adminApi.reportOverview({ period }), [period]);
 
-  const n = (v) => Number(v || 0).toLocaleString();
 
   return (
     <>
@@ -66,19 +66,19 @@ export default function ReportsPage() {
                  style={{ borderRadius: 'var(--p-radius)', background: 'var(--warning-soft)',
                           border: '1px solid var(--warning-border)', color: 'var(--p-warning)',
                           fontSize: 13 }}>
-              {t('rp.pending')}: <strong>{n(data.pendingEvents)}</strong> — {t('rp.pendingHint')}
+              {t('rp.pending')}: <strong>{count(data.pendingEvents)}</strong> — {t('rp.pendingHint')}
             </div>
           )}
 
           <div className="grid gap-4 mb-6"
                style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
-            <Stat label={t('rp.views')} value={n(data.totalViews)} accent="var(--p-accent)" />
-            <Stat label={t('rp.plays')} value={n(data.totalPlays)} />
-            <Stat label={t('rp.completes')} value={n(data.totalCompletes)} accent="var(--p-success)" />
+            <Stat label={t('rp.views')} value={count(data.totalViews)} accent="var(--p-accent)" />
+            <Stat label={t('rp.plays')} value={count(data.totalPlays)} />
+            <Stat label={t('rp.completes')} value={count(data.totalCompletes)} accent="var(--p-success)" />
             <Stat label={t('rp.completionRate')}
                   value={(data.completionRate || 0).toFixed(1)} suffix="%" />
-            <Stat label={t('rp.impressions')} value={n(data.adImpressions)} />
-            <Stat label={t('rp.clicks')} value={n(data.adClicks)} />
+            <Stat label={t('rp.impressions')} value={count(data.adImpressions)} />
+            <Stat label={t('rp.clicks')} value={count(data.adClicks)} />
             <Stat label={t('rp.ctr')} value={(data.adCtr || 0).toFixed(2)} suffix="%"
                   accent="var(--p-gold)" />
           </div>
@@ -109,9 +109,9 @@ export default function ReportsPage() {
                         {data.topContent.map((c) => (
                           <tr key={c.contentId}>
                             <td style={{ fontWeight: 600, fontSize: 13 }}>{c.slug}</td>
-                            <td className="uz-mono" style={{ textAlign: 'right' }}>{n(c.views)}</td>
-                            <td className="uz-mono uz-muted" style={{ textAlign: 'right' }}>{n(c.plays)}</td>
-                            <td className="uz-mono uz-muted" style={{ textAlign: 'right' }}>{n(c.uniqueViewers)}</td>
+                            <td className="uz-mono" style={{ textAlign: 'right' }}>{count(c.views)}</td>
+                            <td className="uz-mono uz-muted" style={{ textAlign: 'right' }}>{count(c.plays)}</td>
+                            <td className="uz-mono uz-muted" style={{ textAlign: 'right' }}>{count(c.uniqueViewers)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -139,8 +139,8 @@ export default function ReportsPage() {
                         {data.topAds.map((a) => (
                           <tr key={a.advertisementId}>
                             <td style={{ fontWeight: 600, fontSize: 13 }}>{a.name}</td>
-                            <td className="uz-mono" style={{ textAlign: 'right' }}>{n(a.impressions)}</td>
-                            <td className="uz-mono uz-muted" style={{ textAlign: 'right' }}>{n(a.clicks)}</td>
+                            <td className="uz-mono" style={{ textAlign: 'right' }}>{count(a.impressions)}</td>
+                            <td className="uz-mono uz-muted" style={{ textAlign: 'right' }}>{count(a.clicks)}</td>
                             <td className="uz-mono" style={{ textAlign: 'right', color: 'var(--p-gold)' }}>
                               {(a.ctr || 0).toFixed(2)}%
                             </td>

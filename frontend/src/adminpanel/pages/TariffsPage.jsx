@@ -109,7 +109,6 @@ export default function TariffsPage() {
     }
   };
 
-  const money = (v) => Number(v || 0).toLocaleString();
 
   return (
     <>

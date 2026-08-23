@@ -4,6 +4,7 @@ import { useApi } from '../api/useApi';
 import { useAuth } from '../auth/AuthContext';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, SearchInput } from '../components/Ui';
+import { count } from '../utils/format';
 import { toBackendLocale, usePanelI18n } from '../i18n';
 import CreatorForm from './CreatorForm';
 
@@ -87,7 +88,7 @@ export default function CreatorsPage() {
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 650, fontSize: 14 }}>{nameOf(c)}</div>
                   <div className="uz-muted" style={{ fontSize: 12, marginTop: 2 }}>
-                    ⭐ {Number(c.starsReceived || 0).toLocaleString()} {t('creators.stars')}
+                    ⭐ {count(c.starsReceived)} {t('creators.stars')}
                   </div>
                   {bioOf(c) && (
                     <p className="uz-muted" style={{

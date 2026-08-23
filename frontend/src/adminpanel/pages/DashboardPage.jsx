@@ -4,6 +4,7 @@ import { useApi } from '../api/useApi';
 import { ErrorState, LoadingState } from '../components/States';
 import { PageHeader } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
+import { count } from '../utils/format';
 
 function StatCard({ label, value, accent }) {
   const { t } = usePanelI18n();
@@ -23,7 +24,7 @@ function StatCard({ label, value, accent }) {
           className="uz-mono"
           style={{ fontSize: 30, fontWeight: 700, marginTop: 6, color: accent || 'var(--p-text)' }}
         >
-          {Number(value).toLocaleString()}
+          {count(value)}
         </div>
       )}
     </div>
@@ -75,7 +76,7 @@ export default function DashboardPage() {
         </div>
         {data.pendingEvents > 0 && (
           <p className="uz-muted mt-4" style={{ fontSize: 12 }}>
-            {t('rp.pending')}: {Number(data.pendingEvents).toLocaleString()} — {t('rp.pendingHint')}
+            {t('rp.pending')}: {count(data.pendingEvents)} — {t('rp.pendingHint')}
           </p>
         )}
       </div>
