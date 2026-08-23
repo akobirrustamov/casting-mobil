@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { setAuthToken } from '@/lib/api';
 import { getItem, removeItem, setItem } from '@/lib/storage';
 
 /**
@@ -94,3 +95,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ token: null, user: null, isAuthorized: false });
   },
 }));
+
+/**
+ * Токен → HTTP-клиент.
+ *
+ * Подписка, а не вызов в каждом действии: `restore`, `signIn` и `signOut`
+ * меняют токен по-разному, и забытый вызов в одном из них дал бы запрос без
+ * заголовка — молчаливый «войдите в систему» на экране, где человек уже вошёл.
+ */
+useAuthStore.subscribe((state) => setAuthToken(state.token));

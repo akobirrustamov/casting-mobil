@@ -31,6 +31,20 @@ export const api = axios.create({
   timeout: 15_000,
 });
 
+/**
+ * Токен для заголовка `Authorization`.
+ *
+ * Живёт здесь, а не в сторе, по направлению зависимостей: `lib` не знает про
+ * `features`. Значение сюда проталкивает `features/auth/store` — одной
+ * подпиской, чтобы вход, выход и восстановление из хранилища не требовали
+ * каждый своего вызова (пропущенный вызов дал бы молчаливый 401).
+ */
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null): void {
+  authToken = token;
+}
+
 api.interceptors.request.use((config) => {
   const method = (config.method ?? 'get').toLowerCase();
 
@@ -44,11 +58,23 @@ api.interceptors.request.use((config) => {
     );
   }
 
+  if (authToken) {
+    config.headers.set('Authorization', `Bearer ${authToken}`);
+  }
+
   return config;
 });
 
-// TODO: подставлять токен из expo-secure-store, когда сделаем авторизацию.
-// На сайте это localStorage.getItem('access_token') → заголовок Authorization.
+/**
+ * Заголовки для плеера и любых запросов мимо axios.
+ *
+ * Картинки бэкенд отдаёт всем, а видео проверяет право доступа
+ * (`AccessService.canReadMedia`) и без токена вернёт отказ — поэтому
+ * `expo-video` обязан идти с тем же заголовком, что и остальные запросы.
+ */
+export function authHeaders(): Record<string, string> {
+  return authToken ? { Authorization: `Bearer ${authToken}` } : {};
+}
 
 /** Файлы отдаются по id вложения. */
 export function fileUrl(id: string): string {

@@ -153,5 +153,36 @@
   },
   "favorites": {
     "empty": "Yurak belgisini bosib, yoqqan ijodkorlarni shu yerga qo'shing."
+  },
+  "content": {
+    "notFound": "Bu kontent topilmadi",
+    "multiPartTitle": "Kontent qismlardan iborat",
+    "multiPartBody": "Qismlar ro'yxatini ilova hali ololmaydi — bu uchun server tomonida alohida manzil kerak.",
+    "noVideo": "Video hali yuklanmagan",
+    "part": "{{number}}-qism",
+    "minutes": "{{count}} daqiqa",
+    "needSignIn": "Ko'rish uchun hisobingizga kiring.",
+    "needPurchase": "Bu kontent sotib olingandan keyin ochiladi.",
+    "needSubscription": "Bu kontentni Premium obuna ochadi.",
+    "needPurchaseOrSubscription": "Kontentni alohida sotib olish yoki Premium obuna bilan ochish mumkin.",
+    "subscribe": "Premium olish",
+    "paymentSoon": "To'lov ilovada hali ulanmagan.",
+    "notPublished": "Kontent hali nashr qilinmagan.",
+    "userBlocked": "Hisobingiz bloklangan. Qo'llab-quvvatlash xizmatiga murojaat qiling.",
+    "episodes": "Qismlar",
+    "season": "{{number}}-mavsum",
+    "episodesEmpty": "Bu mavsumda hali qism yo'q"
+  },
+  "contentType": {
+    "SHORT_FILM": "Qisqa metraj",
+    "MOVIE": "Film",
+    "MINI_SERIES": "Mini-serial",
+    "SERIES": "Serial",
+    "PODCAST": "Podkast",
+    "SHOW": "Ko'rsatuv",
+    "INTERVIEW": "Intervyu",
+    "STREAM": "Jonli efir",
+    "CLIP": "Klip",
+    "OTHER": "Boshqa"
   }
 }

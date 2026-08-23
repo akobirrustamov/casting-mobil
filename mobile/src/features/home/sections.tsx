@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Linking } from 'react-native';
 
@@ -66,29 +67,60 @@ export function ContentPoster({
       imageUrl={mediaUrl(card.posterMediaId)}
       badge={badge?.tone ?? null}
       badgeLabel={badge ? t(badge.key) : undefined}
-      // TODO: экран 17 «Episode detail» (ТЗ V3) — переход появится вместе с ним.
-      // До тех пор карточка не кликается: тап, который ничего не делает, хуже,
-      // чем его отсутствие.
+      // Экран 17: право на просмотр и цену спрашивает уже он — в фиде их нет.
+      onPress={() => router.push(`/content/${card.id}`)}
     />
   );
 }
 
 /**
- * Подпись кнопки баннера — только если по ней есть куда пойти.
+ * Куда ведёт баннер — или `null`, если вести некуда.
  *
- * `INTERNAL` ведёт на экраны, которых ещё нет (контент, эпизод, кастинг),
- * поэтому такая кнопка не рисуется вовсе, а не рисуется мёртвой.
+ * `INTERNAL` бэкенд умеет нацеливать на семь сущностей, а экраны в приложении
+ * есть только под две. Остальные (категория, креатор, кастинг, премьера)
+ * возвращают `null`: кнопка, которая ничего не делает, хуже её отсутствия.
+ *
+ * Экспортируется: чистая функция, по которой проверяются переходы, и та же
+ * таблица понадобится обработчику диплинков.
  */
+type BannerTarget = { kind: 'external'; url: string } | { kind: 'route'; route: string };
+
+export function bannerTarget(banner: BannerCard): BannerTarget | null {
+  if (banner.linkType === 'EXTERNAL') {
+    // Только http(s): схемы вроде `tel:` или `intent:` из панели не ждём,
+    // а открывать что попало по ссылке из админки не стоит.
+    return banner.linkUrl && /^https?:\/\//i.test(banner.linkUrl)
+      ? { kind: 'external', url: banner.linkUrl }
+      : null;
+  }
+
+  if (banner.linkType !== 'INTERNAL' || banner.internalTargetId === null) return null;
+
+  switch (banner.internalTargetType) {
+    case 'CONTENT':
+      return { kind: 'route', route: `/content/${banner.internalTargetId}` };
+    case 'EPISODE':
+      return { kind: 'route', route: `/episode/${banner.internalTargetId}` };
+    default:
+      return null;
+  }
+}
+
+/** Подпись кнопки — только если по ней есть куда пойти. */
 function bannerCta(banner: BannerCard, fallback: string): string | undefined {
   if (!banner.buttonEnabled) return undefined;
-  if (banner.linkType !== 'EXTERNAL') return undefined;
-  if (!banner.linkUrl || !/^https?:\/\//i.test(banner.linkUrl)) return undefined;
+  if (bannerTarget(banner) === null) return undefined;
   return banner.buttonText ?? fallback;
 }
 
 function openBanner(banner: BannerCard) {
-  if (banner.linkType === 'EXTERNAL' && banner.linkUrl) {
-    void Linking.openURL(banner.linkUrl);
+  const target = bannerTarget(banner);
+  if (target === null) return;
+
+  if (target.kind === 'external') {
+    void Linking.openURL(target.url);
+  } else {
+    router.push(target.route);
   }
 }
 

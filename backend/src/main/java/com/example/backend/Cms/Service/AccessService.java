@@ -23,8 +23,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * «Kim nimani ko'ra oladi» — YAGONA manba (ТЗ §37).
@@ -54,6 +59,27 @@ public class AccessService {
     private final PermissionService permissionService;
 
     /**
+     * Kontent shu odam uchun umuman mavjudmi.
+     *
+     * Bu HUQUQ emas — KO'RINISH: nashr holati, o'chirilgani va havola
+     * bo'yicha ochiqligi. PRIVATE faqat panel xodimlari uchun, havola bilan
+     * ham ochilmaydi; UNLISTED havola bilan ochiladi, katalogda ko'rinmaydi.
+     *
+     * Ilgari bu uch shart ikki joyda so'zma-so'z takrorlanardi — biri
+     * o'zgarsa, ikkinchisi jimgina eskirib qolardi.
+     */
+    public boolean isVisible(User user, Content content) {
+        if (content == null) {
+            return false;
+        }
+        return content.getStatus().isVisibleToUsers()
+                && content.getDeletedAt() == null
+                && (content.getVisibility() == null
+                    || content.getVisibility().reachableByLink()
+                    || (user != null && permissionService.canAccessAdminPanel(user)));
+    }
+
+    /**
      * Foydalanuvchi shu qismni ko'ra oladimi.
      *
      * @param user    tizimga kirgan foydalanuvchi, yoki {@code null} — anonim
@@ -61,6 +87,75 @@ public class AccessService {
      */
     @Transactional(readOnly = true)
     public AccessDecision canWatch(User user, Episode episode) {
+        return canWatch(user, episode, null);
+    }
+
+    /**
+     * Bir nechta qism uchun qaror — qismlar ro'yxati uchun.
+     *
+     * <h2>Nima uchun alohida metod</h2>
+     * {@link #canWatch} ni sikl ichida chaqirish har bir qism uchun hisobni va
+     * xaridlarni QAYTA so'raydi: 20 qismli mavsumda bu qirqdan ortiq so'rov.
+     * Bu yerda ular BIR marta o'qiladi.
+     *
+     * ⚠️ Qoida NUSXALANMAYDI: qaror baribir {@link #canWatch} ning o'sha
+     * tanasida qabul qilinadi. Aks holda ro'yxat va ochish sahifasi bir kuni
+     * kelib har xil javob berardi — ТЗ §37 aynan shundan qochadi.
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, AccessDecision> canWatchAll(User user, List<Episode> episodes) {
+        if (episodes == null || episodes.isEmpty()) {
+            return Map.of();
+        }
+
+        Viewer viewer = viewerFor(user, episodes);
+
+        Map<Long, AccessDecision> result = new LinkedHashMap<>();
+        for (Episode episode : episodes) {
+            result.put(episode.getId(), canWatch(user, episode, viewer));
+        }
+        return result;
+    }
+
+    /**
+     * Oldindan o'qilgan holat: hisob va haqiqiy xaridlar.
+     * {@code null} bo'lsa — bitta qism so'ralgan, hammasi joyida so'raladi.
+     */
+    private record Viewer(UserAccount account, Set<Long> boughtEpisodes,
+                          Set<Long> boughtPremieres) {
+    }
+
+    private Viewer viewerFor(User user, List<Episode> episodes) {
+        if (user == null) {
+            return new Viewer(null, Set.of(), Set.of());
+        }
+
+        List<Long> episodeIds = episodes.stream().map(Episode::getId).toList();
+        List<Long> contentIds = episodes.stream()
+                .map(e -> e.getContent() == null ? null : e.getContent().getId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        return new Viewer(
+                accountRepo.findByUserId(user.getId()).orElse(null),
+                validTargets(user.getId(), PurchaseType.EPISODE, episodeIds),
+                validTargets(user.getId(), PurchaseType.PREMIERE, contentIds));
+    }
+
+    /** Qaytarilmagan va muddati o'tmagan xaridlar — {@link Purchase#isValid}. */
+    private Set<Long> validTargets(UUID userId, PurchaseType type, List<Long> targetIds) {
+        if (targetIds.isEmpty()) {
+            return Set.of();
+        }
+        return purchaseRepo.findAllByUserIdAndTypeAndTargetIdIn(userId, type, targetIds)
+                .stream()
+                .filter(Purchase::isValid)
+                .map(Purchase::getTargetId)
+                .collect(Collectors.toSet());
+    }
+
+    private AccessDecision canWatch(User user, Episode episode, Viewer viewer) {
         if (episode == null || episode.getContent() == null) {
             return AccessDecision.deny(AccessDecision.Reason.NOT_PUBLISHED,
                     AccessDecision.RequiredAction.NONE);
@@ -68,12 +163,7 @@ public class AccessService {
 
         // 1. Nashr qilinmagan kontentni hech kim ko'rmaydi — hatto sotib olgan ham.
         //    (Adminlar uchun alohida oldindan ko'rish oqimi bo'ladi.)
-        boolean contentLive = episode.getContent().getStatus().isVisibleToUsers()
-                && episode.getContent().getDeletedAt() == null
-                // Kontent PRIVATE bo'lsa uning qismlari ham yopiq.
-                && (episode.getContent().getVisibility() == null
-                    || episode.getContent().getVisibility().reachableByLink()
-                    || (user != null && permissionService.canAccessAdminPanel(user)));
+        boolean contentLive = isVisible(user, episode.getContent());
         boolean episodeLive = episode.getStatus().isVisibleToUsers();
         if (!contentLive || !episodeLive) {
             return AccessDecision.deny(AccessDecision.Reason.NOT_PUBLISHED,
@@ -96,7 +186,9 @@ public class AccessService {
         }
 
         // 4. Bloklangan foydalanuvchi hech narsani ko'rmaydi.
-        UserAccount account = accountRepo.findByUserId(user.getId()).orElse(null);
+        UserAccount account = viewer != null
+                ? viewer.account()
+                : accountRepo.findByUserId(user.getId()).orElse(null);
         if (account != null && account.getStatus() == UserStatus.BLOCKED) {
             return AccessDecision.deny(AccessDecision.Reason.USER_BLOCKED,
                     AccessDecision.RequiredAction.NONE);
@@ -114,11 +206,19 @@ public class AccessService {
 
         // 6. Xaridlar. Avval butun premyera — u kengroq huquq beradi.
         if (purchaseAllowed) {
-            if (hasValidPurchase(user.getId(), PurchaseType.PREMIERE,
-                    episode.getContent().getId())) {
+            Long contentId = episode.getContent().getId();
+
+            boolean premiereBought = viewer != null
+                    ? viewer.boughtPremieres().contains(contentId)
+                    : hasValidPurchase(user.getId(), PurchaseType.PREMIERE, contentId);
+            if (premiereBought) {
                 return AccessDecision.allow(AccessDecision.Reason.PREMIERE_PURCHASE);
             }
-            if (hasValidPurchase(user.getId(), PurchaseType.EPISODE, episode.getId())) {
+
+            boolean episodeBought = viewer != null
+                    ? viewer.boughtEpisodes().contains(episode.getId())
+                    : hasValidPurchase(user.getId(), PurchaseType.EPISODE, episode.getId());
+            if (episodeBought) {
                 return AccessDecision.allow(AccessDecision.Reason.EPISODE_PURCHASE);
             }
         }
@@ -161,14 +261,7 @@ public class AccessService {
                     AccessDecision.RequiredAction.NONE);
         }
 
-        boolean live = content.getStatus().isVisibleToUsers()
-                && content.getDeletedAt() == null
-                // PRIVATE — faqat panel xodimlari uchun. Havola bilan ham
-                // ochilmaydi: u tayyorlanayotgan kontentni tekshirish uchun.
-                // UNLISTED esa havola bilan OCHILADI, faqat katalogda yo'q.
-                && (content.getVisibility() == null
-                    || content.getVisibility().reachableByLink()
-                    || (user != null && permissionService.canAccessAdminPanel(user)));
+        boolean live = isVisible(user, content);
         if (!live) {
             return AccessDecision.deny(AccessDecision.Reason.NOT_PUBLISHED,
                     AccessDecision.RequiredAction.NONE);

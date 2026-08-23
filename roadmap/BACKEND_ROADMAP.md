@@ -2179,14 +2179,26 @@ server.error.include-exception=false
 
 /api/v1/app/watch/{episodeId}       qism (EPISODIC / SEASONAL)
 /api/v1/app/watch/content/{id}     SINGLE kontent (film, klip, shou)
+/api/v1/app/content/{id}/episodes   qismlar ro'yxati (mavsumlar bilan)
 /api/v1/app/media/{id}/raw          rasm ochiq, video entitlement bilan
 /api/v1/app/analytics/events        ochiq, rate limit bilan
+/api/v1/app/donations · packages    donat va valyuta paketlari
 ```
+
+⚠️ `/api/v1/app/content/{id}/episodes` VIDEO HAVOLASINI BERMAYDI — u faqat
+`/watch/{episodeId}` dan, huquq tasdiqlangandan keyin chiqadi. Ro'yxatdagi
+qulf va ochish sahifasidagi qulf bitta qoidadan
+(`AccessService.canWatchAll`) chiqadi, ya'ni ular ajralib keta olmaydi.
 
 **Klient uchun hali ochilmagan:**
 
 - `[ ]` `/api/v1/app/catalog` — bosh sahifa bo'limlari bilan
-- `[ ]` `/api/v1/app/content/{slug}` — kontent sahifasi
+- `[ ]` `/api/v1/app/content/{slug}` — kontent sahifasi (tavsif, janrlar,
+  rollar). Hozircha ilova afishani bosh sahifa keshidan oladi: kartochka
+  endpointi yo'q, to'g'ridan-to'g'ri havola bilan kirilganda kesh bo'sh
+- `[ ]` `HomeFeedDto.ContentCard` ga `structureType` — ilova kartochkaga
+  qarab filmni serialdan ajrata olmaydi va buni faqat `/watch` javobidan
+  biladi (ТЗ §13, §14: tur va tuzilma — har xil o'q)
 - `[ ]` `/api/v1/app/search`
 - `[ ]` `/api/v1/app/comments` — yozish va o'qish
 - `[ ]` `/api/v1/app/ads` — ko'rsatiladigan reklama

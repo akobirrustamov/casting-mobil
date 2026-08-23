@@ -109,6 +109,11 @@ public class SecurityConfig {
                         // darajali — /watch/content/{id}. Bitta yulduzcha uni
                         // qamramaydi va film tomosha qilish 401 qaytarardi.
                         .requestMatchers(HttpMethod.GET, "/api/v1/app/watch/**").permitAll()
+                        // Kontent qismlari ro'yxati. Katalog ma'lumoti - kim
+                        // nima ko'ra olishini aytadi, video havolasini BERMAYDI.
+                        // Token yuborilsa hisobga olinadi: sotib olingan qism
+                        // ro'yxatda ochiq ko'rinadi.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/app/content/*/episodes").permitAll()
                         // Bosh sahifa (§31). Mehmon ham ko'ra oladi - aks holda
                         // odam ilovada nima borligini bilmasdan ro'yxatdan
                         // o'tishi kerak bo'lardi. Tomosha qilish esa baribir
