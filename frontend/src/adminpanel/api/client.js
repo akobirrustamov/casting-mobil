@@ -319,6 +319,7 @@ export const adminApi = {
   comments: (params) => api.get('/api/v1/app/admin/comments', params),
   setCommentStatus: (id, status) => api.put(`/api/v1/app/admin/comments/${id}/status/${status}`),
 
+  notificationAudience: () => api.get('/api/v1/app/admin/notifications/audience'),
   notifications: (params) => api.get('/api/v1/app/admin/notifications', params),
   createNotification: (body) => api.post('/api/v1/app/admin/notifications', body),
   updateNotification: (id, body) => api.put(`/api/v1/app/admin/notifications/${id}`, body),

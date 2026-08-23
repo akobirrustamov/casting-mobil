@@ -3328,7 +3328,7 @@ Keyin qisqa qilib:
 5. Current implementation phase
 6. First code changes made
 7. Build/test status
-```
+``` 
 
 ko‘rsat.
 

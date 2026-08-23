@@ -7,7 +7,7 @@ import Modal from '../components/Modal';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, SearchInput, TableWrap } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
-import { count, money } from '../utils/format';
+import { money } from '../utils/format';
 
 /**
  * Mobil ilova foydalanuvchilari.
@@ -91,6 +91,7 @@ export default function UsersPage() {
                   <th>{t('us.premium')}</th>
                   <th>{t('us.balance')}</th>
                   <th>{t('us.devices')}</th>
+                  <th>{t('us.language')}</th>
                   <th>{t('content.col.status')}</th>
                   <th />
                 </tr>
@@ -115,6 +116,15 @@ export default function UsersPage() {
                               onClick={() => setDevicesFor(u)}>
                         {u.activeDevices ?? 0}
                       </button>
+                    </td>
+                    <td>
+                      {/* ⚠️ `null` — «hali til tanlamagan», UZ emas.
+                          Uni UZ deb ko'rsatish taxminni fakt sifatida
+                          ko'rsatish bo'lardi: bu odam hali ilovani
+                          ochmagan. */}
+                      {u.language
+                        ? <Badge tone="info">{u.language}</Badge>
+                        : <span className="uz-muted" title={t('us.languageUnknown')}>—</span>}
                     </td>
                     <td>
                       <Badge tone={u.status === 'BLOCKED' ? 'blocked' : 'published'}>

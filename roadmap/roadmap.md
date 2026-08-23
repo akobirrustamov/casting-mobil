@@ -269,7 +269,7 @@ tegilmagan (§75) — ogohlantirishlar ham o'sha holida.
 
 | Buyruq | Natija |
 |---|---|
-| `./mvnw test` | ✅ **741 test**, yiqilish yo'q |
+| `./mvnw test` | ✅ **745 test**, yiqilish yo'q |
 | `./mvnw -DskipTests package` | ✅ SUCCESS |
 | `react-scripts test` | ✅ **16 test** (3 to'plam) |
 | `react-scripts build` | ✅ SUCCESS — `adminpanel` da ogohlantirish yo'q |
@@ -621,7 +621,7 @@ Til tanlovi `localStorage` da saqlanadi va kontent tarjimasiga ham ta'sir qiladi
 | 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma: rejalashtirish ishlaydi, hisobot halol (ТЗ §32–§33). FCM ulanmagan |
 | 7 | Users & Monetization — tariffs, premium, Stars, Coin | `[x]` foydalanuvchi, tarif, balans, qurilma, donat |
 | 8 | Analytics — events, aggregation, dashboard, reports | `[x]` ikki qatlamli: xom hodisa + kunlik jamlanma |
-| 9 | Hardening — tests, performance, security, indexes | `[~]` 741 backend + 16 frontend test; migratsiyalar V1–V26 |
+| 9 | Hardening — tests, performance, security, indexes | `[~]` 745 backend + 16 frontend test; migratsiyalar V1–V26 |
 
 ---
 
@@ -1440,26 +1440,21 @@ qo'shilsa — test yiqiladi.
 
 ### Keyingi aniq qadamlar
 
-1. **`UserAccount.language` ni panelga chiqarish.**
-   Maydon va migratsiya (V26) tayyor, `HomeFeedService` uni o'qiydi.
-   Yetishmagani: `UsersPage` da ustun va `NotificationsPage` da
-   «qaysi tilda nechta foydalanuvchi bor» ko'rsatkichi.
-
-2. **Bildirishnoma yuborishda oluvchi tilini tanlash.**
+1. **Bildirishnoma yuborishda oluvchi tilini tanlash.**
    `NotificationDispatcher` hozir barcha tarjimani saqlaydi, lekin
    yuborishda tilni tanlash mantig'i FCM ulanmagani uchun yozilmagan.
    Ulanganda: `UserAccount.language` bo'yicha tarjimani tanlash.
 
-3. **`AdminAuthController` ni bo'lish.**
+2. **`AdminAuthController` ni bo'lish.**
    §61 dan keyin u 220 qatordan oshdi (login, refresh, logout, me,
    cookie yordamchilari). `AuthCookieService` ajratilsin.
 
-4. **Eski `/api/v1/auth/refresh` ni cookie'ga o'tkazish.**
+3. **Eski `/api/v1/auth/refresh` ni cookie'ga o'tkazish.**
    Yangi modul tuzatildi, eski modul hali refresh tokenni **URL query
    parametrida** qabul qiladi va u loglarga tushadi. Eski frontend ham
    birga o'zgartirilishi kerak.
 
-5. **`ContentService.apply()` dagi shartsiz `clear()`.**
+4. **`ContentService.apply()` dagi shartsiz `clear()`.**
    `media.clear()` va `credits.clear()` har saqlashda chaqiriladi. Bu
    §60 versiyasini tasodifan oshirib turibdi va §66 da ortiqcha yozuv
    hosil qiladi. O'zgarmagan ro'yxatga tegmaslik kerak — lekin avval

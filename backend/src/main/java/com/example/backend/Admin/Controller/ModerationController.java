@@ -34,6 +34,7 @@ public class ModerationController {
     private final ModerationService moderationService;
     private final NotificationAdminService notificationService;
     private final PermissionService permissionService;
+    private final com.example.backend.Cms.Repository.UserAccountRepo userAccountRepo;
 
     private void require(Permission permission) {
         if (!permissionService.hasPermission(CurrentUser.get(), permission)) {
@@ -104,6 +105,35 @@ public class ModerationController {
         require(Permission.NOTIFICATION_VIEW);
         var result = notificationService.list(q, page(page, size, Sort.unsorted()));
         return ResponseEntity.ok(PageResponse.of(result, NotificationDto::from));
+    }
+
+    /**
+     * Auditoriya tillar bo'yicha (mobil 3 tilli talabi).
+     *
+     * <h2>Nega kerak</h2>
+     * Bildirishnomada uchala tarjima ham majburiy, lekin admin ularni
+     * qanchalik puxta yozishini bilishi kerak: RU matnini shosha-pisha
+     * yozgan bo'lsa, necha kishi o'sha matnni o'qishini ko'rsin.
+     *
+     * ⚠️ Hisobi yo'q foydalanuvchilar bu ro'yxatga KIRMAYDI — ular
+     * hali ilovani ochmagan va til tanlamagan. Ularni UZ ga qo'shish
+     * taxminni fakt sifatida ko'rsatish bo'lardi (§45).
+     */
+    @GetMapping("/notifications/audience")
+    public ResponseEntity<java.util.List<LanguageAudience>> audienceByLanguage() {
+        require(Permission.NOTIFICATION_VIEW);
+
+        var rows = userAccountRepo.countByLanguage().stream()
+                .filter(r -> r.getLanguage() != null)
+                .map(r -> new LanguageAudience(r.getLanguage(), r.getTotal()))
+                .toList();
+
+        return ResponseEntity.ok(rows);
+    }
+
+    /** Bitta til va undagi foydalanuvchilar soni. */
+    public record LanguageAudience(com.example.backend.Cms.Enums.Locale language,
+                                   long users) {
     }
 
     @PostMapping("/notifications")

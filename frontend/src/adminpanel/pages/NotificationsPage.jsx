@@ -8,6 +8,7 @@ import MediaField from '../components/MediaField';
 import Modal from '../components/Modal';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, SearchInput, TableWrap } from '../components/Ui';
+import { count } from '../utils/format';
 import { usePanelI18n } from '../i18n';
 
 const TYPES = ['APP_NOTIFICATION', 'CASTING_NOTIFICATION'];
@@ -28,6 +29,9 @@ export default function NotificationsPage() {
   const { can } = useAuth();
   const [page, setPage] = useState(0);
   const [q, setQ] = useState('');
+  // Til bo'yicha auditoriya: admin RU matnini kim o'qishini bilsin.
+  const audience = useApi(() => adminApi.notificationAudience(), []);
+
   const { data, error, loading, reload } = useApi(
     () => adminApi.notifications({ q: q || undefined, page, size: 20 }),
     [q, page]
@@ -125,6 +129,22 @@ export default function NotificationsPage() {
           </div>
         )}
       />
+
+      {/* ⚠️ Uchala tarjima ham majburiy, lekin ularning OG'IRLIGI har xil.
+          RU matnini shosha-pisha yozgan admin necha kishi o'sha matnni
+          o'qishini ko'rsin. Hisobi yo'q foydalanuvchilar bu yerda YO'Q -
+          ular hali ilovani ochmagan va til tanlamagan. */}
+      {audience.data?.length > 0 && (
+        <div className="uz-card mb-4" style={{ padding: '10px 14px', display: 'flex',
+             gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span className="uz-muted" style={{ fontSize: 13 }}>{t('nt.audienceByLang')}:</span>
+          {audience.data.map((a) => (
+            <span key={a.language} style={{ fontSize: 13 }}>
+              <strong>{a.language}</strong> — {count(a.users)}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Provayder ulanmagani ochiq aytiladi — admin nima bo'layotganini bilsin */}
       <div className="mb-4 px-4 py-3"
