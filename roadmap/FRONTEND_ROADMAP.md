@@ -392,3 +392,32 @@ tugmasi ham `setPage(0)` ni o'z ichiga oladi va butun sahifani
 «qamralgan» qilib ko'rsatardi. Farq argumentda: filtr haqiqiy qiymat
 uzatadi, tozalash esa bo'sh literal.
 
+---
+
+## Testlar `[~]` — ТЗ §86
+
+| Fayl | Nimani qamraydi |
+|---|---|
+| `api/__tests__/refreshFlow.test.js` | 401 da tokenni yangilash: qayta urinish, bitta yangilash (poyga yo'q), cheksiz halqa yo'qligi, auth endpointlari istisnosi, tokenning `localStorage` ga tushmasligi |
+| `auth/__tests__/guards.test.jsx` | Ruxsatli/ruxsatsiz sahifa, 403, rol darajasi, kirmagan foydalanuvchi, sessiya tiklanayotgan holat |
+
+**Stack:** CRA jest + `@testing-library/react`. Kutubxona §86 uchun
+ataylab qo'shildi — ТЗ sakkizta oqimni test qilishni talab qiladi va
+ularning ko'pi DOM'siz tekshirilmaydi.
+
+⚠️ `src/setupTests.js` yaratildi: usiz `toBeInTheDocument` matcheri
+mavjud bo'lmaydi va testlar «is not a function» bilan yiqiladi.
+
+### Hali yozilmagan oqimlar
+
+`create content`, `edit content`, `create creator`, `add episode`,
+`create advertisement` — bular server bilan ishlaydigan ko'p bosqichli
+formalar. Ularning **backend tomoni to'liq qamralgan**
+(`ContentAcceptanceTest`, `SeriesStructureAcceptanceTest`,
+`CreatorModuleTest`, `AdvertisementModuleTest`), frontend tomoni esa
+hozircha qo'lda tekshiriladi.
+
+⚠️ **Muhim tafsilot:** eng qimmatli ikkitasi allaqachon yozildi.
+`login` va `forbidden route` — xavfsizlik bilan bog'liq va jimgina
+buziladigan yagona oqimlar; qolganlari buzilsa admin darhol ko'radi.
+
