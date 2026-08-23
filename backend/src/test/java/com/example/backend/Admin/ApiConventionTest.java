@@ -144,4 +144,89 @@ class ApiConventionTest {
                 .filter(p -> p.toString().contains("/Admin/") || p.toString().contains("/Cms/"))
                 .toList();
     }
+
+    // ---------------------------------------------------- DTO qoidasi (§65)
+
+    @Nested
+    @DisplayName("DTO qoidasi")
+    class DtoRule {
+
+        /** Yangi modul entity'lari — bular javobda chiqmasligi kerak. */
+        private static final Set<String> ENTITIES = Set.of(
+                "Content", "Episode", "Season", "Creator", "Category", "Genre",
+                "MediaAsset", "Advertisement", "Premiere", "Tariff", "Comment",
+                "Notification", "Donation", "Purchase", "Subscription",
+                "UserBalance", "UserAccount", "CurrencyPackage", "AuditLog",
+                "RefreshToken", "ContentCredit", "ContentMedia");
+
+        @Test
+        @DisplayName("Controller entity qaytarmaydi")
+        void controllersReturnDtos() throws IOException {
+            Pattern ret = Pattern.compile(
+                    "ResponseEntity<\\s*(?:List<)?\\s*(\\w+)");
+            List<String> violations = new ArrayList<>();
+
+            for (Path f : newModuleSources()) {
+                Matcher m = ret.matcher(Files.readString(f));
+                while (m.find()) {
+                    if (ENTITIES.contains(m.group(1))) {
+                        violations.add(f.getFileName() + " → " + m.group(1));
+                    }
+                }
+            }
+
+            assertThat(violations)
+                    .as("entity javobda chiqsa, lazy proxy va ichki maydonlar "
+                            + "ham birga ketadi - klient kutmagan ma'lumot")
+                    .isEmpty();
+        }
+
+        /**
+         * DTO ichida entity turi bo'lmasin.
+         *
+         * ⚠️ Aylanma havola aynan shu yerdan boshlanadi: `Content` ichida
+         * `credits`, `ContentCredit` ichida `content` — Jackson bu
+         * halqani cheksiz aylantiradi va so'rov `StackOverflowError`
+         * bilan tugaydi. Bundan tashqari lazy proxy'ga tegish
+         * tranzaksiyadan tashqarida xato beradi.
+         */
+        @Test
+        @DisplayName("DTO maydonlari entity emas")
+        void dtoFieldsAreNotEntities() throws IOException {
+            Pattern field = Pattern.compile(
+                    "private\\s+(?:List<|Set<|Map<[^,]+,\\s*)?(\\w+)[>\\s]");
+            List<String> violations = new ArrayList<>();
+
+            try (Stream<Path> s = Files.walk(Path.of(
+                    "src/main/java/com/example/backend/Admin/Dto"))) {
+                for (Path f : s.filter(p -> p.toString().endsWith(".java")).toList()) {
+                    Matcher m = field.matcher(Files.readString(f));
+                    while (m.find()) {
+                        if (ENTITIES.contains(m.group(1))) {
+                            violations.add(f.getFileName() + " → " + m.group(1));
+                        }
+                    }
+                }
+            }
+
+            assertThat(violations)
+                    .as("DTO faqat oddiy turlarni va boshqa DTO'larni saqlasin")
+                    .isEmpty();
+        }
+
+        @Test
+        @DisplayName("Qoida haqiqatan yiqila oladi")
+        void ruleCanFail() {
+            Pattern ret = Pattern.compile("ResponseEntity<\\s*(?:List<)?\\s*(\\w+)");
+            Matcher m = ret.matcher("public ResponseEntity<Content> get() {");
+            assertThat(m.find()).isTrue();
+            assertThat(ENTITIES.contains(m.group(1))).isTrue();
+
+            Pattern field = Pattern.compile(
+                    "private\\s+(?:List<|Set<|Map<[^,]+,\\s*)?(\\w+)[>\\s]");
+            Matcher f = field.matcher("    private List<ContentCredit> credits;");
+            assertThat(f.find()).isTrue();
+            assertThat(ENTITIES.contains(f.group(1))).isTrue();
+        }
+    }
 }

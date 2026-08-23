@@ -1747,13 +1747,44 @@ foydalanuvchiga o'zbekcha** matn ketardi.
 
 ## 28.1. DTO, N+1 va vaqt `[x]` — ТЗ §65, §66, §68
 
-### §65 DTO qoidasi — bajarilgan
+### §65 DTO qoidasi `[x]`
 
 Yangi modulda birorta endpoint entity qaytarmaydi; hammasi `...Dto`.
 Yagona istisno — eski castingdagi `SecurityServiceImpl` (u `User`
 qaytaradi, lekin hash endi `WRITE_ONLY`).
 
-### §66 N+1 — ⚠️ ma'lumot yo'qolishi topildi
+- `[x]` **Aylanma havola imkoni yo'q** — DTO maydonlarida entity turi
+  ishlatilmaydi. Aylanma aynan shu yerdan boshlanardi: `Content` ichida
+  `credits`, `ContentCredit` ichida `content` — Jackson bu halqani
+  cheksiz aylantirib, so'rovni `StackOverflowError` bilan tugatardi
+- `[x]` `ApiConventionTest.DtoRule` — ikkala qoidani ham qo'riqlaydi
+
+### §66 N+1 — ⚠️ tuzatish o'zi N+1 yaratdi
+
+**Ikkinchi ko'rikda topildi.** `genreIds` va `credits` DTO'ga
+qo'shilgach, ikkalasi ham LAZY to'plam bo'lib qoldi va sahifadagi har
+bir satr uchun alohida so'rov chiqara boshladi.
+
+O'lchov (kontekst tozalangan holda, janr va ijodkor biriktirilgan
+ma'lumot bilan):
+
+| Sahifa | Tuzatishdan oldin | Keyin |
+|---|---|---|
+| 2 satr | 10 so'rov | 8 |
+| 20 satr | **46 so'rov** | 8 |
+
+- `[x]` `Content.genres` va `Content.credits` ga `@BatchSize(50)`
+- `[x]` `ContentListPerformanceTest` endi **to'liq DTO** quradi —
+  ilgari u faqat tarjimalarga tegardi va shu sababli bu nuqsonni
+  ko'rmasdi
+
+⚠️ Birinchi o'lchovim yolg'on tinchlik berdi: boyitish bir xil
+tranzaksiyada bo'lgani uchun entity'lar sessiyada qolgan va Hibernate
+ular uchun so'rov yubormasdi (`em.flush()` + `em.clear()` qo'shilgach
+haqiqiy raqamlar chiqdi). O'lchov janr biriktirilmagan kontentda ham
+ma'nosiz — test buni endi alohida tekshiradi.
+
+### §66 — ma'lumot yo'qolishi (birinchi ko'rikda)
 
 Ro'yxat so'rovi allaqachon ikki bosqichli (id'lar sahifalanadi →
 `@EntityGraph` bilan bitta so'rovda to'ldiriladi), `@BatchSize(50)`

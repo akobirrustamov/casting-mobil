@@ -109,6 +109,16 @@ public class Content {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    /**
+     * ⚠️ {@code @BatchSize} — ro'yxat uchun (§66).
+     *
+     * Janrlar DTO'ga §66 tuzatishida qo'shildi (usiz tahrirda janrlar
+     * o'chib ketardi) va shu bilan yangi xavf paydo bo'ldi: sahifadagi
+     * har bir kontent uchun alohida so'rov. O'lchov 20 satrda 46 ta
+     * so'rov ko'rsatdi, 2 satrda esa 10 ta — ya'ni har satr ikkitadan
+     * qo'shardi.
+     */
+    @org.hibernate.annotations.BatchSize(size = 50)
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "cms_content_genre",
             joinColumns = @JoinColumn(name = "content_id"),
@@ -171,6 +181,7 @@ public class Content {
     private List<ContentMedia> media = new ArrayList<>();
 
     @OneToMany(mappedBy = "content", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @org.hibernate.annotations.BatchSize(size = 50)
     @Builder.Default
     private List<ContentCredit> credits = new ArrayList<>();
 
