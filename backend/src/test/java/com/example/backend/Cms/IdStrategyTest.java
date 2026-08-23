@@ -234,4 +234,93 @@ class IdStrategyTest {
                     .contains("id.intValue()");
         }
     }
+
+    // ------------------------------------------------- dublikat yo'qligi
+
+    @Nested
+    @DisplayName("Dublikat model yo'q (ТЗ §89)")
+    class NoDuplicates {
+
+        /**
+         * ⚠️ Ikkita entity bitta jadvalga bog'lansa, ular bir-birining
+         * yozuvini bilmasdan yozadi: birida qo'yilgan cheklov ikkinchisi
+         * orqali chetlab o'tiladi va kesh ham ikkiga bo'linadi.
+         *
+         * Bu odatda «mavjudini kengaytirish qiyin edi, yangisini
+         * yozdim» degan qarordan kelib chiqadi.
+         */
+        @Test
+        @DisplayName("Bitta jadvalga ikkita entity bog'lanmagan")
+        void noTwoEntitiesShareATable() throws java.io.IOException {
+            java.util.Map<String, java.util.List<String>> byTable = new java.util.HashMap<>();
+
+            for (java.nio.file.Path f : entitySources()) {
+                String src = java.nio.file.Files.readString(f);
+                Matcher m = Pattern.compile("@Table\\(\\s*name\\s*=\\s*\"([a-z_]+)\"")
+                        .matcher(src);
+                if (m.find()) {
+                    byTable.computeIfAbsent(m.group(1), k -> new java.util.ArrayList<>())
+                            .add(f.getFileName().toString());
+                }
+            }
+
+            java.util.List<String> shared = byTable.entrySet().stream()
+                    .filter(e -> e.getValue().size() > 1)
+                    .map(e -> e.getKey() + " → " + e.getValue())
+                    .toList();
+
+            assertThat(shared).as("har bir jadval bitta entity'ga tegishli bo'lsin")
+                    .isEmpty();
+        }
+
+        /**
+         * ТЗ §89 sanagan tushunchalar. Har biri uchun BITTA entity
+         * bo'lishi kerak.
+         *
+         * ⚠️ {@code Movie} va {@code Series} ataylab yo'q: ular
+         * {@code Content} ning turi ({@code ContentType}). Ularni
+         * alohida entity qilish aynan §89 ogohlantirgan dublikat
+         * bo'lardi — bir xil maydonlar ikki joyda yashardi.
+         */
+        @Test
+        @DisplayName("Asosiy tushunchalar takrorlanmagan")
+        void coreConceptsAreNotDuplicated() throws java.io.IOException {
+            java.util.List<String> names = entitySources().stream()
+                    .map(f -> f.getFileName().toString().replace(".java", ""))
+                    .toList();
+
+            for (String concept : java.util.List.of(
+                    "User", "Role", "Content", "Subscription", "Notification")) {
+                assertThat(names.stream().filter(n -> n.equals(concept)).count())
+                        .as(concept + " uchun aniq bitta entity bo'lsin")
+                        .isEqualTo(1);
+            }
+
+            assertThat(names)
+                    .as("Movie va Series - Content turi, alohida entity emas")
+                    .doesNotContain("Movie", "Series");
+        }
+
+        @Test
+        @DisplayName("Detektor haqiqatan entity'larni topadi")
+        void detectorFindsEntities() throws java.io.IOException {
+            assertThat(entitySources()).hasSizeGreaterThan(40);
+        }
+
+        private java.util.List<java.nio.file.Path> entitySources() throws java.io.IOException {
+            try (java.util.stream.Stream<java.nio.file.Path> s =
+                         java.nio.file.Files.walk(
+                                 java.nio.file.Path.of("src/main/java/com/example/backend"))) {
+                java.util.List<java.nio.file.Path> all = s
+                        .filter(p -> p.toString().endsWith(".java")).toList();
+                java.util.List<java.nio.file.Path> out = new java.util.ArrayList<>();
+                for (java.nio.file.Path p : all) {
+                    if (java.nio.file.Files.readString(p).contains("\n@Entity")) {
+                        out.add(p);
+                    }
+                }
+                return out;
+            }
+        }
+    }
 }

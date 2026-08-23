@@ -249,12 +249,30 @@ bitta joydan ko'rinishi kerak.
 | `npm install --legacy-peer-deps` (frontend) | ✅ SUCCESS |
 | `CI=true react-scripts build` (frontend) | ✅ SUCCESS (ESLint warning'lar bilan) |
 
-**Pre-existing issue:** `BackendApplicationTests.contextLoads` yiqiladi — test tirik
-PostgreSQL (`localhost:5432`) talab qiladi, test profili va Testcontainers yo'q.
-Bu **bizning o'zgarishimiz emas**, avvaldan shunday.
+**Pre-existing issue #1 — HAL QILINDI.** `BackendApplicationTests.contextLoads`
+yiqilardi: test tirik PostgreSQL (`localhost:5432`) talab qilardi, test profili
+yo'q edi. `application-test.properties` (H2, PostgreSQL rejimida) qo'shilgach
+o'tadi. ⚠️ Bu bizning xatomiz emas edi, lekin butun test infratuzilmasi shunga
+tayangani uchun tuzatildi — usiz birorta test yozib bo'lmasdi.
 
-Frontend build o'tadi, lekin ~40 ta ESLint warning bor (`no-unused-vars`,
-`react-hooks/exhaustive-deps`, `jsx-a11y/*`, `react/jsx-no-target-blank`) — pre-existing.
+**Pre-existing issue #2 — OCHIQ.** Frontend ESLint ogohlantirishlari
+(`no-unused-vars`, `react-hooks/exhaustive-deps`, `jsx-a11y/*`,
+`react/jsx-no-target-blank`). Hozirgi holat: **81 ta, hammasi eski casting
+kodida** (`src/App.js`, `src/admin/**`, `src/bot-admin/**`, `src/pages/**`).
+`src/adminpanel/**` da **nol**.
+
+⚠️ Bu son o'sganday ko'rinadi (avval «~40» deb yozilgandi), lekin sabab
+sanoqning aniqlashuvi: avval fayllar sanalgan, endi qatorlar. Eski kodga
+tegilmagan (§75) — ogohlantirishlar ham o'sha holida.
+
+### Hozirgi holat (23.08.2026)
+
+| Buyruq | Natija |
+|---|---|
+| `./mvnw test` | ✅ **727 test**, yiqilish yo'q |
+| `./mvnw -DskipTests package` | ✅ SUCCESS |
+| `react-scripts test` | ✅ **10 test** (2 to'plam) |
+| `react-scripts build` | ✅ SUCCESS — `adminpanel` da ogohlantirish yo'q |
 
 ---
 
@@ -603,7 +621,7 @@ Til tanlovi `localStorage` da saqlanadi va kontent tarjimasiga ham ta'sir qiladi
 | 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma: rejalashtirish ishlaydi, hisobot halol (ТЗ §32–§33). FCM ulanmagan |
 | 7 | Users & Monetization — tariffs, premium, Stars, Coin | `[x]` foydalanuvchi, tarif, balans, qurilma, donat |
 | 8 | Analytics — events, aggregation, dashboard, reports | `[x]` ikki qatlamli: xom hodisa + kunlik jamlanma |
-| 9 | Hardening — tests, performance, security, indexes | `[~]` 724 backend + 10 frontend test; migratsiyalar V1–V26 |
+| 9 | Hardening — tests, performance, security, indexes | `[~]` 727 backend + 10 frontend test; migratsiyalar V1–V26 |
 
 ---
 
