@@ -229,7 +229,8 @@ tekshiradi.
 | §78 | chuqur tekshiruv | `HyperAdminHierarchyTest`, `StaffManagementTest`, `RbacIntegrationTest`, `BackendAuthorizationTest`, `UserCannotEnterPanelTest`, `SidebarPermissionsTest` |
 | §79 | 5 ta kontent turi + barcha maydonlar | `ContentAcceptanceTest` — turlar parametrlangan, maydonlar bandma-band |
 | §79 | chuqur tekshiruv | `ContentStructureTest`, `ContentEditRoundTripTest`, `ContentClassificationTest` |
-| §80 | Serial / mini serial tuzilishi | `ContentStructureTest` (SEASONAL fasl bilan, EPISODIC fasilsiz) |
+| §80 | Serial / mini serial tuzilishi | `SeriesStructureAcceptanceTest` — ТЗ dagi daraxt to'liq quriladi |
+| §80 | chuqur tekshiruv | `ContentStructureTest` |
 | §81 | Reklama + CTR hisoboti | `AdAnalyticsTest`, `AdStatisticsEndpointTest`, `AdvertisementModuleTest` |
 | §82 | Ijodkor yaratish, qidirish, biriktirish | `CreatorSelectionTest`, `ContentEditRoundTripTest` |
 | §83 | Premium berish/bekor qilish + audit | `PremiumGiftTest`, `PremiumLifecycleTest`, `TariffModuleTest` |
@@ -602,7 +603,7 @@ Til tanlovi `localStorage` da saqlanadi va kontent tarjimasiga ham ta'sir qiladi
 | 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma: rejalashtirish ishlaydi, hisobot halol (ТЗ §32–§33). FCM ulanmagan |
 | 7 | Users & Monetization — tariffs, premium, Stars, Coin | `[x]` foydalanuvchi, tarif, balans, qurilma, donat |
 | 8 | Analytics — events, aggregation, dashboard, reports | `[x]` ikki qatlamli: xom hodisa + kunlik jamlanma |
-| 9 | Hardening — tests, performance, security, indexes | `[~]` 713 test; migratsiyalar V1–V26 |
+| 9 | Hardening — tests, performance, security, indexes | `[~]` 718 test; migratsiyalar V1–V26 |
 
 ---
 
