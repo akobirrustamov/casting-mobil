@@ -1896,6 +1896,39 @@ bajariladi (§38). Bu yerda faqat o'qish.
 **Sovg'a obunada `paidAmount` — `null`, nol emas.** Nol «bepul
 sotildi» degani, `null` esa «sotilmagan» (§45).
 
+## 28.4. Migratsiya siyosati `[x]` — ТЗ §90, §91
+
+### §91 auditi
+
+| Tekshiruv | Natija |
+|---|---|
+| Migratsiyalarda `drop table` / `drop database` / `truncate` / `delete from` / `drop column` | Yo'q |
+| `ddl-auto` | `none` — prod, dev va testda |
+| `flyway:clean` | Aniq yopildi (sukut qiymatga tayanilmaydi) |
+
+### ⚠️ Qo'riqchidagi teshik topildi
+
+`DataPreserved` testi allaqachon bor edi, lekin u **faqat `.sql`
+fayllarni** o'qirdi. Java migratsiyalari (**V19, V21, V23**) xom SQL
+bajaradi (`st.execute(...)`) va ular tekshiruvdan **butunlay chetda
+qolardi** — u yerga yozilgan `drop table` hech kim sezmasdan o'tib
+ketardi.
+
+`allSql()` endi ikkala papkani ham o'qiydi. Mutatsiya bilan
+tasdiqlandi: V23 ga `drop table audit_log` yozdim — endi ushlanadi,
+ilgari ushlanmasdi.
+
+### §90 — refaktor siyosati
+
+Bu sessiyada qayta yozish qilinmadi. Har bir o'zgarish aniq muammoga
+javob bo'ldi va test bilan mahkamlandi. Ikki marta ataylab **qayta
+yozishdan voz kechildi**:
+
+- **11 ta sahifadagi filtr/sahifa mantiqi** — takrorlangan, lekin
+  ishlaydi. Qayta yozish o'rniga qoida test bilan qo'riqlandi (§72)
+- **310 ta `LocalDateTime`** — `Instant` ga ko'chirish o'rniga vaqt
+  mintaqasi aniq belgilandi (§68)
+
 ## 28. Indexes `[x]`
 
 - `[x]` **59 indeks** (61 yaratilgan − 2 ortiqchasi olib tashlangan) —

@@ -269,7 +269,7 @@ tegilmagan (§75) — ogohlantirishlar ham o'sha holida.
 
 | Buyruq | Natija |
 |---|---|
-| `./mvnw test` | ✅ **727 test**, yiqilish yo'q |
+| `./mvnw test` | ✅ **729 test**, yiqilish yo'q |
 | `./mvnw -DskipTests package` | ✅ SUCCESS |
 | `react-scripts test` | ✅ **10 test** (2 to'plam) |
 | `react-scripts build` | ✅ SUCCESS — `adminpanel` da ogohlantirish yo'q |
@@ -621,7 +621,7 @@ Til tanlovi `localStorage` da saqlanadi va kontent tarjimasiga ham ta'sir qiladi
 | 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma: rejalashtirish ishlaydi, hisobot halol (ТЗ §32–§33). FCM ulanmagan |
 | 7 | Users & Monetization — tariffs, premium, Stars, Coin | `[x]` foydalanuvchi, tarif, balans, qurilma, donat |
 | 8 | Analytics — events, aggregation, dashboard, reports | `[x]` ikki qatlamli: xom hodisa + kunlik jamlanma |
-| 9 | Hardening — tests, performance, security, indexes | `[~]` 727 backend + 10 frontend test; migratsiyalar V1–V26 |
+| 9 | Hardening — tests, performance, security, indexes | `[~]` 729 backend + 10 frontend test; migratsiyalar V1–V26 |
 
 ---
 

@@ -33,11 +33,27 @@ class DatabaseRulesTest {
 
     private static final Path MIGRATIONS = Path.of("src/main/resources/db/migration");
 
+    /**
+     * Barcha migratsiya matni.
+     *
+     * ⚠️ Java migratsiyalari HAM o'qiladi. Ilgari bu yerda faqat
+     * `.sql` fayllar bor edi, ya'ni V19, V21 va V23 dagi xom SQL
+     * ({@code st.execute(...)}) tekshiruvdan butunlay chetda qolardi —
+     * u yerga yozilgan `drop table` hech kim sezmasdan o'tib ketardi.
+     */
     private String allSql() throws IOException {
         StringBuilder sb = new StringBuilder();
-        try (Stream<Path> files = Files.list(MIGRATIONS)) {
-            for (Path f : files.filter(p -> p.toString().endsWith(".sql")).sorted().toList()) {
-                sb.append(Files.readString(f)).append('\n');
+        for (Path dir : List.of(MIGRATIONS, Path.of("src/main/java/db/migration"))) {
+            if (!Files.isDirectory(dir)) {
+                continue;
+            }
+            try (Stream<Path> files = Files.list(dir)) {
+                for (Path f : files.sorted().toList()) {
+                    String name = f.toString();
+                    if (name.endsWith(".sql") || name.endsWith(".java")) {
+                        sb.append(Files.readString(f)).append('\n');
+                    }
+                }
             }
         }
         return sb.toString();
@@ -223,5 +239,44 @@ class DatabaseRulesTest {
                 assertThat(sql).as(idx + " yo'q").contains(idx);
             }
         }
+    }
+
+    // ------------------------------------------ buzuvchi migratsiya yo'q
+
+    @Nested
+    @DisplayName("Migratsiya siyosati (ТЗ §91)")
+    class MigrationPolicy {
+
+        /**
+         * Hibernate sxemaga o'zi tegmasligi kerak.
+         *
+         * ⚠️ `ddl-auto=update` eng xavflisi: u jimgina ustun qo'shadi,
+         * lekin migratsiyalar bilan sinxron emas. Natijada ishlab
+         * turgan bazaning sxemasi hech qayerda yozilmagan holatga
+         * kelib qoladi va keyingi migratsiya nima ustiga tushishini
+         * hech kim bilmaydi.
+         */
+        @Test
+        @DisplayName("Sxemani faqat Flyway boshqaradi")
+        void hibernateDoesNotTouchSchema() throws IOException {
+            for (Path p : List.of(
+                    Path.of("src/main/resources/application.properties"),
+                    Path.of("src/main/resources/application-dev.properties"),
+                    Path.of("src/test/resources/application-test.properties"))) {
+                assertThat(Files.readString(p))
+                        .as(p.getFileName() + " da ddl-auto")
+                        .contains("spring.jpa.hibernate.ddl-auto=none");
+            }
+        }
+
+        @Test
+        @DisplayName("`flyway:clean` yopiq")
+        void flywayCleanIsDisabled() throws IOException {
+            // Sukut qiymatga tayanilmaydi: bu ishlab turgan baza.
+            assertThat(Files.readString(
+                    Path.of("src/main/resources/application.properties")))
+                    .contains("spring.flyway.clean-disabled=true");
+        }
+
     }
 }
