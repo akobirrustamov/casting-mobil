@@ -601,7 +601,7 @@ Til tanlovi `localStorage` da saqlanadi va kontent tarjimasiga ham ta'sir qiladi
 | 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma: rejalashtirish ishlaydi, hisobot halol (ТЗ §32–§33). FCM ulanmagan |
 | 7 | Users & Monetization — tariffs, premium, Stars, Coin | `[x]` foydalanuvchi, tarif, balans, qurilma, donat |
 | 8 | Analytics — events, aggregation, dashboard, reports | `[x]` ikki qatlamli: xom hodisa + kunlik jamlanma |
-| 9 | Hardening — tests, performance, security, indexes | `[~]` 704 test; migratsiyalar V1–V26 |
+| 9 | Hardening — tests, performance, security, indexes | `[~]` 706 test; migratsiyalar V1–V26 |
 
 ---
 
@@ -1538,6 +1538,54 @@ tug'diradi.
    tiklash kodi ikkinchi marta o'tmasligi, `2fa_pending` token bilan
    API'ga kirib bo'lmasligi, vaqt siljishi (±1 oyna).
 
+
+## 14.2. Future Mobile Scope (ТЗ §76, §77)
+
+> Bu bo'lim **hozir yozilmaydigan**, lekin backend tayyor turishi kerak
+> bo'lgan imkoniyatlar uchun. Mobil kod yozilmaydi.
+
+### «Keyinroq ko'raman» / Saqlanganlar (§77)
+
+Foydalanuvchi kino yoki serialni saqlab qo'yishi kerak bo'ladi.
+**Admin panelda bunga sahifa kerak emas** va jadval ham yaratilmadi —
+bo'sh jadval qo'shish faqat sxemani og'irlashtiradi.
+
+ТЗ talabi «content ID architecture stable bo'lsin» — quyida uning
+haqiqatan barqarorligi tekshirildi:
+
+| Savol | Javob | Dalil |
+|---|---|---|
+| ID turi o'zgaradimi? | Yo'q — `Long`, IDENTITY | `IdStrategyTest` (§57) |
+| ID qayta ishlatiladimi? | Yo'q — IDENTITY ketma-ketligi orqaga qaytmaydi | — |
+| Kontent bazadan yo'qoladimi? | Yo'q — arxivlanadi | `SoftDeleteTest` `contentRepo.delete(` ni taqiqlaydi (§58) |
+| Slug barqarormi? | **YO'Q** | Admin uni tahrirlashi mumkin |
+
+⚠️ **Shu sababli saqlanganlar ro'yxati `content_id` ga bog'lansin,
+slugga emas.** Slug odam o'qiydigan manzil, u o'zgarishi mumkin va
+o'zgarganda foydalanuvchining saqlangan ro'yxati buzilardi.
+
+Kelajakdagi jadval — boshqa hech narsa o'zgarmaydi:
+
+```sql
+create table user_watchlist (
+    id         bigserial primary key,
+    user_id    uuid   not null references users(id),
+    content_id bigint not null references cms_content(id),
+    created_at timestamp not null,
+    unique (user_id, content_id)
+);
+```
+
+Endpointlar: `GET/POST/DELETE /api/v1/app/me/watchlist`.
+
+⚠️ Ro'yxatni qaytarishda **arxivlangan kontent filtrlansin**: saqlangan
+film arxivga tushsa, u ro'yxatda «ochilmaydigan element» bo'lib
+qolardi.
+
+### Hozir yozilmaydigan boshqa mobil qismlar (§76)
+
+React Native ekranlari, USER kirish oynasi, pleyer, obuna va donat
+interfeyslari. Backend kontrakti — `backend/FUTURE_MOBILE_API.md`.
 
 ## 15. Dev muhitini ishga tushirish
 

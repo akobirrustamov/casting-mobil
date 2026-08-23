@@ -64,9 +64,23 @@ Foydalanuvchi kino yoki serialni saqlab qo'yishi kerak bo'ladi.
 **Hozir admin panelda bunga sahifa kerak emas** va jadval ham
 yaratilmadi — bo'sh jadval qo'shish keraksiz.
 
-Muhimi shuki, **kontent ID arxitekturasi barqaror**: `Content.id` —
-`Long`, IDENTITY, hech qachon qayta ishlatilmaydi va soft delete
-tufayli o'chmaydi (§58). Ya'ni kelajakdagi jadval shunchaki:
+Muhimi shuki, **kontent ID arxitekturasi barqaror** — bu tekshirildi,
+taxmin emas:
+
+| Savol | Javob | Dalil |
+|---|---|---|
+| ID turi o'zgaradimi? | Yo'q — `Long`, IDENTITY | `IdStrategyTest` (§57) |
+| ID qayta ishlatiladimi? | Yo'q | IDENTITY orqaga qaytmaydi |
+| Kontent bazadan yo'qoladimi? | Yo'q — arxivlanadi | `SoftDeleteTest` (§58) |
+| Slug barqarormi? | **YO'Q** | Admin uni tahrirlashi mumkin |
+
+⚠️ **Saqlanganlar ro'yxati `content_id` ga bog'lansin, slugga emas.**
+Slug — odam o'qiydigan manzil, u o'zgarishi mumkin va o'zgarganda
+foydalanuvchining saqlangan ro'yxati buzilardi. Mobil klient ID ni
+allaqachon ko'radi: `HomeFeedDto.ContentCard` da `id` ham, `slug` ham
+qaytariladi.
+
+Ya'ni kelajakdagi jadval shunchaki:
 
 ```sql
 create table user_watchlist (
@@ -79,6 +93,10 @@ create table user_watchlist (
 ```
 
 Bundan boshqa hech narsa o'zgarmaydi.
+
+⚠️ Ro'yxatni qaytarishda **arxivlangan kontent filtrlansin**: saqlangan
+film arxivga tushsa, u ro'yxatda «ochilmaydigan element» bo'lib
+qolardi.
 
 ---
 

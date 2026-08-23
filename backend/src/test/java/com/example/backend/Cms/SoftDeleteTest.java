@@ -102,6 +102,7 @@ class SoftDeleteTest {
     @Autowired private EpisodeRepo episodeRepo;
     @Autowired private PurchaseRepo purchaseRepo;
     @Autowired private MediaAssetRepo mediaAssetRepo;
+    @Autowired private com.example.backend.Cms.Repository.ContentRepo contentRepo;
     @Autowired private UserRepo userRepo;
     @Autowired private RoleRepo roleRepo;
 
@@ -443,5 +444,73 @@ class SoftDeleteTest {
                 .currency("UZS")
                 .createdAt(LocalDateTime.now())
                 .build());
+    }
+
+    // ------------------------------------------- kontent ID barqarorligi
+
+    @Nested
+    @DisplayName("Kontent ID barqarorligi (ТЗ §77)")
+    class ContentIdStability {
+
+        /**
+         * ТЗ §77: «content ID architecture stable bo'lsin».
+         *
+         * Kelajakdagi «keyinroq ko'raman» ro'yxati kontentga ID bo'yicha
+         * bog'lanadi. Agar kontent bazadan butunlay yo'qolsa, o'sha
+         * ro'yxatda egasiz yozuv qolardi — foydalanuvchi saqlagan
+         * film o'rniga bo'sh joy.
+         *
+         * Bu yuqoridagi manba qoidasi bilan qamralgan, lekin talab
+         * alohida bo'lgani uchun xatti-harakat ham tekshiriladi.
+         */
+        @Test
+        @DisplayName("Arxivlangan kontent bazada qoladi va id o'zgarmaydi")
+        void archivedContentKeepsItsId() {
+            Content c = content();
+            Long id = c.getId();
+
+            contentService.archive(null, id);
+
+            Content after = contentRepo.findById(id).orElse(null);
+            assertThat(after)
+                    .as("arxivlangan kontent bazadan yo'qolmasligi kerak - "
+                            + "aks holda saqlangan ro'yxatda egasiz yozuv qolardi")
+                    .isNotNull();
+            assertThat(after.getId()).isEqualTo(id);
+        }
+
+        /**
+         * ⚠️ Slug BARQAROR EMAS: admin uni tahrirlashi mumkin.
+         *
+         * Shuning uchun saqlanganlar ro'yxati `content_id` ga
+         * bog'lanishi kerak. Bu test o'sha faktni qayd etadi — u
+         * kelajakda kimdir slugni identifikator sifatida ishlatmoqchi
+         * bo'lganda hujjat vazifasini bajaradi.
+         */
+        @Test
+        @DisplayName("Slug o'zgarishi mumkin, ID esa yo'q")
+        void slugCanChangeButIdCannot() {
+            Content c = content();
+            Long id = c.getId();
+            String oldSlug = contentRepo.findById(id).orElseThrow().getSlug();
+
+            ContentSaveRequest edit = new ContentSaveRequest();
+            edit.setContentType(ContentType.SERIES);
+            edit.setStructureType(StructureType.EPISODIC);
+            edit.setAccessPolicy(AccessPolicy.FREE);
+            edit.setStatus(PublicationStatus.DRAFT);
+            edit.setTranslations(Translations.all("Boshqa nom " + SEQ.incrementAndGet()));
+            edit.setSlug("butunlay-boshqa-manzil-" + SEQ.incrementAndGet());
+            edit.setVersion(contentRepo.findById(id).orElseThrow().getVersion());
+            contentService.update(null, id, edit);
+
+            Content after = contentRepo.findById(id).orElseThrow();
+            assertThat(after.getSlug())
+                    .as("slug odam o'qiydigan manzil - u o'zgarishi mumkin")
+                    .isNotEqualTo(oldSlug);
+            assertThat(after.getId())
+                    .as("ID esa hech qachon o'zgarmaydi - bog'lanish shunga qurilsin")
+                    .isEqualTo(id);
+        }
     }
 }
