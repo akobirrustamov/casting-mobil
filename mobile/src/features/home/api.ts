@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DEFAULT_LANGUAGE, isSupportedLanguage, type Language } from '@/i18n';
@@ -202,6 +203,24 @@ export function contentCards(feed: HomeFeed | undefined): ContentCard[] {
     }
   }
   return result;
+}
+
+/**
+ * Карточка контента по id — из кэша главной.
+ *
+ * Обогащение, а не источник правды: эндпоинта «дай карточку по id» в
+ * `/api/v1/app/**` нет, а при переходе по прямой ссылке кэш может быть
+ * пустым. Экран обязан работать и без неё.
+ */
+export function useContentCard(contentId: number | null): ContentCard | undefined {
+  const feed = useHomeFeed();
+  return useMemo(
+    () =>
+      contentId === null
+        ? undefined
+        : contentCards(feed.data).find((c) => c.id === contentId),
+    [feed.data, contentId]
+  );
 }
 
 /** Баннеры премьер — их отдаёт секция `NEW_PREMIERES`. */

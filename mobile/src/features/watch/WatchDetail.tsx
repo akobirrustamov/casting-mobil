@@ -15,7 +15,6 @@ import { BASE_URL, authHeaders, mediaUrl } from '@/lib/api';
 import { useIsOffline } from '@/lib/network';
 
 import {
-  ContentIsMultiPartError,
   ContentNotFoundError,
   WatchUnavailableError,
   type useWatchContent,
@@ -129,17 +128,6 @@ function WatchError({
 
   if (error instanceof ContentNotFoundError) {
     return <ScreenState kind="empty" body={t('content.notFound')} />;
-  }
-
-  // Не сбой: сервер прав, спрашивать надо конкретную серию.
-  if (error instanceof ContentIsMultiPartError) {
-    return (
-      <ScreenState
-        kind="empty"
-        title={t('content.multiPartTitle')}
-        body={t('content.multiPartBody')}
-      />
-    );
   }
 
   if (error instanceof WatchUnavailableError) {

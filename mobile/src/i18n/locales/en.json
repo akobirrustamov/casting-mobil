@@ -168,7 +168,10 @@
     "subscribe": "Get Premium",
     "paymentSoon": "Payments are not wired into the app yet.",
     "notPublished": "This content is not published yet.",
-    "userBlocked": "Your account is blocked. Please contact support."
+    "userBlocked": "Your account is blocked. Please contact support.",
+    "episodes": "Episodes",
+    "season": "Season {{number}}",
+    "episodesEmpty": "No episodes in this season yet"
   },
   "contentType": {
     "SHORT_FILM": "Short film",

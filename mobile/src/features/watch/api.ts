@@ -149,9 +149,9 @@ function retryPolicy(failureCount: number, error: unknown): boolean {
  *
  * Входит в ключ кэша: право на просмотр у гостя и у вошедшего человека
  * РАЗНОЕ. Без этого после входа экран показывал бы закрытый замок из кэша,
- * снятого до авторизации.
+ * снятого до авторизации. По той же причине им пользуется список серий.
  */
-function useViewerKey(): string {
+export function useViewerKey(): string {
   return useAuthStore((s) => s.user?.id ?? (s.token ? 'token' : 'guest'));
 }
 

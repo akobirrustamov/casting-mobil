@@ -168,7 +168,10 @@
     "subscribe": "Premium olish",
     "paymentSoon": "To'lov ilovada hali ulanmagan.",
     "notPublished": "Kontent hali nashr qilinmagan.",
-    "userBlocked": "Hisobingiz bloklangan. Qo'llab-quvvatlash xizmatiga murojaat qiling."
+    "userBlocked": "Hisobingiz bloklangan. Qo'llab-quvvatlash xizmatiga murojaat qiling.",
+    "episodes": "Qismlar",
+    "season": "{{number}}-mavsum",
+    "episodesEmpty": "Bu mavsumda hali qism yo'q"
   },
   "contentType": {
     "SHORT_FILM": "Qisqa metraj",

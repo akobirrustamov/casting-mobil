@@ -4,6 +4,7 @@ import com.example.backend.Cms.Entity.Purchase;
 import com.example.backend.Cms.Enums.PurchaseType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,6 +17,13 @@ public interface PurchaseRepo extends JpaRepository<Purchase, Long> {
      * servisda bo'ladi, chunki qaytarish qoidalari hali aniqlanmagan.
      */
     List<Purchase> findAllByUserIdAndTypeAndTargetId(UUID userId, PurchaseType type, Long targetId);
+
+    /**
+     * Bir nechta maqsad uchun xaridlar — qismlar ro'yxatida N+1 dan qochish uchun
+     * ({@code AccessService.canWatchAll}).
+     */
+    List<Purchase> findAllByUserIdAndTypeAndTargetIdIn(UUID userId, PurchaseType type,
+                                                       Collection<Long> targetIds);
 
     List<Purchase> findAllByUserIdOrderByCreatedAtDesc(UUID userId);
 
