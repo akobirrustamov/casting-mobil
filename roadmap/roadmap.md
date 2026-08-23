@@ -269,7 +269,7 @@ tegilmagan (§75) — ogohlantirishlar ham o'sha holida.
 
 | Buyruq | Natija |
 |---|---|
-| `./mvnw test` | ✅ **737 test**, yiqilish yo'q |
+| `./mvnw test` | ✅ **741 test**, yiqilish yo'q |
 | `./mvnw -DskipTests package` | ✅ SUCCESS |
 | `react-scripts test` | ✅ **10 test** (2 to'plam) |
 | `react-scripts build` | ✅ SUCCESS — `adminpanel` da ogohlantirish yo'q |
@@ -621,7 +621,7 @@ Til tanlovi `localStorage` da saqlanadi va kontent tarjimasiga ham ta'sir qiladi
 | 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma: rejalashtirish ishlaydi, hisobot halol (ТЗ §32–§33). FCM ulanmagan |
 | 7 | Users & Monetization — tariffs, premium, Stars, Coin | `[x]` foydalanuvchi, tarif, balans, qurilma, donat |
 | 8 | Analytics — events, aggregation, dashboard, reports | `[x]` ikki qatlamli: xom hodisa + kunlik jamlanma |
-| 9 | Hardening — tests, performance, security, indexes | `[~]` 737 backend + 10 frontend test; migratsiyalar V1–V26 |
+| 9 | Hardening — tests, performance, security, indexes | `[~]` 741 backend + 10 frontend test; migratsiyalar V1–V26 |
 
 ---
 
@@ -1413,6 +1413,23 @@ xavfsizlikni oshirmaydi, tizimni egasiz qoldirish xavfini tug'diradi.
 Arxitektura tayyor: §61 dagi token turi mexanizmi `2fa_pending` ni
 qo'shishga imkon beradi, qurilma tarixi `refresh_token` da bor.
 To'liq reja — `roadmap.md → 14.1`.
+
+
+**D20 — Reklama va premyera ro'yxati sahifalanmaydi (§95).**
+ТЗ §95 reklamani sahifalash majburiy ro'yxatiga kiritadi, lekin §81.4
+o'sha reklamalarni **tartiblashni** talab qiladi. Sahifalangan ro'yxatda
+2-sahifadagi bannerni 1-sahifaga ko'chirib bo'lmaydi — ikki talab
+bir-biriga zid.
+
+Tanlov: ro'yxat qoldirildi. Sabab — u **cheksiz o'smaydi**:
+o'chirilgan reklama arxivlanadi va ro'yxatdan chiqadi (§58). §95 ning
+asosiy maqsadi «100 000 yozuvni bitta javobda qaytarma» va bu yerda
+bunday xavf yo'q.
+
+Buning o'rniga qoida test bilan mahkamlandi: sahifalanmagan har bir
+ro'yxat endpointi **sababi yozilgan** ro'yxatda bo'lishi shart
+(`ApiConventionTest.UNPAGINATED`). Yangi `List<ContentListDto>` jimgina
+qo'shilsa — test yiqiladi.
 
 
 ## 14. Next Exact Steps

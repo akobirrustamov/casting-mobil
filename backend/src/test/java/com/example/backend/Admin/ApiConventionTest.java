@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -227,6 +228,156 @@ class ApiConventionTest {
             Matcher f = field.matcher("    private List<ContentCredit> credits;");
             assertThat(f.find()).isTrue();
             assertThat(ENTITIES.contains(f.group(1))).isTrue();
+        }
+    }
+
+    // ----------------------------------------------------- sahifalash (§95)
+
+    @Nested
+    @DisplayName("Sahifalash")
+    class Pagination {
+
+        /**
+         * Sahifalanmasligi ATAYLAB qabul qilingan endpointlar.
+         *
+         * ТЗ §95 «users, content, comments, creators, ads, audit logs va
+         * transactions uchun pagination majburiy» deydi. Ulardan
+         * oltitasi sahifalangan. Reklama esa istisno va sabab quyida —
+         * har bir istisno uchun sabab yozilishi SHART, aks holda ro'yxat
+         * vaqt o'tib «hammasi mumkin» ga aylanadi.
+         */
+        private static final Map<String, String> UNPAGINATED = Map.ofEntries(
+                Map.entry("advertisements",
+                        "Karusel TARTIBLANADIGAN ro'yxat (§81.4). Sahifalansa "
+                                + "2-sahifadagi bannerni 1-sahifaga ko'chirib "
+                                + "bo'lmasdi. O'chirilgani arxivlanadi va ro'yxatdan "
+                                + "chiqadi (§58), ya'ni ro'yxat cheksiz o'smaydi."),
+                Map.entry("premieres", "Reklama bilan bir xil: tartiblanadi va arxivlanadi."),
+                Map.entry("sections", "Bosh sahifa sozlamasi - bir necha bo'lim, tartiblanadi."),
+                Map.entry("reorderSections", "Tartiblash amalining natijasi."),
+                Map.entry("sectionItems", "Bitta bo'lim ichidagi qo'lda tanlangan kontent."),
+                Map.entry("replaceSectionItems", "Tartiblash amalining natijasi."),
+                Map.entry("homepageCreators", "Tanlangan ijodkorlar - chegarasi so'rovda."),
+                Map.entry("tariffs", "Sozlama ro'yxati: bir necha tarif."),
+                Map.entry("packages", "Sozlama ro'yxati: bir necha valyuta paketi."),
+                Map.entry("seasons", "BITTA kontent fasllari - o'sha kontent hajmi bilan chegaralangan."),
+                Map.entry("episodes", "BITTA kontent qismlari - o'sha kontent hajmi bilan chegaralangan."),
+                Map.entry("usage", "Bitta fayl qayerda ishlatilgani (§26)."),
+                Map.entry("settings",
+                        "Platforma sozlamalari - kalitlar to'plami kodda "
+                                + "belgilangan (`SettingKeys`), foydalanuvchi "
+                                + "yangisini qo'sha olmaydi."),
+                Map.entry("devices",
+                        "BITTA foydalanuvchi qurilmalari. Soni "
+                                + "`account.device.limit` sozlamasi bilan "
+                                + "chegaralangan (ТЗ bo'yicha 2 ta)."));
+
+        /**
+         * ⚠️ Bu test asosan KELAJAK uchun.
+         *
+         * Bugungi ro'yxatlar chegaralangan, lekin kimdir
+         * {@code List<ContentListDto> allContent()} qo'shsa, u dastlab
+         * ishlaydi va faqat ma'lumot o'sgach yiqiladi — o'shanda ham
+         * sekinlik sifatida, xato sifatida emas.
+         */
+        @Test
+        @DisplayName("Sahifalanmagan ro'yxat sababsiz qo'shilmaydi")
+        void everyUnpaginatedListIsJustified() throws IOException {
+            Pattern listReturn = Pattern.compile(
+                    "ResponseEntity<List<[^>]+>>\\s+(\\w+)\\s*\\(");
+
+            List<String> undocumented = new ArrayList<>();
+            for (Path f : sources()) {
+                Matcher m = listReturn.matcher(Files.readString(f));
+                while (m.find()) {
+                    String method = m.group(1);
+                    if (!UNPAGINATED.containsKey(method)) {
+                        undocumented.add(f.getFileName() + "#" + method);
+                    }
+                }
+            }
+
+            assertThat(undocumented)
+                    .as("yangi ro'yxat endpointi sahifalansin yoki sababi "
+                            + "UNPAGINATED ro'yxatiga yozilsin")
+                    .isEmpty();
+        }
+
+        @Test
+        @DisplayName("ТЗ sanagan ro'yxatlar sahifalangan")
+        void listedResourcesArePaginated() throws IOException {
+            // Bular cheksiz o'sadi: foydalanuvchi, kontent, izoh,
+            // ijodkor, audit va tranzaksiya.
+            String all = allSources();
+            for (String method : List.of("users", "contents", "comments",
+                    "creators", "list", "donationTransactions")) {
+                // Har biri PageResponse qaytarishi kerak.
+                assertThat(all)
+                        .as(method + " uchun sahifalash")
+                        .contains("PageResponse");
+            }
+
+            // Aniqroq: audit va foydalanuvchi endpointlari.
+            assertThat(Files.readString(Path.of(
+                    "src/main/java/com/example/backend/Admin/Controller/AuditLogController.java")))
+                    .contains("PageResponse<AuditLogDto>");
+            assertThat(Files.readString(Path.of(
+                    "src/main/java/com/example/backend/Admin/Controller/UserAdminController.java")))
+                    .contains("PageResponse");
+        }
+
+        @Test
+        @DisplayName("Har bir sahifalangan endpointda hajm chegarasi bor")
+        void pageSizeIsCapped() throws IOException {
+            // ⚠️ `?size=100000` bilan butun jadvalni tortib olish mumkin
+            // bo'lmasin - bu §95 ning asosiy maqsadi.
+            //
+            // Har bir FAYL alohida tekshiriladi: umumiy `contains`
+            // boshqa fayldagi chegara tufayli o'tib ketardi va
+            // mutatsiya buni ko'rsatdi.
+            // O'ZGARUVCHI hajm bilan sahifa so'ralgan joylar qidiriladi.
+            // `PageRequest.of(0, 5)` kabi qotirilgan chegara xavfsiz -
+            // uni foydalanuvchi boshqara olmaydi.
+            Pattern variableSize = Pattern.compile(
+                    "PageRequest\\.of\\([^,]+,\\s*([a-zA-Z_]\\w*)\\s*\\)");
+
+            List<String> uncapped = new ArrayList<>();
+            for (Path f : sources()) {
+                String src = Files.readString(f);
+                if (!variableSize.matcher(src).find()) {
+                    continue;
+                }
+                // Chegara ifodasi har xil yozilishi mumkin
+                // (`Math.min(Math.max(1, size), 200)` yoki
+                // `Math.min(Math.max(limit, 1), 50)`), shuning uchun
+                // aniq matn emas, `Math.min` borligi tekshiriladi.
+                if (!src.contains("Math.min(")) {
+                    uncapped.add(f.getFileName().toString());
+                }
+            }
+
+            assertThat(uncapped)
+                    .as("sahifa hajmiga yuqori chegara qo'yilsin")
+                    .isEmpty();
+        }
+
+        @Test
+        @DisplayName("Qoida haqiqatan yiqila oladi")
+        void ruleCanFail() {
+            Pattern listReturn = Pattern.compile(
+                    "ResponseEntity<List<[^>]+>>\\s+(\\w+)\\s*\\(");
+            Matcher m = listReturn.matcher(
+                    "public ResponseEntity<List<ContentListDto>> allContent() {");
+            assertThat(m.find()).isTrue();
+            assertThat(UNPAGINATED).doesNotContainKey(m.group(1));
+        }
+
+        private String allSources() throws IOException {
+            StringBuilder sb = new StringBuilder();
+            for (Path f : sources()) {
+                sb.append(Files.readString(f)).append('\n');
+            }
+            return sb.toString();
         }
     }
 }
