@@ -1438,27 +1438,37 @@ qo'shilsa — test yiqiladi.
 > Build yashil: backend **679 test**, frontend **5 test**, migratsiyalar
 > **V1–V26**.
 
-### Keyingi aniq qadamlar
+### Keyingi aniq qadamlar — ADMIN PANEL FRONTENDI
 
-1. **Bildirishnoma yuborishda oluvchi tilini tanlash.**
-   `NotificationDispatcher` hozir barcha tarjimani saqlaydi, lekin
-   yuborishda tilni tanlash mantig'i FCM ulanmagani uchun yozilmagan.
-   Ulanganda: `UserAccount.language` bo'yicha tarjimani tanlash.
+> To'liq ТЗ: `FRONTEND_ROADMAP.md → ADMIN PANEL — BOSQICHMA-BOSQICH ТЗ`
+>
+> ⚠️ **Eski kodga tegilmaydi.** `/aadmin/*`, `/admin/*` va ommaviy
+> sahifalar ishlab turadi, ma'lumot saqlanadi. Mobil dastur
+> (`mobile/`) **umuman tegilmaydi**. Ish faqat
+> `frontend/src/adminpanel/` ichida.
 
-2. **`AdminAuthController` ni bo'lish.**
-   §61 dan keyin u 220 qatordan oshdi (login, refresh, logout, me,
-   cookie yordamchilari). `AuthCookieService` ajratilsin.
+**Auditda topilgani:** backend 74 ta admin endpoint taklif qiladi,
+panel ularning bir qismini umuman chaqirmaydi — ya'ni yozilgan va
+sinalgan ish frontendда ko'rinmaydi.
 
-3. **Eski `/api/v1/auth/refresh` ni cookie'ga o'tkazish.**
-   Yangi modul tuzatildi, eski modul hali refresh tokenni **URL query
-   parametrida** qabul qiladi va u loglarga tushadi. Eski frontend ham
-   birga o'zgartirilishi kerak.
+| Bosqich | Nima | Nega |
+|---|---|---|
+| **F1** | Xodimlar boshqaruvi — 8 amal | ⚠️ Hozir paneldan **xodim yaratib bo'lmaydi**. RBAC butun tizim asosi |
+| **F2** | Media: arxiv, tiklash, ishlatilishi, o'chirish | Admin faylni xavfsiz o'chira olmaydi |
+| **F3** | Dashboard grafiklari va jadvallari | §48 da yozilgan `charts`/`tables` ishlatilmayapti |
+| **F4** | Bosh sahifa: tartiblash + qo'lda tanlash | §31 ning yarmi UI'siz |
+| **F5** | Hisobotlar: reklama CTR, bildirishnoma, kontent | §33, §46, §81 |
+| **F6** | Foydalanuvchi sahifasi | `GET /users/{id}` ishlatilmayapti |
+| **F7** | **Foydalanuvchi (USER) qismi** | ⚠️ **ENG OXIRGI.** Backend ham tayyor emas |
 
-4. **`ContentService.apply()` dagi shartsiz `clear()`.**
-   `media.clear()` va `credits.clear()` har saqlashda chaqiriladi. Bu
-   §60 versiyasini tasodifan oshirib turibdi va §66 da ortiqcha yozuv
-   hosil qiladi. O'zgarmagan ro'yxatga tegmaslik kerak — lekin avval
-   `ConcurrentEditTest` dagi `touch()` ishonchli ishlashini tasdiqlash.
+**Boshlash tartibi: F1 → F2 → F3 → F4 → F5 → F6 → F7.**
+
+### Oldingi ro'yxatdan qolganlari (backend, kichik)
+
+1. Bildirishnoma yuborishda oluvchi tilini tanlash (FCM kelganda).
+2. `AdminAuthController` ni bo'lish — `AuthCookieService` ajratilsin.
+3. Eski `/api/v1/auth/refresh` ni cookie'ga o'tkazish.
+4. `ContentService.apply()` dagi shartsiz `clear()`.
 
 ### Qaror kutilayotgan (kod yozilmaydi)
 

@@ -444,3 +444,183 @@ Farq bezak emas. Sovg'a obunada to'lov summasi `null` —
 `toLocaleString` endi panelda **hech qayerda to'g'ridan-to'g'ri
 chaqirilmaydi**.
 
+
+---
+
+# ADMIN PANEL — BOSQICHMA-BOSQICH ТЗ (23.08.2026)
+
+> **Qoidalar.** Eski kodga tegilmaydi: `/aadmin/*`, `/admin/*`, `/`,
+> `/models`, `/bot/:id`, `/data-form/:id`, `/history/:id`, `/appeal/:id`
+> — hammasi ishlab turadi, ma'lumot saqlanadi. Mobil dastur
+> (`mobile/`) **umuman tegilmaydi**. Barcha ish faqat
+> `frontend/src/adminpanel/` ichida, `/app/panel/*` marshrutida.
+
+## Auditda topilgani
+
+Backend **74 ta admin endpoint** taklif qiladi, panel esa ularning bir
+qismini **umuman chaqirmaydi**. Ya'ni backendda yozilgan va sinalgan
+ish frontendда ko'rinmaydi:
+
+| Sahifa | Hozir bor | Backendda tayyor, lekin UI yo'q |
+|---|---|---|
+| Xodimlar | faqat ro'yxat | **yaratish**, tahrirlash, rol, ruxsatlar, parol, faollashtirish, bloklash — **8 amal** |
+| Media | faqat ro'yxat | arxivlash, tiklash, qayerda ishlatilgani, o'chirish — **4 amal** |
+| Dashboard | faqat `summary` | `charts`, `tables` — **2 endpoint** |
+| Bosh sahifa | bo'lim tahriri | tartiblash, qo'lda kontent tanlash, tanlangan ijodkorlar |
+| Hisobotlar | faqat `overview` | kontent analitikasi (§46) |
+| — | — | reklama CTR hisoboti (§81) |
+| — | — | bildirishnoma hisoboti (§33) |
+| Foydalanuvchilar | ro'yxat + amallar | bitta foydalanuvchi sahifasi |
+
+⚠️ **Eng jiddiysi — xodim yaratish.** Backend to'liq tayyor (ierarxiya,
+ruxsatlar, audit — 745 testdan bir qismi shuni tekshiradi), lekin
+panelda tugma yo'q. Ya'ni yangi admin yoki worker **faqat baza orqali**
+qo'shiladi. §78 qabul mezoni buni talab qiladi.
+
+---
+
+## BOSQICH F1 — Xodimlar boshqaruvi
+
+**Nega birinchi:** RBAC butun tizimning asosi va u hozir paneldan
+boshqarilmaydi.
+
+**Fayl:** `pages/StaffPage.jsx` (126 → ~400 qator, kerak bo'lsa
+`pages/staff/` ga bo'linadi)
+
+| # | Vazifa | API |
+|---|---|---|
+| 1 | «+ Xodim» tugmasi va yaratish formasi | `POST /staff` |
+| 2 | Rol tanlash — faqat **yaratuvchi bera oladigan** rollar ko'rinsin | — |
+| 3 | WORKER uchun ruxsatlar ro'yxati (checkbox) | `PUT /{id}/permissions` |
+| 4 | Tahrirlash: ism, telefon, email | `PUT /{id}` |
+| 5 | Rolni o'zgartirish | `PUT /{id}/role` |
+| 6 | Parolni tiklash | `PUT /{id}/password` |
+| 7 | Faollashtirish / faolsizlantirish | `POST /{id}/activate`, `/deactivate` |
+| 8 | Bloklash / blokdan chiqarish (sabab bilan) | `POST /{id}/block`, `/unblock` |
+
+**Qabul mezonlari:**
+
+- `[ ]` ADMIN faqat WORKER yarata oladi — rol ro'yxatida boshqasi **yo'q**
+- `[ ]` SUPER_ADMIN — ADMIN va WORKER yarata oladi, HYPER_ADMIN yo'q
+- `[ ]` Ruxsatlar bloki faqat WORKER tanlanganda ko'rinadi
+- `[ ]` O'zini bloklash yoki rolini o'zgartirish tugmasi **ko'rinmaydi**
+- `[ ]` Har bir buzuvchi amal `ConfirmDialog` bilan
+- `[ ]` Xato `useFieldErrors` orqali maydonga bog'lanadi (§52)
+- `[ ]` Uch tilda tarjima
+- `[ ]` ⚠️ Frontend yashirishi **xavfsizlik emas** — backend baribir 403
+  qaytaradi va bu allaqachon sinalgan
+
+---
+
+## BOSQICH F2 — Media kutubxonasi
+
+**Fayl:** `pages/MediaPage.jsx` (93 → ~250 qator)
+
+| # | Vazifa | API |
+|---|---|---|
+| 1 | «Qayerda ishlatilgan» oynasi | `GET /media/{id}/usage` |
+| 2 | Arxivlash / tiklash | `POST /media/{id}/archive`, `/restore` |
+| 3 | O'chirish — **faqat ishlatilmayotgan fayl** | `DELETE /media/{id}` |
+| 4 | Arxivlanganlarni ko'rsatish filtri | `GET /media?status=ARCHIVED` |
+
+**Qabul mezonlari:**
+
+- `[ ]` O'chirishdan oldin qayerda ishlatilgani **ko'rsatiladi**
+- `[ ]` Ishlatilayotgan fayl o'chirilmoqchi bo'lsa, backend 409 qaytaradi
+  va panel qaysi kontentda ekanini ro'yxat qilib ko'rsatadi
+- `[ ]` Arxivlanganlar sukut bo'yicha **ko'rinmaydi** (§26)
+
+---
+
+## BOSQICH F3 — Dashboard grafiklari va jadvallari
+
+**Fayl:** `pages/DashboardPage.jsx` (95 → ~200 qator)
+
+Backendda `charts` va `tables` §48 da yozilgan va sinalgan, lekin panel
+ularni chaqirmaydi.
+
+| # | Vazifa | API |
+|---|---|---|
+| 1 | Ro'yxatdan o'tish, ko'rish, daromad grafiklari | `GET /dashboard/charts` |
+| 2 | Oxirgi kontent va foydalanuvchilar jadvali | `GET /dashboard/tables` |
+| 3 | Davr tanlash (7 / 30 / 90 kun) | `?days=` |
+
+**Qabul mezonlari:**
+
+- `[ ]` Ma'lumot yo'q bo'lsa **bo'sh holat**, soxta grafik emas (§45)
+- `[ ]` Uchta so'rov **parallel** ketadi, ketma-ket emas (§73)
+- `[ ]` `TrendChart` komponenti qayta ishlatiladi
+
+---
+
+## BOSQICH F4 — Bosh sahifa: tartiblash va qo'lda tanlash
+
+**Fayl:** `pages/HomepagePage.jsx` (221 → ~350 qator)
+
+| # | Vazifa | API |
+|---|---|---|
+| 1 | Bo'limlarni tartiblash | `PUT /homepage/sections/order` |
+| 2 | Bo'limga **qo'lda kontent tanlash** | `GET/PUT /homepage/sections/{id}/items` |
+| 3 | Tanlangan ijodkorlar ro'yxati | `GET /homepage/creators` |
+
+**Qabul mezonlari:**
+
+- `[ ]` Qo'lda tanlangan ro'yxat bo'sh bo'lsa — avtomatik qoida
+  ishlaydi (§31 dagi mantiq)
+- `[ ]` Tartib saqlangach ommaviy lentada ham o'zgaradi
+
+---
+
+## BOSQICH F5 — Hisobotlar
+
+| # | Vazifa | API | ТЗ |
+|---|---|---|---|
+| 1 | Reklama CTR hisoboti | `GET /advertisements/{id}/statistics` | §81 |
+| 2 | Bildirishnoma hisoboti | `GET /notifications/{id}/report` | §33 |
+| 3 | Kontent analitikasi | `GET /content/{id}/statistics` | §46 |
+
+**Qabul mezonlari:**
+
+- `[ ]` ⚠️ Mavjud bo'lmagan ko'rsatkich **`null`** ko'rsatiladi, nol emas.
+  FCM ulanmagani uchun «yetkazildi» soni yo'q va uni 0 deb ko'rsatish
+  yolg'on bo'lardi (§33)
+- `[ ]` Ko'rsatishsiz CTR — nol, nolga bo'linish yo'q
+
+---
+
+## BOSQICH F6 — Foydalanuvchi sahifasi
+
+| # | Vazifa | API |
+|---|---|---|
+| 1 | Bitta foydalanuvchi sahifasi | `GET /users/{id}` |
+| 2 | Obuna tarixi, balans, qurilmalar bir joyda | mavjud endpointlar |
+
+---
+
+## BOSQICH F7 — FOYDALANUVCHI (USER) QISMI — **ENG OXIRGI**
+
+⚠️ **Hozir boshlanmaydi.** Buyurtmachi tartibi: avval admin panel
+to'liq tugaydi.
+
+Bundan tashqari **backend tayyor emas**: `/app/auth/**` (OTP kirish),
+`/app/catalog`, `/app/content/{slug}`, `/app/search`, `/app/me`,
+`/app/purchases`, `/app/comments` — yozilmagan. Ya'ni interfeys
+quradigan ma'lumot yo'q.
+
+---
+
+## Har bosqichda bajariladigan tekshiruv (§102)
+
+```
+[ ] kod yozildi
+[ ] validatsiya ishlaydi
+[ ] ruxsat tekshirildi (frontend yashiradi, backend 403 qaytaradi)
+[ ] API ulandi
+[ ] yuklanish holati bor
+[ ] bo'sh holat bor
+[ ] xato holati + qayta urinish tugmasi bor
+[ ] uch tilda tarjima
+[ ] test qo'shildi
+[ ] build o'tdi
+[ ] roadmap yangilandi
+```
