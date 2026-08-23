@@ -1,8 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import './header.css';
 import logo from "./logo1.jpg"
+import {
+    headerClass,
+    headerContainerClass,
+    logoLinkClass,
+    logoImgClass,
+    navClass,
+    navListClass,
+    navLinkClass,
+    navLinkSpanClass,
+    registerBtnClass,
+    languageToggleClass,
+    languageChevronClass,
+    languageMenuClass,
+    langButtonClass,
+    mobileToggleClass,
+    mobileBarClass,
+} from "../../shared/headerStyles";
+
+// Public header menyusi rangi (avval header.css dagi .nav-link)
+const publicNavLink = navLinkClass + " text-[#1f2937] hover:text-[#2563eb]";
 
 function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -56,107 +75,101 @@ function Header() {
         setIsLanguageOpen(false);
     };
 
+    const languageMenu = (
+        <div className={languageMenuClass}>
+            <button className={langButtonClass(currentLanguage === 'uz')} onClick={() => changeLanguage('uz')}>O'Z</button>
+            <button className={langButtonClass(currentLanguage === 'ru')} onClick={() => changeLanguage('ru')}>RU</button>
+            <button className={langButtonClass(currentLanguage === 'en')} onClick={() => changeLanguage('en')}>EN</button>
+        </div>
+    );
+
+    const languageChevron = (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={languageChevronClass}>
+            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+        </svg>
+    );
+
     return (
         <>
-            <header className={`header ${isScrolled ? "scrolled" : ""}`}>
-
-                <div className="header-container">
-                    <div className="logo">
-                        <Link to="/">
-                            <img src={logo} alt="Logo" />
-                            <span>{t('header.siteTitle')}</span>
+            <header className={headerClass(isScrolled)}>
+                <div className={headerContainerClass}>
+                    <div>
+                        <Link to="/" className={logoLinkClass}>
+                            <img src={logo} alt="Logo" className={logoImgClass} />
+                            <span className="max-md:hidden">{t('header.siteTitle')}</span>
                         </Link>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                        <nav className={`nav ${isMobileMenuOpen ? 'nav-open' : ''} pt-3`}>
-                            <ul>
+                    <div className="flex items-center gap-8">
+                        <nav className={navClass(isMobileMenuOpen)}>
+                            <ul className={navListClass}>
                                 <li>
-                                    <Link to="/" className="nav-link">
-                                        <span>{t('header.home')}</span>
-                                        <div className="link-underline"></div>
+                                    <Link to="/" className={publicNavLink}>
+                                        <span className={navLinkSpanClass}>{t('header.home')}</span>
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link to="/models" className="nav-link">
-                                        <span>{t('header.models')}</span>
-                                        <div className="link-underline"></div>
+                                    <Link to="/models" className={publicNavLink}>
+                                        <span className={navLinkSpanClass}>{t('header.models')}</span>
                                     </Link>
                                 </li>
-                                <li>
-                                    <Link to="https://t.me/uzcastingbot" style={{
-                                        display: window.innerWidth >= 769 ? "none" : "block"
-                                    }} className="nav-link">
+                                <li className="md:hidden">
+                                    <Link to="https://t.me/uzcastingbot" className={publicNavLink}>
                                         {t('header.register')}
                                     </Link>
                                 </li>
                             </ul>
                         </nav>
 
-                        {/* ...внутри .header-right */}
-                        <div className="header-right">
-                            <div className="language-selector only-desktop">
+                        {/* ...o'ngdagi desktop paneli */}
+                        <div className="flex items-center gap-4 max-md:hidden">
+                            <div className="relative hidden md:flex">
                                 <button
-                                    className="language-toggle"
+                                    className={languageToggleClass}
                                     onClick={toggleLanguageMenu}
                                     aria-label="Change language"
                                 >
                                     {currentLanguage.toUpperCase()}
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                    </svg>
+                                    {languageChevron}
                                 </button>
 
-                                {isLanguageOpen && (
-                                    <div className="language-menu">
-                                        <button style={{ color: "white" }} className={currentLanguage === 'uz' ? 'active' : ''} onClick={() => changeLanguage('uz')}>O'Z</button>
-                                        <button style={{ color: "white" }} className={currentLanguage === 'ru' ? 'active' : ''} onClick={() => changeLanguage('ru')}>RU</button>
-                                        <button style={{ color: "white" }} className={currentLanguage === 'en' ? 'active' : ''} onClick={() => changeLanguage('en')}>EN</button>
-                                    </div>
-                                )}
+                                {isLanguageOpen && languageMenu}
                             </div>
 
-                            <div className="auth-buttons">
-                                <Link to="https://t.me/uzcastingbot" className="register-btn">{t('header.register')}</Link>
+                            <div className="flex items-center">
+                                <Link to="https://t.me/uzcastingbot" className={registerBtnClass}>{t('header.register')}</Link>
                             </div>
                         </div>
 
-                        {/* мобильный блок */}
-                        <div className="mobile-actions">
-                            <div className="language-selector only-mobile">
+                        {/* mobil blok */}
+                        <div className="flex items-center gap-4">
+                            <div className="relative flex md:hidden">
                                 <button
-                                    className="language-toggle"
+                                    className={languageToggleClass}
                                     onClick={toggleLanguageMenu}
                                     aria-label="Change language"
                                 >
                                     {currentLanguage.toUpperCase()}
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                    </svg>
+                                    {languageChevron}
                                 </button>
 
-                                {isLanguageOpen && (
-                                    <div className="language-menu">
-                                        <button style={{ color: "white" }} className={currentLanguage === 'uz' ? 'active' : ''} onClick={() => changeLanguage('uz')}>O'Z</button>
-                                        <button style={{ color: "white" }} className={currentLanguage === 'ru' ? 'active' : ''} onClick={() => changeLanguage('ru')}>RU</button>
-                                        <button style={{ color: "white" }} className={currentLanguage === 'en' ? 'active' : ''} onClick={() => changeLanguage('en')}>EN</button>
-                                    </div>
-                                )}
+                                {isLanguageOpen && languageMenu}
                             </div>
 
                             <button
-                                className={`mobile-menu-toggle ${isMobileMenuOpen ? 'open' : ''}`}
+                                className={mobileToggleClass}
                                 onClick={toggleMobileMenu}
                                 aria-label="Toggle menu"
                             >
-                                <span></span><span></span><span></span>
+                                <span className={mobileBarClass(0, isMobileMenuOpen)}></span>
+                                <span className={mobileBarClass(1, isMobileMenuOpen)}></span>
+                                <span className={mobileBarClass(2, isMobileMenuOpen)}></span>
                             </button>
                         </div>
                     </div>
 
                 </div>
             </header >
-            {/* <div className="header-spacer"></div> */}
         </>
     );
 }

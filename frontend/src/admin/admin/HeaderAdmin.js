@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import './headeradmin.css';
 import logo from "../../pages/header/logo1.jpg"
+import {
+    headerClass,
+    headerContainerClass,
+    logoLinkClass,
+    logoImgClass,
+    mobileToggleClass,
+    mobileBarClass,
+    headerSpacerClass,
+} from "../../shared/headerStyles";
 
 function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -33,63 +40,30 @@ function Header() {
     };
     return (
         <>
-            <header className={`header admin-header ${isScrolled ? 'scrolled' : ''}`}>
-                <div className="header-container">
-                    <div className="logo">
-                        <Link to="/aadmin/casting-users/web">
-                            <img src={logo} alt="Logo" />
-                            <span>Uzcasting</span>
+            <header className={headerClass(isScrolled)}>
+                <div className={headerContainerClass}>
+                    <div>
+                        <Link to="/aadmin/casting-users/web" className={logoLinkClass}>
+                            <img src={logo} alt="Logo" className={logoImgClass} />
+                            <span className="max-md:hidden">Uzcasting</span>
                         </Link>
                     </div>
 
-                    {/*<nav className={`nav ${isMobileMenuOpen ? 'nav-open' : ''} pt-3`}>*/}
-                    {/*    <ul>*/}
-                    {/*        /!*<li>*!/*/}
-                    {/*        /!*    <Link to="/admin/home" className="nav-link">*!/*/}
-                    {/*        /!*        <span>🏠Bosh Sahifa</span>*!/*/}
-                    {/*        /!*        <div className="link-underline"></div>*!/*/}
-                    {/*        /!*    </Link>*!/*/}
-                    {/*        /!*</li>*!/*/}
-                    {/*        /!*<li>*!/*/}
-                    {/*        /!*    <Link to="/admin/news" className="nav-link">*!/*/}
-                    {/*        /!*        <span>📰Yangiliklar</span>*!/*/}
-                    {/*        /!*        <div className="link-underline"></div>*!/*/}
-                    {/*        /!*    </Link>*!/*/}
-                    {/*        /!*</li>*!/*/}
-                    {/*        /!*<li>*!/*/}
-                    {/*        /!*    <Link to="/admin/casting-users" className="nav-link">*!/*/}
-                    {/*        /!*        <span>🎭Kelib tushgan arizalar</span>*!/*/}
-                    {/*        /!*        <div className="link-underline"></div>*!/*/}
-                    {/*        /!*    </Link>*!/*/}
-                    {/*        /!*</li>*!/*/}
-                    {/*        /!*<li>*!/*/}
-                    {/*        /!*    <Link to="/admin/accepted" className="nav-link">*!/*/}
-                    {/*        /!*        <span>✔️Qabul qilingan arizalar</span>*!/*/}
-                    {/*        /!*        <div className="link-underline"></div>*!/*/}
-                    {/*        /!*    </Link>*!/*/}
-                    {/*        /!*</li>*!/*/}
-                    {/*        <li>*/}
-                    {/*            <Link to="/admin/accepted" className="nav-link">*/}
-                    {/*                <span>Chiqish</span>*/}
-                    {/*                <div className="link-underline"></div>*/}
-                    {/*            </Link>*/}
-                    {/*        </li>*/}
-
-                    {/*    </ul>*/}
-                    {/*</nav>*/}
-                    {/* мобильный блок */}
-                    <div className="mobile-actions">
+                    {/* mobil blok */}
+                    <div className="flex items-center gap-4">
                         <button
-                            className={`mobile-menu-toggle ${isMobileMenuOpen ? 'open' : ''}`}
+                            className={mobileToggleClass}
                             onClick={toggleMobileMenu}
                             aria-label="Toggle menu"
                         >
-                            <span></span><span></span><span></span>
+                            <span className={mobileBarClass(0, isMobileMenuOpen)}></span>
+                            <span className={mobileBarClass(1, isMobileMenuOpen)}></span>
+                            <span className={mobileBarClass(2, isMobileMenuOpen)}></span>
                         </button>
                     </div>
                 </div>
             </header >
-            <div className="header-spacer"></div>
+            <div className={headerSpacerClass}></div>
         </>
     );
 }
