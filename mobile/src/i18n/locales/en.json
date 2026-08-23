@@ -166,7 +166,9 @@
     "needSubscription": "A Premium subscription unlocks this content.",
     "needPurchaseOrSubscription": "Buy this content separately or unlock it with Premium.",
     "subscribe": "Get Premium",
-    "paymentSoon": "Payments are not wired into the app yet."
+    "paymentSoon": "Payments are not wired into the app yet.",
+    "notPublished": "This content is not published yet.",
+    "userBlocked": "Your account is blocked. Please contact support."
   },
   "contentType": {
     "SHORT_FILM": "Short film",

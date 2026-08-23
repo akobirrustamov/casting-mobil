@@ -166,7 +166,9 @@
     "needSubscription": "Bu kontentni Premium obuna ochadi.",
     "needPurchaseOrSubscription": "Kontentni alohida sotib olish yoki Premium obuna bilan ochish mumkin.",
     "subscribe": "Premium olish",
-    "paymentSoon": "To'lov ilovada hali ulanmagan."
+    "paymentSoon": "To'lov ilovada hali ulanmagan.",
+    "notPublished": "Kontent hali nashr qilinmagan.",
+    "userBlocked": "Hisobingiz bloklangan. Qo'llab-quvvatlash xizmatiga murojaat qiling."
   },
   "contentType": {
     "SHORT_FILM": "Qisqa metraj",

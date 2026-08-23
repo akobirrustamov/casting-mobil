@@ -260,8 +260,8 @@ function accessBadge(reason: string): { tone: BadgeTone; key: string } | null {
       return { tone: 'purchased', key: 'common.free' };
     case 'PREMIUM':
       return { tone: 'premiere', key: 'common.premium' };
-    case 'PURCHASED':
-    case 'PREMIERE_PURCHASED':
+    case 'EPISODE_PURCHASE':
+    case 'PREMIERE_PURCHASE':
       return { tone: 'purchased', key: 'common.purchased' };
     default:
       return null;
@@ -307,11 +307,22 @@ function groupDigits(amount: number): string {
   return String(Math.round(amount)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
+/** Что делать — по требуемому действию. */
 const LOCKED_BODY: Record<string, string> = {
   SIGN_IN: 'content.needSignIn',
   BUY_EPISODE: 'content.needPurchase',
+  BUY_PREMIERE: 'content.needPurchase',
   SUBSCRIBE: 'content.needSubscription',
   BUY_OR_SUBSCRIBE: 'content.needPurchaseOrSubscription',
+};
+
+/**
+ * Отказы, в которых делать нечего: `requiredAction` там `NONE`, и без этой
+ * таблицы человек увидел бы общее «закрыто» вместо настоящей причины.
+ */
+const LOCKED_REASON: Record<string, string> = {
+  NOT_PUBLISHED: 'content.notPublished',
+  USER_BLOCKED: 'content.userBlocked',
 };
 
 /**
@@ -327,10 +338,11 @@ function LockedPanel({ info }: { info: WatchInfo }) {
   const action: RequiredAction = info.requiredAction;
 
   const needsSignIn = action === 'SIGN_IN';
-  const needsPurchase = action === 'BUY_EPISODE' || action === 'BUY_OR_SUBSCRIBE';
+  const needsPurchase =
+    action === 'BUY_EPISODE' || action === 'BUY_PREMIERE' || action === 'BUY_OR_SUBSCRIBE';
   const needsSubscription = action === 'SUBSCRIBE' || action === 'BUY_OR_SUBSCRIBE';
 
-  const bodyKey = LOCKED_BODY[action] ?? 'states.lockedBody';
+  const bodyKey = LOCKED_BODY[action] ?? LOCKED_REASON[info.reason] ?? 'states.lockedBody';
   const price = info.episodePrice ?? info.premierePrice;
 
   return (

@@ -14,11 +14,12 @@
 export type WatchReason =
   | 'FREE'
   | 'PREMIUM'
-  | 'PURCHASED'
-  | 'PREMIERE_PURCHASED'
-  | 'SIGN_IN_REQUIRED'
+  | 'EPISODE_PURCHASE'
+  | 'PREMIERE_PURCHASE'
+  | 'NOT_PUBLISHED'
+  | 'USER_BLOCKED'
+  | 'NOT_AUTHENTICATED'
   | 'PAYMENT_REQUIRED'
-  | 'SUBSCRIPTION_REQUIRED'
   | (string & {});
 
 /**
@@ -29,8 +30,9 @@ export type WatchReason =
 export type RequiredAction =
   | 'NONE'
   | 'SIGN_IN'
-  | 'SUBSCRIBE'
   | 'BUY_EPISODE'
+  | 'BUY_PREMIERE'
+  | 'SUBSCRIBE'
   | 'BUY_OR_SUBSCRIBE'
   | (string & {});
 

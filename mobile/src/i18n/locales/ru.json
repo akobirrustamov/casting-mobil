@@ -166,7 +166,9 @@
     "needSubscription": "Этот контент открывает подписка Premium.",
     "needPurchaseOrSubscription": "Контент можно купить отдельно или открыть подпиской Premium.",
     "subscribe": "Оформить Premium",
-    "paymentSoon": "Оплата в приложении пока не подключена."
+    "paymentSoon": "Оплата в приложении пока не подключена.",
+    "notPublished": "Контент ещё не опубликован.",
+    "userBlocked": "Ваш аккаунт заблокирован. Напишите в поддержку."
   },
   "contentType": {
     "SHORT_FILM": "Короткий метр",
