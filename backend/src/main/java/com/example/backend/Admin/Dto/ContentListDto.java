@@ -206,6 +206,16 @@ public class ContentListDto {
     public static class CreditDto {
         private Long creatorId;
         private String creatorName;
+
+        /**
+         * Ijodkor surati — kartochkada ko'rsatiladi.
+         *
+         * ⚠️ Bu maydonsiz panel ijodkorni faqat alohida yuklangan
+         * ro'yxatdan topa olardi, u esa 200 tada cheklangan. 200 dan
+         * keyingi ijodkor biriktirilgan kontentda kartochka o'rniga
+         * quruq `#42` chiqardi.
+         */
+        private Long photoMediaId;
         private com.example.backend.Cms.Enums.CreatorProfession profession;
         private String characterName;
         private Integer sortOrder;
@@ -214,6 +224,8 @@ public class ContentListDto {
             return CreditDto.builder()
                     .creatorId(c.getCreator() == null ? null : c.getCreator().getId())
                     .creatorName(displayName(c))
+                    .photoMediaId(c.getCreator() == null || c.getCreator().getPhoto() == null
+                            ? null : c.getCreator().getPhoto().getId())
                     .profession(c.getProfession())
                     .characterName(c.getCharacterName())
                     .sortOrder(c.getSortOrder())

@@ -601,7 +601,7 @@ Til tanlovi `localStorage` da saqlanadi va kontent tarjimasiga ham ta'sir qiladi
 | 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma: rejalashtirish ishlaydi, hisobot halol (ТЗ §32–§33). FCM ulanmagan |
 | 7 | Users & Monetization — tariffs, premium, Stars, Coin | `[x]` foydalanuvchi, tarif, balans, qurilma, donat |
 | 8 | Analytics — events, aggregation, dashboard, reports | `[x]` ikki qatlamli: xom hodisa + kunlik jamlanma |
-| 9 | Hardening — tests, performance, security, indexes | `[~]` 685 test; migratsiyalar V1–V26 |
+| 9 | Hardening — tests, performance, security, indexes | `[~]` 688 test; migratsiyalar V1–V26 |
 
 ---
 
@@ -1403,32 +1403,26 @@ To'liq reja — `roadmap.md → 14.1`.
 
 ### Keyingi aniq qadamlar
 
-1. **Ijodkor kartochkasini `ContentEditor` da ko'rsatish.**
-   Backend `credits` ni endi qaytaradi (`ContentListDto.CreditDto` —
-   `creatorId`, `creatorName`, `profession`, `characterName`,
-   `sortOrder`), lekin `CreditsTab.jsx` uni faqat saqlash uchun
-   ishlatadi. Yuklangan ro'yxatni ism bilan ko'rsatish kerak.
-
-2. **`UserAccount.language` ni panelga chiqarish.**
+1. **`UserAccount.language` ni panelga chiqarish.**
    Maydon va migratsiya (V26) tayyor, `HomeFeedService` uni o'qiydi.
    Yetishmagani: `UsersPage` da ustun va `NotificationsPage` da
    «qaysi tilda nechta foydalanuvchi bor» ko'rsatkichi.
 
-3. **Bildirishnoma yuborishda oluvchi tilini tanlash.**
+2. **Bildirishnoma yuborishda oluvchi tilini tanlash.**
    `NotificationDispatcher` hozir barcha tarjimani saqlaydi, lekin
    yuborishda tilni tanlash mantig'i FCM ulanmagani uchun yozilmagan.
    Ulanganda: `UserAccount.language` bo'yicha tarjimani tanlash.
 
-4. **`AdminAuthController` ni bo'lish.**
+3. **`AdminAuthController` ni bo'lish.**
    §61 dan keyin u 220 qatordan oshdi (login, refresh, logout, me,
    cookie yordamchilari). `AuthCookieService` ajratilsin.
 
-5. **Eski `/api/v1/auth/refresh` ni cookie'ga o'tkazish.**
+4. **Eski `/api/v1/auth/refresh` ni cookie'ga o'tkazish.**
    Yangi modul tuzatildi, eski modul hali refresh tokenni **URL query
    parametrida** qabul qiladi va u loglarga tushadi. Eski frontend ham
    birga o'zgartirilishi kerak.
 
-6. **`ContentService.apply()` dagi shartsiz `clear()`.**
+5. **`ContentService.apply()` dagi shartsiz `clear()`.**
    `media.clear()` va `credits.clear()` har saqlashda chaqiriladi. Bu
    §60 versiyasini tasodifan oshirib turibdi va §66 da ortiqcha yozuv
    hosil qiladi. O'zgarmagan ro'yxatga tegmaslik kerak — lekin avval
@@ -1464,6 +1458,8 @@ To'liq reja — `roadmap.md → 14.1`.
 | §78 | Sakkizta qabul mezoni — raqamlangan test |
 | §86 | Frontend testi — 401 da yangilash oqimi |
 | §106 | OpenAPI (prod'da yopiq) |
+| §63/§64 | API konvensiyasi qo'riqchisi; 2FA — alohida security task |
+| — | Ijodkor kartochkasi muharrirda (ism + surat), tartib raqami tuzatildi |
 
 ### Qolgan ishlar
 

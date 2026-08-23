@@ -193,7 +193,12 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
       popular: form.popular,
       translations: form.translations,
       media,
-      credits: form.credits,
+      // ⚠️ Tartib raqami ro'yxatdagi joydan qayta hisoblanadi.
+      // Ilgari u biriktirish paytida `credits.length` dan olinardi:
+      // o'rtadagi bittasi o'chirilib yangisi qo'shilsa raqam
+      // TAKRORLANARDI va kim oldin turishi bazaga bog'liq bo'lib
+      // qolardi — admin ko'rgan tartib saqlanmasdi.
+      credits: form.credits.map((c, i) => ({ ...c, sortOrder: i })),
       version: form.version,
     };
 

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import CreatorQuickCreate from '../../components/CreatorQuickCreate';
+import { mediaUrl } from '../../api/client';
 import { PROFESSIONS } from './constants';
 /**
  * Ijodkorlar va ularning kasblari (ТЗ §24).
@@ -29,6 +30,26 @@ export default function CreditsTab({ form, set, t, locale, creators, onCreatorCr
   const creatorName = (c) => {
     const tr = c.translations || {};
     return tr[locale]?.displayName || tr.UZ?.displayName || c.slug;
+  };
+
+  /**
+   * Biriktirilgan ijodkorning ko'rinishi.
+   *
+   * ⚠️ Ilgari bu faqat yuklangan `creators` ro'yxatidan qidirilardi, u
+   * esa 200 tada cheklangan. Ya'ni 200 dan keyingi ijodkor biriktirilgan
+   * kontentda kartochka o'rniga quruq `#42` chiqardi va admin kimni
+   * biriktirganini bilmasdi.
+   *
+   * Endi backend har bir bog'lanish bilan birga ism va suratni ham
+   * qaytaradi — ro'yxatdagi nusxa faqat afzal ko'riladi (u tanlangan
+   * tilda va yangiroq bo'lishi mumkin).
+   */
+  const attachedInfo = (cr) => {
+    const loaded = creators.find((c) => c.id === cr.creatorId);
+    return {
+      name: loaded ? creatorName(loaded) : (cr.creatorName || `#${cr.creatorId}`),
+      photoId: loaded ? loaded.photoMediaId : cr.photoMediaId,
+    };
   };
 
   /**
@@ -82,11 +103,32 @@ export default function CreditsTab({ form, set, t, locale, creators, onCreatorCr
           <p className="uz-muted" style={{ fontSize: 13 }}>{t('empty.body')}</p>
         ) : (
           form.credits.map((cr, i) => {
-            const creator = creators.find((c) => c.id === cr.creatorId);
+            const info = attachedInfo(cr);
             return (
               <div key={i} className="uz-row mb-3 items-center">
-                <div className="uz-col" style={{ flex: '0 0 180px', fontWeight: 600, fontSize: 14 }}>
-                  {creator ? creatorName(creator) : `#${cr.creatorId}`}
+                <div className="uz-col" style={{ flex: '0 0 200px', display: 'flex',
+                     alignItems: 'center', gap: 10, minWidth: 0 }}>
+                  {info.photoId ? (
+                    <img src={mediaUrl(info.photoId)} alt="" loading="lazy"
+                         style={{ width: 36, height: 36, borderRadius: '50%',
+                                  objectFit: 'cover', flexShrink: 0 }} />
+                  ) : (
+                    /* Surat yo'q bo'lsa bo'sh joy emas, ism harfi:
+                       qator balandligi bir xil qoladi va kartochka
+                       «yuklanmagan» kabi ko'rinmaydi. */
+                    <span aria-hidden="true"
+                          style={{ width: 36, height: 36, borderRadius: '50%',
+                                   flexShrink: 0, display: 'grid', placeItems: 'center',
+                                   background: 'var(--p-surface-2)', fontWeight: 700,
+                                   fontSize: 14, color: 'var(--p-muted)' }}>
+                      {info.name.trim().charAt(0).toUpperCase() || '?'}
+                    </span>
+                  )}
+                  <span style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden',
+                                 textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                        title={info.name}>
+                    {info.name}
+                  </span>
                 </div>
                 <div className="uz-col">
                   <select className="uz-select" value={cr.profession} aria-label={t('editor.profession')}

@@ -358,4 +358,104 @@ class ContentEditRoundTripTest {
         r.setTranslations(tr);
         return taxonomyService.saveCreator(null, null, r);
     }
+
+    // ------------------------------------------------- ijodkor kartochkasi
+
+    /**
+     * Panel ijodkorlar ro'yxatini alohida yuklaydi va u <b>200 ta</b>
+     * bilan cheklangan. Ya'ni bog'lanishning o'zida ism va surat
+     * bo'lmasa, 200 dan keyingi ijodkor biriktirilgan kontentda
+     * kartochka o'rniga quruq {@code #42} chiqardi va admin kimni
+     * biriktirganini bilmasdi.
+     */
+    @Test
+    @DisplayName("Bog'lanish ijodkor ismi va suratini o'zi bilan olib keladi")
+    void creditCarriesNameAndPhoto() {
+        MediaAsset photo = image("ijodkor-surati");
+        Creator creator = creatorWithPhoto(photo);
+
+        ContentSaveRequest req = base("Kartochkali kontent");
+        req.setCredits(List.of(credit(creator.getId())));
+        Content created = contentService.create(null, req);
+
+        var credits = ContentListDto.from(
+                contentRepo.findById(created.getId()).orElseThrow()).getCredits();
+
+        assertThat(credits).hasSize(1);
+        assertThat(credits.get(0).getCreatorName())
+                .as("ro'yxatdan topilmasa ham ism ko'rinsin")
+                .isNotBlank();
+        assertThat(credits.get(0).getPhotoMediaId())
+                .as("kartochkada surat ko'rsatiladi")
+                .isEqualTo(photo.getId());
+    }
+
+    /**
+     * ⚠️ Tartib raqami ilgari biriktirish paytida {@code credits.length}
+     * dan olinardi. O'rtadagi bittasi o'chirilib yangisi qo'shilsa raqam
+     * TAKRORLANARDI va kim oldin turishi bazaga bog'liq bo'lib qolardi.
+     */
+    @Test
+    @DisplayName("Tartib raqami takrorlanmaydi")
+    void sortOrderHasNoDuplicates() {
+        Creator a = creator();
+        Creator b = creator();
+        Creator c = creator();
+
+        ContentSaveRequest req = base("Tartibli kontent");
+        req.setCredits(List.of(credit(a.getId()), credit(b.getId()), credit(c.getId())));
+        // Panel saqlashda tartibni ro'yxatdagi joydan qayta hisoblaydi.
+        List.of(0, 1, 2).forEach(i -> req.getCredits().get(i).setSortOrder(i));
+        Content created = contentService.create(null, req);
+
+        var credits = ContentListDto.from(
+                contentRepo.findById(created.getId()).orElseThrow()).getCredits();
+
+        assertThat(credits.stream().map(x -> x.getSortOrder()).toList())
+                .as("har bir bog'lanishda o'z raqami bo'lsin")
+                .doesNotHaveDuplicates()
+                .containsExactly(0, 1, 2);
+    }
+
+    @Test
+    @DisplayName("Panel kartochkani ism va surat bilan chizadi")
+    void editorRendersCard() throws java.io.IOException {
+        String src = java.nio.file.Files.readString(java.nio.file.Path.of(
+                "../frontend/src/adminpanel/pages/editor/CreditsTab.jsx"));
+
+        // Aniq ifoda tekshiriladi: shunchaki `cr.creatorName` matni
+        // faylning boshqa joyida ham uchrashi mumkin va u holda test
+        // hech narsani isbotlamasdi.
+        assertThat(src)
+                .as("ro'yxatda yo'q ijodkor uchun bog'lanishdagi ism ishlatilsin")
+                .contains("(cr.creatorName || `#${cr.creatorId}`)");
+        assertThat(src)
+                .as("surat ko'rsatilsin")
+                .contains("mediaUrl(info.photoId)");
+
+        String editor = java.nio.file.Files.readString(java.nio.file.Path.of(
+                "../frontend/src/adminpanel/pages/ContentEditor.jsx"));
+        // ⚠️ Shunchaki `sortOrder: i` yetarli emas: u galereya uchun ham
+        // ishlatiladi va mutatsiya buni ko'rsatdi — kreditlar qatorini
+        // butunlay olib tashlasam ham test o'tib ketdi.
+        assertThat(editor)
+                .as("tartib saqlashda qayta hisoblansin")
+                .contains("credits: form.credits.map((c, i) => ({ ...c, sortOrder: i }))");
+    }
+
+    private Creator creatorWithPhoto(MediaAsset photo) {
+        var r = new com.example.backend.Admin.Dto.CreatorSaveRequest();
+        r.setActive(true);
+        r.setPhotoMediaId(photo.getId());
+        int n = SEQ.incrementAndGet();
+        var tr = new java.util.LinkedHashMap<Locale,
+                com.example.backend.Admin.Dto.CreatorSaveRequest.NameDto>();
+        for (Locale loc : Locale.values()) {
+            var name = new com.example.backend.Admin.Dto.CreatorSaveRequest.NameDto();
+            name.setDisplayName("Suratli ijodkor " + loc + " " + n);
+            tr.put(loc, name);
+        }
+        r.setTranslations(tr);
+        return taxonomyService.saveCreator(null, null, r);
+    }
 }
