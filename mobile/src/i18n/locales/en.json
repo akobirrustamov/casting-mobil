@@ -153,5 +153,31 @@
   },
   "favorites": {
     "empty": "Tap the heart to collect creators here."
+  },
+  "content": {
+    "notFound": "No such content",
+    "multiPartTitle": "This content has episodes",
+    "multiPartBody": "The app cannot list episodes yet — that needs a separate backend endpoint.",
+    "noVideo": "The video is not uploaded yet",
+    "part": "Part {{number}}",
+    "minutes": "{{count}} min",
+    "needSignIn": "Sign in to watch.",
+    "needPurchase": "This content unlocks after purchase.",
+    "needSubscription": "A Premium subscription unlocks this content.",
+    "needPurchaseOrSubscription": "Buy this content separately or unlock it with Premium.",
+    "subscribe": "Get Premium",
+    "paymentSoon": "Payments are not wired into the app yet."
+  },
+  "contentType": {
+    "SHORT_FILM": "Short film",
+    "MOVIE": "Movie",
+    "MINI_SERIES": "Mini-series",
+    "SERIES": "Series",
+    "PODCAST": "Podcast",
+    "SHOW": "Show",
+    "INTERVIEW": "Interview",
+    "STREAM": "Live",
+    "CLIP": "Clip",
+    "OTHER": "Other"
   }
 }
