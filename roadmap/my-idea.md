@@ -2576,7 +2576,7 @@ season yaratmasdan ishlashi kerak.
 
 ---
 
-# 81. ACCEPTANCE CRITERIA — AD
+_# 81. ACCEPTANCE CRITERIA — AD
 
 Admin:
 
@@ -2607,7 +2607,7 @@ Admin:
 * bir contentga bir nechta creator biriktiradi;
 * har creator uchun content-specific rol belgilaydi.
 
----
+---_
 
 # 83. ACCEPTANCE CRITERIA — PREMIUM
 

@@ -19,6 +19,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -266,6 +267,75 @@ class AdvertisementModuleTest {
                     .isEqualTo(AdAudience.ADVERTISEMENT);
             assertThat(homepageService.saveAdvertisement(null, null, announcement).getAudience())
                     .isEqualTo(AdAudience.ADMIN_ANNOUNCEMENT);
+        }
+    }
+
+    // ------------------------------------------------- karusel tartibi
+
+    @Nested
+    @DisplayName("Karusel tartibi (ТЗ §81.4)")
+    class CarouselOrder {
+
+        /**
+         * ⚠️ Bu band ТЗ da bor, lekin sinalmagan edi.
+         *
+         * Tartib bannerlar uchun bezak emas: birinchi o'rin eng ko'p
+         * ko'riladi va reklama beruvchiga aynan shu sotiladi. Tartib
+         * bazadagi qo'shilish ketma-ketligiga bog'lanib qolsa,
+         * admin uni boshqara olmasdi.
+         */
+        @Test
+        @DisplayName("Ro'yxat `sortOrder` bo'yicha keladi, qo'shilish tartibida emas")
+        void listFollowsSortOrder() {
+            MediaAsset img = image("karusel");
+
+            AdvertisementSaveRequest third = request("Uchinchi", img);
+            third.setSortOrder(30);
+            Advertisement c = homepageService.saveAdvertisement(null, null, third);
+
+            AdvertisementSaveRequest first = request("Birinchi", img);
+            first.setSortOrder(10);
+            Advertisement a = homepageService.saveAdvertisement(null, null, first);
+
+            AdvertisementSaveRequest second = request("Ikkinchi", img);
+            second.setSortOrder(20);
+            Advertisement b = homepageService.saveAdvertisement(null, null, second);
+
+            List<Long> ids = homepageService.advertisements().stream()
+                    .map(Advertisement::getId)
+                    .filter(id -> id.equals(a.getId()) || id.equals(b.getId())
+                            || id.equals(c.getId()))
+                    .toList();
+
+            assertThat(ids)
+                    .as("qo'shilish tartibi teskari edi - ro'yxat sortOrder ga bo'ysunsin")
+                    .containsExactly(a.getId(), b.getId(), c.getId());
+        }
+
+        @Test
+        @DisplayName("Tartibni o'zgartirish ro'yxatni qayta joylaydi")
+        void changingOrderMovesTheBanner() {
+            MediaAsset img = image("karusel-2");
+
+            AdvertisementSaveRequest r1 = request("Oldingi", img);
+            r1.setSortOrder(10);
+            Advertisement first = homepageService.saveAdvertisement(null, null, r1);
+
+            AdvertisementSaveRequest r2 = request("Keyingi", img);
+            r2.setSortOrder(20);
+            Advertisement second = homepageService.saveAdvertisement(null, null, r2);
+
+            // Ikkinchisini birinchi o'ringa ko'chiramiz.
+            AdvertisementSaveRequest move = request("Keyingi", img);
+            move.setSortOrder(5);
+            homepageService.saveAdvertisement(null, second.getId(), move);
+
+            List<Long> ids = homepageService.advertisements().stream()
+                    .map(Advertisement::getId)
+                    .filter(id -> id.equals(first.getId()) || id.equals(second.getId()))
+                    .toList();
+
+            assertThat(ids).containsExactly(second.getId(), first.getId());
         }
     }
 }
