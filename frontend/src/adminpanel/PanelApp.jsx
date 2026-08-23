@@ -26,6 +26,7 @@ import NotificationsPage from './pages/NotificationsPage';
 import UsersPage from './pages/UsersPage';
 import DonationsPage from './pages/DonationsPage';
 import CastingPage from './pages/CastingPage';
+import SubscriptionsPage from './pages/SubscriptionsPage';
 import TariffsPage from './pages/TariffsPage';
 import SettingsPage from './pages/SettingsPage';
 import ReportsPage from './pages/ReportsPage';
@@ -153,6 +154,14 @@ export default function PanelApp() {
               element={
                 <RequirePermission permission="CONTENT_VIEW">
                   <CastingPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="subscriptions"
+              element={
+                <RequirePermission permission="SUBSCRIPTION_VIEW">
+                  <SubscriptionsPage />
                 </RequirePermission>
               }
             />

@@ -1858,6 +1858,44 @@ tiklaydigan yuqoriroq rol yo'q.
 | Qurilma tarixi («yangi qurilma») | `refresh_token.ip`, `user_agent` |
 | Barcha sessiyani yopish | `RefreshTokenService.revokeAll` |
 
+## 28.3. Obunalar moduli `[x]` — ТЗ §71, §107
+
+### Nega qo'shildi
+
+Dashboard **obuna daromadini ko'rsatardi**, lekin admin qaysi obunalar
+bu raqamni bergani ko'ra olmasdi: na endpoint, na sahifa bor edi.
+`Subscription` entity, jadval va ma'lumot bor edi — faqat ularni
+ko'radigan yo'l yo'q edi.
+
+Moliyaviy ko'rsatkichni tekshirib bo'lmasa, u shunchaki ishonish kerak
+bo'lgan raqamga aylanadi.
+
+- `[x]` `GET /api/v1/app/admin/subscriptions` — sahifalangan, filtrlar
+  **birga** ishlaydi (§34 va §59 dagi xato takrorlanmasin)
+- `[x]` Filtrlar: holat (faol/tugagan), manba (xarid/sovg'a), tarif,
+  sana oralig'i, ism yoki telefon bo'yicha qidiruv
+- `[x]` `/app/panel/subscriptions` sahifasi + menyu bandi + uch til
+
+### ⚠️ Alohida ruxsat
+
+`SUBSCRIPTION_VIEW` qo'shildi. `TARIFF_VIEW` dan **ataylab ajratilgan**:
+tarif narxi ommaviy ma'lumot, obuna ro'yxati esa KIM qancha to'laganini
+ochadi. Ikkalasini bitta ruxsatga qo'shish tarif narxini ko'rishi kerak
+bo'lgan xodimga foydalanuvchilarning to'lov tarixini ham ochib berardi.
+
+Migratsiya kerak emas: ruxsatlar `user_permission` da nom bilan
+saqlanadi, ADMIN va undan yuqori rollar esa ruxsat ro'yxatiga
+qaramaydi.
+
+### ⚠️ Tahrirlash va o'chirish yo'q
+
+Obuna — moliyaviy yozuv (§42, §58). Premiumni berish yoki bekor qilish
+«Foydalanuvchilar» bo'limida, auditga tushadigan amal sifatida
+bajariladi (§38). Bu yerda faqat o'qish.
+
+**Sovg'a obunada `paidAmount` — `null`, nol emas.** Nol «bepul
+sotildi» degani, `null` esa «sotilmagan» (§45).
+
 ## 28. Indexes `[x]`
 
 - `[x]` **59 indeks** (61 yaratilgan − 2 ortiqchasi olib tashlangan) —

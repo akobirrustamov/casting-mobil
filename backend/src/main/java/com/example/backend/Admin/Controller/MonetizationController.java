@@ -3,6 +3,7 @@ package com.example.backend.Admin.Controller;
 import com.example.backend.Admin.CurrentUser;
 import com.example.backend.Admin.RequirePermission;
 import com.example.backend.Admin.Dto.CurrencyPackageDto;
+import com.example.backend.Admin.Dto.SubscriptionDto;
 import com.example.backend.Admin.Dto.DonationReportDto;
 import com.example.backend.Admin.Dto.DonationTransactionDto;
 import com.example.backend.Admin.Dto.PageResponse;
@@ -49,11 +50,59 @@ public class MonetizationController {
     private final SettingsService settingsService;
     private final com.example.backend.Cms.Service.CurrencyPricingService currencyPricingService;
     private final PermissionService permissionService;
+    private final com.example.backend.Cms.Repository.SubscriptionRepo subscriptionRepo;
 
     private void require(Permission permission) {
         if (!permissionService.hasPermission(CurrentUser.get(), permission)) {
             throw BusinessException.accessDenied("Ruxsat yo'q: " + permission);
         }
+    }
+
+    // ----------------------------------------------------------- obunalar
+
+    /**
+     * Obunalar ro'yxati (ТЗ §71, §107).
+     *
+     * <h2>Nega kerak bo'ldi</h2>
+     * Dashboard obuna daromadini ko'rsatardi, lekin admin QAYSI obunalar
+     * bu raqamni bergani ko'ra olmasdi: na endpoint, na sahifa bor edi.
+     * Ya'ni moliyaviy ko'rsatkichni tekshirib bo'lmasdi.
+     *
+     * <h2>Nega alohida ruxsat</h2>
+     * {@code TARIFF_VIEW} tarif narxini ko'rsatadi — u ommaviy ma'lumot.
+     * Bu ro'yxat esa KIM qancha to'laganini ochadi.
+     */
+    @GetMapping("/subscriptions")
+    @RequirePermission(Permission.SUBSCRIPTION_VIEW)
+    public ResponseEntity<PageResponse<SubscriptionDto>> subscriptions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(required = false) com.example.backend.Cms.Enums.SubscriptionSource source,
+            @RequestParam(required = false) Long tariffId,
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) String q,
+            @org.springframework.format.annotation.DateTimeFormat(iso =
+                    org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            @RequestParam(required = false) java.time.LocalDate from,
+            @org.springframework.format.annotation.DateTimeFormat(iso =
+                    org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            @RequestParam(required = false) java.time.LocalDate to) {
+
+        require(Permission.SUBSCRIPTION_VIEW);
+
+        var pageable = org.springframework.data.domain.PageRequest.of(
+                Math.max(0, page), Math.min(Math.max(1, size), 100));
+
+        var result = subscriptionRepo.search(
+                source, tariffId, active,
+                from == null ? null : from.atStartOfDay(),
+                // Kun oxirigacha: «to = 15-avgust» o'sha kunni ham qamrasin.
+                to == null ? null : to.atTime(java.time.LocalTime.MAX),
+                q == null || q.isBlank() ? null : q.trim(),
+                java.time.LocalDateTime.now(),
+                pageable);
+
+        return ResponseEntity.ok(PageResponse.of(result, SubscriptionDto::from));
     }
 
     // ---------------------------------------------------------------- tarif

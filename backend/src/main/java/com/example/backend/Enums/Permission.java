@@ -66,6 +66,16 @@ public enum Permission {
     TARIFF_VIEW,
     TARIFF_EDIT,
 
+    /**
+     * Obunalar ro'yxati (ТЗ §71, §107).
+     *
+     * ⚠️ {@code TARIFF_VIEW} dan alohida: tarif narxi ommaviy ma'lumot,
+     * obuna ro'yxati esa KIM qancha to'laganini ko'rsatadi. Ikkalasini
+     * bitta ruxsatga qo'shish tarif narxini ko'rishi kerak bo'lgan
+     * xodimga foydalanuvchilarning to'lov tarixini ham ochib berardi.
+     */
+    SUBSCRIPTION_VIEW,
+
     DONATION_VIEW,
     DONATION_PACKAGE_EDIT,
 

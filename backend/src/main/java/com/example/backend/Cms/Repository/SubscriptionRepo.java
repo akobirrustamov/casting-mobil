@@ -11,6 +11,63 @@ public interface SubscriptionRepo extends JpaRepository<Subscription, Long> {
     List<Subscription> findAllByUserIdOrderByEndAtDesc(UUID userId);
 
     /**
+     * Obunalar ro'yxati (ТЗ §71, §107).
+     *
+     * <h2>Nega bu kerak bo'ldi</h2>
+     * Dashboard obuna daromadini ko'rsatardi, lekin admin QAYSI obunalar
+     * bu raqamni bergani ko'ra olmasdi — endpoint ham, sahifa ham yo'q
+     * edi. Ya'ni raqamni tekshirib bo'lmasdi.
+     *
+     * <h2>Filtrlar birga ishlaydi</h2>
+     * Har bir shart {@code :param is null or ...} ko'rinishida — biri
+     * ikkinchisini bekor qilmaydi (§34 va §59 dagi xato takrorlanmasin).
+     *
+     * {@code active} — hozir amal qilayotganlar: bekor qilinmagan va
+     * muddati tugamagan.
+     */
+    @org.springframework.data.jpa.repository.Query(value = """
+            select s from Subscription s
+            left join fetch s.user u
+            left join fetch s.tariff t
+            where (:source is null or s.source = :source)
+              and (:tariffId is null or t.id = :tariffId)
+              and (:from is null or s.startAt >= :from)
+              and (:to is null or s.startAt <= :to)
+              and (:active is null
+                   or (:active = true  and s.revokedAt is null and s.endAt > :now)
+                   or (:active = false and (s.revokedAt is not null or s.endAt <= :now)))
+              and (:q is null
+                   or lower(u.phone) like lower(concat('%', :q, '%'))
+                   or lower(u.name) like lower(concat('%', :q, '%')))
+            order by s.startAt desc
+            """,
+            countQuery = """
+            select count(s) from Subscription s
+            left join s.user u
+            left join s.tariff t
+            where (:source is null or s.source = :source)
+              and (:tariffId is null or t.id = :tariffId)
+              and (:from is null or s.startAt >= :from)
+              and (:to is null or s.startAt <= :to)
+              and (:active is null
+                   or (:active = true  and s.revokedAt is null and s.endAt > :now)
+                   or (:active = false and (s.revokedAt is not null or s.endAt <= :now)))
+              and (:q is null
+                   or lower(u.phone) like lower(concat('%', :q, '%'))
+                   or lower(u.name) like lower(concat('%', :q, '%')))
+            """)
+    org.springframework.data.domain.Page<Subscription> search(
+            @org.springframework.data.repository.query.Param("source")
+            com.example.backend.Cms.Enums.SubscriptionSource source,
+            @org.springframework.data.repository.query.Param("tariffId") Long tariffId,
+            @org.springframework.data.repository.query.Param("active") Boolean active,
+            @org.springframework.data.repository.query.Param("from") java.time.LocalDateTime from,
+            @org.springframework.data.repository.query.Param("to") java.time.LocalDateTime to,
+            @org.springframework.data.repository.query.Param("q") String q,
+            @org.springframework.data.repository.query.Param("now") java.time.LocalDateTime now,
+            org.springframework.data.domain.Pageable pageable);
+
+    /**
      * Obuna daromadi (§45).
      *
      * ⚠️ FAQAT haqiqiy xaridlar: {@code ADMIN_GIFT} obunalarida

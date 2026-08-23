@@ -343,6 +343,7 @@ export const adminApi = {
   userDevices: (id) => api.get(`/api/v1/app/admin/users/${id}/devices`),
   revokeDevice: (id, rowId) => api.del(`/api/v1/app/admin/users/${id}/devices/${rowId}`),
 
+  subscriptions: (params) => api.get('/api/v1/app/admin/subscriptions', params),
   tariffs: () => api.get('/api/v1/app/admin/tariffs'),
   createTariff: (body) => api.post('/api/v1/app/admin/tariffs', body),
   updateTariff: (id, body) => api.put(`/api/v1/app/admin/tariffs/${id}`, body),
