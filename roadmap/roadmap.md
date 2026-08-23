@@ -227,7 +227,8 @@ tekshiradi.
 |---|---|---|
 | §78 | 8 ta RBAC bandi | `AcceptanceCriteriaTest` — raqamlangan, bandma-band |
 | §78 | chuqur tekshiruv | `HyperAdminHierarchyTest`, `StaffManagementTest`, `RbacIntegrationTest`, `BackendAuthorizationTest`, `UserCannotEnterPanelTest`, `SidebarPermissionsTest` |
-| §79 | 5 ta kontent turi + barcha maydonlar | `ContentStructureTest`, `ContentEditRoundTripTest`, `ContentClassificationTest` |
+| §79 | 5 ta kontent turi + barcha maydonlar | `ContentAcceptanceTest` — turlar parametrlangan, maydonlar bandma-band |
+| §79 | chuqur tekshiruv | `ContentStructureTest`, `ContentEditRoundTripTest`, `ContentClassificationTest` |
 | §80 | Serial / mini serial tuzilishi | `ContentStructureTest` (SEASONAL fasl bilan, EPISODIC fasilsiz) |
 | §81 | Reklama + CTR hisoboti | `AdAnalyticsTest`, `AdStatisticsEndpointTest`, `AdvertisementModuleTest` |
 | §82 | Ijodkor yaratish, qidirish, biriktirish | `CreatorSelectionTest`, `ContentEditRoundTripTest` |
@@ -601,7 +602,7 @@ Til tanlovi `localStorage` da saqlanadi va kontent tarjimasiga ham ta'sir qiladi
 | 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma: rejalashtirish ishlaydi, hisobot halol (ТЗ §32–§33). FCM ulanmagan |
 | 7 | Users & Monetization — tariffs, premium, Stars, Coin | `[x]` foydalanuvchi, tarif, balans, qurilma, donat |
 | 8 | Analytics — events, aggregation, dashboard, reports | `[x]` ikki qatlamli: xom hodisa + kunlik jamlanma |
-| 9 | Hardening — tests, performance, security, indexes | `[~]` 706 test; migratsiyalar V1–V26 |
+| 9 | Hardening — tests, performance, security, indexes | `[~]` 713 test; migratsiyalar V1–V26 |
 
 ---
 
