@@ -59,6 +59,23 @@ export function useCreators() {
   });
 }
 
+/**
+ * Один креатор.
+ *
+ * Берём из того же списка, а не отдельным запросом. Причины две:
+ * эндпоинт `/casting-user/appeal/{id}` отдаёт полную анкету вместе
+ * с персональными данными (телефон, email, замеры) — тянуть их в приложение
+ * нельзя; и список уже в кэше, так что открытие профиля мгновенное.
+ */
+export function useCreator(id: number | null) {
+  return useQuery({
+    queryKey: ['creators'],
+    queryFn: fetchCreators,
+    enabled: id !== null,
+    select: (list) => list.find((c) => c.id === id) ?? null,
+  });
+}
+
 /** Только те, у кого есть хотя бы одно публичное фото — для витрин. */
 export function withPhotos(creators: Creator[] | undefined): Creator[] {
   return (creators ?? []).filter((c) => c.photoUrls.length > 0);

@@ -1,6 +1,7 @@
 package com.example.backend.Controller;
 
 import com.example.backend.DTO.CastingUserDTO;
+import com.example.backend.DTO.CastingUserPublicDto;
 import com.example.backend.Entity.Attachment;
 import com.example.backend.Entity.CastingUser;
 import com.example.backend.Entity.Message;
@@ -30,9 +31,17 @@ public class CastingUserController {
         List<CastingUser> all = castingUserRepo.findAllByOrderByCreatedAtDesc();
         return new ResponseEntity<>(all, HttpStatus.OK);
     }
+    /**
+     * Ochiq katalog. Tokensiz kirish mumkin, shuning uchun FAQAT vitrina
+     * maydonlari qaytariladi — telefon, email, ijtimoiy tarmoqlar va tana
+     * o'lchovlari bu yerdan chiqmaydi (batafsil: {@link CastingUserPublicDto}).
+     */
     @GetMapping("/web")
     public HttpEntity<?> getAllCastingUserWeb(){
-        List<CastingUser> all = castingUserRepo.findAllByIsWebShow(true);
+        List<CastingUserPublicDto> all = castingUserRepo.findAllByIsWebShow(true)
+                .stream()
+                .map(CastingUserPublicDto::from)
+                .toList();
         return new ResponseEntity<>(all, HttpStatus.OK);
     }
 

@@ -1,11 +1,14 @@
 package com.example.backend.Config;
 
+import com.example.backend.Admin.PermissionInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.resource.ResourceResolver;
@@ -18,7 +21,19 @@ import java.util.List;
 
 
 @Configuration
+@RequiredArgsConstructor
 public class WebMvcConfig implements WebMvcConfigurer {
+
+    private final PermissionInterceptor permissionInterceptor;
+
+    /**
+     * Ruxsat tekshiruvi so'rov tanasi o'qilishidan oldin ishlashi uchun.
+     * Batafsil: {@link PermissionInterceptor}.
+     */
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(permissionInterceptor).addPathPatterns("/api/**");
+    }
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
@@ -79,8 +94,25 @@ public class WebMvcConfig implements WebMvcConfigurer {
             }
         }
 
+        /**
+         * SPA fallback API yo'llariga TEGMASLIGI kerak.
+         *
+         * ⚠️ Ilgari bu {@code ignoredPaths.contains(path)} edi, ya'ni faqat
+         * AYNAN "api" degan yo'lni tanirdi. Natijada mavjud bo'lmagan API
+         * yo'li ({@code /api/v1/app/admin/xato}) 404 emas, {@code index.html}
+         * sahifasini 200 bilan qaytarardi.
+         *
+         * Klient uchun bu chalg'ituvchi: JSON kutgan joyda HTML keladi va
+         * xato "yo'q endpoint" emas, "javobni o'qib bo'lmadi" ko'rinishida
+         * chiqadi.
+         *
+         * Endi prefiks bo'yicha tekshiriladi.
+         */
         private boolean isIgnored(String path) {
-            return ignoredPaths.contains(path);
+            String normalized = path.startsWith("/") ? path.substring(1) : path;
+            return ignoredPaths.stream()
+                    .anyMatch(ignored -> normalized.equals(ignored)
+                            || normalized.startsWith(ignored + "/"));
         }
 
         private boolean isHandled(String path) {

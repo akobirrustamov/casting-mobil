@@ -1,0 +1,44 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://uzcasting.site",
+        "EXPO_PUBLIC_READ_ONLY": "true",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "497193534365-urqt7p6tufge2qpqhdns5qv8nvshjsqe.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "497193534365-03mh4geit6f6n13enrf2bqcs8dhcp1cb.apps.googleusercontent.com"
+      },
+      "android": {
+        "buildType": "apk",
+        "credentialsSource": "local"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://uzcasting.site",
+        "EXPO_PUBLIC_READ_ONLY": "true",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "497193534365-urqt7p6tufge2qpqhdns5qv8nvshjsqe.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "497193534365-03mh4geit6f6n13enrf2bqcs8dhcp1cb.apps.googleusercontent.com"
+      },
+      "android": {
+        "buildType": "apk",
+        "credentialsSource": "local"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

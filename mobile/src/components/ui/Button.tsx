@@ -11,9 +11,17 @@ import { TOUCH_TARGET, colors } from '@/theme/tokens';
  */
 type Variant = 'primary' | 'premium' | 'gold' | 'secondary';
 
+/**
+ * На макетах входа и презентации кнопки — скруглённые прямоугольники,
+ * а не пилюли. Форма вынесена в параметр, чтобы не переверстывать экраны,
+ * которых в макете нет.
+ */
+type Shape = 'pill' | 'card';
+
 type Props = Omit<PressableProps, 'children'> & {
   children: string;
   variant?: Variant;
+  shape?: Shape;
   loading?: boolean;
   className?: string;
 };
@@ -35,12 +43,14 @@ const FG: Record<Variant, string> = {
 export function Button({
   children,
   variant = 'primary',
+  shape = 'pill',
   loading = false,
   disabled = false,
   className = '',
   ...rest
 }: Props) {
   const isInactive = disabled || loading;
+  const radius = shape === 'card' ? 'rounded-card' : 'rounded-pill';
 
   return (
     <Pressable
@@ -48,7 +58,7 @@ export function Button({
       accessibilityState={{ disabled: isInactive, busy: loading }}
       disabled={isInactive}
       style={{ minHeight: TOUCH_TARGET }}
-      className={`flex-row items-center justify-center gap-2 rounded-pill px-6 ${BG[variant]} ${
+      className={`flex-row items-center justify-center gap-2 px-6 ${radius} ${BG[variant]} ${
         isInactive ? 'opacity-40' : 'active:opacity-80'
       } ${className}`}
       {...rest}

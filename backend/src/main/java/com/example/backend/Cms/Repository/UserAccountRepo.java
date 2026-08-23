@@ -1,0 +1,45 @@
+package com.example.backend.Cms.Repository;
+
+import com.example.backend.Cms.Entity.UserAccount;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+public interface UserAccountRepo extends JpaRepository<UserAccount, Long> {
+
+    Optional<UserAccount> findByUserId(UUID userId);
+
+    /**
+     * Til bo'yicha foydalanuvchilar soni (mobil 3 tilli talabi).
+     *
+     * <h2>Nega kerak</h2>
+     * Bildirishnoma yuborishdan oldin admin auditoriyani bilishi kerak:
+     * uchala tarjima ham majburiy, lekin RU matni bo'sh qolsa
+     * necha kishi tushunmaydigan xabar olishini ko'rish kerak.
+     *
+     * ⚠️ Hisobi yo'q foydalanuvchi bu yerga KIRMAYDI. Uni UZ ga
+     * qo'shish taxminni fakt sifatida ko'rsatish bo'lardi — u hali
+     * ilovani ochmagan va til tanlamagan.
+     */
+    @org.springframework.data.jpa.repository.Query(
+            "select a.language as language, count(a) as total from UserAccount a "
+                    + "group by a.language")
+    java.util.List<LanguageCount> countByLanguage();
+
+    interface LanguageCount {
+        com.example.backend.Cms.Enums.Locale getLanguage();
+        long getTotal();
+    }
+
+    /** Ro'yxat uchun — har bir foydalanuvchiga alohida so'rov ketmasin (N+1). */
+    List<UserAccount> findAllByUserIdIn(Collection<UUID> userIds);
+
+    long countByPremiumUntilAfter(LocalDateTime moment);
+
+    /** Berilgan sanadan keyin faol bo'lganlar (§45 «Active users»). */
+    long countByLastActiveAtAfter(LocalDateTime moment);
+}

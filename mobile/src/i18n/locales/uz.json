@@ -30,7 +30,49 @@
     "locked": "Yopiq",
     "purchased": "Olingan",
     "premiere": "Premyera",
-    "years": "{{count}} yosh"
+    "years": "{{count}} yosh",
+    "premium": "Premium",
+    "free": "Bepul"
+  },
+  "splash": {
+    "subtitle": "Ijodkorlar uchun platforma"
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "next": "KEYINGI",
+    "start": "BOSHLASH",
+    "casting": {
+      "title": "Castingni toping",
+      "body": "Rollar, portfolio va professional imkoniyatlar bir joyda"
+    },
+    "premiere": {
+      "title": "Premyerani birinchi bo'lib ko'ring",
+      "body": "Eksklyuziv seriallar, ko'rsatuvlar va filmlar"
+    },
+    "earn": {
+      "title": "Ijod qiling va daromad oling",
+      "body": "Kontentingiz uchun to'g'ridan-to'g'ri to'lov"
+    },
+    "stars": {
+      "title": "UZCASTING STARS",
+      "body": "Sevimli ijodkorlaringizni qo'llab-quvvatlang"
+    }
+  },
+  "auth": {
+    "phoneTitle": "Iltimos, telefon raqamingizni kiriting",
+    "consentTail": "roziman",
+    "phonePlaceholder": "91 123 45 67",
+    "continue": "DAVOM ETISH",
+    "consentPrefix": "Davom etish orqali siz",
+    "termsLink": "Foydalanuvchi kelishuvi",
+    "consentMiddle": "va",
+    "privacyLink": "Maxfiylik siyosatiga",
+    "consentSuffix": "rozilik bildirasiz",
+    "or": "yoki",
+    "google": "Google orqali kirish",
+    "googleUnavailable": "Google kiritish hozircha sozlanmagan",
+    "cancelled": "Kirish bekor qilindi",
+    "skip": "Keyinroq"
   },
   "home": {
     "todayPremieres": "Bugungi premyeralar",
@@ -41,7 +83,10 @@
     "premiumBody": "Eksklyuziv premyeralarni birinchi bo'lib ko'ring",
     "premiumCta": "Premiumga o'tish",
     "heroSubtitle": "Bugun faqat UzCasting'da",
-    "unlock": "Ochish"
+    "unlock": "Ochish",
+    "castingCreators": "Casting ijodkorlari",
+    "feedUnavailableTitle": "Bosh sahifa yuklanmadi",
+    "feedUnavailableBody": "Server bosh sahifa bo'limlarini bermayapti."
   },
   "casting": {
     "title": "Casting e'lonlari",
@@ -56,7 +101,8 @@
     "tabsAll": "Barchasi",
     "tabsSeries": "Seriallar",
     "tabsShows": "Ko'rsatuvlar",
-    "tabsMovies": "Filmlar"
+    "tabsMovies": "Filmlar",
+    "emptyByTab": "Bu bo'limda hozircha kontent yo'q."
   },
   "profile": {
     "title": "Profil",
@@ -75,5 +121,68 @@
     "logout": "Chiqish",
     "guest": "Mehmon",
     "signIn": "Kirish"
+  },
+  "catalog": {
+    "title": "Katalog",
+    "all": "Barchasi",
+    "filters": "Filtrlar",
+    "reset": "Tozalash",
+    "gender": "Jins",
+    "age": "Yosh",
+    "region": "Viloyat",
+    "male": "Erkak",
+    "female": "Ayol",
+    "found": "{{count}} ta anketa",
+    "emptyByFilters": "Tanlangan filtrlarga mos anketa topilmadi. Shartlarni kengaytiring.",
+    "noDataYet": "Bu yo'nalish bo'yicha anketalar hali qo'shilmagan."
+  },
+  "creator": {
+    "age": "Yosh",
+    "height": "Bo'y",
+    "region": "Viloyat",
+    "gender": "Jins",
+    "cm": "sm",
+    "notFound": "Anketa topilmadi"
+  },
+  "search": {
+    "minLength": "Minimal qidiruv uzunligi {{count}} ta harf!",
+    "hintTitle": "Kimni qidiryapsiz?",
+    "hintBody": "Ism, yo'nalish yoki viloyat bo'yicha qidiring.",
+    "nothingTitle": "Hech narsa topilmadi",
+    "nothingBody": "Boshqa so'z bilan urinib ko'ring."
+  },
+  "favorites": {
+    "empty": "Yurak belgisini bosib, yoqqan ijodkorlarni shu yerga qo'shing."
+  },
+  "content": {
+    "notFound": "Bu kontent topilmadi",
+    "multiPartTitle": "Kontent qismlardan iborat",
+    "multiPartBody": "Qismlar ro'yxatini ilova hali ololmaydi — bu uchun server tomonida alohida manzil kerak.",
+    "noVideo": "Video hali yuklanmagan",
+    "part": "{{number}}-qism",
+    "minutes": "{{count}} daqiqa",
+    "needSignIn": "Ko'rish uchun hisobingizga kiring.",
+    "needPurchase": "Bu kontent sotib olingandan keyin ochiladi.",
+    "needSubscription": "Bu kontentni Premium obuna ochadi.",
+    "needPurchaseOrSubscription": "Kontentni alohida sotib olish yoki Premium obuna bilan ochish mumkin.",
+    "subscribe": "Premium olish",
+    "paymentSoon": "To'lov ilovada hali ulanmagan.",
+    "notPublished": "Kontent hali nashr qilinmagan.",
+    "userBlocked": "Hisobingiz bloklangan. Qo'llab-quvvatlash xizmatiga murojaat qiling.",
+    "episodes": "Qismlar",
+    "season": "{{number}}-mavsum",
+    "episodesEmpty": "Bu mavsumda hali qism yo'q"
+  },
+  "contentType": {
+    "SHORT_FILM": "Qisqa metraj",
+    "MOVIE": "Film",
+    "MINI_SERIES": "Mini-serial",
+    "SERIES": "Serial",
+    "PODCAST": "Podkast",
+    "SHOW": "Ko'rsatuv",
+    "INTERVIEW": "Intervyu",
+    "STREAM": "Jonli efir",
+    "CLIP": "Klip",
+    "OTHER": "Boshqa"
   }
 }

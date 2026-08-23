@@ -30,7 +30,49 @@
     "locked": "Закрыто",
     "purchased": "Куплено",
     "premiere": "Премьера",
-    "years": "{{count}} лет"
+    "years": "{{count}} лет",
+    "premium": "Premium",
+    "free": "Бесплатно"
+  },
+  "splash": {
+    "subtitle": "Платформа для креаторов"
+  },
+  "onboarding": {
+    "skip": "Пропустить",
+    "next": "ДАЛЕЕ",
+    "start": "НАЧАТЬ",
+    "casting": {
+      "title": "Найдите кастинг",
+      "body": "Роли, портфолио и профессиональные возможности в одном месте"
+    },
+    "premiere": {
+      "title": "Смотрите премьеры первыми",
+      "body": "Эксклюзивные сериалы, шоу и фильмы"
+    },
+    "earn": {
+      "title": "Творите и зарабатывайте",
+      "body": "Прямые выплаты за ваш контент"
+    },
+    "stars": {
+      "title": "UZCASTING STARS",
+      "body": "Поддерживайте любимых креаторов"
+    }
+  },
+  "auth": {
+    "phoneTitle": "Пожалуйста, введите номер телефона",
+    "consentTail": "согласен",
+    "phonePlaceholder": "91 123 45 67",
+    "continue": "ПРОДОЛЖИТЬ",
+    "consentPrefix": "Продолжая, вы соглашаетесь с",
+    "termsLink": "Пользовательским соглашением",
+    "consentMiddle": "и",
+    "privacyLink": "Политикой конфиденциальности",
+    "consentSuffix": "",
+    "or": "или",
+    "google": "Войти через Google",
+    "googleUnavailable": "Вход через Google пока не настроен",
+    "cancelled": "Вход отменён",
+    "skip": "Позже"
   },
   "home": {
     "todayPremieres": "Сегодняшние премьеры",
@@ -41,7 +83,10 @@
     "premiumBody": "Смотрите эксклюзивные премьеры первыми",
     "premiumCta": "Перейти на Premium",
     "heroSubtitle": "Сегодня только на UzCasting",
-    "unlock": "Открыть"
+    "unlock": "Открыть",
+    "castingCreators": "Креаторы кастинга",
+    "feedUnavailableTitle": "Главная не загрузилась",
+    "feedUnavailableBody": "Сервер не отдаёт блоки главной."
   },
   "casting": {
     "title": "Кастинги",
@@ -56,7 +101,8 @@
     "tabsAll": "Все",
     "tabsSeries": "Сериалы",
     "tabsShows": "Шоу",
-    "tabsMovies": "Фильмы"
+    "tabsMovies": "Фильмы",
+    "emptyByTab": "В этом разделе пока нет контента."
   },
   "profile": {
     "title": "Профиль",
@@ -75,5 +121,68 @@
     "logout": "Выйти",
     "guest": "Гость",
     "signIn": "Войти"
+  },
+  "catalog": {
+    "title": "Каталог",
+    "all": "Все",
+    "filters": "Фильтры",
+    "reset": "Сбросить",
+    "gender": "Пол",
+    "age": "Возраст",
+    "region": "Регион",
+    "male": "Мужчины",
+    "female": "Женщины",
+    "found": "Анкет: {{count}}",
+    "emptyByFilters": "По выбранным фильтрам никого нет. Попробуйте смягчить условия.",
+    "noDataYet": "Анкеты по этому направлению ещё не добавлены."
+  },
+  "creator": {
+    "age": "Возраст",
+    "height": "Рост",
+    "region": "Регион",
+    "gender": "Пол",
+    "cm": "см",
+    "notFound": "Анкета не найдена"
+  },
+  "search": {
+    "minLength": "Минимальная длина запроса — {{count}} символа!",
+    "hintTitle": "Кого ищете?",
+    "hintBody": "Ищите по имени, направлению или региону.",
+    "nothingTitle": "Ничего не найдено",
+    "nothingBody": "Попробуйте другое слово."
+  },
+  "favorites": {
+    "empty": "Нажимайте на сердечко, чтобы креаторы попадали сюда."
+  },
+  "content": {
+    "notFound": "Такого контента нет",
+    "multiPartTitle": "Контент состоит из серий",
+    "multiPartBody": "Список серий приложение пока получить не может — для него нужен отдельный адрес на бэкенде.",
+    "noVideo": "Видео ещё не загружено",
+    "part": "Часть {{number}}",
+    "minutes": "{{count}} мин",
+    "needSignIn": "Чтобы смотреть, войдите в аккаунт.",
+    "needPurchase": "Этот контент открывается после покупки.",
+    "needSubscription": "Этот контент открывает подписка Premium.",
+    "needPurchaseOrSubscription": "Контент можно купить отдельно или открыть подпиской Premium.",
+    "subscribe": "Оформить Premium",
+    "paymentSoon": "Оплата в приложении пока не подключена.",
+    "notPublished": "Контент ещё не опубликован.",
+    "userBlocked": "Ваш аккаунт заблокирован. Напишите в поддержку.",
+    "episodes": "Серии",
+    "season": "Сезон {{number}}",
+    "episodesEmpty": "В этом сезоне пока нет серий"
+  },
+  "contentType": {
+    "SHORT_FILM": "Короткий метр",
+    "MOVIE": "Фильм",
+    "MINI_SERIES": "Мини-сериал",
+    "SERIES": "Сериал",
+    "PODCAST": "Подкаст",
+    "SHOW": "Шоу",
+    "INTERVIEW": "Интервью",
+    "STREAM": "Эфир",
+    "CLIP": "Клип",
+    "OTHER": "Другое"
   }
 }

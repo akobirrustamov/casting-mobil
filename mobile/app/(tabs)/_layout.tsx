@@ -1,8 +1,7 @@
 import { Tabs } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Text, type ColorValue } from 'react-native';
 
-import { colors } from '@/theme/tokens';
+import { TabBar } from '@/components/navigation/TabBar';
 
 /**
  * 5 вкладок зафиксированы в ТЗ (V2, стр. 19 «NAVIGATION + ROLE SYSTEM»)
@@ -12,63 +11,26 @@ import { colors } from '@/theme/tokens';
  * Роль Creator добавляет Creator Studio / Upload / Revenue / Withdraw —
  * это не 6-я вкладка, а раздел внутри Profil.
  *
- * TODO: иконки заменить на набор из Figma после утверждения макетов.
+ * Сам бар отрисован своим компонентом — стандартный не даёт
+ * плавающую капсулу и анимацию переключения, как в Yangi.TV.
  */
-function TabIcon({ glyph, color }: { glyph: string; color: ColorValue }) {
-  return <Text style={{ color, fontSize: 20 }}>{glyph}</Text>;
-}
-
 export default function TabsLayout() {
   const { t } = useTranslation();
 
   return (
     <Tabs
+      tabBar={(props) => <TabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.purple,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-        },
-        tabBarLabelStyle: { fontSize: 11 },
+        // Плавное перетекание вместо резкой подмены экрана
+        animation: 'fade',
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: t('tabs.home'),
-          tabBarIcon: ({ color }) => <TabIcon glyph="⌂" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="casting"
-        options={{
-          title: t('tabs.casting'),
-          tabBarIcon: ({ color }) => <TabIcon glyph="☆" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="premiere"
-        options={{
-          title: t('tabs.premiere'),
-          tabBarIcon: ({ color }) => <TabIcon glyph="▶" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="messages"
-        options={{
-          title: t('tabs.messages'),
-          tabBarIcon: ({ color }) => <TabIcon glyph="◍" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: t('tabs.profile'),
-          tabBarIcon: ({ color }) => <TabIcon glyph="◯" color={color} />,
-        }}
-      />
+      <Tabs.Screen name="index" options={{ title: t('tabs.home') }} />
+      <Tabs.Screen name="casting" options={{ title: t('tabs.casting') }} />
+      <Tabs.Screen name="premiere" options={{ title: t('tabs.premiere') }} />
+      <Tabs.Screen name="messages" options={{ title: t('tabs.messages') }} />
+      <Tabs.Screen name="profile" options={{ title: t('tabs.profile') }} />
     </Tabs>
   );
 }

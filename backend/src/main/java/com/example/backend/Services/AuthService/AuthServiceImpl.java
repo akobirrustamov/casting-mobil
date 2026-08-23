@@ -1,20 +1,28 @@
 package com.example.backend.Services.AuthService;
 
 import com.example.backend.DTO.UserDTO;
+import com.example.backend.Entity.Role;
 import com.example.backend.Entity.User;
+import com.example.backend.Enums.UserRoles;
+import com.example.backend.Repository.RoleRepo;
 import com.example.backend.Repository.UserRepo;
+import com.example.backend.Security.GoogleTokenVerifier;
 import com.example.backend.Security.JwtService;
 import com.example.backend.exceptions.InvalidCredentialsException;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,9 +31,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
     private final UserRepo userRepo;
+    private final RoleRepo roleRepo;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
+    private final GoogleTokenVerifier googleTokenVerifier;
     @Override
     public HttpEntity<Map<String, Object>> login(UserDTO userDTO) {
         Optional<User> userOpt = userRepo.findByPhone(userDTO.getPhone());
@@ -48,6 +58,91 @@ public class AuthServiceImpl implements AuthService {
 
         response.put("roles", user.getRoles());
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Google login.
+     *
+     * Ilova Google'dan olgan ID token'ni yuboradi -> imzo va audience tekshiriladi
+     * -> "sub" bo'yicha foydalanuvchi topiladi yoki yaratiladi -> o'z JWT'imiz qaytariladi.
+     *
+     * Telefon bu bosqichda so'ralmaydi: yangi foydalanuvchida u null bo'ladi.
+     * Javobdagi "phone_required" bayrog'i ilovaga telefon so'rash kerakligini bildiradi.
+     */
+    @Override
+    @Transactional
+    public HttpEntity<?> googleLogin(String idToken) {
+        GoogleIdToken.Payload payload;
+        try {
+            payload = googleTokenVerifier.verify(idToken);
+        } catch (IllegalStateException e) {
+            // Server sozlanmagan - bu mijozning aybi emas
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", e.getMessage()));
+        }
+
+        String googleSub = payload.getSubject();
+        String email = payload.getEmail();
+        String name = (String) payload.get("name");
+        String picture = (String) payload.get("picture");
+
+        User user = userRepo.findByGoogleSub(googleSub)
+                .or(() -> userRepo.findByEmail(email))
+                .map(existing -> linkGoogle(existing, googleSub, name, picture))
+                .orElseGet(() -> createGoogleUser(googleSub, email, name, picture));
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("access_token", jwtService.generateJwtToken(user));
+        response.put("refresh_token", jwtService.generateJwtRefreshToken(user));
+        response.put("roles", user.getRoles());
+        response.put("phone_required", user.getPhone() == null);
+        response.put("user", Map.of(
+                "id", user.getId().toString(),
+                "name", user.getName() == null ? "" : user.getName(),
+                "email", user.getEmail() == null ? "" : user.getEmail(),
+                "avatarUrl", user.getAvatarUrl() == null ? "" : user.getAvatarUrl()
+        ));
+        return ResponseEntity.ok(response);
+    }
+
+    /** Email bo'yicha topilgan eski hisobga Google'ni bog'laymiz. */
+    private User linkGoogle(User user, String googleSub, String name, String picture) {
+        boolean changed = false;
+
+        if (user.getGoogleSub() == null) {
+            user.setGoogleSub(googleSub);
+            changed = true;
+        }
+        if (user.getName() == null && name != null) {
+            user.setName(name);
+            changed = true;
+        }
+        if (user.getAvatarUrl() == null && picture != null) {
+            user.setAvatarUrl(picture);
+            changed = true;
+        }
+
+        return changed ? userRepo.save(user) : user;
+    }
+
+    private User createGoogleUser(String googleSub, String email, String name, String picture) {
+        Role userRole = roleRepo.findByName(UserRoles.ROLE_USER);
+
+        User user = User.builder()
+                .googleSub(googleSub)
+                .email(email)
+                .name(name)
+                .avatarUrl(picture)
+                // Parol yo'q: bu hisobga faqat Google orqali kiriladi.
+                // Tasodifiy qiymat - hech qachon mos kelmasligi uchun.
+                .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .roles(userRole == null ? List.of() : List.of(userRole))
+                .build();
+
+        return userRepo.save(user);
     }
 
     @Override

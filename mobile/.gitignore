@@ -43,3 +43,12 @@ yarn-error.*
 # tooling artifacts
 .playwright-mcp/
 .claude/
+
+# env
+.env
+
+
+# EAS credentials - keystore va parollar repoga tushmaydi
+credentials.json
+credentials/
+

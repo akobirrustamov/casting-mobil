@@ -5,7 +5,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "uzcasting",
+    "scheme": [
+      "uzcasting",
+      "uz.uzcasting.app"
+    ],
     "userInterfaceStyle": "dark",
     "backgroundColor": "#07070D",
     "newArchEnabled": true,
@@ -29,12 +32,27 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#07070D",
+          "imageWidth": 180
+        }
+      ],
       "expo-secure-store",
       "expo-image",
       "expo-video",
       "expo-web-browser",
       "expo-localization",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0ce6ce6a-5243-426b-9a5f-adff85882fec"
+      }
+    },
+    "owner": "bukakish"
   }
 }

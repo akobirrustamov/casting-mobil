@@ -1,5 +1,6 @@
 package com.example.backend.Controller;
 
+import com.example.backend.DTO.GoogleLoginDTO;
 import com.example.backend.DTO.UserDTO;
 import com.example.backend.Entity.User;
 import com.example.backend.Repository.UserRepo;
@@ -25,6 +26,12 @@ public class AuthController {
     @PostMapping(value = "/login", consumes = "application/json")
     public HttpEntity<?> login(@RequestBody UserDTO dto) {
         return service.login(dto);
+    }
+
+    /** Mobil ilovadan Google login: {"idToken": "..."} */
+    @PostMapping(value = "/google", consumes = "application/json")
+    public HttpEntity<?> googleLogin(@RequestBody GoogleLoginDTO dto) {
+        return service.googleLogin(dto.getIdToken());
     }
 
     @PostMapping("/refresh")

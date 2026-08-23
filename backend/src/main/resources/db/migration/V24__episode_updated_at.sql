@@ -1,0 +1,12 @@
+-- V24 — qism uchun «oxirgi tahrir» ustuni (ТЗ §60).
+--
+-- Optimistik qulf uchun ham zarur: Hibernate egasining @Version ini
+-- faqat uning O'Z ustuni o'zgarganda oshiradi. Qism matni tarjima
+-- jadvalida joyida tahrirlanadi, ya'ni qism qatori toza qolardi va
+-- versiya oshmasdi — ikki admin bir qismning tavsifini navbatma-navbat
+-- yozib, bir-birining ishini indamay bosib ketaverardi.
+--
+-- Mavjud qatorlar uchun qiymat NULL qoladi: «qachon tahrirlangani
+-- noma'lum» — bu haqiqat, uni yaratilish sanasi bilan to'ldirish
+-- soxta ma'lumot bo'lardi.
+alter table cms_episode add column if not exists updated_at timestamp;

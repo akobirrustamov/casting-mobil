@@ -1,30 +1,35 @@
 /**
  * ⚠️ ВРЕМЕННЫЕ ДАННЫЕ — НЕ ПРОДАКШЕН.
  *
- * Для премьер и кастинг-объявлений API пока нет (есть только каталог
- * креаторов — он подключён по-настоящему в features/creators).
- * Эти данные нужны, чтобы собрать и посмотреть главные экраны до контракта.
+ * Осталось только для кастинг-объявлений: эндпоинта для них нет ни в старом
+ * API сайта, ни в новой платформе `/api/v1/app/**`. Удалить, как только он
+ * появится.
  *
- * Названия сериалов взяты из мокапов ТЗ (V4), цена 5 000 сум — из ТЗ.
- * Удалить целиком, как только появятся эндпоинты.
+ * Премьеры отсюда убраны — главная и вкладка «Premyera» работают на
+ * `GET /api/v1/app/home` (`src/features/home`).
+ *
+ * Цены ниже — не заглушка: это цифры заказчика от 13.08.2026, они понадобятся
+ * экрану Premium. Цена конкретного контента приходит с бэкенда вместе с правом
+ * доступа (`/api/v1/app/watch/{episodeId}`) и здесь не выдумывается.
  */
 
-export const EPISODE_PRICE = 5000;
+/**
+ * Цены — из сообщения заказчика от 13.08.2026, см. docs/MONETIZATION.md.
+ * ⚠️ В ТЗ и на мокапах стоит 5 000 за серию — эта цифра устарела.
+ */
+export const EPISODE_PRICE = 3000;
+export const PREMIERE_PRICE = 15000;
 
-export type PlaceholderPremiere = {
-  id: string;
-  title: string;
-  episode: string;
-  purchased: boolean;
-};
+/** Тарифы Premium. */
+export const PREMIUM_PLANS = [
+  { id: 'm1', months: 1, price: 24000, best: false },
+  { id: 'm3', months: 3, price: 49999, best: false },
+  { id: 'm6', months: 6, price: 99000, best: false },
+  { id: 'y1', months: 12, price: 159900, best: true },
+] as const;
 
-export const PREMIERES: PlaceholderPremiere[] = [
-  { id: 'p1', title: 'Qalbim egasi', episode: '2-qism', purchased: false },
-  { id: 'p2', title: 'Shahar soyasida', episode: '3-qism', purchased: false },
-  { id: 'p3', title: 'Meni kechir', episode: '4-qism', purchased: true },
-  { id: 'p4', title: 'Orzular ortida', episode: '5-qism', purchased: false },
-  { id: 'p5', title: "Yuragim iztirobi", episode: '4-qism', purchased: false },
-];
+/** Пакеты UzCasting Stars — донаты креаторам. */
+export const STARS_PACKS = [10, 50, 100, 500, 1000] as const;
 
 export type PlaceholderCasting = {
   id: string;

@@ -1,0 +1,188 @@
+{
+  "tabs": {
+    "home": "Home",
+    "casting": "Casting",
+    "premiere": "Premiere",
+    "messages": "Messages",
+    "profile": "Profile"
+  },
+  "states": {
+    "emptyTitle": "Nothing here yet",
+    "emptyBody": "There is no data to show.",
+    "errorTitle": "Something went wrong",
+    "errorBody": "Please try again.",
+    "retry": "Try again",
+    "offlineTitle": "No internet",
+    "offlineBody": "Check your connection.",
+    "lockedTitle": "Episode locked",
+    "lockedBody": "Purchase to watch.",
+    "purchased": "Purchased",
+    "loading": "Loading..."
+  },
+  "common": {
+    "price": "{{amount}} so'm",
+    "watch": "Watch",
+    "buy": "Buy",
+    "apply": "Apply",
+    "save": "Save",
+    "seeAll": "See all",
+    "search": "Search...",
+    "locked": "Locked",
+    "purchased": "Purchased",
+    "premiere": "Premiere",
+    "years": "{{count}} y.o.",
+    "premium": "Premium",
+    "free": "Free"
+  },
+  "splash": {
+    "subtitle": "A platform for creators"
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "next": "NEXT",
+    "start": "GET STARTED",
+    "casting": {
+      "title": "Find your casting",
+      "body": "Roles, portfolio and professional opportunities in one place"
+    },
+    "premiere": {
+      "title": "Watch premieres first",
+      "body": "Exclusive series, shows and films"
+    },
+    "earn": {
+      "title": "Create and earn",
+      "body": "Direct payouts for your content"
+    },
+    "stars": {
+      "title": "UZCASTING STARS",
+      "body": "Support the creators you love"
+    }
+  },
+  "auth": {
+    "phoneTitle": "Please enter your phone number",
+    "consentTail": "I agree",
+    "phonePlaceholder": "91 123 45 67",
+    "continue": "CONTINUE",
+    "consentPrefix": "By continuing, you agree to the",
+    "termsLink": "Terms of Service",
+    "consentMiddle": "and",
+    "privacyLink": "Privacy Policy",
+    "consentSuffix": "",
+    "or": "or",
+    "google": "Continue with Google",
+    "googleUnavailable": "Google sign-in is not configured yet",
+    "cancelled": "Sign-in cancelled",
+    "skip": "Later"
+  },
+  "home": {
+    "todayPremieres": "Today's premieres",
+    "popularCreators": "Popular creators",
+    "categories": "Categories",
+    "castings": "Casting calls",
+    "premiumTitle": "UzCasting Premium",
+    "premiumBody": "Be the first to watch exclusive premieres",
+    "premiumCta": "Get Premium",
+    "heroSubtitle": "Today only on UzCasting",
+    "unlock": "Unlock",
+    "castingCreators": "Casting talent",
+    "feedUnavailableTitle": "Home feed unavailable",
+    "feedUnavailableBody": "The server does not provide home sections."
+  },
+  "casting": {
+    "title": "Casting calls",
+    "subtitle": "All roles and projects",
+    "paid": "Paid",
+    "unpaid": "Unpaid",
+    "deadline": "Deadline"
+  },
+  "premiere": {
+    "title": "Premiere",
+    "subtitle": "Exclusive content hub",
+    "tabsAll": "All",
+    "tabsSeries": "Series",
+    "tabsShows": "Shows",
+    "tabsMovies": "Films",
+    "emptyByTab": "No content in this tab yet."
+  },
+  "profile": {
+    "title": "Profile",
+    "balance": "Balance",
+    "topUp": "Top up balance",
+    "purchases": "My purchases",
+    "paymentHistory": "Payment history",
+    "applications": "My applications",
+    "portfolio": "Portfolio",
+    "favorites": "Favorites",
+    "creatorStudio": "Creator Studio",
+    "premium": "Premium",
+    "devices": "Active devices",
+    "settings": "Settings",
+    "contact": "Contact us",
+    "logout": "Log out",
+    "guest": "Guest",
+    "signIn": "Sign in"
+  },
+  "catalog": {
+    "title": "Catalog",
+    "all": "All",
+    "filters": "Filters",
+    "reset": "Reset",
+    "gender": "Gender",
+    "age": "Age",
+    "region": "Region",
+    "male": "Male",
+    "female": "Female",
+    "found": "{{count}} profiles",
+    "emptyByFilters": "Nothing matches these filters. Try widening them.",
+    "noDataYet": "No profiles in this category yet."
+  },
+  "creator": {
+    "age": "Age",
+    "height": "Height",
+    "region": "Region",
+    "gender": "Gender",
+    "cm": "cm",
+    "notFound": "Profile not found"
+  },
+  "search": {
+    "minLength": "Minimum query length is {{count}} characters!",
+    "hintTitle": "Who are you looking for?",
+    "hintBody": "Search by name, category or region.",
+    "nothingTitle": "Nothing found",
+    "nothingBody": "Try a different word."
+  },
+  "favorites": {
+    "empty": "Tap the heart to collect creators here."
+  },
+  "content": {
+    "notFound": "No such content",
+    "multiPartTitle": "This content has episodes",
+    "multiPartBody": "The app cannot list episodes yet — that needs a separate backend endpoint.",
+    "noVideo": "The video is not uploaded yet",
+    "part": "Part {{number}}",
+    "minutes": "{{count}} min",
+    "needSignIn": "Sign in to watch.",
+    "needPurchase": "This content unlocks after purchase.",
+    "needSubscription": "A Premium subscription unlocks this content.",
+    "needPurchaseOrSubscription": "Buy this content separately or unlock it with Premium.",
+    "subscribe": "Get Premium",
+    "paymentSoon": "Payments are not wired into the app yet.",
+    "notPublished": "This content is not published yet.",
+    "userBlocked": "Your account is blocked. Please contact support.",
+    "episodes": "Episodes",
+    "season": "Season {{number}}",
+    "episodesEmpty": "No episodes in this season yet"
+  },
+  "contentType": {
+    "SHORT_FILM": "Short film",
+    "MOVIE": "Movie",
+    "MINI_SERIES": "Mini-series",
+    "SERIES": "Series",
+    "PODCAST": "Podcast",
+    "SHOW": "Show",
+    "INTERVIEW": "Interview",
+    "STREAM": "Live",
+    "CLIP": "Clip",
+    "OTHER": "Other"
+  }
+}

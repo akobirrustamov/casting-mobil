@@ -71,9 +71,44 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Bean Validation - request DTO'larni tekshirish uchun (@NotBlank, @Size...).
+             Spring Boot 3'da web starter'ga kirmaydi, alohida qo'shiladi. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- Flyway - sxema migratsiyalari.
+             Ilgari sxemani Hibernate'ning ddl-auto=update boshqarardi: o'zgarish
+             nazoratsiz, rollback yo'q, review yo'q edi. Endi har bir o'zgarish
+             db/migration ostidagi versiyalangan SQL fayl. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
+        <!-- AOP - @RequirePermission annotatsiyasi uchun.
+             Ruxsat tekshiruvi qo'lda chaqirilganda uni unutish oson;
+             annotatsiya buni metod imzosida ko'rinadigan qiladi. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!--
+            Faqat lokal ishga tushirish uchun: telefon/mobil ilovani sinash paytida
+            Postgres va parol talab qilinmasin. Prod'da application.properties'dagi
+            datasource Postgres'ga ko'rsatadi, H2 umuman ishlatilmaydi.
+        -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -103,6 +138,12 @@
             <artifactId>jjwt-api</artifactId>
             <version>0.11.5</version>
         </dependency>
+        <!-- Google ID token tekshirish uchun (mobil ilovadan Google login) -->
+        <dependency>
+            <groupId>com.google.api-client</groupId>
+            <artifactId>google-api-client</artifactId>
+            <version>2.7.0</version>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-jackson -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -110,6 +151,20 @@
             <version>0.11.5</version>
             <scope>runtime</scope>
         </dependency>
+        <!--
+            OpenAPI (ТЗ §106). Mobil va frontend jamoasi endpointni backend
+            kodini o'qimasdan ishlata olishi kerak.
+
+            Yangi bog'liqlik ataylab: mavjud annotatsiyalardan hujjat
+            hosil qiladi, qo'shimcha kod talab qilmaydi va Spring Boot
+            uchun standart yechim (ТЗ §70 - "real muammoni hal qilsin").
+        -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.2.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -133,3 +133,8 @@ temp/
 # ======================
 .playwright-mcp/
 .claude/
+
+# H2 dev bazasi
+backend/data/
+*.mv.db
+*.trace.db
