@@ -601,7 +601,7 @@ Til tanlovi `localStorage` da saqlanadi va kontent tarjimasiga ham ta'sir qiladi
 | 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma: rejalashtirish ishlaydi, hisobot halol (ТЗ §32–§33). FCM ulanmagan |
 | 7 | Users & Monetization — tariffs, premium, Stars, Coin | `[x]` foydalanuvchi, tarif, balans, qurilma, donat |
 | 8 | Analytics — events, aggregation, dashboard, reports | `[x]` ikki qatlamli: xom hodisa + kunlik jamlanma |
-| 9 | Hardening — tests, performance, security, indexes | `[~]` 679 test; migratsiyalar V1–V26 |
+| 9 | Hardening — tests, performance, security, indexes | `[~]` 685 test; migratsiyalar V1–V26 |
 
 ---
 
@@ -1376,6 +1376,25 @@ Komponent renderini talab qiladigan testlar kerak bo'lsa, o'shanda
 qo'shiladi.
 
 
+**D18 — API yo'l konvensiyasi o'zgartirilmadi (§64).**
+ТЗ {@code /api/admin/v1/...} ni misol qilib keltiradi, loyihada esa
+`/api/v1/app/admin/...` ishlatiladi. Ikkalasi ham versiyalangan — farq
+faqat versiya raqamining joyida. ТЗ ning o'zi «existing API convention
+bo'lsa uni to'satdan sindirma» deydi; qirqdan ortiq endpointni qayta
+nomlash ishlab turgan panelni sindirardi va evaziga hech narsa
+bermasdi. `ApiConventionTest` yangi endpoint versiyasiz yoki boshqa
+prefiks bilan qo'shilishini taqiqlaydi.
+
+**D19 — 2FA hozir yozilmadi, alohida security task sifatida rejalashtirildi (§63).**
+ТЗ shunga ruxsat beradi. Sabab: tiklash kodlarisiz 2FA **xavfli** —
+telefonini yo'qotgan HYPER_ADMIN tizimga abadiy kira olmaydi va uni
+tiklaydigan yuqoriroq rol yo'q. Ya'ni yarim bajarilgan 2FA
+xavfsizlikni oshirmaydi, tizimni egasiz qoldirish xavfini tug'diradi.
+Arxitektura tayyor: §61 dagi token turi mexanizmi `2fa_pending` ni
+qo'shishga imkon beradi, qurilma tarixi `refresh_token` da bor.
+To'liq reja — `roadmap.md → 14.1`.
+
+
 ## 14. Next Exact Steps
 
 > ⚠️ **23.08.2026 holati.** ТЗ §29–§83 va §93–§106 ko'rib chiqildi.
@@ -1460,6 +1479,69 @@ qo'shiladi.
 7. Kontent muharririda galereya boshqaruvi.
 
 ---
+
+## 14.1. Security task: 2FA (ТЗ §63)
+
+**Holat:** `[ ]` bajarilmagan — ataylab. ТЗ «agar hozir implementation
+katta scope talab qilsa roadmapga alohida security task qilib yoz»
+deydi. Quyida uni to'g'ridan-to'g'ri olib bajarish uchun yetarli reja.
+
+### Nega hozir yozilmadi
+
+To'liq TOTP uchta narsani talab qiladi: yangi bog'liqlik, QR bilan
+ulash oqimi va tiklash kodlari. Tiklash kodlarisiz 2FA **xavfli**:
+telefonini yo'qotgan HYPER_ADMIN tizimga abadiy kira olmay qoladi va
+uni tiklaydigan yuqoriroq rol yo'q. Ya'ni yarim bajarilgan 2FA
+xavfsizlikni oshirmaydi, aksincha tizimni egasiz qoldirish xavfini
+tug'diradi.
+
+### Arxitektura TAYYOR — nima tufayli
+
+| Nima | Qayerda | Nega yetarli |
+|---|---|---|
+| Token turi (`typ`) | `JwtService` (§61) | `2fa_pending` uchinchi tur sifatida qo'shiladi; `MyFilter` uni API kaliti sifatida rad etadi — refresh tokenda bo'lgani kabi |
+| Ulanish nuqtasi | `AdminAuthController.login()` | Parol tekshirilgan, token hali berilmagan — izoh bilan belgilangan |
+| Qurilma tarixi | `refresh_token.ip`, `user_agent` (V25) | «Yangi qurilma» ni aniqlash uchun qo'shimcha jadval kerak emas |
+| Sessiyani yopish | `RefreshTokenService.revokeAll` | 2FA yoqilganda barcha eski sessiya yopiladi |
+| Audit | `AuditAction` | `TWO_FACTOR_ENABLED` / `_DISABLED` / `_FAILED` qo'shiladi |
+
+### Bajarish tartibi
+
+1. **Migratsiya V27** — `user_two_factor` jadvali:
+   `user_id` (PK, FK), `secret` (shifrlangan), `enabled_at`,
+   `recovery_codes_hash` (BCrypt, bittalab), `last_used_at`.
+   ⚠️ `secret` ochiq matnda saqlanmasin — baza o'qilsa 2FA ma'nosini
+   yo'qotadi. Kalit `APP_2FA_KEY` environment'dan.
+
+2. **Bog'liqlik** — TOTP uchun `dev.samstevens.totp:totp` yoki
+   `com.warrenstrange:googleauth`. Ikkalasi ham RFC 6238.
+   Qo'lda yozilmasin (§92 ruhi: kriptografiya qo'lda yozilmaydi).
+
+3. **Endpointlar:**
+   ```
+   POST /api/v1/app/admin/auth/2fa/setup     QR uchun secret (bir marta)
+   POST /api/v1/app/admin/auth/2fa/confirm   kod bilan yoqish
+   POST /api/v1/app/admin/auth/2fa/verify    kirish paytida (challenge token bilan)
+   POST /api/v1/app/admin/auth/2fa/disable   parol + kod talab qiladi
+   GET  /api/v1/app/admin/auth/2fa/recovery  yangi tiklash kodlari
+   ```
+
+4. **Majburiylik** — `HYPER_ADMIN` va `SUPER_ADMIN` uchun. Amalga
+   oshirish tartibi muhim: avval **ixtiyoriy** qilib chiqarilsin, bu
+   rollar yoqib olsin, keyingina majburiy qilinsin. Teskarisi — barcha
+   super adminni bir vaqtda tizimdan chiqarib yuborish.
+
+5. **Rate limit** — `/2fa/verify` ga alohida qoida (6 xonali kod
+   1 000 000 variant, sekundiga o'nlab urinish uni bir necha soatda
+   sindiradi). `LoginAttemptService` shu yerda ham ishlatilsin.
+
+6. **Tiklash kodlari** — 10 ta, bir martalik, BCrypt bilan
+   xeshlangan, faqat yaratilganda bir marta ko'rsatiladi.
+
+7. **Testlar:** yoqish/o'chirish oqimi, noto'g'ri kod, ishlatilgan
+   tiklash kodi ikkinchi marta o'tmasligi, `2fa_pending` token bilan
+   API'ga kirib bo'lmasligi, vaqt siljishi (±1 oyna).
+
 
 ## 15. Dev muhitini ishga tushirish
 

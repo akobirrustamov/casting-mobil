@@ -107,6 +107,26 @@ public class AdminAuthController {
         }
 
         loginAttempts.recordSuccess(login);
+
+        // ─── 2FA ULANADIGAN JOY (ТЗ §63) ───────────────────────────────
+        // Parol tekshirilgan, lekin token hali berilmagan — ikkinchi
+        // omil aynan shu yerga qo'yiladi:
+        //
+        //   if (twoFactor.isRequiredFor(role) && twoFactor.isEnabled(user)) {
+        //       return ResponseEntity.ok(AdminLoginResponse.challenge(
+        //               jwtService.generateChallengeToken(user)));
+        //   }
+        //
+        // Arxitektura bunga TAYYOR: §61 da token turi (`typ`) qo'shildi,
+        // ya'ni «2fa_pending» uchinchi tur sifatida qo'shiladi va
+        // `MyFilter` uni API kaliti sifatida qabul qilmaydi — xuddi
+        // refresh tokenda bo'lgani kabi. Qurilma tarixi ham bor
+        // (`refresh_token.ip`, `user_agent`) — «yangi qurilma» ni
+        // aniqlash uchun qo'shimcha jadval kerak emas.
+        //
+        // To'liq reja: roadmap.md → «Security task: 2FA».
+        // ───────────────────────────────────────────────────────────────
+
         staffService.recordLogin(user);
         auditService.log(user, AuditAction.ADMIN_LOGIN, "User", user.getId());
 

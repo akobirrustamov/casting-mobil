@@ -1792,6 +1792,41 @@ edi. UTC talab qilinishining asosiy sababi — yozgi vaqt; O'zbekiston
 1996 yildan beri UTC+5 da qat'iy turadi, ya'ni takrorlanadigan yoki
 tushib qoladigan soat yo'q.
 
+## 28.2. API dizayni va 2FA `[~]` — ТЗ §63, §64
+
+### §64 — versiyalash `[x]`
+
+Konvensiya izchil: barcha yo'l `/api/v1/...`, yangi modul
+`/api/v1/app/...`, admin `/api/v1/app/admin/...`.
+
+ТЗ `/api/admin/v1/...` ni misol qilib keltiradi, lekin o'zi «existing
+API convention bo'lsa uni to'satdan sindirma» deydi. Ikkala shakl ham
+versiyalangan — farq faqat versiya raqamining joyida. Qirqdan ortiq
+endpointni qayta nomlash ishlab turgan panelni sindirardi.
+
+- `[x]` `ApiConventionTest` — versiyasiz yoki boshqa prefiksli yangi
+  endpointni taqiqlaydi. **Aralash konvensiya eng yomon variant:**
+  klient qaysi shaklni kutishini bilmay qoladi
+- `[x]` Eski casting yo'llari ataylab istisno (§75)
+
+### §63 — 2FA `[ ]` ataylab bajarilmadi
+
+ТЗ «katta scope bo'lsa roadmapga alohida security task qilib yoz»
+deydi. To'liq reja: `roadmap.md → 14.1`.
+
+**Sabab:** tiklash kodlarisiz 2FA xavfsizlikni oshirmaydi — telefonini
+yo'qotgan HYPER_ADMIN tizimga abadiy kira olmay qoladi va uni
+tiklaydigan yuqoriroq rol yo'q.
+
+**Arxitektura tayyor:**
+
+| Nima | Qayerda |
+|---|---|
+| Token turi (`typ`) → `2fa_pending` qo'shiladi | §61 |
+| Ulanish nuqtasi izoh bilan belgilangan | `AdminAuthController.login()` |
+| Qurilma tarixi («yangi qurilma») | `refresh_token.ip`, `user_agent` |
+| Barcha sessiyani yopish | `RefreshTokenService.revokeAll` |
+
 ## 28. Indexes `[x]`
 
 - `[x]` **59 indeks** (61 yaratilgan − 2 ortiqchasi olib tashlangan) —
