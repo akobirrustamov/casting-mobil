@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -307,6 +309,139 @@ class PanelUiRequirementsTest {
                     "../frontend/src/adminpanel/components/Modal.jsx"));
             assertThat(src).hasSizeGreaterThan(500);
             assertThat(src).contains("aria-modal");
+        }
+    }
+
+    // --------------------------------------------- filtr va sahifa bog'liqligi
+
+    @Nested
+    @DisplayName("Filtr o'zgarganda sahifa boshiga qaytadi (ТЗ §72)")
+    class FilterResetsPage {
+
+        /**
+         * ⚠️ Nega bu muhim.
+         *
+         * Foydalanuvchi 3-sahifada turib filtr qo'ysa va sahifa raqami
+         * qolib ketsa, natija BO'SH chiqadi — filtrlangan ro'yxatda 3-
+         * sahifa yo'q. Ekranda «hech narsa topilmadi» ko'rinadi, aslida
+         * esa ma'lumot bor. Hech qanday xato chiqmaydi.
+         *
+         * Bu qoida hozir 11 ta sahifada qo'lda takrorlangan. Ularni
+         * qayta yozish o'rniga (§90 — ishlayotgan kodni sababsiz
+         * o'zgartirma) qoidaning o'zi test bilan qo'riqlanadi.
+         */
+        @Test
+        @DisplayName("Har bir filtr sahifani nolga qaytaradi")
+        void everyFilterResetsPage() throws java.io.IOException {
+            List<String> violations = new ArrayList<>();
+
+            for (java.nio.file.Path f : panelPages()) {
+                String src = java.nio.file.Files.readString(f);
+                if (!src.contains("setPage")) {
+                    continue;
+                }
+
+                Matcher deps = Pattern
+                        .compile("useApi\\(\\s*\\(\\)\\s*=>.*?\\[([^\\]]*)\\]\\s*\\)",
+                                Pattern.DOTALL)
+                        .matcher(src);
+                if (!deps.find()) {
+                    continue;
+                }
+
+                // ⚠️ Faqat FILTR O'ZGARISHI qatorlari hisobga olinadi.
+                //
+                // «Hammasini tozalash» tugmasi ham `setPage(0)` ni o'z
+                // ichiga oladi, lekin u boshqa narsa: u qiymatlarni
+                // bo'shatadi (`setQ('')`). Uni ham hisobga olsak,
+                // bitta shunday tugma butun sahifani «qamralgan» qilib
+                // ko'rsatardi — mutatsiya buni ko'rsatdi.
+                //
+                // Farq argumentda: filtr HAQIQIY QIYMAT uzatadi
+                // (`setter(value)`, `setStatus(e.target.value)`),
+                // tozalash esa bo'sh literal (`setQ('')`).
+                Pattern passesValue = Pattern.compile(
+                        "set(?!Page)\\w*\\(\\s*[^'\"\\s)]");
+                String resetLines = src.lines()
+                        .filter(l -> l.contains("setPage(0)"))
+                        .filter(l -> passesValue.matcher(l).find())
+                        .collect(java.util.stream.Collectors.joining(" "));
+
+                for (String dep : deps.group(1).split(",")) {
+                    String name = dep.trim();
+                    if (name.isEmpty() || name.equals("page") || name.equals("size")) {
+                        continue;
+                    }
+                    // Prop bo'lgan bog'liqlikning setteri yo'q — u
+                    // marshrutdan keladi va `key` qoidasi bilan
+                    // qamraladi (quyidagi test).
+                    // ⚠️ Aniq `const [` bo'lishi shart: `[kind,` matni
+                    // useApi bog'liqliklar massivida ham uchraydi va
+                    // tekshiruv o'zini aldab qo'yardi.
+                    if (!src.contains("const [" + name + ",")) {
+                        continue;
+                    }
+
+                    String setter = "set" + Character.toUpperCase(name.charAt(0))
+                            + name.substring(1);
+                    // `setter` — umumiy yordamchi (onFilter(setX)) ishlatilgan holat.
+                    boolean covered = resetLines.contains(setter)
+                            || resetLines.contains("setter");
+                    if (!covered) {
+                        violations.add(f.getFileName() + " → " + name);
+                    }
+                }
+            }
+
+            assertThat(violations)
+                    .as("filtr o'zgarganda sahifa boshiga qaytmasa, foydalanuvchi "
+                            + "bo'sh ro'yxat ko'radi va ma'lumot yo'q deb o'ylaydi")
+                    .isEmpty();
+        }
+
+        /**
+         * ⚠️ Bitta komponent ikki xil marshrutda ishlatilsa, React uni
+         * qayta ishlatadi va HOLATNI SAQLAB QOLADI.
+         *
+         * `TaxonomyPage` da aynan shu bo'lgan: kategoriyani tahrirlash
+         * oynasi ochiq turganda «Janrlar» ga o'tilsa, oyna yopilmasdi va
+         * saqlash kategoriya ma'lumotini o'sha raqamli JANR ustiga
+         * yozardi — jimgina, boshqa turdagi yozuvni buzib.
+         */
+        @Test
+        @DisplayName("Bir komponent ikki marshrutda ishlatilsa `key` bo'ladi")
+        void sharedComponentRoutesAreKeyed() throws java.io.IOException {
+            String src = java.nio.file.Files.readString(java.nio.file.Path.of(
+                    "../frontend/src/adminpanel/PanelApp.jsx"));
+
+            Matcher m = Pattern.compile("<(\\w+)\\s+(?:key=\"[^\"]*\"\\s+)?kind=")
+                    .matcher(src);
+            List<String> unkeyed = new ArrayList<>();
+            while (m.find()) {
+                String tag = m.group(0);
+                if (!tag.contains("key=")) {
+                    unkeyed.add(m.group(1));
+                }
+            }
+
+            assertThat(unkeyed)
+                    .as("`kind` bilan ajratilgan komponentga `key` qo'yilsin - "
+                            + "aks holda marshrut almashganda eski holat qoladi")
+                    .isEmpty();
+        }
+
+        @Test
+        @DisplayName("Detektor haqiqatan sahifalarni o'qiydi")
+        void detectorReadsPages() throws java.io.IOException {
+            assertThat(panelPages()).hasSizeGreaterThan(10);
+        }
+
+        private List<java.nio.file.Path> panelPages() throws java.io.IOException {
+            try (java.util.stream.Stream<java.nio.file.Path> s =
+                         java.nio.file.Files.list(java.nio.file.Path.of(
+                                 "../frontend/src/adminpanel/pages"))) {
+                return s.filter(p -> p.toString().endsWith(".jsx")).toList();
+            }
         }
     }
 }

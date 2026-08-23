@@ -347,3 +347,48 @@ Serverda `multipart` chegarasi 50 MB. Epizod videosi bunga sig'masdi, ya'ni
   yuboriladi (davom ettirish).
 - Progress bo'laklar bo'yicha 99% gacha, 100% esa yig'ish tugagach —
   aks holda bar to'lgan holda foydalanuvchi kutib qolardi.
+
+---
+
+## Umumiy komponentlar va jadval mantiqi `[x]` — ТЗ §72
+
+### Mavjud komponentlar
+
+| ТЗ so'ragan | Loyihada |
+|---|---|
+| `DataTable` | `TableWrap` + sahifaga xos jadval — to'liq umumiy `DataTable` yaratilmadi (ustunlar juda har xil) |
+| `Pagination`, `SearchInput`, `PageHeader`, `StatusBadge` | `components/Ui.jsx` |
+| `EmptyState`, `ErrorState`, `LoadingState`, `ForbiddenState` | `components/States.jsx` |
+| `ConfirmDialog` | `components/ConfirmDialog.jsx` + `useConfirm` |
+| `MediaUploader`, `ImagePicker`, `VideoUploader` | `MediaField`, `MediaPicker`, `GalleryField` |
+| `PermissionGuard` | `auth/Guards.jsx` — `RequirePermission` |
+| `FilterPanel` | yaratilmadi — filtrlar sahifaga xos |
+
+### ⚠️ Ikkita jimgina buzuvchi xato topildi
+
+`TaxonomyPage` (kategoriya/janr) va `BannerPage` (reklama/premyera) —
+**bitta komponent ikki marshrutda**. React ularni bir xil tur deb
+hisoblab qayta ishlatadi va **holatni saqlab qoladi**.
+
+Oqibati eng yomon holatda: admin kategoriyani tahrirlash oynasini ochib,
+menyudan «Janrlar» ga o'tsa, oyna yopilmasdi. `isEdit` rost, `isCategory`
+esa endi yolg'on — saqlash **kategoriya ma'lumotini o'sha raqamli janr
+ustiga yozardi**. Reklama/premyera juftida ham xuddi shunday.
+
+Yengilroq oqibati: qidiruv matni va sahifa raqami eski bo'limdan qolib
+ketardi — admin bo'sh ro'yxat ko'rib «ma'lumot yo'q» deb o'ylardi.
+
+- `[x]` Ikkala juftga ham `key` qo'yildi — marshrut almashganda toza mount
+- `[x]` Qo'riqchi test: `kind` bilan ajratilgan komponentga `key` majburiy
+
+### Filtr va sahifa raqami
+
+Qoida — «filtr o'zgarsa, birinchi sahifaga qayt» — 11 ta sahifada
+qo'lda takrorlangan. Ishlaydigan 11 sahifani qayta yozish o'rniga
+(§90) qoidaning o'zi test bilan qo'riqlandi.
+
+⚠️ Detektorning birinchi ikki varianti ishlamadi: «hammasini tozalash»
+tugmasi ham `setPage(0)` ni o'z ichiga oladi va butun sahifani
+«qamralgan» qilib ko'rsatardi. Farq argumentda: filtr haqiqiy qiymat
+uzatadi, tozalash esa bo'sh literal.
+

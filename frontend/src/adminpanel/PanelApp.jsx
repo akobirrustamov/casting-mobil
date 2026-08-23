@@ -68,7 +68,15 @@ export default function PanelApp() {
               path="categories"
               element={
                 <RequirePermission permission="CATEGORY_VIEW">
-                  <TaxonomyPage kind="category" />
+                  {/* ⚠️ `key` SHART. Ikkala marshrut ham bir xil
+                      komponentni bir joyda chizadi, ya'ni React uni
+                      qayta ishlatadi va HOLATNI SAQLAB QOLADI. Natijada
+                      kategoriyani tahrirlash oynasi ochiq turganda
+                      «Janrlar» ga o'tilsa, oyna yopilmasdi va saqlash
+                      kategoriya ma'lumotini o'sha raqamli JANR ustiga
+                      yozardi. Qidiruv matni va sahifa raqami ham
+                      eskisidan qolib ketardi. */}
+                  <TaxonomyPage key="category" kind="category" />
                 </RequirePermission>
               }
             />
@@ -76,7 +84,7 @@ export default function PanelApp() {
               path="genres"
               element={
                 <RequirePermission permission="GENRE_VIEW">
-                  <TaxonomyPage kind="genre" />
+                  <TaxonomyPage key="genre" kind="genre" />
                 </RequirePermission>
               }
             />
@@ -100,7 +108,7 @@ export default function PanelApp() {
               path="ads"
               element={
                 <RequirePermission permission="ADVERTISEMENT_VIEW">
-                  <BannerPage kind="ad" />
+                  <BannerPage key="ad" kind="ad" />
                 </RequirePermission>
               }
             />
@@ -108,7 +116,7 @@ export default function PanelApp() {
               path="premieres"
               element={
                 <RequirePermission permission="PREMIERE_VIEW">
-                  <BannerPage kind="premiere" />
+                  <BannerPage key="premiere" kind="premiere" />
                 </RequirePermission>
               }
             />
