@@ -227,6 +227,35 @@ mavjud bo'lmaydi.
 | `DataTable` | ⚠️ **ataylab yaratilmadi** — ustunlar sahifadan sahifaga juda farq qiladi, bitta komponentga tiqish §72 ogohlantirgan «haddan tashqari abstraction» bo'lardi |
 | `FilterPanel` | ⚠️ ataylab yaratilmadi — filtrlar sahifaga xos |
 
+### Qidiruvli tanlash `[x]` — ТЗ §53
+
+Panelda nativ `<select>` **qolmadi** — 31 ta chaqiruv joyi
+`components/Select.jsx` ga o'tkazildi.
+
+**Nima uchun API nativ `<select>` bilan bir xil.** `value` + `onChange(e)`
++ `<option>` bolalari. Shuning uchun 31 ta joyda faqat teg nomi
+o'zgardi, ichidagi mantiq (`e.target.value`, `.map()` bilan yasalgan
+variantlar, `option disabled` ruxsat to'sig'i) teginilmadi.
+
+| Xatti-harakat | Qaror |
+|---|---|
+| `e.target.value` turi | HAR DOIM satr — nativdek. Aks holda `Number(e.target.value)` buzilardi |
+| Bir xil variant qayta tanlansa | `onChange` chaqirilmaydi — nativdek |
+| Qidiruv maydoni | variantlar soni **7 dan oshganda**. 2-3 variantli ro'yxatda u faqat ortiqcha tugma bosish qo'shadi. `searchThreshold={0}` bilan majburlanadi |
+| `<option disabled>` | bosilmaydi va klaviatura uni sakrab o'tadi — `CONTENT_PUBLISH` to'sig'i shunga tayanadi |
+| Pastda joy yetmasa | ro'yxat yuqoriga ochiladi (`.uz-dropdown-up`) |
+| Klaviatura | ↑ ↓ Home End Enter Escape; yopilgach fokus tugmaga qaytadi |
+
+`SearchableSelect` (massiv API'li, 4 ta joyda) endi shu komponentning
+ustidagi yupqa qatlam — ilgari ikkalasida **alohida** ochiluvchi ro'yxat
+mantig'i bor edi va klaviatura boshqaruvi faqat bittasiga qo'shilardi.
+
+Testlar: `components/__tests__/select.test.jsx` (12 ta).
+Mutatsiya sinovi 9 ta buzilishni ushladi va yo'l-yo'lakay 3 ta haqiqiy
+kamchilikni ochdi: Fragment ichidagi variantlar jimgina yo'qolardi,
+variant bosilganda fokus `<body>` ga tushardi, fokus tekshiruvining
+o'zi qisqa ro'yxatda bo'sh edi.
+
 ### ⚠️ Bir komponent ikki marshrutda — `key` MAJBURIY
 
 `TaxonomyPage` (kategoriya/janr) va `BannerPage` (reklama/premyera)

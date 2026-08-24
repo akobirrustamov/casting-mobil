@@ -1,4 +1,5 @@
 import { POLICIES } from './constants';
+import Select from '../../components/Select';
 /**
  * Kirish siyosati va narx (ТЗ §23).
  *
@@ -10,10 +11,10 @@ export default function AccessTab({ form, set, t }) {
       <div className="uz-row">
         <div className="uz-col">
           <label className="uz-label" htmlFor="ap">{t('editor.accessPolicy')}</label>
-          <select id="ap" className="uz-select" value={form.accessPolicy}
+          <Select id="ap" className="uz-select" value={form.accessPolicy}
                   onChange={(e) => set({ accessPolicy: e.target.value })}>
             {POLICIES.map((x) => <option key={x} value={x}>{x.replace(/_/g, ' ')}</option>)}
-          </select>
+          </Select>
         </div>
         <div className="uz-col">
           <label className="uz-label" htmlFor="pp">{t('editor.premierePrice')}</label>

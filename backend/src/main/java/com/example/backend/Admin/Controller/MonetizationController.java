@@ -235,15 +235,30 @@ public class MonetizationController {
      * ⚠️ Faqat o'qish. Moliyaviy tarix o'zgarmas — tahrirlash va o'chirish
      * endpointi ataylab yo'q.
      */
+    /**
+     * Donat tranzaksiyalari saralanadigan ustunlar (§95).
+     *
+     * ⚠️ Summa bo'yicha saralashda VALYUTA ARALASHADI: 100 yulduz va
+     * 100 tanga bir xil son. Panel qatorda valyutani ham ko'rsatadi,
+     * lekin tartib ma'nosiz bo'lib qolishi mumkin. Shuning uchun
+     * standarti — sana.
+     */
+    private static final com.example.backend.Admin.SortWhitelist DONATION_SORT =
+            com.example.backend.Admin.SortWhitelist.of("createdAt")
+                    .add("amount");
+
     @GetMapping("/donations/transactions")
     public ResponseEntity<PageResponse<DonationTransactionDto>> donationTransactions(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String dir) {
 
         require(Permission.DONATION_VIEW);
         int safeSize = Math.min(Math.max(size, 1), 200);
         var result = monetizationService.donationTransactions(
-                org.springframework.data.domain.PageRequest.of(Math.max(page, 0), safeSize));
+                org.springframework.data.domain.PageRequest.of(
+                        Math.max(page, 0), safeSize, DONATION_SORT.resolve(sort, dir)));
 
         // ⚠️ Nomlar SAHIFA uchun bir yo'la yuklanadi. Har bir qator
         // uchun alohida so'rov N+1 bo'lardi (§66).

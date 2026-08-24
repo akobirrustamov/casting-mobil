@@ -75,12 +75,14 @@ public class CmsCatalogController {
     public ResponseEntity<PageResponse<CategoryDto>> categories(
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String dir) {
 
         require(Permission.CATEGORY_VIEW);
         return ResponseEntity.ok(PageResponse.of(
                 categoryRepo.searchPage(query(q),
-                        pageable(page, size, Sort.by("sortOrder"))),
+                        pageable(page, size, TAXONOMY_SORT.resolve(sort, dir))),
                 CategoryDto::from));
     }
 
@@ -91,12 +93,14 @@ public class CmsCatalogController {
     public ResponseEntity<PageResponse<GenreDto>> genres(
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String dir) {
 
         require(Permission.GENRE_VIEW);
         return ResponseEntity.ok(PageResponse.of(
                 genreRepo.searchPage(query(q),
-                        pageable(page, size, Sort.by("sortOrder"))),
+                        pageable(page, size, TAXONOMY_SORT.resolve(sort, dir))),
                 GenreDto::from));
     }
 
@@ -113,12 +117,14 @@ public class CmsCatalogController {
     public ResponseEntity<PageResponse<CreatorDto>> creators(
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String dir) {
 
         require(Permission.CREATOR_VIEW);
         return ResponseEntity.ok(PageResponse.of(
                 creatorRepo.searchPage(query(q),
-                        pageable(page, size, Sort.by("sortOrder"))),
+                        pageable(page, size, CREATOR_SORT.resolve(sort, dir))),
                 CreatorDto::from));
     }
 
@@ -141,6 +147,33 @@ public class CmsCatalogController {
      *
      * open-in-view sozlamasiga tayanmaymiz — u o'chirilishi mumkin.
      */
+    /**
+     * Taksonomiya ro'yxatlari (kategoriya, janr) saralanadigan ustunlar.
+     *
+     * ⚠️ Standart yo'nalish — **O'SISH**. `sortOrder` bu admin qo'lda
+     * tuzgan tartib va u aynan shu ketma-ketlikda ko'rsatilishi kerak.
+     * Kamayish tartibi ro'yxatni teskari ag'darib, panelni jimgina
+     * buzardi.
+     */
+    private static final com.example.backend.Admin.SortWhitelist TAXONOMY_SORT =
+            com.example.backend.Admin.SortWhitelist.of("sortOrder",
+                            org.springframework.data.domain.Sort.Direction.ASC)
+                    .add("slug")
+                    .add("createdAt");
+
+    /**
+     * Ijodkorlar saralanadigan ustunlar.
+     *
+     * ⚠️ Ism bu yerda YO'Q: u tarjima jadvalida va tanlangan tilga
+     * bog'liq — `join` talab qiladi va har til uchun boshqa natija
+     * berardi.
+     */
+    private static final com.example.backend.Admin.SortWhitelist CREATOR_SORT =
+            com.example.backend.Admin.SortWhitelist.of("sortOrder",
+                            org.springframework.data.domain.Sort.Direction.ASC)
+                    .add("stars", "starsReceived")
+                    .add("createdAt");
+
     /**
      * Kontent ro'yxati saralanadigan ustunlar (§95).
      *

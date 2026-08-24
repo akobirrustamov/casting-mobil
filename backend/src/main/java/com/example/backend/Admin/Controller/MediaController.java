@@ -168,17 +168,30 @@ public class MediaController {
      *
      * @param q asl fayl nomi bo'yicha qidiruv
      */
+    /**
+     * Media kutubxonasi saralanadigan ustunlar (§95).
+     *
+     * ⚠️ Hajm bo'yicha saralash amaliy: eng katta fayllarni topib,
+     * ishlatilmayotganlarini tozalash uchun kerak bo'ladi.
+     */
+    private static final com.example.backend.Admin.SortWhitelist MEDIA_SORT =
+            com.example.backend.Admin.SortWhitelist.of("createdAt")
+                    .add("filename", "originalFilename")
+                    .add("size", "sizeBytes");
+
     @GetMapping("/api/v1/app/admin/media")
     public ResponseEntity<PageResponse<MediaDto>> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "40") int size,
             @RequestParam(required = false) MediaType type,
             @RequestParam(required = false) MediaStatus status,
-            @RequestParam(required = false) String q) {
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String dir) {
 
         require(Permission.MEDIA_VIEW);
         var pageable = PageRequest.of(Math.max(0, page), Math.min(Math.max(1, size), 100),
-                Sort.by(Sort.Direction.DESC, "createdAt"));
+                MEDIA_SORT.resolve(sort, dir));
 
         // Holat ko'rsatilmasa - faqat tayyor fayllar.
         MediaStatus effectiveStatus = status == null ? MediaStatus.READY : status;

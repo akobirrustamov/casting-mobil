@@ -11,6 +11,7 @@ import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, StatusBadge, TableWrap } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
 import AdStatsModal from './reports/AdStatsModal';
+import Select from '../components/Select';
 
 const STATUSES = ['DRAFT', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED'];
 
@@ -309,18 +310,18 @@ export default function BannerPage({ kind }) {
           {isAd && (
             <div className="uz-col" style={{ flexBasis: '100%' }}>
               <label className="uz-label" htmlFor="b-aud">{t('ads.audience')}</label>
-              <select id="b-aud" className="uz-select" value={form.audience}
+              <Select id="b-aud" className="uz-select" value={form.audience}
                       onChange={(e) => setForm({ ...form, audience: e.target.value })}>
                 <option value="ADVERTISEMENT">{t('ads.audienceAd')}</option>
                 <option value="ADMIN_ANNOUNCEMENT">{t('ads.audienceAnnouncement')}</option>
-              </select>
+              </Select>
             </div>
           )}
 
           {!isAd && (
             <div className="uz-col" style={{ flexBasis: '100%' }}>
               <label className="uz-label" htmlFor="b-content">{t('pr.content')}</label>
-              <select id="b-content" className="uz-select" value={form.contentId}
+              <Select id="b-content" className="uz-select" value={form.contentId}
                       onChange={(e) => setForm({ ...form, contentId: e.target.value })}>
                 <option value="">{t('common.none')}</option>
                 {contents.map((c) => (
@@ -328,7 +329,7 @@ export default function BannerPage({ kind }) {
                     {c.translations?.UZ?.title || c.slug}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           )}
         </div>
@@ -403,14 +404,14 @@ export default function BannerPage({ kind }) {
         <div className="uz-row">
           <div className="uz-col">
             <label className="uz-label" htmlFor="b-st">{t('editor.status')}</label>
-            <select id="b-st" className="uz-select" value={form.status}
+            <Select id="b-st" className="uz-select" value={form.status}
                     onChange={(e) => setForm({ ...form, status: e.target.value })}>
               {STATUSES.map((x) => (
                 <option key={x} value={x} disabled={x === 'PUBLISHED' && !can('CONTENT_PUBLISH')}>
                   {x}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <div className="uz-col">
             <label className="uz-label" htmlFor="b-sa">{t('ads.startAt')}</label>

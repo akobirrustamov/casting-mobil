@@ -619,11 +619,34 @@
    Qidiruvli tanlash (ТЗ §53)
    -------------------------------------------------------------------------- */
 
+.uz-select-wrap {
+    /* Ochiluvchi ro'yxat shu o'ramga nisbatan joylashadi. Kengligi
+       nativ `<select>` dagidek 100% - chaqiruv joyidagi `style` uni
+       (masalan `width: auto`) bekor qila oladi. */
+    position: relative;
+    width: 100%;
+}
+
 .uz-select-button {
     text-align: left;
     cursor: pointer;
     display: flex;
     align-items: center;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+.uz-select-value {
+    /* Uzun nom tugmani cho'zib yubormasin - kesilsin. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.uz-select-caret {
+    flex: 0 0 auto;
+    font-size: 11px;
+    color: var(--p-muted);
 }
 
 .uz-dropdown {
@@ -637,6 +660,11 @@
     background: var(--surface-2);
     border: 1px solid var(--border);
     box-shadow: var(--shadow);
+}
+
+.uz-dropdown-up {
+    top: auto;
+    bottom: calc(100% + 4px);
 }
 
 .uz-dropdown-list {
@@ -659,7 +687,17 @@
     cursor: pointer;
 }
 
-.uz-dropdown-item:hover { background: var(--surface-3); }
+.uz-dropdown-item:hover,
+/* Klaviatura kursori sichqoncha bilan BIR XIL ko'rinadi: foydalanuvchi
+   ikki xil "joriy element" tushunchasini ajratib o'tirmasin. */
+.uz-dropdown-item.active { background: var(--surface-3); }
+
 .uz-dropdown-item.selected { background: var(--brand-primary-soft); }
+
+.uz-dropdown-item.disabled {
+    opacity: .45;
+    cursor: not-allowed;
+    background: transparent;
+}
 
 .uz-select-button.invalid { border-color: var(--danger); }

@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, SearchInput, TableWrap } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
+import Select from '../components/Select';
 
 const STATUSES = ['VISIBLE', 'HIDDEN', 'DELETED'];
 const TONE = { VISIBLE: 'published', HIDDEN: 'scheduled', DELETED: 'draft' };
@@ -52,12 +53,12 @@ export default function CommentsPage() {
         right={
           <>
             <SearchInput value={q} onChange={(v) => { setQ(v); setPage(0); }} placeholder={t('content.search')} />
-            <select className="uz-select" style={{ width: 'auto' }} value={status}
+            <Select className="uz-select" style={{ width: 'auto' }} value={status}
                     aria-label={t('content.col.status')}
                     onChange={(e) => { setStatus(e.target.value); setPage(0); }}>
               <option value="">{t('content.allStatuses')}</option>
               {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
+            </Select>
             <label className="uz-check">
               <input type="checkbox" checked={reportedOnly}
                      onChange={(e) => { setReportedOnly(e.target.checked); setPage(0); }} />

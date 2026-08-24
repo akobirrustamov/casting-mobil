@@ -280,7 +280,10 @@ public class MonetizationService {
      */
     @Transactional(readOnly = true)
     public Page<DonationTransaction> donationTransactions(Pageable pageable) {
-        return donationRepo.findAllByOrderByCreatedAtDesc(pageable);
+        // ⚠️ Tartib metod NOMIGA singdirilmagan: u `Pageable` orqali
+        // keladi. `findAllByOrderByCreatedAtDesc` klient so'ragan
+        // saralashni jimgina bosib ketardi.
+        return donationRepo.findAll(pageable);
     }
 
     public long donationCount() {

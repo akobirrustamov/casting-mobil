@@ -1,4 +1,5 @@
 import { usePanelI18n } from '../i18n';
+import Select from './Select';
 
 const TARGET_TYPES = ['CONTENT', 'EPISODE', 'CATEGORY', 'CREATOR', 'CASTING', 'PREMIERE', 'OTHER'];
 
@@ -22,12 +23,12 @@ export default function LinkFields({ value, onChange }) {
       <div className="uz-row">
         <div className="uz-col">
           <label className="uz-label" htmlFor="lk-type">{t('ads.linkType')}</label>
-          <select id="lk-type" className="uz-select" value={link.linkType || 'NONE'}
+          <Select id="lk-type" className="uz-select" value={link.linkType || 'NONE'}
                   onChange={(e) => set({ linkType: e.target.value })}>
             <option value="NONE">{t('ads.linkNone')}</option>
             <option value="EXTERNAL">{t('ads.linkExternal')}</option>
             <option value="INTERNAL">{t('ads.linkInternal')}</option>
-          </select>
+          </Select>
         </div>
 
         {link.linkType === 'EXTERNAL' && (
@@ -43,11 +44,11 @@ export default function LinkFields({ value, onChange }) {
           <>
             <div className="uz-col">
               <label className="uz-label" htmlFor="lk-tt">{t('ads.targetType')}</label>
-              <select id="lk-tt" className="uz-select" value={link.internalTargetType || ''}
+              <Select id="lk-tt" className="uz-select" value={link.internalTargetType || ''}
                       onChange={(e) => set({ internalTargetType: e.target.value || null })}>
                 <option value="">{t('common.none')}</option>
                 {TARGET_TYPES.map((x) => <option key={x} value={x}>{x}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="uz-col">
               <label className="uz-label" htmlFor="lk-tid">{t('ads.targetId')}</label>

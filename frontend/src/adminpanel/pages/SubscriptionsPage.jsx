@@ -6,6 +6,7 @@ import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, SearchInput, SortableTh, TableWrap, useSort } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
 import { money } from '../utils/format';
+import Select from '../components/Select';
 
 /**
  * Obunalar ro'yxati (ТЗ §71, §107).
@@ -69,21 +70,21 @@ export default function SubscriptionsPage() {
            gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <label>
           <span className="uz-label">{t('sub.status')}</span>
-          <select className="uz-select" value={active}
+          <Select className="uz-select" value={active}
                   onChange={(e) => reset(setActive)(e.target.value)}>
             <option value="">{t('common.all')}</option>
             <option value="true">{t('sub.active')}</option>
             <option value="false">{t('sub.ended')}</option>
-          </select>
+          </Select>
         </label>
         <label>
           <span className="uz-label">{t('sub.source')}</span>
-          <select className="uz-select" value={source}
+          <Select className="uz-select" value={source}
                   onChange={(e) => reset(setSource)(e.target.value)}>
             <option value="">{t('common.all')}</option>
             <option value="PURCHASE">{t('sub.purchase')}</option>
             <option value="ADMIN_GIFT">{t('sub.gift')}</option>
-          </select>
+          </Select>
         </label>
         {(q || active || source) && (
           <button type="button" className="uz-btn uz-btn-ghost"

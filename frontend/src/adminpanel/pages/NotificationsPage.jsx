@@ -11,6 +11,7 @@ import { Badge, PageHeader, Pagination, SearchInput, TableWrap } from '../compon
 import { count } from '../utils/format';
 import { usePanelI18n } from '../i18n';
 import NotificationReportModal from './reports/NotificationReportModal';
+import Select from '../components/Select';
 
 const TYPES = ['APP_NOTIFICATION', 'CASTING_NOTIFICATION'];
 const AUDIENCES = ['ALL', 'PREMIUM_ONLY', 'NON_PREMIUM'];
@@ -266,17 +267,17 @@ export default function NotificationsPage() {
         <div className="uz-row mb-4">
           <div className="uz-col">
             <label className="uz-label" htmlFor="n-type">{t('nt.type')}</label>
-            <select id="n-type" className="uz-select" value={form.type}
+            <Select id="n-type" className="uz-select" value={form.type}
                     onChange={(e) => setForm({ ...form, type: e.target.value })}>
               {TYPES.map((x) => <option key={x} value={x}>{x.replace(/_/g, ' ')}</option>)}
-            </select>
+            </Select>
           </div>
           <div className="uz-col">
             <label className="uz-label" htmlFor="n-aud">{t('nt.audience')}</label>
-            <select id="n-aud" className="uz-select" value={form.audience}
+            <Select id="n-aud" className="uz-select" value={form.audience}
                     onChange={(e) => setForm({ ...form, audience: e.target.value })}>
               {AUDIENCES.map((x) => <option key={x} value={x}>{audienceLabel(x)}</option>)}
-            </select>
+            </Select>
           </div>
           <div className="uz-col">
             <label className="uz-label" htmlFor="n-sch">{t('nt.scheduledAt')}</label>

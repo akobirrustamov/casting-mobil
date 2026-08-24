@@ -128,8 +128,16 @@ describe("Qism qo'shish (§86)", () => {
     // ⚠️ «PREMIUM OR PURCHASE» matni ikki joyda: meros variantida va
     // to'g'ridan-to'g'ri tanlash variantida. Bizga MEROS varianti kerak,
     // uni «Kontentdan meros» so'zlari ajratadi.
+    //
+    // ⚠️ Ro'yxat AVVAL ochiladi. Qidiruvli tanlashda variantlar faqat
+    // ochilganda chiziladi — nativ `<select>` da esa ular yopiq holatda
+    // ham DOM'da turardi.
+    await user.click(document.getElementById('e-ap'));
     expect(screen.getByRole('option', { name: /Kontentdan meros \(PREMIUM OR PURCHASE\)/i }))
       .toBeInTheDocument();
+    // Escape TANLOVNI o'zgartirmasdan yopadi: bu test aynan meros
+    // holatida qolganini tekshiradi.
+    await user.keyboard('{Escape}');
 
     await user.type(document.getElementById('e-ti'), "To'rtinchi");
     await user.click(screen.getByRole('button', { name: /^Saqlash$/ }));
