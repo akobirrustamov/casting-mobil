@@ -269,7 +269,7 @@ tegilmagan (§75) — ogohlantirishlar ham o'sha holida.
 
 | Buyruq | Natija |
 |---|---|
-| `./mvnw test` | ✅ **775 test**, yiqilish yo'q |
+| `./mvnw test` | ✅ **787 test**, yiqilish yo'q |
 | `./mvnw -DskipTests package` | ✅ SUCCESS |
 | `react-scripts test` | ✅ **44 test** (9 to'plam) |
 | `react-scripts build` | ✅ SUCCESS — `adminpanel` da ogohlantirish yo'q |
@@ -621,7 +621,7 @@ Til tanlovi `localStorage` da saqlanadi va kontent tarjimasiga ham ta'sir qiladi
 | 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma: rejalashtirish ishlaydi, hisobot halol (ТЗ §32–§33). FCM ulanmagan |
 | 7 | Users & Monetization — tariffs, premium, Stars, Coin | `[x]` foydalanuvchi, tarif, balans, qurilma, donat |
 | 8 | Analytics — events, aggregation, dashboard, reports | `[x]` ikki qatlamli: xom hodisa + kunlik jamlanma |
-| 9 | Hardening — tests, performance, security, indexes | `[~]` 775 backend + 44 frontend test; migratsiyalar V1–V26 |
+| 9 | Hardening — tests, performance, security, indexes | `[~]` 787 backend + 44 frontend test; migratsiyalar V1–V26 |
 
 ---
 
@@ -1430,6 +1430,25 @@ Buning o'rniga qoida test bilan mahkamlandi: sahifalanmagan har bir
 ro'yxat endpointi **sababi yozilgan** ro'yxatda bo'lishi shart
 (`ApiConventionTest.UNPAGINATED`). Yangi `List<ContentListDto>` jimgina
 qo'shilsa — test yiqiladi.
+
+
+**D21 — Panel hisoblari AutoRun orqali, parol sozlamada (§92).**
+AutoRun endi to'rttala rol uchun ham hisob yaratadi: HYPER_ADMIN,
+SUPER_ADMIN, ADMIN, WORKER. Ilgari faqat ikkita master hisob va eski
+casting adminlari bor edi — panel ADMIN va WORKER rollarini sinash
+uchun ularni baza orqali qo'lda qo'shishga to'g'ri kelardi.
+
+Parollar `application.properties` da. ⚠️ **Bu fayl `.gitignore` da**,
+ya'ni parol repozitoriyga tushmaydi. Environment qiymati (masalan
+`APP_ADMIN_PASSWORD`) undan ustun turadi.
+
+**Nima ATAYLAB qilinmadi:** parol `AutoRun.java` ichiga yozilmadi. U
+fayl commit qilinadi, ya'ni parol repozitoriyda abadiy qolardi va
+ishlab chiqarishga ham o'sha qiymat bilan chiqardi (§92, §109).
+
+⚠️ WORKER hech qanday **ruxsatsiz** yaratiladi. ТЗ §12 bo'yicha
+ruxsatni Admin beradi va bu amal auditga tushadi; avtomatik berish
+o'sha izni hech kim bermagan holga keltirardi.
 
 
 ## 14. Next Exact Steps

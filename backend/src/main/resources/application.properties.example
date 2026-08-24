@@ -57,11 +57,29 @@ APP_AUTH_COOKIE_SECURE=true
 APP_TIMEZONE=Asia/Tashkent
 
 # --- Yashirin master hisoblar (AutoRun) ---
-# Berilmasa default parol "00000000" ishlatiladi - PRODUCTION uchun YARAMAYDI.
+#
+# ⚠️ Parol berilmasa hisob YARATILMAYDI va logga ogohlantirish
+# yoziladi. Bu ataylab: bo'sh yoki standart parolli master hisob
+# ochiq eshikdan yomonroq, chunki uni hech kim ko'rmaydi.
+#
+# Bular panelning xodimlar ro'yxatida KO'RINMAYDI - tizim egasining
+# zaxira kaliti.
 APP_SUPERADMIN_PHONE=
 APP_SUPERADMIN_PASSWORD=
 APP_GIPERSUPERADMIN_PHONE=
 APP_GIPERSUPERADMIN_PASSWORD=
+
+# --- Panel hisoblari (AutoRun) ---
+#
+# Master hisoblardan farqli: bular xodimlar ro'yxatida ko'rinadi va
+# ular ustida odatdagi amallar bajariladi.
+#
+# ⚠️ WORKER hech qanday ruxsatsiz yaratiladi - ruxsatni Admin panel
+# orqali beradi va bu amal auditga tushadi (ТЗ §12).
+APP_ADMIN_PHONE=admin
+APP_ADMIN_PASSWORD=
+APP_WORKER_PHONE=worker
+APP_WORKER_PASSWORD=
 
 # --- Google OAuth (mobil ilova uchun) ---
 APP_GOOGLE_CLIENT_IDS=

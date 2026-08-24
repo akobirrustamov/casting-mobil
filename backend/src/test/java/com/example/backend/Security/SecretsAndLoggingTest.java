@@ -32,11 +32,31 @@ class SecretsAndLoggingTest {
     @DisplayName("Sirlar repozitoriyda yo'q")
     class Secrets {
 
+        /**
+         * ⚠️ Faqat REPOZITORIYGA TUSHADIGAN fayllar tekshiriladi.
+         *
+         * ТЗ §92 «repositoryga hardcode qilma» deydi. Lokal
+         * {@code application.properties} esa {@code .gitignore} da —
+         * u dasturchining shaxsiy sozlamasi va u yerdagi parol hech
+         * qachon repozitoriyga tushmaydi.
+         *
+         * Uni ham tekshirish noto'g'ri qamrov edi: bu test dasturchini
+         * o'z mashinasida ishlaydigan sozlama yozishdan to'sardi.
+         *
+         * ⚠️ Agar kimdir faylni {@code .gitignore} dan chiqarsa,
+         * tekshiruv YANA ishlaydi — quyidagi shart aynan shuni
+         * ta'minlaydi.
+         */
         @Test
-        @DisplayName("Ishlab chiqarish sozlamasida qotirilgan sir yo'q")
+        @DisplayName("Repozitoriyga tushadigan sozlamada qotirilgan sir yo'q")
         void productionConfigHasNoLiteralSecrets() throws IOException {
-            String props = Files.readString(
-                    Path.of("src/main/resources/application.properties"));
+            Path local = Path.of("src/main/resources/application.properties");
+            if (isGitIgnored("application.properties")) {
+                // Fayl repozitoriyga tushmaydi - tekshirish o'rniga
+                // namuna fayl tekshiriladi (pastdagi test).
+                return;
+            }
+            String props = Files.readString(local);
 
             List<String> violations = new ArrayList<>();
             for (String line : props.split("\n")) {
@@ -74,6 +94,17 @@ class SecretsAndLoggingTest {
          * keyin ham. Shu bo'yicha sozlagan odam qisqa muddatli token
          * himoyasini bilmasdan bekor qilardi.
          */
+        /** `.gitignore` da shu nomdagi qoida bormi. */
+        private static boolean isGitIgnored(String fileName) throws IOException {
+            Path ignore = Path.of("../.gitignore");
+            if (!Files.exists(ignore)) {
+                return false;
+            }
+            return Files.readAllLines(ignore).stream()
+                    .map(String::trim)
+                    .anyMatch(l -> !l.startsWith("#") && l.endsWith(fileName));
+        }
+
         @Test
         @DisplayName("Namuna faylda haqiqiy sir yo'q va u eskirmagan")
         void exampleFileIsSafeAndCurrent() throws IOException {

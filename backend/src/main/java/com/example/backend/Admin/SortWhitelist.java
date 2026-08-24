@@ -41,9 +41,11 @@ public final class SortWhitelist {
 
     private final Map<String, String> allowed = new LinkedHashMap<>();
     private final String defaultKey;
+    private final Sort.Direction defaultDirection;
 
-    private SortWhitelist(String defaultKey) {
+    private SortWhitelist(String defaultKey, Sort.Direction defaultDirection) {
         this.defaultKey = defaultKey;
+        this.defaultDirection = defaultDirection;
     }
 
     /**
@@ -51,7 +53,19 @@ public final class SortWhitelist {
      *                   ishlatiladi va u ham ro'yxatga qo'shiladi
      */
     public static SortWhitelist of(String defaultKey) {
-        SortWhitelist w = new SortWhitelist(defaultKey);
+        return of(defaultKey, Sort.Direction.DESC);
+    }
+
+    /**
+     * Standart yo'nalishi boshqa bo'lgan ro'yxatlar uchun.
+     *
+     * ⚠️ Bu SHART bo'lgan holat bor: kategoriya, janr va ijodkorlar
+     * {@code sortOrder} bo'yicha O'SISH tartibida ko'rsatiladi — bu
+     * admin qo'lda tuzgan tartib. Kamayish tartibi uni teskari
+     * ag'darib, panelni jimgina buzardi.
+     */
+    public static SortWhitelist of(String defaultKey, Sort.Direction defaultDirection) {
+        SortWhitelist w = new SortWhitelist(defaultKey, defaultDirection);
         w.allowed.put(defaultKey, defaultKey);
         return w;
     }
@@ -81,9 +95,13 @@ public final class SortWhitelist {
                             + ". Mumkin: " + String.join(", ", allowed.keySet()));
         }
 
-        Sort.Direction direction = "asc".equalsIgnoreCase(dir)
-                ? Sort.Direction.ASC
-                : Sort.Direction.DESC;
+        // Yo'nalish ko'rsatilmagan bo'lsa - shu ro'yxatning standarti.
+        Sort.Direction direction;
+        if (dir == null || dir.isBlank()) {
+            direction = defaultDirection;
+        } else {
+            direction = "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        }
 
         return Sort.by(direction, field);
     }

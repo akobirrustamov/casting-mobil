@@ -61,6 +61,28 @@ public class AutoRun implements CommandLineRunner {
     @Value("${app.legacy-admin.password:}")
     private String legacyAdminPassword;
 
+    // ------------------------------------------- panel hisoblari
+    //
+    // UZCASTING admin paneli uchun ADMIN va WORKER hisoblari.
+    //
+    // ⚠️ Parol berilmasa hisob YARATILMAYDI. Bu ataylab: bo'sh yoki
+    // standart parolli admin hisobi ochiq eshikdan yomonroq, chunki
+    // uni hech kim ko'rmaydi.
+    //
+    // Environment ustun turadi:
+    //   APP_ADMIN_PHONE / APP_ADMIN_PASSWORD
+    //   APP_WORKER_PHONE / APP_WORKER_PASSWORD
+
+    @Value("${app.admin.phone:admin}")
+    private String adminPhone;
+    @Value("${app.admin.password:}")
+    private String adminPassword;
+
+    @Value("${app.worker.phone:worker}")
+    private String workerPhone;
+    @Value("${app.worker.password:}")
+    private String workerPassword;
+
     @Override
     public void run(String... args) throws Exception {
         // 1) Rollarni ta'minlaymiz (bo'sh DB'da ham, mavjud DB'da ham idempotent)
@@ -74,12 +96,66 @@ public class AutoRun implements CommandLineRunner {
         ensureRole(UserRoles.ROLE_WORKER);
 
         // 2) Eski casting admin hisoblari
-        String adminPhone = "admin1234";
-        saveUser(adminPhone, userRepo.findByPhone(adminPhone));
+        //
+        // ⚠️ O'zgaruvchi nomi `legacyPhone` — `adminPhone` EMAS. U
+        // maydon nomi bilan bir xil bo'lsa uni SOYA qilardi va
+        // pastdagi `ensurePanelUser` sozlamadagi telefonni emas,
+        // `admin1234` ni olardi. Natijada panel ADMIN hisobi jimgina
+        // yaratilmasdi: hisob allaqachon mavjud deb hisoblanardi va
+        // logga ham hech narsa yozilmasdi.
+        String legacyPhone = "admin1234";
+        saveUser(legacyPhone, userRepo.findByPhone(legacyPhone));
 
         // 3) Master hisoblar - hech qayerda ro'yxatga chiqmaydi
         ensureHiddenUser(superAdminPhone, superAdminPassword, UserRoles.ROLE_SUPERADMIN);
         ensureHiddenUser(giperSuperAdminPhone, giperSuperAdminPassword, UserRoles.ROLE_GIPERSUPERADMIN);
+
+        // 4) Panel hisoblari — ADMIN va WORKER
+        //
+        // ⚠️ Bular master hisoblardan FARQLI: ular panelning xodimlar
+        // ro'yxatida KO'RINADI va ular ustida odatdagi amallar
+        // bajariladi (rol o'zgartirish, bloklash, parol tiklash).
+        ensurePanelUser(adminPhone, adminPassword, UserRoles.ROLE_ADMIN);
+        ensurePanelUser(workerPhone, workerPassword, UserRoles.ROLE_WORKER);
+    }
+
+    /**
+     * Panel hisobi — xodimlar ro'yxatida ko'rinadigan ADMIN yoki WORKER.
+     *
+     * <h2>Master hisobdan farqi</h2>
+     * {@code ensureHiddenUser} yaratgan hisoblar ro'yxatga chiqmaydi va
+     * ular tizim egasining zaxira kaliti. Bular esa oddiy xodim:
+     * panelda ko'rinadi, tahrirlanadi, bloklanadi.
+     *
+     * ⚠️ WORKER hech qanday RUXSATSIZ yaratiladi. Bu to'g'ri: ТЗ §12
+     * bo'yicha ruxsatni Admin yoki SuperAdmin beradi va bu amal
+     * auditga tushadi. Bu yerda avtomatik ruxsat berish o'sha izni
+     * hech kim bermagan holga keltirardi.
+     */
+    private void ensurePanelUser(String phone, String rawPassword, UserRoles role) {
+        if (phone == null || phone.isBlank()) {
+            return;
+        }
+        if (userRepo.findByPhone(phone).isPresent()) {
+            return;
+        }
+        if (!passwordAccepted(rawPassword, phone)) {
+            return;
+        }
+
+        userRepo.save(User.builder()
+                .phone(phone)
+                .password(passwordEncoder.encode(rawPassword))
+                .name(defaultNameFor(role))
+                .roles(List.of(roleRepo.findByName(role)))
+                .build());
+
+        log.info("Panel hisobi yaratildi: {} ({})", phone, role);
+    }
+
+    /** Xodimlar ro'yxatida bo'sh ustun turmasligi uchun. */
+    private String defaultNameFor(UserRoles role) {
+        return role == UserRoles.ROLE_ADMIN ? "Administrator" : "Xodim";
     }
 
 
@@ -92,21 +168,21 @@ public class AutoRun implements CommandLineRunner {
      * MAVJUD o'rnatishlarga ta'sir qilmaydi: hisob allaqachon bazada bo'lsa,
      * bu metod umuman ishlamaydi.
      */
-    private void saveUser(String adminPhone, Optional<User> userByPhone) {
+    private void saveUser(String legacyPhone, Optional<User> userByPhone) {
         if (userByPhone.isPresent()) {
             return;
         }
-        if (!passwordAccepted(legacyAdminPassword, adminPhone)) {
+        if (!passwordAccepted(legacyAdminPassword, legacyPhone)) {
             return;
         }
-        for (String phone : List.of(adminPhone, adminPhone + "5")) {
+        for (String phone : List.of(legacyPhone, legacyPhone + "5")) {
             userRepo.save(User.builder()
                     .phone(phone)
                     .password(passwordEncoder.encode(legacyAdminPassword))
                     .roles(List.of(roleRepo.findByName(UserRoles.ROLE_ADMIN)))
                     .build());
         }
-        log.info("Eski admin hisoblari yaratildi: {}, {}5", adminPhone, adminPhone);
+        log.info("Eski admin hisoblari yaratildi: {}, {}5", legacyPhone, legacyPhone);
     }
 
     /**
