@@ -169,3 +169,64 @@ describe('Bekor qilish', () => {
     expect(localStorage.getItem('uzpanel.uploads')).not.toContain('S1');
   });
 });
+
+/**
+ * Access token 15 daqiqada tugaydi (`app.jwt.access-token-ms`).
+ * Bir gigabaytlik video 10 Mbit/s kanalda ~14 daqiqa yuklanadi — ya'ni
+ * KATTA video yuklashda tokenning tugashi istisno emas, ODATIY hol.
+ */
+describe("Token muddati yuklash o'rtasida tugasa", () => {
+  let client;
+
+  beforeEach(() => {
+    jest.resetModules();
+    [mockRequest, mockPost, mockPut, mockDelete].forEach((m) => m.mockReset());
+    localStorage.clear();
+    client = require('../client');
+  });
+
+  function beginTwoChunks() {
+    mockRequest.mockImplementation(({ method, url }) => {
+      if (method === 'post' && url.endsWith('/uploads')) {
+        return Promise.resolve({
+          data: { uploadId: 'S9', chunkSize: 5 * 1024 * 1024, totalChunks: 2, receivedChunks: [] },
+        });
+      }
+      return Promise.resolve({ data: { id: 77 } });   // complete
+    });
+  }
+
+  test('token yangilanib, yuklash DAVOM etadi', async () => {
+    beginTwoChunks();
+
+    const refreshes = [];
+    mockPost.mockImplementation((url) => {
+      if (url.endsWith('/auth/refresh')) {
+        refreshes.push(url);
+        return Promise.resolve({ data: { accessToken: 'YANGI' } });
+      }
+      return Promise.resolve({ data: {} });
+    });
+
+    let puts = 0;
+    mockPut.mockImplementation(() => {
+      puts += 1;
+      // Birinchi bo'lak ketdi; ikkinchisida token muddati tugadi.
+      if (puts === 2) {
+        return Promise.reject({ response: { status: 401, data: { code: 'UNAUTHORIZED' } } });
+      }
+      return Promise.resolve({ data: {} });
+    });
+
+    const kicked = jest.fn();
+    client.setUnauthorizedHandler(kicked);
+
+    const media = await client.adminApi.uploadMedia(bigFile(), 'content');
+
+    expect(refreshes).toHaveLength(1);
+    expect(media.id).toBe(77);
+    // ⚠️ Eng muhimi: admin tizimdan CHIQARIB yuborilmasin. 40 daqiqa
+    // yuklangan video shu sababdan yo'qolsa — bu eng og'ir nosozlik.
+    expect(kicked).not.toHaveBeenCalled();
+  });
+});
