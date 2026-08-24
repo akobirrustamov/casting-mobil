@@ -53,6 +53,26 @@ public interface UserRepo extends JpaRepository<User, UUID> {
      * uchun alohida parametr: qidiruv matni to'g'ri UUID bo'lsa
      * to'ldiriladi, aks holda {@code null} va shart o'chadi.
      */
+    /*
+     * ⚠️ `cast(:param as ...)` — bezak emas, MAJBURIY.
+     *
+     * `:param is null` shartida parametr boshqa hech qayerda
+     * ishlatilmaydi: Hibernate har bir nomlangan parametr uchun
+     * ALOHIDA pozitsion `?` yasaydi, ya'ni `$N` faqat `is null`
+     * kontekstida qoladi. PostgreSQL 18 uchun bunday parametrning
+     * turi noma'lum va u so'rovni butunlay rad etadi:
+     *
+     *   ERROR: could not determine data type of parameter $N
+     *
+     * Xato FAQAT filtr bo'sh bo'lganda chiqadi — ya'ni sahifa
+     * birinchi marta, filtrsiz ochilganda. Bu esa eng ko'p
+     * uchraydigan holat.
+     *
+     * `String` ga o'girish `is null` ma'nosini o'zgartirmaydi
+     * (`cast(null as ...)` baribir null), lekin parametrga tur
+     * beradi. Haqiqiy solishtirishda esa parametr o'z turida
+     * qoladi — u alohida `?`.
+     */
     @Query("""
             select u from User u
             where not exists (
@@ -63,7 +83,7 @@ public interface UserRepo extends JpaRepository<User, UUID> {
                  or lower(u.phone) like lower(concat('%', :q, '%'))
                  or lower(u.email) like lower(concat('%', :q, '%'))
                  or lower(u.name)  like lower(concat('%', :q, '%'))
-                 or (:exactId is not null and u.id = :exactId))
+                 or (cast(:exactId as String) is not null and u.id = :exactId))
             """)
     Page<User> findAppUsers(@Param("q") String q,
                             @Param("exactId") UUID exactId,

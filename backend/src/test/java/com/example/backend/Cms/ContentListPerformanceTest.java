@@ -68,25 +68,65 @@ class ContentListPerformanceTest {
     @Autowired
     private com.example.backend.Cms.Service.TaxonomyService taxonomyService;
 
+    @Autowired
+    private org.springframework.transaction.PlatformTransactionManager txManager;
+
+    /**
+     * Ma'lumot tayyorlash.
+     *
+     * ⚠️ Yozish ALOHIDA tranzaksiyada bajariladi.
+     *
+     * Test metodlari {@code @Transactional(readOnly = true)} — ular
+     * so'rovlar sonini sanaydi va yozuvga ruxsat bermasligi kerak.
+     * Spring esa tranzaksiyani {@code @BeforeEach} dan OLDIN ochadi,
+     * ya'ni tayyorlash ham o'sha «faqat o'qish» tranzaksiyasiga tushib
+     * qoladi va PostgreSQL uni rad etadi:
+     *
+     *   ERROR: cannot execute INSERT in a read-only transaction
+     *
+     * Ilgari bu ko'rinmasdi: test bazasi hech qachon tozalanmagani
+     * uchun kerakli yozuvlar oldingi yurishlardan qolib ketardi va
+     * halqa tanasi umuman ishlamasdi. Ya'ni test o'zi tayyorlagan
+     * ma'lumot ustida emas, tasodifiy qoldiq ustida ishlardi.
+     */
     @BeforeEach
     void seed() {
         long existing = contentRepo.findAll().stream()
                 .filter(c -> c.getTranslations().stream().anyMatch(
                         t -> t.getTitle() != null && t.getTitle().startsWith(MARKER)))
                 .count();
-        for (long i = existing; i < TOTAL; i++) {
-            ContentSaveRequest c = new ContentSaveRequest();
-            c.setContentType(ContentType.MOVIE);
-            c.setStructureType(StructureType.SINGLE);
-            c.setAccessPolicy(AccessPolicy.FREE);
-            c.setStatus(PublicationStatus.PUBLISHED);
-            c.setTranslations(Map.of(
-                    Locale.UZ, TranslationDto.ofTitle(MARKER + " " + i),
-                    Locale.RU, TranslationDto.ofTitle(MARKER + " ru " + i),
-                    Locale.EN, TranslationDto.ofTitle(MARKER + " en " + i)));
-            contentService.create(null, c);
-        }
-        enrich();
+        inNewTransaction(() -> {
+            for (long i = existing; i < TOTAL; i++) {
+                ContentSaveRequest c = new ContentSaveRequest();
+                c.setContentType(ContentType.MOVIE);
+                c.setStructureType(StructureType.SINGLE);
+                c.setAccessPolicy(AccessPolicy.FREE);
+                c.setStatus(PublicationStatus.PUBLISHED);
+                c.setTranslations(Map.of(
+                        Locale.UZ, TranslationDto.ofTitle(MARKER + " " + i),
+                        Locale.RU, TranslationDto.ofTitle(MARKER + " ru " + i),
+                        Locale.EN, TranslationDto.ofTitle(MARKER + " en " + i)));
+                contentService.create(null, c);
+            }
+            enrich();
+        });
+    }
+
+    /**
+     * Berilgan ishni YANGI, yozishga ruxsat etilgan tranzaksiyada
+     * bajaradi va darhol yakunlaydi.
+     *
+     * {@code REQUIRES_NEW} tashqi «faqat o'qish» tranzaksiyasini
+     * to'xtatib turadi — annotatsiya bu yerda ishlamasdi, chunki
+     * JUnit test klassini proksi orqali emas, to'g'ridan-to'g'ri
+     * chaqiradi.
+     */
+    private void inNewTransaction(Runnable work) {
+        org.springframework.transaction.support.TransactionTemplate template =
+                new org.springframework.transaction.support.TransactionTemplate(txManager);
+        template.setPropagationBehavior(
+                org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        template.executeWithoutResult(status -> work.run());
     }
 
     /** H2 PostgreSQL rejimida chegara "limit", ba'zi dialektlarda "fetch first". */

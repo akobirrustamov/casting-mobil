@@ -235,6 +235,22 @@ public class CmsCatalogController {
                 CategoryDto.from(taxonomyService.saveCategory(CurrentUser.get(), id, request)));
     }
 
+    /**
+     * Kategoriyani o'chiradi (ТЗ §16).
+     *
+     * Kontentga bog'langan bo'lsa backend 409 {@code CATEGORY_IN_USE}
+     * qaytaradi va NECHTA kontentda ekanini aytadi — panel buni
+     * ko'rsatib, admin avval o'sha kontentlarni ko'chirishi kerakligini
+     * bilib oladi.
+     */
+    @DeleteMapping("/categories/{id}")
+    @RequirePermission(Permission.CATEGORY_DELETE)
+    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
+        require(Permission.CATEGORY_DELETE);
+        taxonomyService.deleteCategory(CurrentUser.get(), id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/genres")
     @RequirePermission(Permission.GENRE_CREATE)
     public ResponseEntity<GenreDto> createGenre(@Valid @RequestBody TaxonomySaveRequest request) {
@@ -250,6 +266,15 @@ public class CmsCatalogController {
         require(Permission.GENRE_EDIT);
         return ResponseEntity.ok(
                 GenreDto.from(taxonomyService.saveGenre(CurrentUser.get(), id, request)));
+    }
+
+    /** Janrni o'chiradi (ТЗ §17). Foydalanilayotgan bo'lsa 409 {@code GENRE_IN_USE}. */
+    @DeleteMapping("/genres/{id}")
+    @RequirePermission(Permission.GENRE_DELETE)
+    public ResponseEntity<Void> deleteGenre(@PathVariable Long id) {
+        require(Permission.GENRE_DELETE);
+        taxonomyService.deleteGenre(CurrentUser.get(), id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/creators")

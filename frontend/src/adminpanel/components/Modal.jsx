@@ -15,6 +15,25 @@ export default function Modal({ open, title, onClose, children, footer, width = 
   const dialogRef = useRef(null);
   const returnFocusRef = useRef(null);
 
+  /**
+   * ⚠️ `onClose` REF orqali ushlanadi va effekt bog'liqligiga KIRMAYDI.
+   *
+   * Bu bezak emas — usiz muharrirga yozib bo'lmasdi. Ota-komponent
+   * odatda `onClose={() => setOpen(false)}` yoki `onClose={requestClose}`
+   * beradi, ya'ni funksiya HAR RENDERDA yangi bo'ladi. Agar u
+   * bog'liqlikda tursa, effekt har renderda qaytadan ishga tushadi:
+   * tozalash fokusni ochgan tugmaga qaytaradi, keyingi ishga tushish
+   * esa uni oynaning BIRINCHI elementiga olib qo'yadi.
+   *
+   * Formasi o'z ichida turgan oynalarda (kontent muharriri, reklama,
+   * bildirishnoma, bosh sahifa) har bosilgan harf renderni keltirib
+   * chiqaradi — natijada fokus har harfdan keyin ko'chib ketardi va
+   * maydonga faqat BITTA belgi tushardi. `§86` oqim testi shuni
+   * topdi.
+   */
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!open) return undefined;
 
@@ -38,7 +57,7 @@ export default function Modal({ open, title, onClose, children, footer, width = 
 
     const onKey = (e) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== 'Tab') return;
@@ -75,7 +94,8 @@ export default function Modal({ open, title, onClose, children, footer, width = 
         returnFocusRef.current.focus();
       }
     };
-  }, [open, onClose]);
+    // Faqat `open` — sabab yuqoridagi izohda.
+  }, [open]);
 
   if (!open) return null;
 

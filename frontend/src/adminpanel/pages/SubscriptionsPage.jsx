@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../api/client';
 import { useApi } from '../api/useApi';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
@@ -22,7 +23,19 @@ import { money } from '../utils/format';
 export default function SubscriptionsPage() {
   const { t } = usePanelI18n();
   const [page, setPage] = useState(0);
-  const [q, setQ] = useState('');
+
+  /**
+   * ⚠️ Boshlang'ich qidiruv manzildan olinadi (`?q=`).
+   *
+   * Foydalanuvchi sahifasidan «Obunalar bo'limida ochish» havolasi
+   * aynan shu bilan ishlaydi. Usiz havola bo'limni ochib, filtrni esa
+   * bo'sh qoldirardi va admin telefonni qo'lda qayta terardi.
+   *
+   * Keyingi o'zgarishlar manzilga yozilmaydi — bu faqat KIRISH
+   * nuqtasi, doimiy holat emas.
+   */
+  const [searchParams] = useSearchParams();
+  const [q, setQ] = useState(() => searchParams.get('q') || '');
   const [active, setActive] = useState('');
   const [source, setSource] = useState('');
 

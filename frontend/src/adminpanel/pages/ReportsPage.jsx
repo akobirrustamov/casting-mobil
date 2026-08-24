@@ -6,8 +6,7 @@ import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { PageHeader, TableWrap } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
 import { count, money } from '../utils/format';
-
-const PERIODS = ['today', 'yesterday', 'last7', 'last30'];
+import ReportFilters, { EMPTY_REPORT_FILTER, toReportParams } from './reports/ReportFilters';
 
 function Stat({ label, value, suffix, accent }) {
   return (
@@ -25,41 +24,58 @@ function Stat({ label, value, suffix, accent }) {
 }
 
 /**
- * Hisobotlar.
+ * Hisobotlar (ТЗ §45, §47).
  *
  * Barcha raqamlar kunlik jamlanmadan keladi — xom hodisalar ustida
  * hech qanday hisob-kitob yo'q.
+ *
+ * <h2>Filtr qo'llanganda buni SAHIFA aytadi</h2>
+ * Backend javobda `appliedFilters` ni qaytaradi va panel uni ochiq
+ * ko'rsatadi. Usiz admin «bu son butun platformanikimi yoki
+ * filtrlanganmi?» degan savolga javob topa olmasdi — ayniqsa saqlangan
+ * yoki hamkasbga yuborilgan skrinshotda.
  */
 export default function ReportsPage() {
   const { t } = usePanelI18n();
-  const [period, setPeriod] = useState('last30');
-  const { data, error, loading, reload } = useApi(
-    () => adminApi.reportOverview({ period }), [period]);
+  const [filter, setFilter] = useState(EMPTY_REPORT_FILTER);
+  const params = toReportParams(filter);
 
+  const { data, error, loading, reload } = useApi(
+    () => adminApi.reportOverview(params),
+    [
+      params.period, params.from, params.to,
+      params.contentId, params.categoryId, params.creatorId,
+      params.tariffId, params.advertisementId,
+    ]
+  );
+
+  const applied = data?.appliedFilters || {};
+  const isFiltered = Object.values(applied).some((v) => v !== null && v !== undefined);
+
+  // Filtr qo'llangan, lekin mos ma'lumot yo'q — bu BO'SH NATIJA, xato emas.
+  // Ikkalasini bir xil ko'rsatish admin uchun butunlay boshqa xulosa bo'lardi.
+  const noMatch = isFiltered && data && !data.series?.length
+    && !data.topContent?.length && !data.topAds?.length;
 
   return (
     <>
-      <PageHeader
-        title={t('rp.title')}
-        subtitle={t('rp.subtitle')}
-        right={
-          <div className="flex gap-2 flex-wrap">
-            {PERIODS.map((p) => (
-              <button key={p} type="button"
-                      className={`uz-chip ${period === p ? 'selected' : ''}`}
-                      aria-pressed={period === p}
-                      onClick={() => setPeriod(p)}>
-                {t(`rp.${p}`)}
-              </button>
-            ))}
-          </div>
-        }
-      />
+      <PageHeader title={t('rp.title')} subtitle={t('rp.subtitle')} />
+
+      <ReportFilters value={filter} onChange={setFilter} />
 
       {loading ? <LoadingState rows={4} /> :
        error ? <ErrorState error={error} onRetry={reload} /> :
        !data ? <EmptyState icon="📊" /> : (
         <>
+          {isFiltered && (
+            <div className="mb-4 px-4 py-3"
+                 style={{ borderRadius: 'var(--p-radius)', background: 'var(--brand-primary-soft, var(--p-surface-2))',
+                          border: '1px solid var(--p-primary)', color: 'var(--p-text)',
+                          fontSize: 13 }}>
+              <strong>{t('rp.filtered')}.</strong> {t('rp.filteredHint')}
+            </div>
+          )}
+
           {/* Kechikish ochiq ko'rsatiladi — raqamlar «jonli» emasligini admin bilsin */}
           {data.pendingEvents > 0 && (
             <div className="mb-4 px-4 py-3"
@@ -69,6 +85,10 @@ export default function ReportsPage() {
               {t('rp.pending')}: <strong>{count(data.pendingEvents)}</strong> — {t('rp.pendingHint')}
             </div>
           )}
+
+          <p className="uz-muted mb-4 uz-mono" style={{ fontSize: 12 }}>
+            {data.from} — {data.to}
+          </p>
 
           <div className="grid gap-4 mb-6"
                style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
@@ -81,7 +101,17 @@ export default function ReportsPage() {
             <Stat label={t('rp.clicks')} value={count(data.adClicks)} />
             <Stat label={t('rp.ctr')} value={(data.adCtr || 0).toFixed(2)} suffix="%"
                   accent="var(--p-gold)" />
+            {/* ⚠️ Backend bu ko'rsatkichni allaqachon qaytarardi
+                (`subscriptionRevenue`), lekin sahifa uni ko'rsatmasdi.
+                `money()` `null` ni «—» qiladi: obuna daromadi
+                hisoblanmagan holat nol bilan aralashib ketmasin (§103). */}
+            <Stat label={t('rp.subRevenue')} value={money(data.subscriptionRevenue)}
+                  suffix={t('common.currency')} accent="var(--p-success)" />
           </div>
+
+          {noMatch && (
+            <p className="uz-muted mb-4" style={{ fontSize: 13 }}>{t('rp.noMatch')}</p>
+          )}
 
           <div className="uz-card p-5 mb-6">
             <div className="uz-h2 mb-3" style={{ fontSize: 15 }}>{t('rp.chart')}</div>

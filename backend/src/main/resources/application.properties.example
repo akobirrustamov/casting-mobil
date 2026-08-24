@@ -74,3 +74,24 @@ APP_GOOGLE_CLIENT_IDS=
 # PAYMENT_PROVIDER=
 # PAYMENT_MERCHANT_ID=
 # PAYMENT_SECRET_KEY=
+
+# ── Sxema siyosati (ТЗ §91) ──────────────────────────────────────────
+#
+# Sxemani FAQAT Flyway boshqaradi. Hibernate unga tegmaydi: aks holda
+# ishlab turgan bazaning sxemasi hech qayerda yozilmagan holatga kelib
+# qoladi va keyingi migratsiya nima ustiga tushishi noma'lum bo'ladi.
+spring.jpa.hibernate.ddl-auto=none
+
+# Ishlab turgan bazani tozalash imkoniyati YOPIQ.
+spring.flyway.clean-disabled=true
+
+# ── Xato javoblari (ТЗ §94) ──────────────────────────────────────────
+#
+# Stacktrace va istisno nomi klientga HECH QACHON yuborilmaydi: ular
+# ichki tuzilishni, paket nomlarini va ba'zan so'rov parametrlarini
+# ochib beradi.
+#
+# Sukut qiymatga tayanilmaydi — u Spring versiyasi bilan o'zgarishi
+# mumkin va bu jimgina o'zgarish bo'lardi.
+server.error.include-stacktrace=never
+server.error.include-exception=false

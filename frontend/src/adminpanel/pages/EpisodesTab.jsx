@@ -492,8 +492,14 @@ export default function EpisodesTab({ contentId, structureType, contentAccessPol
         </div>
       </div>
       <StatusBadge status={e.status} />
+      {/* ⚠️ Qiymat yo'q bo'lsa ham qator YIQILMASLIGI kerak.
+          Ilgari bu yerda to'g'ridan-to'g'ri `.replace()` chaqirilardi va
+          bitta bo'sh maydon BUTUN «Fasl va qismlar» bo'limini oq ekranga
+          aylantirardi — admin qismlarni umuman ko'ra olmasdi. */}
       <Badge tone={e.effectiveAccessPolicy === 'FREE' ? 'published' : 'gold'}>
-        {e.effectiveAccessPolicy === 'FREE' ? t('common.free') : e.effectiveAccessPolicy.replace(/_/g, ' ')}
+        {e.effectiveAccessPolicy === 'FREE'
+          ? t('common.free')
+          : String(e.effectiveAccessPolicy || '—').replace(/_/g, ' ')}
       </Badge>
       {can('CONTENT_EDIT') && (
         <button type="button" className="uz-btn uz-btn-ghost"

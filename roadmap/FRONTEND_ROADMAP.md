@@ -59,16 +59,16 @@ Oxirgi yangilanish: 20.08.2026 — PHASE 5–8 qo'shildi
 
 ---
 
-## 2. PHASE 2 — Staff Management `[ ]`
+## 2. PHASE 2 — Staff Management `[x]`
 
 - `[x]` `/app/panel/staff` — ro'yxat: ism, telefon, rol, ruxsatlar soni
 - `[x]` Faqat o'zidan quyi rollar ko'rinadi (backendda filtrlanadi)
-- `[ ]` Avatar, createdBy, lastLoginAt ustunlari
-- `[ ]` Filter: role, active/inactive, qidiruv, sana
-- `[ ]` Create/Edit modal — role tanlash yaratuvchi huquqiga qarab cheklanadi
-- `[ ]` Worker uchun permission tanlash UI (checkbox guruhlari)
-- `[ ]` Activate / deactivate / reset password / block
-- `[ ]` Confirmation dialog barcha xavfli action'larga
+- `[x]` Avatar, createdBy, lastLoginAt ustunlari
+- `[x]` Filter: role, active/inactive, qidiruv, sana
+- `[x]` Create/Edit modal — role tanlash yaratuvchi huquqiga qarab cheklanadi
+- `[x]` Worker uchun permission tanlash UI (checkbox guruhlari)
+- `[x]` Activate / deactivate / reset password / block
+- `[x]` Confirmation dialog barcha xavfli action'larga
 
 ---
 
@@ -157,7 +157,8 @@ Oxirgi yangilanish: 20.08.2026 — PHASE 5–8 qo'shildi
 - `[x]` «Oyiga» ustuni avtomatik hisoblanadi
 - `[x]` Valyuta paketlari — narxni joyida tahrirlash
 - `[x]` **Kurs aytilmagani ochiq yozilgan** — 0 «sozlanmagan» degani
-- `[ ]` Donation report ekrani (backend `GET /donations/top` tayyor)
+- `[x]` Bitta foydalanuvchi sahifasi — profil, balans, premium, qurilmalar, obuna tarixi
+- `[x]` Donation report ekrani — `DonationsPage.jsx` (bu qator eskirgan edi, ekran allaqachon bor)
 - `[ ]` Xaridlar tarixi
 
 ---
@@ -166,11 +167,9 @@ Oxirgi yangilanish: 20.08.2026 — PHASE 5–8 qo'shildi
 
 - `[x]` `/app/panel` — dashboard: 10 ta real ko'rsatkich; modul yo'q bo'lganlar ochiq «—» bilan
 - `[x]` **Bitta** `dashboard/summary` chaqiruvi (§73)
-- `[ ]` Charts: user growth, views, revenue
-- `[ ]` Charts: user growth, views, subscription revenue, donations
-- `[ ]` Tables: latest content, top content, latest users, best ads, top creators
-- `[ ]` **Bitta** `dashboard/summary` chaqiruvi — 20 ta parallel request emas
-- `[ ]` `/app/panel/reports` — filter: today / yesterday / 7 / 30 / custom + content/category/creator/tariff/ad
+- `[x]` Charts: user growth, views, subscription revenue, donations
+- `[x]` Tables: latest content, top content, latest users, best ads, top creators
+- `[x]` `/app/panel/reports` — filter: today / yesterday / 7 / 30 / custom + content/category/creator/tariff/ad (§47)
 - `[!]` Ma'lumot yo'q bo'lsa **empty state**, fake grafik emas
 
 ---
@@ -179,10 +178,10 @@ Oxirgi yangilanish: 20.08.2026 — PHASE 5–8 qo'shildi
 
 - `[x]` Katta video yuklash — bo'laklab, qayta urinish bilan (§16)
 - `[ ]` Barcha list sahifalarda: search, filter, pagination, sorting, loading, empty, error, retry
-- `[ ]` Search debounce
+- `[x]` Search debounce — `SearchInput` da 400 ms (§96)
 - `[ ]` Accessibility: button label, keyboard, modal focus, form label, kontrast
 - `[ ]` Responsive: desktop-first, laptop/tablet'da buzilmasin
-- `[ ]` Critical flow testlari (§86): login, forbidden route, create/edit content, create creator, add episode, create ad, staff permission
+- `[x]` Critical flow testlari (§86): login, forbidden route, create/edit content, create creator, add episode, create ad, staff permission — **38 ta test**
 
 ---
 
@@ -461,25 +460,124 @@ Backend **74 ta admin endpoint** taklif qiladi, panel esa ularning bir
 qismini **umuman chaqirmaydi**. Ya'ni backendda yozilgan va sinalgan
 ish frontendда ko'rinmaydi:
 
-| Sahifa | Hozir bor | Backendda tayyor, lekin UI yo'q |
+| Sahifa | Yetishmagan UI | Holat |
 |---|---|---|
-| Xodimlar | faqat ro'yxat | **yaratish**, tahrirlash, rol, ruxsatlar, parol, faollashtirish, bloklash — **8 amal** |
-| Media | faqat ro'yxat | arxivlash, tiklash, qayerda ishlatilgani, o'chirish — **4 amal** |
-| Dashboard | faqat `summary` | `charts`, `tables` — **2 endpoint** |
-| Bosh sahifa | bo'lim tahriri | tartiblash, qo'lda kontent tanlash, tanlangan ijodkorlar |
-| Hisobotlar | faqat `overview` | kontent analitikasi (§46) |
-| — | — | reklama CTR hisoboti (§81) |
-| — | — | bildirishnoma hisoboti (§33) |
-| Foydalanuvchilar | ro'yxat + amallar | bitta foydalanuvchi sahifasi |
+| Xodimlar | **yaratish**, tahrirlash, rol, ruxsatlar, parol, faollashtirish, bloklash — **8 amal** | `[x]` F1 |
+| Media | arxivlash, tiklash, qayerda ishlatilgani, o'chirish — **4 amal** | `[x]` F2 |
+| Dashboard | `charts`, `tables` — **2 endpoint** | `[x]` F3 |
+| Bosh sahifa | tartiblash, qo'lda kontent tanlash, tanlangan ijodkorlar | `[x]` F4 |
+| Hisobotlar | kontent analitikasi (§46) | `[x]` F5 |
+| — | reklama CTR hisoboti (§81) | `[x]` F5 |
+| — | bildirishnoma hisoboti (§33) | `[x]` F5 |
+| Foydalanuvchilar | bitta foydalanuvchi sahifasi | `[x]` F6 |
 
 ⚠️ **Eng jiddiysi — xodim yaratish.** Backend to'liq tayyor (ierarxiya,
 ruxsatlar, audit — 745 testdan bir qismi shuni tekshiradi), lekin
-panelda tugma yo'q. Ya'ni yangi admin yoki worker **faqat baza orqali**
-qo'shiladi. §78 qabul mezoni buni talab qiladi.
+panelda tugma yo'q edi. Ya'ni yangi admin yoki worker **faqat baza
+orqali** qo'shilardi. §78 qabul mezoni buni talab qiladi — F1 da
+yopildi.
+
+### Yakuniy holat (23.08.2026)
+
+F1–F6 bajarildi, keyin ТЗ ning qolgan **qisman** bandlaridan §47 va
+§86 yopildi. F7 (foydalanuvchi qismi) boshlanmaydi: buyurtmachi
+tartibi bo'yicha avval admin panel, bundan tashqari `/app/auth/**`,
+`/app/catalog`, `/app/content/{slug}` va qolgan ommaviy endpointlar
+backendda hali yozilmagan — interfeys quradigan ma'lumot yo'q.
+
+`react-scripts build` o'tadi va **panelda birorta ESLint
+ogohlantirishi yo'q**. Testlar: **38 ta**, hammasi o'tadi.
+
+To'liq ТЗ holati → [TZ_CHECKLIST.md](./TZ_CHECKLIST.md).
 
 ---
 
-## BOSQICH F1 — Xodimlar boshqaruvi
+## §47 — hisobot filtrlari (23.08.2026)
+
+`pages/reports/ReportFilters.jsx`. Backend beshta obyekt filtrini
+(kontent · kategoriya · ijodkor · tarif · reklama) allaqachon
+qo'llab-quvvatlardi va ular davr bilan **birga** ishlardi; panelda esa
+faqat davr tugmalari bor edi. Ya'ni «shu kategoriya, oxirgi 7 kun»
+degan savolni umuman berib bo'lmasdi.
+
+⚠️ **Davr tugmasi va qo'lda sana bir-birini tozalaydi.** Backend
+ikkalasini birga qabul qiladi, lekin qaysi biri ustun ekani
+foydalanuvchiga ko'rinmasdi: «oxirgi 7 kun» tanlangan holda eski
+sanalar qolib ketsa, admin qaysi davr amalda ekanini bilmasdi.
+
+⚠️ **Filtr qo'llangani sahifada ochiq yoziladi** (`appliedFilters`).
+Usiz saqlangan yoki hamkasbga yuborilgan skrinshotda «bu son butun
+platformanikimi yoki filtrlanganmi?» degan savolga javob yo'q edi.
+
+⚠️ **Bo'sh natija «xato» emas.** Filtr mos kelmasa alohida matn
+chiqadi — ikkalasini bir xil ko'rsatish admin uchun butunlay boshqa
+xulosa bo'lardi (§45).
+
+---
+
+## §86 — beshta yetishmagan oqim testi (23.08.2026)
+
+| Fayl | Oqim |
+|---|---|
+| `pages/__tests__/contentFlow.test.jsx` | kontent yaratish **va** tahrirlash |
+| `pages/__tests__/creatorFlow.test.jsx` | ijodkor yaratish |
+| `pages/__tests__/episodeFlow.test.jsx` | qism qo'shish |
+| `pages/__tests__/advertisementFlow.test.jsx` | reklama yaratish |
+
+Testlar aynan **jimgina buziladigan** xatti-harakatlarni qo'riqlaydi:
+tahrirlashda slug o'zgarmasligi (B13), janr va ijodkorlar saqlanib
+qolishi (B17), `version` yuborilishi (§60), qism raqami avtomatik
+hisoblanishi, meros holatida `accessPolicyOverride` ning `null`
+ketishi (B24), reklama so'roviga premyera maydonlari tushmasligi.
+
+### ⚠️ Test topgan ikkita HAQIQIY xato — tuzatildi
+
+**1. Modalda har harfdan keyin fokus yo'qolardi.**
+
+`Modal` ning effekti `onClose` ni bog'liqlik sifatida ushlab turardi.
+Ota-komponent odatda `onClose={() => setOpen(false)}` yoki
+`onClose={requestClose}` beradi — bu funksiya **har renderda yangi**.
+Formasi o'z ichida turgan oynalarda (kontent muharriri, reklama,
+bildirishnoma, bosh sahifa, premium sovg'a) har bosilgan harf render
+keltirib chiqaradi; effekt qayta ishga tushib, tozalashda fokusni
+ochgan tugmaga qaytaradi va keyin oynaning **birinchi** elementiga
+olib qo'yadi.
+
+Natija: maydonga faqat **bitta belgi** tushardi. Ya'ni kontent
+muharririga amalda yozib bo'lmasdi.
+
+Tuzatish: `onClose` `ref` orqali ushlanadi, effekt faqat `open` ga
+bog'liq (`components/Modal.jsx`).
+
+**2. Bitta bo'sh maydon «Fasl va qismlar» bo'limini yiqitardi.**
+
+`EpisodesTab` da `e.effectiveAccessPolicy.replace(...)` himoyasiz
+chaqirilardi. Qiymat kelmasa butun bo'lim oq ekranga aylanib, admin
+qismlarni umuman ko'ra olmasdi. Endi `String(... || '—')`.
+
+---
+
+## ⚠️ Backend ishlari to'xtatildi — muhit muammosi
+
+§16, §17, §51 va §59 backend o'zgarishini talab qiladi va ular bu
+mashinada **kompilyatsiya qilib tekshirib bo'lmaydi**:
+
+- faqat **JDK 25** o'rnatilgan;
+- `mvnw` buzilgan — `.mvn/wrapper/maven-wrapper.properties` yo'q;
+- JDK 23 dan boshlab `javac` annotatsiya protsessorlarini sukut
+  bo'yicha o'chiradi, `maven-compiler-plugin` esa `pom.xml` da 3.11.0
+  ga qotirilgan va `proc` parametrini bilmaydi → **Lombok umuman
+  ishlamaydi**, 410 ta «cannot find symbol».
+
+Tekshirib bo'lmaydigan backend o'zgarishini kiritish ko'r-ko'rona ish
+bo'lardi. Yechim: JDK 17/21 o'rnatish, yoki `pom.xml` da compiler
+plaginini 3.13+ ga ko'tarib `<annotationProcessorPaths>` ga Lombok'ni
+ochiq yozish (bu build sozlamasini o'zgartirish, shuning uchun
+tasdiqsiz qilinmadi).
+
+---
+
+## BOSQICH F1 — Xodimlar boshqaruvi `[x]`
 
 **Nega birinchi:** RBAC butun tizimning asosi va u hozir paneldan
 boshqarilmaydi.
@@ -500,19 +598,61 @@ boshqarilmaydi.
 
 **Qabul mezonlari:**
 
-- `[ ]` ADMIN faqat WORKER yarata oladi — rol ro'yxatida boshqasi **yo'q**
-- `[ ]` SUPER_ADMIN — ADMIN va WORKER yarata oladi, HYPER_ADMIN yo'q
-- `[ ]` Ruxsatlar bloki faqat WORKER tanlanganda ko'rinadi
-- `[ ]` O'zini bloklash yoki rolini o'zgartirish tugmasi **ko'rinmaydi**
-- `[ ]` Har bir buzuvchi amal `ConfirmDialog` bilan
-- `[ ]` Xato `useFieldErrors` orqali maydonga bog'lanadi (§52)
-- `[ ]` Uch tilda tarjima
-- `[ ]` ⚠️ Frontend yashirishi **xavfsizlik emas** — backend baribir 403
+- `[x]` ADMIN faqat WORKER yarata oladi — rol ro'yxatida boshqasi **yo'q**
+- `[x]` SUPER_ADMIN — ADMIN va WORKER yarata oladi, HYPER_ADMIN yo'q
+- `[x]` Ruxsatlar bloki faqat WORKER tanlanganda ko'rinadi
+- `[x]` O'zini bloklash yoki rolini o'zgartirish tugmasi **ko'rinmaydi**
+- `[x]` Har bir buzuvchi amal `ConfirmDialog` bilan
+- `[x]` Xato `useFieldErrors` orqali maydonga bog'lanadi (§52)
+- `[x]` Uch tilda tarjima
+- `[x]` ⚠️ Frontend yashirishi **xavfsizlik emas** — backend baribir 403
   qaytaradi va bu allaqachon sinalgan
+
+### Nima qilindi (23.08.2026)
+
+`pages/StaffPage.jsx` (126 qator) → `pages/staff/` papkasi:
+`StaffPage.jsx` (ro'yxat, filtrlar, sakkizta amal), `StaffForm.jsx`
+(yaratish/tahrirlash), `PermissionPicker.jsx`, `permissionGroups.js`.
+
+Rol tanlash ro'yxati `/auth/me` dagi `creatableRoles` dan quriladi —
+ya'ni ierarxiya frontendda qayta yozilmaydi, backend nima ruxsat
+bersa, o'sha ko'rinadi.
+
+⚠️ **Rol, ruxsat va parol alohida oynalarda.** Backend ham shunday
+bo'lingan: `PUT /staff/{id}` faqat ism, telefon, email va avatarni
+o'zgartiradi. Har birining o'z xavfsizlik qoidasi bor («o'zida
+bo'lmagan ruxsatni bera olmaydi», «yangi rol ham yaratish doirasida
+bo'lsin»). Ularni bitta formaga qo'shish tekshiruvlarni foydalanuvchi
+uchun ko'rinmas qilardi: bitta «Saqlash» ba'zan o'tib, ba'zan
+tushunarsiz 403 qaytarardi.
+
+⚠️ **Uch modal ataylab shartli chiziladi** (`{permissionsFor && ...}`).
+Ular boshlang'ich holatini prop'dan oladi; doim chizilib faqat `open`
+bilan yashirilsa, ikkinchi marta ochilganda holat eskisidan qolardi —
+parol oynasida oldingi matn, ruxsatlar oynasida boshqa xodimning
+qutichalari.
+
+### Yo'l-yo'lakay tuzatilgan xato
+
+**Build butunlay sinib turgan edi.** `TariffsPage.jsx` da `money()`
+chaqirilardi, lekin import 94052b7 («pul formatlash markazlashtirildi»)
+da olib tashlangan. `react-scripts build` `no-undef` bilan yiqilardi,
+ya'ni panelning **hech qanday** o'zgarishini yig'ib bo'lmasdi.
+
+### Qo'shilgan test
+
+`pages/staff/__tests__/permissionGroups.test.js` — paneldagi ruxsatlar
+ro'yxatini backenddagi `Enums/Permission.java` bilan solishtiradi.
+
+⚠️ Nega kerak: WORKER huquqlari faqat shu ro'yxatdagi qutichalar orqali
+beriladi. Backendga yangi ruxsat qo'shilsayu bu yerga qo'shilmasa, u
+panel orqali **hech qachon berib bo'lmaydigan** huquqqa aylanadi —
+va buni hech kim sezmaydi, chunki hech qayerda xato chiqmaydi:
+quticha shunchaki yo'q bo'ladi.
 
 ---
 
-## BOSQICH F2 — Media kutubxonasi
+## BOSQICH F2 — Media kutubxonasi `[x]`
 
 **Fayl:** `pages/MediaPage.jsx` (93 → ~250 qator)
 
@@ -525,14 +665,35 @@ boshqarilmaydi.
 
 **Qabul mezonlari:**
 
-- `[ ]` O'chirishdan oldin qayerda ishlatilgani **ko'rsatiladi**
-- `[ ]` Ishlatilayotgan fayl o'chirilmoqchi bo'lsa, backend 409 qaytaradi
+- `[x]` O'chirishdan oldin qayerda ishlatilgani **ko'rsatiladi**
+- `[x]` Ishlatilayotgan fayl o'chirilmoqchi bo'lsa, backend 409 qaytaradi
   va panel qaysi kontentda ekanini ro'yxat qilib ko'rsatadi
-- `[ ]` Arxivlanganlar sukut bo'yicha **ko'rinmaydi** (§26)
+- `[x]` Arxivlanganlar sukut bo'yicha **ko'rinmaydi** (§26)
+
+### Nima qilindi (23.08.2026)
+
+Kartochka bosilganda «Fayl ma'lumoti» oynasi ochiladi: oldindan
+ko'rish, o'lcham va davomiylik, holat bejagi, **qayerda ishlatilgani**
+ro'yxati va amallar (arxivlash / tiklash / butunlay o'chirish).
+
+⚠️ **O'chirish tugmasi ishlatilish ro'yxatiga bog'langan.** U ro'yxat
+hali yuklanmaganda ham bloklanadi: «bilmayman» holatida o'chirishga
+ruxsat berish tekshiruvni butunlay ma'nosiz qilardi. Ro'yxat bo'sh
+bo'lgandagina tugma yoqiladi.
+
+⚠️ Bu — QULAYLIK tekshiruvi. Ikki admin bir vaqtda ishlayotgan bo'lsa,
+fayl oyna ochiq turganda band qilinishi mumkin. Shuning uchun
+backendning 409 `MEDIA_IN_USE` javobi ham baribir ushlanadi va sabab
+bilan ko'rsatiladi.
+
+⚠️ **Holat filtrida bo'sh qiymat «hammasi» EMAS.** Backend holat
+berilmasa faqat `READY` qaytaradi (§26), shuning uchun filtrda ikki
+variant bor: «Kutubxonada» va «Arxivlangan». «Barchasi» varianti
+qo'shilsa, u ishlamaydigan tanlov bo'lardi.
 
 ---
 
-## BOSQICH F3 — Dashboard grafiklari va jadvallari
+## BOSQICH F3 — Dashboard grafiklari va jadvallari `[x]`
 
 **Fayl:** `pages/DashboardPage.jsx` (95 → ~200 qator)
 
@@ -547,13 +708,54 @@ ularni chaqirmaydi.
 
 **Qabul mezonlari:**
 
-- `[ ]` Ma'lumot yo'q bo'lsa **bo'sh holat**, soxta grafik emas (§45)
-- `[ ]` Uchta so'rov **parallel** ketadi, ketma-ket emas (§73)
-- `[ ]` `TrendChart` komponenti qayta ishlatiladi
+- `[x]` Ma'lumot yo'q bo'lsa **bo'sh holat**, soxta grafik emas (§45)
+- `[x]` Uchta so'rov **parallel** ketadi, ketma-ket emas (§73)
+- `[x]` `TrendChart` komponenti qayta ishlatiladi
+
+### Nima qilindi (23.08.2026)
+
+To'rtta grafik (yangi foydalanuvchilar, ko'rishlar, obuna daromadi,
+donatlar) va beshta jadval (oxirgi kontent, eng ko'p ko'rilgan, yangi
+foydalanuvchilar, eng samarali reklama, donat bo'yicha ijodkorlar).
+Davr: 7 / 30 / 90 kun.
+
+⚠️ **`summary` + `tables` bitta `Promise.all` da, `charts` alohida
+hook'da.** Ikkala effekt bir renderda ishga tushadi, ya'ni so'rovlar
+parallel ketadi. Grafiklarni ajratish sababi boshqa: davr
+almashtirilganda FAQAT grafiklar qayta so'raladi — kartochkalar va
+jadvallar davrga bog'liq emas va ularni har bosishda qayta yuklash
+bekorga sarf bo'lardi.
+
+⚠️ **Grafik xatosi butun sahifani yiqitmaydi.** Kartochkalar va
+jadvallar allaqachon kelgan bo'ladi va ular baribir foydali — xato
+faqat grafiklar blokida, «qayta urinish» tugmasi bilan ko'rsatiladi.
+
+⚠️ **Donatlar valyuta bo'yicha alohida chiziqda.** Backend
+`{day, series: 'STARS', value}` qatorlarini beradi; panel ularni kun
+bo'yicha pivotlaydi. Qo'shib yuborish 10 so'm bilan 10 dollarni
+qo'shishday bo'lardi.
+
+### `TrendChart` umumiylashtirildi
+
+Ilgari `views / plays / completes` uchtaligi komponentga **qotirilgan**
+edi. Dashboard butunlay boshqa qatorlarni chizadi, ya'ni qotirilgan
+holda har biri uchun yangi komponent yozilardi va ular asta-sekin
+bir-biridan farq qilib ketardi. Endi qatorlar `series` prop'i orqali
+keladi; standart qiymat hisobotlar sahifasi uchun eskisicha qoladi va
+`ReportsPage` umuman o'zgarmadi.
+
+Bundan tashqari grafik ostiga **eng yuqori qiymat** yozildi: usiz
+grafik balandligi hech narsani anglatmasdi — bir xil ko'rinishdagi
+ikkita chiziq 10 ta va 10 000 ta hodisani bildirishi mumkin edi.
+
+⚠️ **Ikkita jadvalda faqat identifikator ko'rinadi** («eng ko'p
+ko'rilgan», «eng samarali reklama»). Backend bu jadvallarda sarlavha
+qaytarmaydi va uni olish har qator uchun qo'shimcha so'rov talab
+qilardi. Buni yashirish o'rniga jadval ostida ochiq yozildi.
 
 ---
 
-## BOSQICH F4 — Bosh sahifa: tartiblash va qo'lda tanlash
+## BOSQICH F4 — Bosh sahifa: tartiblash va qo'lda tanlash `[x]`
 
 **Fayl:** `pages/HomepagePage.jsx` (221 → ~350 qator)
 
@@ -565,13 +767,48 @@ ularni chaqirmaydi.
 
 **Qabul mezonlari:**
 
-- `[ ]` Qo'lda tanlangan ro'yxat bo'sh bo'lsa — avtomatik qoida
+- `[x]` Qo'lda tanlangan ro'yxat bo'sh bo'lsa — avtomatik qoida
   ishlaydi (§31 dagi mantiq)
-- `[ ]` Tartib saqlangach ommaviy lentada ham o'zgaradi
+- `[x]` Tartib saqlangach ommaviy lentada ham o'zgaradi
+
+### Nima qilindi (23.08.2026)
+
+`pages/homepage/SectionItemsModal.jsx` va
+`pages/homepage/CreatorsPreviewModal.jsx` qo'shildi;
+`HomepagePage.jsx` ga «yuqoriga / pastga» va «Tartibni saqlash».
+
+⚠️ **Tartib mahalliy, saqlash bitta so'rov.** O'q tugmalari faqat
+mahalliy ro'yxatni o'zgartiradi, bazaga esa «Tartibni saqlash»
+bosilganda BITTA `PUT /homepage/sections/order` ketadi. Har bosishda
+alohida so'rov yuborilsa, oradagi lahzada ikkita bo'lim bir xil
+raqamda turardi va o'sha paytda `/app/home` ni so'ragan foydalanuvchi
+aralashib ketgan bosh sahifani ko'rardi.
+
+⚠️ **Mahalliy tartib bo'lim OBYEKTLARI emas, ID lar ro'yxati.**
+Bo'limni yoqish/o'chirish ro'yxatni serverdan qayta yuklaydi va
+obyektlar almashadi; ID lar esa o'zgarmaydi, ya'ni saqlanmagan tartib
+yo'qolmaydi.
+
+⚠️ **Bo'sh ro'yxat — buzuq holat emas, QAROR.** «Ro'yxatni tozalash»
+qatorni avtomatik qoidaga qaytaradi (kontent turi yoki
+`featured`/`popular` bayroqlari bo'yicha o'zi to'ladi). Oynada shu
+ochiq yozilgan, aks holda admin bo'sh ro'yxatni «sozlanmagan» deb
+o'ylardi.
+
+⚠️ **Nashr qilinmagan kontent qatorga qo'shilsa, bejak bilan
+belgilanadi.** U bosh sahifada ko'rinmaydi (`isVisible` filtri), va
+buni aytmaslik «qo'shdim, chiqmadi» degan savolni tug'dirardi.
+
+⚠️ **«Mashhur ijodkorlar» qatorida «Kontent» tugmasi yo'q.** Bu bo'lim
+kontent bilan to'ldirilmaydi — u `featured` bayrog'i va
+`homepage.creators.ranking` sozlamasidan quriladi. Uning o'rniga
+«Ijodkorlar» oynasi backend qaytaradigan HAQIQIY ro'yxatni ko'rsatadi:
+ilgari sozlama satri bor edi, mazmuni esa faqat mobil ilovada
+ko'rinardi.
 
 ---
 
-## BOSQICH F5 — Hisobotlar
+## BOSQICH F5 — Hisobotlar `[x]`
 
 | # | Vazifa | API | ТЗ |
 |---|---|---|---|
@@ -581,19 +818,94 @@ ularni chaqirmaydi.
 
 **Qabul mezonlari:**
 
-- `[ ]` ⚠️ Mavjud bo'lmagan ko'rsatkich **`null`** ko'rsatiladi, nol emas.
+- `[x]` ⚠️ Mavjud bo'lmagan ko'rsatkich **`null`** ko'rsatiladi, nol emas.
   FCM ulanmagani uchun «yetkazildi» soni yo'q va uni 0 deb ko'rsatish
   yolg'on bo'lardi (§33)
-- `[ ]` Ko'rsatishsiz CTR — nol, nolga bo'linish yo'q
+- `[x]` Ko'rsatishsiz CTR — nol, nolga bo'linish yo'q
+
+### Nima qilindi (23.08.2026)
+
+Uchta hisobot **obyektning o'z sahifasida** ochiladi, alohida
+«hisobotlar» ro'yxatida emas: reklama qatorida 📊, kontent qatorida 📊,
+bildirishnoma qatorida «Hisobot». Sabab oddiy — admin bu savolni aynan
+o'sha yozuvni ko'rib turganda beradi, uni boshqa sahifadan qidirib
+topishga majburlash ortiqcha qadam bo'lardi.
+
+Fayllar: `pages/reports/AdStatsModal.jsx`,
+`ContentStatsModal.jsx`, `NotificationReportModal.jsx` va ular
+bo'lishadigan `StatBits.jsx` (davr tanlash, kartochka, davr sarlavhasi).
+
+⚠️ **`StatTile` da `null` va `0` har xil ko'rinadi.** Nol — «bo'lmadi»,
+bo'sh katak esa «o'lchanmaydi», va oynada sababi ham yoziladi
+(`unavailableReason`). Bildirishnomada `delivered = 0` ko'rsatilsa,
+admin «hech kimga yetib bormadi» deb o'ylab butunlay boshqa muammoni
+qidirardi — aslida push provayderi ulanmagan va kvitansiya umuman
+kelmaydi.
+
+⚠️ **Auditoriya hajmi «yuborildi» emas.** U nishon auditoriyasining
+hozirgi hajmi. Usiz `opened` ni talqin qilib bo'lmaydi: 250 ta
+ochilish auditoriya 300 kishimi yoki 300 000 kishimi — butunlay
+boshqa xulosa.
+
+⚠️ **Hisobot tugmasi yuborilmagan xabarda ham ochiladi** — auditoriya
+hajmi aynan yuborishdan OLDIN kerak bo'ladigan raqam.
+
+⚠️ **Premyerada statistika tugmasi yo'q.** Backendda faqat reklama
+uchun kunlik jamlanma bor; tugma bo'lsa-yu hech narsa ko'rsatmasa, u
+yo'qidan yomonroq bo'lardi.
+
+⚠️ **Kontent statistikasi `REPORT_VIEW` ni talab qiladi.** Kontentni
+ko'rish huquqi analitikani ko'rish huquqini bermaydi, shuning uchun
+tugma shu ruxsatga bog'landi — aks holda xodim bosib 403 olardi.
+
+### Yo'l-yo'lakay tuzatilgan xato
+
+`ReportsPage` da `money` importi ishlatilmay turardi va build ogohlantirish
+berardi. Sababi kattaroq: backend `subscriptionRevenue` ni allaqachon
+qaytarardi, sahifa esa uni **umuman ko'rsatmasdi**. Ko'rsatkich
+qo'shildi. Endi panelda birorta ESLint ogohlantirishi yo'q.
 
 ---
 
-## BOSQICH F6 — Foydalanuvchi sahifasi
+## BOSQICH F6 — Foydalanuvchi sahifasi `[x]`
 
 | # | Vazifa | API |
 |---|---|---|
 | 1 | Bitta foydalanuvchi sahifasi | `GET /users/{id}` |
 | 2 | Obuna tarixi, balans, qurilmalar bir joyda | mavjud endpointlar |
+
+### Nima qilindi (23.08.2026)
+
+`pages/UserDetailPage.jsx`, marshrut `/app/panel/users/:userId`
+(`USER_VIEW` bilan qo'riqlangan). Ro'yxatdagi ism havolaga aylandi;
+amal tugmalari qatorda QOLDI — bloklash va premium ko'p uchraydigan
+ishlar va ular uchun sahifaga o'tish ortiqcha qadam bo'lardi.
+
+Sahifada: profil (holat, til, ro'yxatdan o'tgan sana, oxirgi faollik,
+bloklash sababi), balans (pul · ⭐ · ◎), premium holati, qurilmalar
+ro'yxati va obuna tarixi — hammasi bitta ekranda.
+
+⚠️ **Obuna tarixi — vaqtinchalik yechim va u ochiq aytilgan.**
+Backendda «foydalanuvchi bo'yicha obunalar» endpointi YO'Q: qidiruv
+faqat telefon va ism bo'yicha. Panel telefon bo'yicha qidirib, keyin
+aynan shu `userId` ga tegishlilarini ajratib oladi. Skanerlash
+chegarasi 100 qator; mos keluvchi yozuvlar shundan ko'p bo'lsa,
+sariq ogohlantirish chiqadi va «Obunalar» bo'limiga havola beriladi.
+Jim qolib qisqartirish «bu odamning boshqa obunasi yo'q» degan
+yolg'on xulosaga olib borardi (§45).
+
+⚠️ **`SUBSCRIPTION_VIEW` alohida tekshiriladi.** Obuna ro'yxati KIM
+qancha to'laganini ochadi, shuning uchun `USER_VIEW` uni bermaydi
+(§71, §107). Ruxsat yo'q bo'lsa bo'lim o'rniga sabab yoziladi.
+
+⚠️ **Sovg'a obunada to'lov «—», nol emas.** `paidAmount = null`
+«sotilmagan» degani; «0 so'm» esa «bepul sotildi» degan boshqa
+ma'noni berardi (§45, §103).
+
+⚠️ **`SubscriptionsPage` endi `?q=` ni manzildan o'qiydi.** Usiz
+foydalanuvchi sahifasidagi havola bo'limni ochib, filtrni bo'sh
+qoldirardi va admin telefonni qo'lda qayta terardi. Keyingi
+o'zgarishlar manzilga yozilmaydi — bu faqat kirish nuqtasi.
 
 ---
 

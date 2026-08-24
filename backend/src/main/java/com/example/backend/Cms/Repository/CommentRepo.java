@@ -50,6 +50,21 @@ public interface CommentRepo extends JpaRepository<Comment, Long> {
      * Sanoq so'rovi alohida yozilgan: {@code join fetch} bilan
      * {@code count} birga ishlamaydi.
      */
+    /*
+     * ⚠️ `cast(:param as ...)` — bezak emas, MAJBURIY.
+     *
+     * `:param is null` shartida parametr boshqa hech qayerda
+     * ishlatilmaydi (Hibernate har bir nomlangan parametrni alohida
+     * pozitsion `?` ga aylantiradi). PostgreSQL uchun bunday
+     * parametrning turi noma'lum bo'lib qoladi va server so'rovni
+     * butunlay rad etadi:
+     *
+     *   ERROR: could not determine data type of parameter $N
+     *
+     * Xato FAQAT filtr bo'sh bo'lganda chiqadi — ya'ni sahifa
+     * birinchi marta ochilganda, filtrsiz. Bu esa eng ko'p
+     * uchraydigan holat.
+     */
     @Query(value = """
             select c from Comment c
             left join fetch c.author
@@ -57,9 +72,9 @@ public interface CommentRepo extends JpaRepository<Comment, Long> {
             left join fetch c.episode
             where (:status is null or c.status = :status)
               and (:contentId is null or c.content.id = :contentId)
-              and (:authorId is null or c.author.id = :authorId)
-              and (:from is null or c.createdAt >= :from)
-              and (:to is null or c.createdAt <= :to)
+              and (cast(:authorId as String) is null or c.author.id = :authorId)
+              and (cast(:from as LocalDateTime) is null or c.createdAt >= :from)
+              and (cast(:to as LocalDateTime) is null or c.createdAt <= :to)
               and (:reportedOnly = false or c.reportsCount > 0)
               and (:q is null or lower(c.text) like lower(concat('%', :q, '%')))
             """,
@@ -67,9 +82,9 @@ public interface CommentRepo extends JpaRepository<Comment, Long> {
             select count(c) from Comment c
             where (:status is null or c.status = :status)
               and (:contentId is null or c.content.id = :contentId)
-              and (:authorId is null or c.author.id = :authorId)
-              and (:from is null or c.createdAt >= :from)
-              and (:to is null or c.createdAt <= :to)
+              and (cast(:authorId as String) is null or c.author.id = :authorId)
+              and (cast(:from as LocalDateTime) is null or c.createdAt >= :from)
+              and (cast(:to as LocalDateTime) is null or c.createdAt <= :to)
               and (:reportedOnly = false or c.reportsCount > 0)
               and (:q is null or lower(c.text) like lower(concat('%', :q, '%')))
             """)

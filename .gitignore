@@ -84,6 +84,15 @@ application-*.yml
 src/main/resources/application.properties
 src/main/resources/application.yml
 
+# ⚠️ Test konfiguratsiyasi ISTISNO — u repozitoriyda turishi SHART.
+#
+# Unda hech qanday sir yo'q (parol `application.properties` dan meros
+# olinadi, JWT kaliti esa faqat testlar uchun yasalgan). Lekin usiz
+# butun test to'plami ishlab chiquvchining shaxsiy bazasiga ulanadi va
+# 758 testdan 625 tasi «Found non-empty schema but no schema history
+# table» bilan yiqiladi — kod butunlay to'g'ri bo'lsa ham.
+!src/test/resources/application-test.properties
+
 # ======================
 
 # Secrets / Keys

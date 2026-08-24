@@ -7,12 +7,21 @@ import Modal from '../components/Modal';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, TableWrap } from '../components/Ui';
 import { LOCALES, toBackendLocale, usePanelI18n } from '../i18n';
+import CreatorsPreviewModal from './homepage/CreatorsPreviewModal';
+import SectionItemsModal from './homepage/SectionItemsModal';
 
 /**
- * Bosh sahifa bo'limlari.
+ * Bosh sahifa bo'limlari (ТЗ §31 — BOSQICH F4).
  *
  * Mobil ilova bosh sahifasi klientda qotirilmaydi — u shu ro'yxatdan quriladi.
  * Shu sababli bo'limni yoqish/o'chirish oddiy toggle bilan bo'ladi.
+ *
+ * <h2>Tartib alohida saqlanadi</h2>
+ * «Yuqoriga / pastga» tugmalari faqat MAHALLIY ro'yxatni o'zgartiradi;
+ * bazaga esa «Tartibni saqlash» bosilganda BITTA so'rov ketadi. Har
+ * bosishda alohida `PUT` yuborilsa, oradagi lahzada ikkita bo'lim bir
+ * xil raqamda turardi va o'sha paytda `/app/home` ni so'ragan
+ * foydalanuvchi aralashib ketgan bosh sahifani ko'rardi.
  */
 export default function HomepagePage() {
   const { t, locale } = usePanelI18n();
@@ -26,7 +35,53 @@ export default function HomepagePage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
 
+  const [itemsFor, setItemsFor] = useState(null);
+  const [creatorsFor, setCreatorsFor] = useState(null);
+
+  /**
+   * Mahalliy tartib — ID lar ro'yxati sifatida.
+   *
+   * ⚠️ Bo'lim OBYEKTLARI emas, aynan ID lar. Toggle bosilganda ro'yxat
+   * serverdan qayta yuklanadi va obyektlar almashadi; ID lar esa
+   * o'zgarmaydi, ya'ni saqlanmagan tartib yo'qolmaydi.
+   */
+  const [orderIds, setOrderIds] = useState(null);
+
   const canEdit = can('HOMEPAGE_EDIT');
+  const sections = data || [];
+
+  const ordered = orderIds
+    ? orderIds
+      .map((id) => sections.find((s) => s.id === id))
+      .filter(Boolean)
+      // Ro'yxat tuzilgandan keyin qo'shilgan bo'lim yo'qolib qolmasin.
+      .concat(sections.filter((s) => !orderIds.includes(s.id)))
+    : sections;
+
+  const orderDirty = Boolean(orderIds)
+    && sections.map((s) => s.id).join(',') !== ordered.map((s) => s.id).join(',');
+
+  const move = (index, delta) => {
+    const ids = ordered.map((s) => s.id);
+    const target = index + delta;
+    if (target < 0 || target >= ids.length) return;
+    [ids[index], ids[target]] = [ids[target], ids[index]];
+    setOrderIds(ids);
+  };
+
+  const saveOrder = async () => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await adminApi.reorderHomepageSections(ordered.map((s) => s.id));
+      setOrderIds(null);
+      reload();
+    } catch (err) {
+      setSaveError(err);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const titleOf = (s) =>
     s.translations?.[bl]?.title || s.translations?.UZ?.title || s.type;
@@ -85,9 +140,26 @@ export default function HomepagePage() {
 
   return (
     <>
-      <PageHeader title={t('hp.title')} subtitle={t('hp.subtitle')} />
+      <PageHeader
+        title={t('hp.title')}
+        subtitle={t('hp.subtitle')}
+        right={canEdit && orderDirty && (
+          <div className="flex items-center gap-3 flex-wrap">
+            <span style={{ fontSize: 13, color: 'var(--p-warning)' }}>{t('hp.orderDirty')}</span>
+            <button type="button" className="uz-btn uz-btn-ghost" disabled={saving}
+                    onClick={() => setOrderIds(null)}>
+              {t('hp.resetOrder')}
+            </button>
+            <button type="button" className="uz-btn uz-btn-primary" disabled={saving}
+                    onClick={saveOrder}>
+              {saving ? t('common.saving') : t('hp.saveOrder')}
+            </button>
+          </div>
+        )}
+      />
 
-      <p className="uz-muted mb-4 text-sm">{t('hp.hint')}</p>
+      <p className="uz-muted mb-2 text-sm">{t('hp.hint')}</p>
+      <p className="uz-muted mb-4" style={{ fontSize: 12 }}>{t('hp.orderNote')}</p>
 
       {saveError && (
         <div role="alert" className="mb-4 px-4 py-3"
@@ -100,7 +172,7 @@ export default function HomepagePage() {
       <div className="uz-card overflow-hidden">
         {loading ? <LoadingState /> :
          error ? <ErrorState error={error} onRetry={reload} /> :
-         !data?.length ? <EmptyState icon="▦" /> : (
+         !ordered.length ? <EmptyState icon="▦" /> : (
           <TableWrap>
             <table className="uz-table">
               <thead>
@@ -114,9 +186,25 @@ export default function HomepagePage() {
                 </tr>
               </thead>
               <tbody>
-                {data.map((s) => (
+                {ordered.map((s, i) => (
                   <tr key={s.id} style={{ opacity: s.enabled ? 1 : 0.5 }}>
-                    <td className="uz-mono uz-muted">{s.sortOrder}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <span className="uz-mono uz-muted" style={{ marginRight: 8 }}>{i + 1}</span>
+                      {canEdit && (
+                        <>
+                          <button type="button" className="uz-icon-btn" onClick={() => move(i, -1)}
+                                  disabled={i === 0 || saving}
+                                  title={t('hp.moveUp')} aria-label={t('hp.moveUp')}>
+                            ↑
+                          </button>
+                          <button type="button" className="uz-icon-btn" onClick={() => move(i, 1)}
+                                  disabled={i === ordered.length - 1 || saving}
+                                  title={t('hp.moveDown')} aria-label={t('hp.moveDown')}>
+                            ↓
+                          </button>
+                        </>
+                      )}
+                    </td>
                     <td>
                       <div style={{ fontWeight: 600 }}>{titleOf(s)}</div>
                       <div className="uz-muted" style={{ fontSize: 11 }}>{s.type}</div>
@@ -136,11 +224,30 @@ export default function HomepagePage() {
                       </Badge>
                     </td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      {/* «Mashhur ijodkorlar» qatori kontent bilan
+                          to'ldirilmaydi — u `featured` bayrog'i va
+                          reyting sozlamasidan quriladi. Shuning uchun
+                          u yerda «Kontent» emas, «Ijodkorlar» ko'rinadi. */}
+                      {s.type === 'POPULAR_CREATORS' ? (
+                        <button type="button" className="uz-btn uz-btn-ghost"
+                                style={{ minHeight: 32, padding: '0 12px', fontSize: 12 }}
+                                onClick={() => setCreatorsFor(s)}>
+                          {t('hp.creators')}
+                        </button>
+                      ) : (
+                        <button type="button" className="uz-btn uz-btn-ghost"
+                                style={{ minHeight: 32, padding: '0 12px', fontSize: 12 }}
+                                onClick={() => setItemsFor(s)}>
+                          {t('hp.items')}
+                        </button>
+                      )}
                       {canEdit && (
                         <>
                           <button type="button" className="uz-btn uz-btn-ghost"
-                                  style={{ minHeight: 32, padding: '0 12px', fontSize: 12 }}
-                                  onClick={() => toggle(s)}>
+                                  style={{ minHeight: 32, padding: '0 12px', fontSize: 12, marginLeft: 8 }}
+                                  onClick={() => toggle(s)}
+                                  title={s.enabled ? t('common.inactive') : t('common.active')}
+                                  aria-label={s.enabled ? t('common.inactive') : t('common.active')}>
                             {s.enabled ? '⏻' : '⏼'}
                           </button>
                           <button type="button" className="uz-btn uz-btn-ghost"
@@ -216,6 +323,24 @@ export default function HomepagePage() {
           </>
         )}
       </Modal>
+
+      {/* Shartli chizish: oyna o'z ro'yxatini har ochilishda yangidan
+          yuklaydi — boshqa admin shu orada qatorni o'zgartirgan bo'lishi
+          mumkin. */}
+      {itemsFor && (
+        <SectionItemsModal
+          section={itemsFor}
+          onClose={() => setItemsFor(null)}
+          onSaved={reload}
+        />
+      )}
+
+      {creatorsFor && (
+        <CreatorsPreviewModal
+          limit={creatorsFor.itemLimit}
+          onClose={() => setCreatorsFor(null)}
+        />
+      )}
     </>
   );
 }

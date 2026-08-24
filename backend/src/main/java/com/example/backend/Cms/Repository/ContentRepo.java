@@ -118,4 +118,19 @@ public interface ContentRepo extends JpaRepository<Content, Long> {
     long countByDeletedAtIsNullAndStatus(PublicationStatus status);
 
     long countByDeletedAtIsNull();
+
+    /**
+     * Shu kategoriyaga bog'langan kontent soni (ТЗ §16).
+     *
+     * ⚠️ O'chirilgan kontent hisobga OLINMAYDI: u soft delete bilan
+     * yashiringan va uni tiklash mumkin, lekin kategoriyasi
+     * o'chirilgan bo'lsa tiklangan kontent kategoriyasiz qolardi.
+     * Shuning uchun shart faqat TIRIK kontent bo'yicha — aks holda
+     * bir marta arxivlangan kontent kategoriyani abadiy qulflab
+     * qo'yardi.
+     */
+    long countByCategoryIdAndDeletedAtIsNull(Long categoryId);
+
+    /** Shu janr biriktirilgan tirik kontent soni (ТЗ §17). */
+    long countByGenres_IdAndDeletedAtIsNull(Long genreId);
 }

@@ -31,6 +31,7 @@ public class TaxonomyService {
     private final GenreRepo genreRepo;
     private final CreatorRepo creatorRepo;
     private final MediaAssetRepo mediaAssetRepo;
+    private final com.example.backend.Cms.Repository.ContentRepo contentRepo;
     private final AuditService auditService;
 
     // -------------------------------------------------------------- category
@@ -80,6 +81,42 @@ public class TaxonomyService {
         return saved;
     }
 
+    /**
+     * Kategoriyani o'chiradi (ТЗ §16).
+     *
+     * <h2>Nega HAQIQIY o'chirish, arxivlash emas</h2>
+     * Kategoriya va janrda {@code deleted_at} yo'q — ular kontent kabi
+     * soft-delete arxitekturasiga kirmaydi (§58 faqat kontent, ijodkor
+     * va media uchun). Ular sof taksonomiya: kontentni guruhlash uchun
+     * yorliq, o'zining tarixi yoki analitikasi yo'q.
+     *
+     * <h2>Nega tekshiruv shart</h2>
+     * Kategoriya kontentga {@code category_id} orqali BOG'LANGAN
+     * (majburiy emas, lekin bog'lansa FK bor). O'chirish jim
+     * bajarilsa, o'sha kontent kategoriyasiz qolib, katalogdagi
+     * filtrlardan tushib qolardi — admin buni sezmasdi, chunki
+     * frontendda xato chiqmasdi.
+     *
+     * Faqat TIRIK kontent hisobga olinadi: arxivlangan (soft-deleted)
+     * kontent kategoriyani qulflab qo'ymasligi kerak.
+     */
+    @Transactional
+    public void deleteCategory(User actor, Long id) {
+        Category category = categoryRepo.findById(id)
+                .orElseThrow(() -> BusinessException.notFound("Category", id));
+
+        long contentCount = contentRepo.countByCategoryIdAndDeletedAtIsNull(id);
+        if (contentCount > 0) {
+            throw new BusinessException("CATEGORY_IN_USE",
+                    "Kategoriya ishlatilmoqda: " + contentCount + " ta kontentda. "
+                            + "Avval o'sha kontentlarning kategoriyasini almashtiring.",
+                    org.springframework.http.HttpStatus.CONFLICT);
+        }
+
+        categoryRepo.delete(category);
+        auditService.log(actor, AuditAction.CATEGORY_DELETED, "Category", id);
+    }
+
     // ----------------------------------------------------------------- genre
 
     @Transactional
@@ -119,6 +156,34 @@ public class TaxonomyService {
         auditService.log(actor, id == null ? AuditAction.GENRE_CREATED : AuditAction.GENRE_UPDATED,
                 "Genre", saved.getId());
         return saved;
+    }
+
+    /**
+     * Janrni o'chiradi (ТЗ §17).
+     *
+     * Kategoriyadan farqi: janr kontentga ko'p-ko'pga bog'lanadi
+     * ({@code content_genre}), ya'ni bitta kontentda bir nechta janr
+     * bo'lishi mumkin. Tekshiruv shu sababli boshqa so'rov —
+     * {@code countByGenres_IdAndDeletedAtIsNull} — ishlatadi.
+     *
+     * Qolgan mantiq {@link #deleteCategory} bilan bir xil: faqat tirik
+     * kontent hisobga olinadi, foydalanilayotgan janr o'chirilmaydi.
+     */
+    @Transactional
+    public void deleteGenre(User actor, Long id) {
+        Genre genre = genreRepo.findById(id)
+                .orElseThrow(() -> BusinessException.notFound("Genre", id));
+
+        long contentCount = contentRepo.countByGenres_IdAndDeletedAtIsNull(id);
+        if (contentCount > 0) {
+            throw new BusinessException("GENRE_IN_USE",
+                    "Janr ishlatilmoqda: " + contentCount + " ta kontentda. "
+                            + "Avval o'sha kontentlardan bu janrni olib tashlang.",
+                    org.springframework.http.HttpStatus.CONFLICT);
+        }
+
+        genreRepo.delete(genre);
+        auditService.log(actor, AuditAction.GENRE_DELETED, "Genre", id);
     }
 
     // --------------------------------------------------------------- creator
