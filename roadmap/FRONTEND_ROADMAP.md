@@ -145,7 +145,7 @@ Oxirgi yangilanish: 20.08.2026 — PHASE 5–8 qo'shildi
 - `[ ]` Notification report — provayder ulangandan keyin
 
 ---
-
+hi
 ## 7. PHASE 7 — Users & Monetization `[ ]`
 
 - `[x]` `/app/panel/users` — ro'yxat, qidiruv, block/unblock (sabab bilan)
