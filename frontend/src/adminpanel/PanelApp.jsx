@@ -24,6 +24,7 @@ import BannerPage from './pages/BannerPage';
 import CommentsPage from './pages/CommentsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import UsersPage from './pages/UsersPage';
+import UserDetailPage from './pages/UserDetailPage';
 import DonationsPage from './pages/DonationsPage';
 import CastingPage from './pages/CastingPage';
 import SubscriptionsPage from './pages/SubscriptionsPage';
@@ -31,7 +32,7 @@ import TariffsPage from './pages/TariffsPage';
 import SettingsPage from './pages/SettingsPage';
 import ReportsPage from './pages/ReportsPage';
 import AuditPage from './pages/AuditPage';
-import StaffPage from './pages/StaffPage';
+import StaffPage from './pages/staff/StaffPage';
 
 export default function PanelApp() {
   return (
@@ -141,6 +142,18 @@ export default function PanelApp() {
               element={
                 <RequirePermission permission="USER_VIEW">
                   <UsersPage />
+                </RequirePermission>
+              }
+            />
+            {/* ⚠️ Bitta foydalanuvchi sahifasi (F6). Ro'yxatdan
+                ALOHIDA marshrut: balans, qurilmalar va obuna tarixi
+                birgalikda kerak bo'lganda modal oynalar orasida yurish
+                kontekstni yo'qotardi. */}
+            <Route
+              path="users/:userId"
+              element={
+                <RequirePermission permission="USER_VIEW">
+                  <UserDetailPage />
                 </RequirePermission>
               }
             />

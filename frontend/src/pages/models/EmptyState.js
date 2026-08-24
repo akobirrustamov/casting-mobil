@@ -5,10 +5,10 @@ export default function EmptyState({ children }) {
     const { t } = useTranslation();
 
     return (
-        <div style={{ height: "59vh" }} className="empty-wrap">
+        <div style={{ height: "59vh" }} className="px-4 pt-9 pb-11 border border-dashed border-[#243244] rounded-[14px] text-center bg-[#121923] text-[#e5edf6]">
             {/* Иллюстрация */}
             <svg
-                className="empty-illustration"
+                className="block mx-auto mb-3 [filter:drop-shadow(0_10px_24px_rgba(0,0,0,0.25))]"
                 width="160"
                 height="120"
                 viewBox="0 0 160 120"
@@ -26,8 +26,8 @@ export default function EmptyState({ children }) {
                 <circle cx="126" cy="108" r="6" fill="#2e8fff" />
             </svg>
 
-            <h3 className="empty-title">{t('common.emptyTitle')}</h3>
-            <p className="empty-subtitle">{t('common.emptySubtitle')}</p>
+            <h3 className="mt-1.5 mb-1 mx-0 text-lg text-[#e5edf6]">{t('common.emptyTitle')}</h3>
+            <p className="m-0 text-[#8a98ac] text-sm">{t('common.emptySubtitle')}</p>
             {children}
         </div>
     );

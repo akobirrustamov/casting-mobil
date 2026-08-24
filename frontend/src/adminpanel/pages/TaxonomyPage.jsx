@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { adminApi, mediaUrl } from '../api/client';
 import { useApi } from '../api/useApi';
 import { useAuth } from '../auth/AuthContext';
+import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, SearchInput, TableWrap } from '../components/Ui';
 import { LOCALES, toBackendLocale, usePanelI18n } from '../i18n';
@@ -19,8 +20,15 @@ export default function TaxonomyPage({ kind }) {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(0);
   const [editing, setEditing] = useState(null);
+  const [deleteError, setDeleteError] = useState(null);
   const canCreate = can(isCategory ? 'CATEGORY_CREATE' : 'GENRE_CREATE');
   const canEdit = can(isCategory ? 'CATEGORY_EDIT' : 'GENRE_EDIT');
+  const canDelete = can(isCategory ? 'CATEGORY_DELETE' : 'GENRE_DELETE');
+
+  // ⚠️ Bu HAQIQIY o'chirish, arxivlash emas (§16, §17) — kategoriya va
+  // janrda `deleted_at` yo'q. Shuning uchun oddiy amaldan qattiqroq
+  // tasdiq va o'chirilmagan holatga qaytarib bo'lmasligi haqidagi izoh.
+  const confirmer = useConfirm(() => reload());
 
   // Qidiruv va sahifalash BACKENDDA: ro'yxat cheklanmagan va butun
   // jadvalni tortib olib xotirada filtrlash platforma o'sgani sari
@@ -53,6 +61,14 @@ export default function TaxonomyPage({ kind }) {
           </div>
         )}
       />
+
+      {deleteError && (
+        <div role="alert" className="mb-4 px-4 py-3"
+             style={{ borderRadius: 'var(--p-radius)', background: 'var(--danger-soft)',
+                      border: '1px solid var(--danger-border)', color: 'var(--p-danger)', fontSize: 13 }}>
+          {deleteError.message}
+        </div>
+      )}
 
       <div className="uz-card overflow-hidden">
         {loading ? (
@@ -104,12 +120,46 @@ export default function TaxonomyPage({ kind }) {
                         {row.active ? t('common.active') : t('common.inactive')}
                       </Badge>
                     </td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                       {canEdit && (
                         <button type="button" className="uz-btn uz-btn-ghost"
                                 style={{ minHeight: 34, padding: '0 12px', fontSize: 13 }}
                                 onClick={() => { setEditing(row); setFormOpen(true); }}>
                           {t('common.edit')}
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button type="button" className="uz-btn uz-btn-danger"
+                                style={{ minHeight: 34, padding: '0 12px', fontSize: 13, marginLeft: 8 }}
+                                onClick={() => {
+                                  setDeleteError(null);
+                                  const name = row.translations?.UZ?.title || row.slug;
+                                  confirmer.ask({
+                                    title: isCategory ? t('tax.deleteCategory') : t('tax.deleteGenre'),
+                                    message: isCategory
+                                      ? t('tax.confirmDeleteCategory', { name })
+                                      : t('tax.confirmDeleteGenre', { name }),
+                                    note: t('tax.deleteNote'),
+                                    confirmLabel: t('common.remove'),
+                                    // ⚠️ Xato ushlanadi va sahifada ko'rsatiladi, SO'NG
+                                    // qayta tashlanadi: `useConfirm` xatoda oynani ochiq
+                                    // qoldiradi (`setState(null)` faqat muvaffaqiyatda
+                                    // chaqiriladi), ya'ni admin sababni ko'rib, keyin
+                                    // «Bekor qilish» bosadi. Backend 409 xabarida
+                                    // ANIQ nechta kontentda ishlatilgani yozilgan.
+                                    run: async () => {
+                                      try {
+                                        await (isCategory
+                                          ? adminApi.deleteCategory(row.id)
+                                          : adminApi.deleteGenre(row.id));
+                                      } catch (err) {
+                                        setDeleteError(err);
+                                        throw err;
+                                      }
+                                    },
+                                  });
+                                }}>
+                          {t('common.remove')}
                         </button>
                       )}
                     </td>
@@ -132,6 +182,8 @@ export default function TaxonomyPage({ kind }) {
         onClose={() => setFormOpen(false)}
         onSaved={reload}
       />
+
+      <ConfirmDialog {...confirmer.props} />
     </>
   );
 }

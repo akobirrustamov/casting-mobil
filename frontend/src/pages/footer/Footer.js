@@ -1,91 +1,90 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import "./Footer.css";
 import Logo from "./logo.jpg";
 
 const Footer = () => {
     const { t } = useTranslation();
 
     return (
-        <footer className="footer">
-            <div className="footer-container">
-                <div className="footer-grid">
+        <footer className="w-full text-white pt-16 px-5 pb-7 relative overflow-hidden border-t border-white/[0.07] bg-[radial-gradient(800px_400px_at_15%_-10%,rgba(16,185,129,0.12),transparent_40%),radial-gradient(800px_400px_at_85%_120%,rgba(245,158,11,0.1),transparent_40%),radial-gradient(600px_600px_at_50%_100%,rgba(139,92,246,0.08),transparent_50%),linear-gradient(180deg,#0a0a0b_0%,#0e1015_60%,#0a0a0b_100%)] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.38),transparent)]">
+            <div className="max-w-[1200px] mx-auto relative z-[1]">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-7 mt-7 mb-9">
                     {/* Brand Section */}
-                    <div className="footer-section">
-                        <div className="brand">
-                            <div className="logo-footer">
-                                <img src={Logo} alt="Logo" />
+                    <div className="py-1.5 min-[900px]:[&:not(:first-child)]:border-l min-[900px]:[&:not(:first-child)]:border-white/10 min-[900px]:[&:not(:first-child)]:pl-6">
+                        <div className="flex items-center gap-4 mb-6 max-[560px]:flex-col max-[560px]:items-start">
+                            <div className="w-[60px] h-[60px] rounded-[14px] overflow-hidden flex-shrink-0 bg-[linear-gradient(135deg,#10b981,#f59e0b)] shadow-[0_8px_24px_rgba(16,185,129,0.28)]">
+                                <img src={Logo} alt="Logo" className="w-full h-full object-cover block" />
                             </div>
-                            <div className="brand-text">UzCasting</div>
+                            <div className="text-[2rem] font-extrabold bg-[linear-gradient(90deg,#e5fff6,#fef3c7)] bg-clip-text text-transparent max-[560px]:text-[1.6rem]">UzCasting</div>
                         </div>
-                        <p className="description">
+                        <p className="text-[#cfd6e3] mt-1.5 mb-3.5 mx-0 leading-[1.65]">
                             {t("footer.brand.description")}
                         </p>
-                        <div className="online-indicator">
-                            <div className="ping-dot">
-                                <span className="ping-animation"></span>
-                                <span className="solid-dot"></span>
+                        <div className="flex items-center gap-2 text-[#e5fff6] font-semibold">
+                            <div className="relative w-3 h-3">
+                                <span className="absolute inset-0 rounded-full bg-[#10b981] animate-pingOut [animation-duration:1.6s]"></span>
+                                <span className="absolute inset-0 rounded-full bg-[#059669]"></span>
                             </div>
                             <span>{t("footer.brand.online")}</span>
                         </div>
                     </div>
 
                     {/* Contact Information */}
-                    <div className="footer-section">
-                        <h3 className="section-heading">
+                    <div className="py-1.5 min-[900px]:[&:not(:first-child)]:border-l min-[900px]:[&:not(:first-child)]:border-white/10 min-[900px]:[&:not(:first-child)]:pl-6">
+                        <h3 className="text-[1.2rem] font-extrabold mt-0 mb-3.5 mx-0 inline-flex items-center gap-2.5">
                             {t("footer.contact.title")}
-                            <span className="heading-underline"></span>
+                            <span className="w-11 h-[3px] rounded-sm bg-[linear-gradient(90deg,#10b981,#f59e0b)] shadow-[0_0_10px_rgba(16,185,129,0.35)]"></span>
                         </h3>
-                        <div className="contact-item">
-                            <div className="icon-wrapper">
+                        <div className="flex items-start gap-3 mt-0 mb-3.5 mx-0 text-[#e9f5ee]">
+                            <div className="w-[26px] h-[26px] text-[#10b981] flex-shrink-0">
                                 <LocationIcon />
                             </div>
                             <span>{t("footer.contact.address")}</span>
                         </div>
-                        <div className="contact-item">
-                            <div className="icon-wrapper">
+                        <div className="flex items-start gap-3 mt-0 mb-3.5 mx-0 text-[#e9f5ee]">
+                            <div className="w-[26px] h-[26px] text-[#10b981] flex-shrink-0">
                                 <PhoneIcon />
                             </div>
-                            <a href="tel:+998916407314" className="contact-link">
+                            <a href="tel:+998916407314" className="text-[#e9f5ee] no-underline transition-[color,transform] duration-200 hover:text-[#fef3c7] hover:translate-x-0.5">
                                 {t("footer.contact.phone")}
                             </a>
                         </div>
-                        <div className="contact-item">
-                            <div className="icon-wrapper">
+                        <div className="flex items-start gap-3 mt-0 mb-3.5 mx-0 text-[#e9f5ee]">
+                            <div className="w-[26px] h-[26px] text-[#10b981] flex-shrink-0">
                                 <EmailIcon />
                             </div>
-                            <a href="mailto:uzcasting.org@gmail.com" className="contact-link">
+                            <a href="mailto:uzcasting.org@gmail.com" className="text-[#e9f5ee] no-underline transition-[color,transform] duration-200 hover:text-[#fef3c7] hover:translate-x-0.5">
                                 {t("footer.contact.email")}
                             </a>
                         </div>
                     </div>
 
                     {/* Social Media Links */}
-                    <div className="footer-section">
-                        <h3 className="section-heading">
+                    <div className="py-1.5 min-[900px]:[&:not(:first-child)]:border-l min-[900px]:[&:not(:first-child)]:border-white/10 min-[900px]:[&:not(:first-child)]:pl-6">
+                        <h3 className="text-[1.2rem] font-extrabold mt-0 mb-3.5 mx-0 inline-flex items-center gap-2.5">
                             {t("footer.social.title")}
-                            <span className="heading-underline"></span>
+                            <span className="w-11 h-[3px] rounded-sm bg-[linear-gradient(90deg,#10b981,#f59e0b)] shadow-[0_0_10px_rgba(16,185,129,0.35)]"></span>
                         </h3>
-                        <a href="https://t.me/Uzcastinguz" target="_blank" rel="noopener noreferrer" className="social-link">
-                            <div className="social-icon">
+                        <a href="https://t.me/Uzcastinguz" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-[#e9f5ee] no-underline mt-0 mb-3 mx-0 py-1.5 transition-[color,transform] duration-200 hover:text-[blue] hover:-translate-y-px">
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center border border-white/[0.14] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.1),rgba(255,255,255,0.04))]">
                                 <TelegramIcon />
                             </div>
                             <span>{t("footer.social.telegram")}</span>
                         </a>
-                        <a href="https://www.instagram.com/uzcasting" target="_blank" rel="noopener noreferrer" className="social-link">
-                            <div className="social-icon">
+                        <a href="https://www.instagram.com/uzcasting" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-[#e9f5ee] no-underline mt-0 mb-3 mx-0 py-1.5 transition-[color,transform] duration-200 hover:text-[blue] hover:-translate-y-px">
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center border border-white/[0.14] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.1),rgba(255,255,255,0.04))]">
                                 <InstagramIcon />
                             </div>
                             <span>{t("footer.social.instagram")}</span>
                         </a>
-                        <a href="http://www.youtube.com/@Jasmaxstar" target="_blank" rel="noopener noreferrer" className="social-link">
-                            <div className="social-icon">
+                        <a href="http://www.youtube.com/@Jasmaxstar" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-[#e9f5ee] no-underline mt-0 mb-3 mx-0 py-1.5 transition-[color,transform] duration-200 hover:text-[blue] hover:-translate-y-px">
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center border border-white/[0.14] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.1),rgba(255,255,255,0.04))]">
                                 <YouTubeIcon />
                             </div>
                             <span>{t("footer.social.youtube")}</span>
                         </a>
-                        <a href="https://www.tiktok.com/@jasmaxstar" target="_blank" rel="noopener noreferrer" className="social-link">
-                            <div className="social-icon">
+                        <a href="https://www.tiktok.com/@jasmaxstar" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-[#e9f5ee] no-underline mt-0 mb-3 mx-0 py-1.5 transition-[color,transform] duration-200 hover:text-[blue] hover:-translate-y-px">
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center border border-white/[0.14] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.1),rgba(255,255,255,0.04))]">
                                 <TikTokIcon />
                             </div>
                             <span>{t("footer.social.tiktok")}</span>
@@ -93,41 +92,41 @@ const Footer = () => {
                     </div>
 
                     {/* Quick Actions */}
-                    <div className="footer-section">
-                        <h3 className="section-heading">
+                    <div className="py-1.5 min-[900px]:[&:not(:first-child)]:border-l min-[900px]:[&:not(:first-child)]:border-white/10 min-[900px]:[&:not(:first-child)]:pl-6">
+                        <h3 className="text-[1.2rem] font-extrabold mt-0 mb-3.5 mx-0 inline-flex items-center gap-2.5">
                             {t("footer.quick.title")}
-                            <span className="heading-underline"></span>
+                            <span className="w-11 h-[3px] rounded-sm bg-[linear-gradient(90deg,#10b981,#f59e0b)] shadow-[0_0_10px_rgba(16,185,129,0.35)]"></span>
                         </h3>
-                        <a href="https://t.me/JasMaxStar" target="_blank" rel="noopener noreferrer" className="quick-action">
-                            <div className="action-icon">
+                        <a href="https://t.me/JasMaxStar" target="_blank" rel="noopener noreferrer" className="flex items-center mb-2.5 gap-3 px-3.5 py-3 rounded-full no-underline text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.35)] border border-[rgba(16,185,129,0.35)] bg-[linear-gradient(90deg,rgba(16,185,129,0.18),rgba(17,24,39,0.35))] hover:border-[rgba(16,67,185,0.55)] hover:bg-[linear-gradient(90deg,rgba(16,185,129,0.25),rgba(17,24,39,0.5))]">
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center">
                                 <LinkIcon />
                             </div>
-                            <div className="action-text">
-                                <div className="action-title">{t("footer.quick.admin")}</div>
-                                <div className="action-subtitle">{t("footer.quick.adminUser")}</div>
+                            <div>
+                                <div className="font-extrabold">{t("footer.quick.admin")}</div>
+                                <div className="text-[#cfd6e3] text-[0.9rem]">{t("footer.quick.adminUser")}</div>
                             </div>
                         </a>
-                        <a href="https://t.me/uzcastingbot" target="_blank" rel="noopener noreferrer" className="quick-action register-action">
-                            <div className="action-icon">
+                        <a href="https://t.me/uzcastingbot" target="_blank" rel="noopener noreferrer" className="flex items-center mb-2.5 gap-3 px-3.5 py-3 rounded-full no-underline text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.35)] border border-[rgba(245,158,11,0.35)] bg-[linear-gradient(90deg,rgba(245,158,11,0.18),rgba(17,24,39,0.35))] hover:border-[rgba(245,158,11,0.55)] hover:bg-[linear-gradient(90deg,rgba(245,158,11,0.25),rgba(17,24,39,0.5))]">
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center">
                                 <BotIcon />
                             </div>
-                            <div className="action-text">
-                                <div className="action-title register-title">{t("footer.quick.register")}</div>
-                                <div className="action-subtitle">{t("footer.quick.registerSub")}</div>
+                            <div>
+                                <div className="font-extrabold text-[#fde68a]">{t("footer.quick.register")}</div>
+                                <div className="text-[#cfd6e3] text-[0.9rem]">{t("footer.quick.registerSub")}</div>
                             </div>
                         </a>
                     </div>
                 </div>
 
                 {/* Copyright Section */}
-                <div className="copyright">
+                <div className="text-[#cfd6e3] text-[0.95rem] mt-0 mb-4 mx-0">
                     <p>© {new Date().getFullYear()} UzCasting. {t("footer.copyright.text")}</p>
-                    <div className="partners">
-                        <span className="partner-text">{t("footer.copyright.partners")}</span>
-                        <div className="partner-logos">
-                            <div className="partner-logo">JasMax</div>
-                            <div className="partner-logo">UzContent</div>
-                            <div className="partner-logo">FilmUz</div>
+                    <div className="flex items-center justify-center gap-3.5 flex-wrap">
+                        <span className="text-[#cfd6e3] font-bold">{t("footer.copyright.partners")}</span>
+                        <div className="flex gap-3 flex-wrap justify-center">
+                            <div className="px-3 py-1.5 rounded-full bg-white/[0.08] border border-white/[0.12] text-[#e5fff6] text-[0.85rem] transition-all duration-200 hover:bg-white/[0.14] hover:-translate-y-0.5">JasMax</div>
+                            <div className="px-3 py-1.5 rounded-full bg-white/[0.08] border border-white/[0.12] text-[#e5fff6] text-[0.85rem] transition-all duration-200 hover:bg-white/[0.14] hover:-translate-y-0.5">UzContent</div>
+                            <div className="px-3 py-1.5 rounded-full bg-white/[0.08] border border-white/[0.12] text-[#e5fff6] text-[0.85rem] transition-all duration-200 hover:bg-white/[0.14] hover:-translate-y-0.5">FilmUz</div>
                         </div>
                     </div>
                 </div>

@@ -56,6 +56,18 @@ public final class AuditAction {
     public static final String CATEGORY_UPDATED = "CATEGORY_UPDATED";
     public static final String GENRE_CREATED = "GENRE_CREATED";
     public static final String GENRE_UPDATED = "GENRE_UPDATED";
+
+    /**
+     * Kategoriya va janrni o'chirish (ТЗ §16, §17).
+     *
+     * ⚠️ Bu HAQIQIY o'chirish, arxivlash emas — kategoriya va janrda
+     * `deleted_at` yo'q va ular kontentga bog'liqligi tekshirilgandan
+     * keyingina o'chiriladi. Shuning uchun jurnalda alohida amal
+     * sifatida turadi: «nega bu kategoriya yo'qoldi?» degan savolga
+     * javob faqat shu yerdan topiladi.
+     */
+    public static final String CATEGORY_DELETED = "CATEGORY_DELETED";
+    public static final String GENRE_DELETED = "GENRE_DELETED";
     public static final String CREATOR_CREATED = "CREATOR_CREATED";
     public static final String CREATOR_UPDATED = "CREATOR_UPDATED";
 

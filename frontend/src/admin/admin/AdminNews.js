@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import Header from "./HeaderAdmin";
 import { FaPlus, FaTrash, FaTimes, FaSpinner, FaEdit } from 'react-icons/fa';
-import './AdminNews.css';
 
 const baseUrl = "http://localhost:8080"; // поменяй на свой бэкенд адрес
 
@@ -267,40 +266,40 @@ const AdminNews = () => {
 
     // ============== РЕНДЕР ==============
     return (
-        <div className="mobile-news-dark">
+        <div className="[font-family:Inter,-apple-system,sans-serif] bg-black text-white min-h-screen p-4">
             <Header props='admin/news' />
 
-            <div className="mobile-news-header">
-                <h1 className="mobile-news-title">Yangiliklar</h1>
-                <button onClick={openCreateModal} className="add-news-btn">
+            <div className="flex justify-between items-center mb-6 pt-[100px]">
+                <h1 className="text-2xl font-bold text-white">Yangiliklar</h1>
+                <button onClick={openCreateModal} className="bg-[#3b82f6] text-white border-none rounded-lg px-4 py-3 font-medium flex items-center gap-2">
                     <FaPlus /> Qo'shish
                 </button>
             </div>
 
-            {error && <div className="error-message">{error}</div>}
+            {error && <div className="bg-[#450a0a] text-[#fca5a5] p-4 rounded-lg mb-4 border-l-4 border-[#ef4444]">{error}</div>}
 
             {loading && !newsList.length ? (
-                <div className="loading-spinner">
-                    <div className="spinner"></div>
+                <div className="flex justify-center items-center h-[200px]">
+                    <div className="w-10 h-10 border-4 border-[rgba(59,130,246,0.2)] border-t-[#3b82f6] rounded-full animate-spin"></div>
                 </div>
             ) : (
-                <div className="news-list">
+                <div className="grid grid-cols-1 gap-4">
                     {newsList.map((news) => (
-                        <div key={news.id} className="news-card">
-                            <div className="news-card-header">
-                                <h3 className="news-card-title">{news.titleUz}</h3>
-                                <span className="news-card-date">
+                        <div key={news.id} className="bg-[#1a1a1a] rounded-xl p-4 border border-[#333333]">
+                            <div className="flex justify-between items-center mb-2">
+                                <h3 className="font-semibold text-[1.1rem] text-white">{news.titleUz}</h3>
+                                <span className="text-[0.8rem] text-[#a1a1aa]">
                                     {new Date(news.createdAt).toLocaleDateString()}
                                 </span>
                             </div>
-                            <div className="news-card-content">
+                            <div className="mt-2 text-[#d4d4d8] text-[0.9rem]">
                                 <p>{news.descriptionUz.substring(0, 100)}...</p>
                             </div>
-                            <div className="news-card-actions">
-                                <button onClick={() => openEditModal(news)} className="edit-btn">
+                            <div className="flex justify-end gap-2 mt-4">
+                                <button onClick={() => openEditModal(news)}>
                                     <FaEdit /> Tahrirlash
                                 </button>
-                                <button onClick={() => openDeleteModal(news)} className="delete-btn">
+                                <button onClick={() => openDeleteModal(news)} className="bg-[#450a0a] text-[#fca5a5] border-none rounded-md px-3 py-2 text-[0.9rem] flex items-center gap-[0.3rem]">
                                     <FaTrash /> O'chirish
                                 </button>
                             </div>
@@ -311,80 +310,80 @@ const AdminNews = () => {
 
             {/* Модал создания/редактирования */}
             {modalVisible && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <h2 className="modal-title">
+                <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-[1000] p-4">
+                    <div className="bg-[#1a1a1a] rounded-xl w-full max-w-[500px] max-h-[90vh] overflow-y-auto p-6 border border-[#333333]">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-semibold text-white">
                                 {mode === 'create' ? 'Yangi Yangilik' : 'Yangilikni Tahrirlash'}
                             </h2>
-                            <button onClick={closeModal} className="close-btn">
+                            <button onClick={closeModal} className="bg-none border-none text-[#a1a1aa] text-2xl cursor-pointer">
                                 <FaTimes />
                             </button>
                         </div>
                         <form onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label className="form-label">Sarlavha (O'zbekcha)</label>
+                            <div className="mb-4">
+                                <label className="block mb-2 text-[#e4e4e7] text-[0.9rem]">Sarlavha (O'zbekcha)</label>
                                 <input
                                     type="text"
                                     name="titleUz"
                                     value={formData.titleUz}
                                     onChange={handleInputChange}
-                                    className="form-input"
+                                    className="w-full p-3 bg-[#262626] border border-[#404040] rounded-lg text-white text-base"
                                     required
                                 />
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label">Sarlavha (Ruscha)</label>
+                            <div className="mb-4">
+                                <label className="block mb-2 text-[#e4e4e7] text-[0.9rem]">Sarlavha (Ruscha)</label>
                                 <input
                                     type="text"
                                     name="titleRu"
                                     value={formData.titleRu}
                                     onChange={handleInputChange}
-                                    className="form-input"
+                                    className="w-full p-3 bg-[#262626] border border-[#404040] rounded-lg text-white text-base"
                                     required
                                 />
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label">Tavsif (O'zbekcha)</label>
+                            <div className="mb-4">
+                                <label className="block mb-2 text-[#e4e4e7] text-[0.9rem]">Tavsif (O'zbekcha)</label>
                                 <textarea
                                     name="descriptionUz"
                                     value={formData.descriptionUz}
                                     onChange={handleInputChange}
-                                    className="form-input form-textarea"
+                                    className="w-full p-3 bg-[#262626] border border-[#404040] rounded-lg text-white text-base min-h-[120px] resize-y"
                                     rows={5}
                                     required
                                 ></textarea>
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label">Tavsif (Ruscha)</label>
+                            <div className="mb-4">
+                                <label className="block mb-2 text-[#e4e4e7] text-[0.9rem]">Tavsif (Ruscha)</label>
                                 <textarea
                                     name="descriptionRu"
                                     value={formData.descriptionRu}
                                     onChange={handleInputChange}
-                                    className="form-input form-textarea"
+                                    className="w-full p-3 bg-[#262626] border border-[#404040] rounded-lg text-white text-base min-h-[120px] resize-y"
                                     rows={5}
                                     required
                                 ></textarea>
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label">YouTube Havolasi</label>
+                            <div className="mb-4">
+                                <label className="block mb-2 text-[#e4e4e7] text-[0.9rem]">YouTube Havolasi</label>
                                 <input
                                     type="text"
                                     name="link"
                                     value={formData.link}
                                     onChange={handleInputChange}
-                                    className="form-input"
+                                    className="w-full p-3 bg-[#262626] border border-[#404040] rounded-lg text-white text-base"
                                     placeholder="https://www.youtube.com/embed/..."
                                 />
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label">Asosiy Rasm</label>
-                                <label className="file-input-label">
+                            <div className="mb-4">
+                                <label className="block mb-2 text-[#e4e4e7] text-[0.9rem]">Asosiy Rasm</label>
+                                <label className="block p-4 bg-[#262626] border border-dashed border-[#404040] rounded-lg text-center cursor-pointer mb-4">
                                     {formData.mainPhotoPreview ? "Rasmni almashtirish" : "Rasm tanlang"}
                                     <input
                                         type="file"
@@ -394,17 +393,17 @@ const AdminNews = () => {
                                     />
                                 </label>
                                 {formData.mainPhotoPreview && (
-                                    <div className="image-preview-container">
-                                        <div className="image-preview">
-                                            <img src={formData.mainPhotoPreview} alt="Asosiy rasm" className="preview-image" />
+                                    <div className="grid grid-cols-2 gap-2 mt-2">
+                                        <div className="relative rounded-lg overflow-hidden aspect-square">
+                                            <img src={formData.mainPhotoPreview} alt="Asosiy rasm" className="w-full h-full object-cover" />
                                         </div>
                                     </div>
                                 )}
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label">Qo'shimcha Rasmlar</label>
-                                <label className="file-input-label">
+                            <div className="mb-4">
+                                <label className="block mb-2 text-[#e4e4e7] text-[0.9rem]">Qo'shimcha Rasmlar</label>
+                                <label className="block p-4 bg-[#262626] border border-dashed border-[#404040] rounded-lg text-center cursor-pointer mb-4">
                                     Rasmlar tanlang
                                     <input
                                         type="file"
@@ -414,14 +413,14 @@ const AdminNews = () => {
                                         multiple
                                     />
                                 </label>
-                                <div className="image-preview-container">
+                                <div className="grid grid-cols-2 gap-2 mt-2">
                                     {formData.additionalImagesPreviews.map((preview, index) => (
-                                        <div key={index} className="image-preview">
-                                            <img src={preview} alt={`Qo'shimcha ${index + 1}`} className="preview-image" />
+                                        <div key={index} className="relative rounded-lg overflow-hidden aspect-square">
+                                            <img src={preview} alt={`Qo'shimcha ${index + 1}`} className="w-full h-full object-cover" />
                                             <button
                                                 type="button"
                                                 onClick={() => removeAdditionalImage(index)}
-                                                className="remove-image-btn"
+                                                className="absolute top-1 right-1 bg-[rgba(239,68,68,0.8)] text-white border-none rounded-full w-6 h-6 flex items-center justify-center cursor-pointer"
                                             >
                                                 <FaTimes />
                                             </button>
@@ -430,11 +429,11 @@ const AdminNews = () => {
                                 </div>
                             </div>
 
-                            <div className="form-actions">
-                                <button type="button" onClick={closeModal} className="cancel-btn">
+                            <div className="flex justify-end gap-3 mt-6">
+                                <button type="button" onClick={closeModal} className="bg-[#262626] text-[#e4e4e7] border-none rounded-lg px-5 py-3">
                                     Bekor qilish
                                 </button>
-                                <button type="submit" className="submit-btn" disabled={loading}>
+                                <button type="submit" className="bg-[#1d4ed8] text-white border-none rounded-lg px-5 py-3 font-medium flex items-center gap-2" disabled={loading}>
                                     {loading ? <FaSpinner className="animate-spin" /> :
                                         (mode === 'create' ? "Saqlash" : "Yangilash")}
                                 </button>
@@ -446,17 +445,17 @@ const AdminNews = () => {
 
             {/* Модал удаления */}
             {deleteModalVisible && (
-                <div className="modal-overlay">
-                    <div className="delete-modal-content">
-                        <h2 className="modal-title">O'chirishni Tasdiqlang</h2>
-                        <p className="delete-modal-text">
+                <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-[1000] p-4">
+                    <div className="bg-[#1a1a1a] rounded-xl p-6 w-[90%] max-w-[400px] border border-[#333333]">
+                        <h2 className="text-xl font-semibold text-white">O'chirishni Tasdiqlang</h2>
+                        <p className="mb-6 text-[#e4e4e7]">
                             "{currentNews?.titleUz}" yangilikni rostdan ham o'chirmoqchimisiz?
                         </p>
-                        <div className="delete-modal-actions">
-                            <button onClick={closeModal} className="cancel-btn">
+                        <div className="flex justify-end gap-3">
+                            <button onClick={closeModal} className="bg-[#262626] text-[#e4e4e7] border-none rounded-lg px-5 py-3">
                                 Bekor qilish
                             </button>
-                            <button onClick={handleDelete} className="confirm-delete-btn" disabled={loading}>
+                            <button onClick={handleDelete} className="bg-[#7f1d1d] text-[#fca5a5] border-none rounded-lg px-5 py-3" disabled={loading}>
                                 {loading ? <FaSpinner className="animate-spin" /> : "O'chirish"}
                             </button>
                         </div>

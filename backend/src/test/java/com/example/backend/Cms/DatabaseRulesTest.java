@@ -259,13 +259,37 @@ class DatabaseRulesTest {
         @Test
         @DisplayName("Sxemani faqat Flyway boshqaradi")
         void hibernateDoesNotTouchSchema() throws IOException {
-            for (Path p : List.of(
+            // ⚠️ Ikki xil fayl, ikki xil qoida.
+            //
+            // `application.properties` va `application-dev.properties`
+            // — LOKAL fayllar, `.gitignore` da. Ular har bir ishlab
+            // chiquvchida boshqacha va umuman bo'lmasligi ham mumkin.
+            // Ilgari test ularni SHART deb talab qilardi va toza
+            // klondan keyin `NoSuchFileException` bilan yiqilardi:
+            // qoidani buzmagan odam ham qizil test ko'rardi.
+            //
+            // Repozitoriy nazorat qiladigan fayllar esa MAJBURIY —
+            // namuna va test konfiguratsiyasi. Aynan ular yangi
+            // muhitning boshlang'ich nuqtasi bo'ladi.
+            List<Path> required = List.of(
+                    Path.of("src/main/resources/application.properties.example"),
+                    Path.of("src/test/resources/application-test.properties"));
+
+            List<Path> localIfPresent = List.of(
                     Path.of("src/main/resources/application.properties"),
-                    Path.of("src/main/resources/application-dev.properties"),
-                    Path.of("src/test/resources/application-test.properties"))) {
+                    Path.of("src/main/resources/application-dev.properties"));
+
+            for (Path p : required) {
                 assertThat(Files.readString(p))
                         .as(p.getFileName() + " da ddl-auto")
                         .contains("spring.jpa.hibernate.ddl-auto=none");
+            }
+            for (Path p : localIfPresent) {
+                if (Files.exists(p)) {
+                    assertThat(Files.readString(p))
+                            .as(p.getFileName() + " da ddl-auto")
+                            .contains("spring.jpa.hibernate.ddl-auto=none");
+                }
             }
         }
 
@@ -273,9 +297,28 @@ class DatabaseRulesTest {
         @DisplayName("`flyway:clean` yopiq")
         void flywayCleanIsDisabled() throws IOException {
             // Sukut qiymatga tayanilmaydi: bu ishlab turgan baza.
+            //
+            // Tekshiruv namunaga ko'chirildi: `application.properties`
+            // lokal va `.gitignore` da, ya'ni toza klonda u yo'q.
+            // Namuna esa repozitoriyda va aynan undan nusxa olinadi.
             assertThat(Files.readString(
-                    Path.of("src/main/resources/application.properties")))
+                    Path.of("src/main/resources/application.properties.example")))
                     .contains("spring.flyway.clean-disabled=true");
+
+            Path local = Path.of("src/main/resources/application.properties");
+            if (Files.exists(local)) {
+                assertThat(Files.readString(local))
+                        .contains("spring.flyway.clean-disabled=true");
+            }
+
+            // ⚠️ Test profilida `clean` ATAYLAB ochiq — u alohida,
+            // nomida `test` bo'lgan bazada ishlaydi va har yurishda
+            // sxemani noldan quradi (`TestDatabaseReset`). Buni shu
+            // yerda ochiq qayd etamiz, aks holda keyingi odam uni
+            // «qoida buzilgan» deb tuzatib qo'yardi.
+            assertThat(Files.readString(
+                    Path.of("src/test/resources/application-test.properties")))
+                    .contains("spring.flyway.clean-disabled=false");
         }
 
     }

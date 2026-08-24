@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import ApiCall, { baseUrl } from '../../config';
-import './Models.css';
 import Header from '../header/Header';
 import Loader from './Loader';
 import EmptyState from './EmptyState';
@@ -10,6 +9,21 @@ import "bootstrap/dist/css/bootstrap.css";
 import Carousel from "react-bootstrap/Carousel";
 import ModelCard from "./ModelCard";
 
+
+
+// Avval Models.css dagi `.dual-range input[type="range"]` uslublari.
+const RANGE_INPUT =
+    "absolute pointer-events-none appearance-none w-full h-[38px] bg-none m-0 " +
+    "[&::-webkit-slider-runnable-track]:h-1.5 [&::-moz-range-track]:h-1.5 " +
+    "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:pointer-events-auto " +
+    "[&::-webkit-slider-thumb]:w-[18px] [&::-webkit-slider-thumb]:h-[18px] " +
+    "[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#4da3ff] " +
+    "[&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#0b1220] " +
+    "[&::-webkit-slider-thumb]:shadow-[0_0_0_2px_rgba(77,163,255,0.55)] [&::-webkit-slider-thumb]:cursor-pointer " +
+    "[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:w-[18px] [&::-moz-range-thumb]:h-[18px] " +
+    "[&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[#4da3ff] " +
+    "[&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#0b1220] " +
+    "[&::-moz-range-thumb]:shadow-[0_0_0_2px_rgba(77,163,255,0.55)] [&::-moz-range-thumb]:cursor-pointer";
 
 function Models() {
     const { t } = useTranslation();
@@ -140,7 +154,7 @@ function Models() {
         };
 
         return (
-            <div className="card-carousel-image" style={style}>
+            <div className="w-full h-full" style={style}>
                 <img
                     src={src}
                     alt={alt}
@@ -248,14 +262,14 @@ function Models() {
     ];
 
     return (
-        <div className="models-page">
+        <div className="[color-scheme:dark] bg-black pt-20 [&_*::-webkit-scrollbar]:h-[10px] [&_*::-webkit-scrollbar]:w-[10px] [&_*::-webkit-scrollbar-track]:bg-[#0b111a] [&_*::-webkit-scrollbar-thumb]:bg-[#2a3a50] [&_*::-webkit-scrollbar-thumb]:rounded-full [&_*::-webkit-scrollbar-thumb]:border-2 [&_*::-webkit-scrollbar-thumb]:border-[#0b111a]">
             <Header props="" />
-            <section className="container">
-                <div className="toolbar">
-                    <h1 className="title">{t('models.title', 'Models / Actors')}</h1>
+            <section className="max-w-[1200px] mx-auto p-6 bg-[#0b0f14] text-[#e5edf6]">
+                <div className="flex flex-col gap-2.5 mb-3.5">
+                    <h1 className="text-2xl font-bold mt-2 mb-4 mx-0 text-[#e5edf6] tracking-[0.2px]">{t('models.title', 'Models / Actors')}</h1>
 
-                    <div className="filters gap-4">
-                        <div className="filter-item">
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] items-end gap-4">
+                        <div className="[&_label]:block [&_label]:text-xs [&_label]:uppercase [&_label]:text-[#8a98ac] [&_label]:tracking-[0.06em] [&_label]:mb-1.5 [&_input]:w-full [&_input]:px-3 [&_input]:py-2.5 [&_input]:rounded-xl [&_input]:border [&_input]:border-[#243244] [&_input]:outline-none [&_input]:bg-[#121923] [&_input]:text-[#e5edf6] [&_input]:transition-all [&_input::placeholder]:text-[#94a3b8] [&_input:focus]:border-[#4da3ff] [&_input:focus]:shadow-[0_0_0_2px_rgba(77,163,255,0.28)] [&_select]:w-full [&_select]:px-3 [&_select]:py-2.5 [&_select]:rounded-xl [&_select]:border [&_select]:border-[#243244] [&_select]:outline-none [&_select]:bg-[#121923] [&_select]:text-[#e5edf6] [&_select]:transition-all [&_select:focus]:border-[#4da3ff] [&_select:focus]:shadow-[0_0_0_2px_rgba(77,163,255,0.28)]">
                             <label>{t('filters.search', 'Поиск')}</label>
                             <input
                                 type="text"
@@ -265,7 +279,7 @@ function Models() {
                             />
                         </div>
 
-                        <div className="filter-item">
+                        <div className="[&_label]:block [&_label]:text-xs [&_label]:uppercase [&_label]:text-[#8a98ac] [&_label]:tracking-[0.06em] [&_label]:mb-1.5 [&_input]:w-full [&_input]:px-3 [&_input]:py-2.5 [&_input]:rounded-xl [&_input]:border [&_input]:border-[#243244] [&_input]:outline-none [&_input]:bg-[#121923] [&_input]:text-[#e5edf6] [&_input]:transition-all [&_input::placeholder]:text-[#94a3b8] [&_input:focus]:border-[#4da3ff] [&_input:focus]:shadow-[0_0_0_2px_rgba(77,163,255,0.28)] [&_select]:w-full [&_select]:px-3 [&_select]:py-2.5 [&_select]:rounded-xl [&_select]:border [&_select]:border-[#243244] [&_select]:outline-none [&_select]:bg-[#121923] [&_select]:text-[#e5edf6] [&_select]:transition-all [&_select:focus]:border-[#4da3ff] [&_select:focus]:shadow-[0_0_0_2px_rgba(77,163,255,0.28)]">
                             <label>{t('filters.gender', 'Пол')}</label>
                             <select value={gender} onChange={(e) => setGender(e.target.value)}>
                                 <option value="all">{t('filters.genderAny', 'Любой')}</option>
@@ -274,7 +288,7 @@ function Models() {
                             </select>
                         </div>
 
-                        <div className="filter-item ">
+                        <div className="[&_label]:block [&_label]:text-xs [&_label]:uppercase [&_label]:text-[#8a98ac] [&_label]:tracking-[0.06em] [&_label]:mb-1.5 [&_input]:w-full [&_input]:px-3 [&_input]:py-2.5 [&_input]:rounded-xl [&_input]:border [&_input]:border-[#243244] [&_input]:outline-none [&_input]:bg-[#121923] [&_input]:text-[#e5edf6] [&_input]:transition-all [&_input::placeholder]:text-[#94a3b8] [&_input:focus]:border-[#4da3ff] [&_input:focus]:shadow-[0_0_0_2px_rgba(77,163,255,0.28)] [&_select]:w-full [&_select]:px-3 [&_select]:py-2.5 [&_select]:rounded-xl [&_select]:border [&_select]:border-[#243244] [&_select]:outline-none [&_select]:bg-[#121923] [&_select]:text-[#e5edf6] [&_select]:transition-all [&_select:focus]:border-[#4da3ff] [&_select:focus]:shadow-[0_0_0_2px_rgba(77,163,255,0.28)]">
                             <label>{t('filters.castingType.label', 'Casting type')}</label>
                             <select value={ctype} onChange={(e) => setCtype(e.target.value)}>
                                 {castingTypeOptions.map(o => (
@@ -283,11 +297,11 @@ function Models() {
                             </select>
                         </div>
 
-                        <div className="filter-item age-block  ">
+                        <div className="[&_label]:block [&_label]:text-xs [&_label]:uppercase [&_label]:text-[#8a98ac] [&_label]:tracking-[0.06em] [&_label]:mb-1.5">
                             <label>{t('filters.age', 'Возраст')}</label>
-                            <div className="dual-range">
+                            <div className="relative h-[38px] mt-0.5 [--range-bg:#253347] [--range-fill:#4da3ff]">
                                 <div
-                                    className="dual-range__track"
+                                    className="absolute left-0 right-0 top-1/2 h-1.5 rounded-full bg-[var(--range-bg)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]"
                                     style={{
                                         background: `linear-gradient(to right,
                       var(--range-bg) 0%,
@@ -300,6 +314,7 @@ function Models() {
                                 />
                                 <input
                                     type="range"
+                                    className={RANGE_INPUT}
                                     min={rangeMin}
                                     max={rangeMax}
                                     value={minAge}
@@ -307,14 +322,15 @@ function Models() {
                                 />
                                 <input
                                     type="range"
+                                    className={RANGE_INPUT}
                                     min={rangeMin}
                                     max={rangeMax}
                                     value={maxAge}
                                     onChange={(e) => setMaxAge(Math.max(clampAge(e.target.value), minAge))}
                                 />
-                                <span className="dual-range__badge" style={{ left: `calc(${pct(minAge)}% - 12px)` }}>{minAge}</span>
-                                <span className="dual-range__badge dual-range__badge--right" style={{ left: `calc(${pct(maxAge)}% - 12px)` }}>{maxAge}</span>
-                                <div className="dual-range__ticks">
+                                <span className="absolute -top-[18px] -translate-x-1/2 bg-[#4b5563] text-white text-[10px] leading-none rounded px-[5px] py-[3px] pointer-events-none" style={{ left: `calc(${pct(minAge)}% - 12px)` }}>{minAge}</span>
+                                <span className="absolute -top-[18px] -translate-x-1/2 bg-[#4b5563] text-white text-[10px] leading-none rounded px-[5px] py-[3px] pointer-events-none" style={{ left: `calc(${pct(maxAge)}% - 12px)` }}>{maxAge}</span>
+                                <div className="absolute left-0 right-0 -bottom-4 h-3 text-[10px] text-[#8a98ac] [&_span]:absolute [&_span]:-translate-x-1/2">
                                     {[0, 25, 50, 75, 100].map(tick => (
                                         <span key={tick} style={{ left: `${tick}%` }}>{tick}</span>
                                     ))}
@@ -322,7 +338,7 @@ function Models() {
                             </div>
                         </div>
 
-                        <div className="filter-item ">
+                        <div className="[&_label]:block [&_label]:text-xs [&_label]:uppercase [&_label]:text-[#8a98ac] [&_label]:tracking-[0.06em] [&_label]:mb-1.5 [&_input]:w-full [&_input]:px-3 [&_input]:py-2.5 [&_input]:rounded-xl [&_input]:border [&_input]:border-[#243244] [&_input]:outline-none [&_input]:bg-[#121923] [&_input]:text-[#e5edf6] [&_input]:transition-all [&_input::placeholder]:text-[#94a3b8] [&_input:focus]:border-[#4da3ff] [&_input:focus]:shadow-[0_0_0_2px_rgba(77,163,255,0.28)] [&_select]:w-full [&_select]:px-3 [&_select]:py-2.5 [&_select]:rounded-xl [&_select]:border [&_select]:border-[#243244] [&_select]:outline-none [&_select]:bg-[#121923] [&_select]:text-[#e5edf6] [&_select]:transition-all [&_select:focus]:border-[#4da3ff] [&_select:focus]:shadow-[0_0_0_2px_rgba(77,163,255,0.28)]">
                             <label>{t('filters.heightFrom', 'Рост от')}</label>
                             <select value={heightFrom} onChange={(e) => setHeightFrom(e.target.value)}>
                                 <option value="">{t('filters.any', 'Любой')}</option>
@@ -332,11 +348,11 @@ function Models() {
                             </select>
                         </div>
 
-                        <div className="filter-item">
+                        <div className="[&_label]:block [&_label]:text-xs [&_label]:uppercase [&_label]:text-[#8a98ac] [&_label]:tracking-[0.06em] [&_label]:mb-1.5 [&_input]:w-full [&_input]:px-3 [&_input]:py-2.5 [&_input]:rounded-xl [&_input]:border [&_input]:border-[#243244] [&_input]:outline-none [&_input]:bg-[#121923] [&_input]:text-[#e5edf6] [&_input]:transition-all [&_input::placeholder]:text-[#94a3b8] [&_input:focus]:border-[#4da3ff] [&_input:focus]:shadow-[0_0_0_2px_rgba(77,163,255,0.28)] [&_select]:w-full [&_select]:px-3 [&_select]:py-2.5 [&_select]:rounded-xl [&_select]:border [&_select]:border-[#243244] [&_select]:outline-none [&_select]:bg-[#121923] [&_select]:text-[#e5edf6] [&_select]:transition-all [&_select:focus]:border-[#4da3ff] [&_select:focus]:shadow-[0_0_0_2px_rgba(77,163,255,0.28)]">
                             <label>&nbsp;</label>
                             <button
                                 type="button"
-                                className="btn-reset"
+                                className="w-full px-3 py-2.5 rounded-xl border border-[#243244] bg-[#121923] text-[#e5edf6] cursor-pointer transition-all hover:bg-[#15202b] hover:border-[#2b3a4f] active:translate-y-px"
                                 onClick={() => {
                                     setQuery('');
                                     setGender('all');
@@ -351,7 +367,7 @@ function Models() {
                         </div>
                     </div>
 
-                    <div className="result-count">
+                    <div className="text-[13px] text-[#8a98ac]">
                         {t('models.found', 'Найдено')}: {filtered.length}
                     </div>
                 </div>
@@ -365,7 +381,7 @@ function Models() {
                     />
                 ) : (
 
-                    <div className="grid">
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
                         {filtered.map((m) => (
                             <ModelCard
                                 key={m.id}
@@ -384,22 +400,22 @@ function Models() {
             </section>
 
             {open && current && (
-                <div className="cast-backdrop" onClick={closeModal}>
-                    <div className="cast-modal" onClick={(e) => e.stopPropagation()}>
-                        <button className="cast-modal-close" onClick={closeModal}>✕</button>
+                <div className="fixed inset-0 bg-[rgba(7,10,14,0.7)] backdrop-blur-[2px] flex items-center justify-center p-4 z-[1000]" onClick={closeModal}>
+                    <div className="bg-[#161f2a] border border-[#243244] rounded-2xl p-5 max-w-[980px] w-[92%] max-h-[90vh] overflow-y-auto relative shadow-[0_24px_64px_rgba(0,0,0,0.6)] text-[#e5edf6] animate-modalIn" onClick={(e) => e.stopPropagation()}>
+                        <button className="absolute z-[100] top-2.5 right-2.5 border border-[#243244] bg-[#121923] text-[#e5edf6] rounded-full w-9 h-9 cursor-pointer text-base grid place-items-center transition-all hover:bg-[#192433] hover:border-[#31465f] active:scale-[0.98]" onClick={closeModal}>✕</button>
 
-                        <div className="cast-modal-body">
-                            <div className="profile-photo">
+                        <div className="flex gap-5 mb-5 max-[860px]:flex-col">
+                            <div className="flex-[0_0_300px] rounded-xl overflow-hidden bg-[#0f1722] border border-[#243244] [&_img]:w-full [&_img]:h-[315px] [&_img]:block [&_img]:object-cover">
                                 {current.photoUrls && current.photoUrls.length > 0 ? (
                                     <Carousel
                                         indicators={current.photoUrls.length > 1}
                                         controls={current.photoUrls.length > 1}
                                         interval={null}
-                                        className="model-carousel"
+                                        className="relative w-full h-full [&_img]:w-full [&_img]:h-full [&_img]:object-cover [&_img]:object-center [&_.carousel-control-prev]:top-1/2 [&_.carousel-control-prev]:-translate-y-1/2 [&_.carousel-control-prev]:w-[10%] [&_.carousel-control-prev]:h-10 [&_.carousel-control-next]:top-1/2 [&_.carousel-control-next]:-translate-y-1/2 [&_.carousel-control-next]:w-[10%] [&_.carousel-control-next]:h-10 [&_.carousel-indicators]:bottom-2 [&_.carousel-indicators_[data-bs-target]]:w-2 [&_.carousel-indicators_[data-bs-target]]:h-2 [&_.carousel-indicators_[data-bs-target]]:rounded-full"
                                     >
                                         {current.photoUrls.map((p, index) => (
                                             <Carousel.Item key={index}>
-                                                <div className="carousel-image-container">
+                                                <div className="w-full h-full">
                                                     <img
                                                         className="d-block w-100"
                                                         src={p.url}
@@ -419,12 +435,12 @@ function Models() {
                                 )}
                             </div>
 
-                            <div className="profile-info">
-                                <div className="profile-head">
-                                    <div className="profile-center">
-                                        <h2 className="profile-name">{getFirstName(current.name)}</h2>
+                            <div className="flex-1 [&_dl]:grid [&_dl]:grid-cols-[160px_1fr] [&_dl]:gap-x-[14px] [&_dl]:gap-y-2 [&_dl]:m-0 [&_dt]:text-xs [&_dt]:uppercase [&_dt]:text-[#8a98ac] [&_dt]:tracking-[0.05em] [&_dd]:m-0 [&_dd]:font-medium [&_dd]:text-[#c3cfde]">
+                                <div className="relative flex items-center text-center gap-2.5">
+                                    <div className="flex flex-col items-center gap-1">
+                                        <h2 className="text-xl font-bold mt-0 mb-2 mx-0 text-[#e5edf6]">{getFirstName(current.name)}</h2>
                                     </div>
-                                    <div className="profile-id">ID: {current.id}</div>
+                                    <div className="text-sm text-[#838282] bg-black/5 px-2 py-0.5 rounded mb-[5px]">ID: {current.id}</div>
                                 </div>
 
                                 <dl>
@@ -450,14 +466,14 @@ function Models() {
                             </div>
                         </div>
 
-                        <div className="profile-gallery">
+                        <div className="mt-[18px] [&_h3]:text-[15px] [&_h3]:text-[#e5edf6] [&_h3]:mt-0 [&_h3]:mb-2 [&_h3]:mx-0 [&_h3]:tracking-[0.02em]">
                             <h3>
                                 {t('models.photos', 'ФОТО')} (
                                 {(current.photos || []).filter(p => p.isWebShow).length}
                                 )
                             </h3>
 
-                            <div className="gallery-row">
+                            <div className="flex gap-2.5 overflow-x-auto pb-1 [scroll-snap-type:x_proximity] [&_img]:w-[120px] [&_img]:h-[160px] [&_img]:object-cover [&_img]:rounded-[10px] [&_img]:cursor-pointer [&_img]:flex-shrink-0 [&_img]:border [&_img]:border-[#243244] [&_img]:bg-[#0f1722] [&_img]:[scroll-snap-align:start] [&_img]:transition-all [&_img:hover]:-translate-y-0.5 [&_img:hover]:border-[#335174] [&_img:hover]:shadow-[0_12px_28px_rgba(0,0,0,0.35)]">
                                 {(current.photos || [])
                                     .filter(p => p.isWebShow === true)
                                     .map((p, idx) => (
@@ -471,10 +487,10 @@ function Models() {
                                         />
                                     ))}
                             </div>
-                            <div className="contact-row">
+                            <div className="mt-3 flex items-center gap-3">
                                 <button
                                     type="button"
-                                    className="btn-primary"
+                                    className="bg-[#4da3ff] text-[#0b1220] border border-[#2e5fa1] px-3.5 py-2.5 rounded-xl font-semibold cursor-pointer transition-all shadow-[0_6px_18px_rgba(77,163,255,0.25)] hover:bg-[#2e8fff] hover:shadow-[0_10px_28px_rgba(77,163,255,0.35)] active:translate-y-px"
                                     onClick={handleContact}
                                     disabled={contactLock}
                                     aria-disabled={contactLock}
@@ -489,7 +505,7 @@ function Models() {
             )}
 
             {zoomPhoto && (
-                <div className="lightbox" onClick={() => setZoomPhoto(null)}>
+                <div className="fixed inset-0 bg-[rgba(5,8,12,0.92)] flex items-center justify-center z-[2000] animate-fadeInOpacity [&_img]:max-w-[92%] [&_img]:max-h-[92%] [&_img]:rounded-[14px] [&_img]:border [&_img]:border-[#243244] [&_img]:shadow-[0_24px_64px_rgba(0,0,0,0.65)]" onClick={() => setZoomPhoto(null)}>
                     <img src={zoomPhoto} alt="zoom" />
                 </div>
             )}

@@ -10,6 +10,7 @@ import Modal from '../components/Modal';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, StatusBadge, TableWrap } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
+import AdStatsModal from './reports/AdStatsModal';
 
 const STATUSES = ['DRAFT', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED'];
 
@@ -56,6 +57,8 @@ export default function BannerPage({ kind }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [contents, setContents] = useState([]);
+  // Reklama statistikasi (ТЗ §29, §81). Premyerada bunday endpoint yo'q.
+  const [statsFor, setStatsFor] = useState(null);
 
   // Premyerada kontent tanlanadi — ro'yxatni oldindan olamiz
   useEffect(() => {
@@ -239,6 +242,18 @@ export default function BannerPage({ kind }) {
                     </td>
                     <td className="uz-mono uz-muted">{row.sortOrder}</td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      {/* ⚠️ Statistika FAQAT reklamada: premyera uchun
+                          kunlik jamlanma yig'ilmaydi va tugma bo'lsa-yu
+                          hech narsa ko'rsatmasa, u yo'qidan yomonroq. */}
+                      {isAd && (
+                        <button type="button" className="uz-btn uz-btn-ghost"
+                                style={{ minHeight: 32, padding: '0 12px', fontSize: 12,
+                                         marginRight: 8 }}
+                                onClick={() => setStatsFor(row)}
+                                title={t('stat.title')} aria-label={t('stat.title')}>
+                          📊
+                        </button>
+                      )}
                       {can(`${perm}_EDIT`) && (
                         <button type="button" className="uz-btn uz-btn-ghost"
                                 style={{ minHeight: 32, padding: '0 12px', fontSize: 12 }}
@@ -414,6 +429,14 @@ export default function BannerPage({ kind }) {
           </div>
         </div>
       </Modal>
+      {statsFor && (
+        <AdStatsModal
+          ad={statsFor}
+          name={statsFor.name || `#${statsFor.id}`}
+          onClose={() => setStatsFor(null)}
+        />
+      )}
+
       <ConfirmDialog {...confirmer.props} />
     </>
   );

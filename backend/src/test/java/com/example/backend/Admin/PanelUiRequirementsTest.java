@@ -144,7 +144,10 @@ class PanelUiRequirementsTest {
                 "CreatorsPage.jsx",
                 "TaxonomyPage.jsx",
                 "MediaPage.jsx",
-                "StaffPage.jsx",
+                // ⚠️ Yo'l bilan: xodimlar sahifasi o'z papkasiga ko'chirilgan
+                // (ro'yxat + forma + ruxsat tanlagichi bitta faylga
+                // sig'masdi). Faqat nomni yozish `NoSuchFileException` berardi.
+                "staff/StaffPage.jsx",
                 "UsersPage.jsx",
                 "CommentsPage.jsx",
                 "NotificationsPage.jsx",
@@ -437,8 +440,12 @@ class PanelUiRequirementsTest {
         }
 
         private List<java.nio.file.Path> panelPages() throws java.io.IOException {
+            // ⚠️ `list` emas, `walk`: sahifalar ichki papkalarga bo'lingan
+            // (`staff/`, `homepage/`, `reports/`). `list` bilan detektor
+            // ularni umuman ko'rmasdi va tekshiruv jimgina torayardi —
+            // ya'ni yangi sahifada qoida buzilsa test buni sezmasdi.
             try (java.util.stream.Stream<java.nio.file.Path> s =
-                         java.nio.file.Files.list(java.nio.file.Path.of(
+                         java.nio.file.Files.walk(java.nio.file.Path.of(
                                  "../frontend/src/adminpanel/pages"))) {
                 return s.filter(p -> p.toString().endsWith(".jsx")).toList();
             }

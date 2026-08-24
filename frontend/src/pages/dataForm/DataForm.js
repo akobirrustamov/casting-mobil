@@ -1,8 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ApiCall from '../../config/index';
-import './DataForm.css';
 import Header from "../BotHeader/BotHeader";
+
+
+// Avval DataForm.css da bo'lgan uslublar — endi Tailwind sinflari.
+// Diqqat: sinf nomlari to'liq yozilgan, chunki Tailwind JIT manba matnini
+// statik skanerlaydi (dinamik yasalgan nomlarni ko'rmaydi).
+const formGroupClass =
+    "relative " +
+    "[&_label]:block [&_label]:mb-3 [&_label]:font-medium [&_label]:text-white [&_label]:text-[0.9rem] " +
+    "[&_input]:w-full [&_input]:px-4 [&_input]:py-[0.85rem] [&_input]:bg-[#2e2e38] [&_input]:border [&_input]:border-[#3d3d47] [&_input]:rounded-lg [&_input]:text-[0.95rem] [&_input]:text-[#f8f9fa] [&_input]:transition-all [&_input]:duration-300 [&_input]:appearance-none " +
+    "[&_textarea]:w-full [&_textarea]:px-4 [&_textarea]:py-[0.85rem] [&_textarea]:bg-[#2e2e38] [&_textarea]:border [&_textarea]:border-[#3d3d47] [&_textarea]:rounded-lg [&_textarea]:text-[0.95rem] [&_textarea]:text-[#f8f9fa] [&_textarea]:transition-all [&_textarea]:duration-300 [&_textarea]:appearance-none " +
+    "[&_select]:w-full [&_select]:px-4 [&_select]:py-[0.85rem] [&_select]:bg-[#2e2e38] [&_select]:border [&_select]:border-[#3d3d47] [&_select]:rounded-lg [&_select]:text-[0.95rem] [&_select]:text-[#f8f9fa] [&_select]:transition-all [&_select]:duration-300 [&_select]:appearance-none " +
+    "[&_input:focus]:border-[#4895ef] [&_input:focus]:outline-none [&_input:focus]:shadow-[0_0_0_3px_rgba(72,149,239,0.2)] " +
+    "[&_textarea:focus]:border-[#4895ef] [&_textarea:focus]:outline-none [&_textarea:focus]:shadow-[0_0_0_3px_rgba(72,149,239,0.2)] " +
+    "[&_select:focus]:border-[#4895ef] [&_select:focus]:outline-none [&_select:focus]:shadow-[0_0_0_3px_rgba(72,149,239,0.2)] " +
+    "[&_select]:bg-select-arrow [&_select]:bg-no-repeat [&_select]:bg-[right_1rem_center] [&_select]:bg-[length:12px] " +
+    "[&_option]:bg-[#2e2e38] [&_option]:text-[#f8f9fa]";
+
+const formSectionClass =
+    "mb-8 p-6 max-md:p-5 bg-white/[0.03] rounded-xl border border-[#3d3d47] " +
+    "transition-all duration-300 animate-formFadeIn opacity-0 hover:border-[#4a4a56] " +
+    "[&:nth-child(1)]:[animation-delay:0.1s] [&:nth-child(2)]:[animation-delay:0.2s] " +
+    "[&:nth-child(3)]:[animation-delay:0.3s] [&:nth-child(4)]:[animation-delay:0.4s] " +
+    "[&>h2]:text-[#4895ef] [&>h2]:text-[1.25rem] [&>h2]:font-semibold [&>h2]:mb-6 " +
+    "[&>h2]:flex [&>h2]:items-center [&>h2]:gap-2 [&>h2]:before:content-[''] " +
+    "[&>h2]:before:inline-block [&>h2]:before:w-2 [&>h2]:before:h-2 " +
+    "[&>h2]:before:bg-[#4895ef] [&>h2]:before:rounded-full";
 
 function DataForm() {
     const { userId } = useParams();
@@ -344,18 +369,18 @@ function DataForm() {
     };
 
     return (
-        <div className={"history-container"}>
+        <div className="min-h-screen bg-[#1b1b1e] text-[#f8f9fa] [font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif] pt-[60px]">
 
 
             {(uploadProgress.isUploading || loading) && (
-                <div className="full-page-loading">
-                    <div className="loading-content">
-                        <div className="loading-spinner"></div>
+                <div className="fixed inset-0 bg-white/90 flex items-center justify-center z-[1000]">
+                    <div className="text-center p-[30px] bg-white rounded-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.1)] max-w-[400px] w-[90%]">
+                        <div className="w-[60px] h-[60px] border-[6px] border-[#4caf50] border-t-transparent rounded-full animate-spin mx-auto mb-5"></div>
                         <p>{uploadProgress.message}</p>
                         {uploadProgress.progress > 0 && (
-                            <div className="progress-bar">
+                            <div className="w-full h-[10px] bg-[#f0f0f0] rounded-[5px] mt-5 overflow-hidden">
                                 <div
-                                    className="progress-fill"
+                                    className="h-full bg-[#4caf50] transition-[width] duration-300"
                                     style={{ width: `${uploadProgress.progress}%` }}
                                 ></div>
                             </div>
@@ -365,31 +390,31 @@ function DataForm() {
             )}
 
             <Header props={"data-form"} />
-            <div className="data-form-container">
+            <div className="max-w-[900px] my-4 mx-auto p-8 bg-[#25252d] rounded-2xl shadow-[0_4px_6px_rgba(0,0,0,0.1)] text-[#f8f9fa] [font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif] max-md:p-6 max-md:m-0 max-md:rounded-none max-[480px]:p-4">
 
-                <div className="form-header">
-                    <h1>{translations[language].formTitle}</h1>
-                    <p>{translations[language].formSubtitle}</p>
+                <div className="text-center mb-10">
+                    <h1 className="text-[2rem] font-bold mb-2 bg-[linear-gradient(90deg,#4361ee,#4895ef)] bg-clip-text text-transparent max-md:text-[1.75rem]">{translations[language].formTitle}</h1>
+                    <p className="text-white opacity-80 text-base">{translations[language].formSubtitle}</p>
                 </div>
 
                 {error && (
-                    <div className="error-message">
+                    <div className="bg-[rgba(247,37,133,0.1)] text-[#f72585] p-4 rounded-lg mb-6 border-l-4 border-[#f72585]">
                         {translations[language].error}: {error}
                     </div>
                 )}
 
                 {success && (
-                    <div className="success-message">
+                    <div className="bg-[rgba(76,201,240,0.1)] text-[#4cc9f0] p-4 rounded-lg mb-6 border-l-4 border-[#4cc9f0]">
                         {translations[language].success}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="casting-form">
+                <form onSubmit={handleSubmit}>
                     <input type="hidden" name="telegramId" value={formData.telegramId} />
-                    <div className="form-section">
+                    <div className={formSectionClass}>
                         <h2>{translations[language].basicInfo}</h2>
-                        <div className="form-row">
-                            <div className="form-group">
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6 mb-6 max-md:grid-cols-1 max-md:gap-4">
+                            <div className={formGroupClass}>
                                 <label>{translations[language].castingType}*</label>
                                 <select
                                     name="castingType"
@@ -407,7 +432,7 @@ function DataForm() {
                                 </select>
                             </div>
 
-                            <div className="form-group">
+                            <div className={formGroupClass}>
                                 <label>{translations[language].gender}*</label>
                                 <select
                                     name="gender"
@@ -422,8 +447,8 @@ function DataForm() {
                             </div>
                         </div>
 
-                        <div className="form-row">
-                            <div className="form-group">
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6 mb-6 max-md:grid-cols-1 max-md:gap-4">
+                            <div className={formGroupClass}>
                                 <label>{translations[language].fullName}*</label>
                                 <input
                                     type="text"
@@ -434,7 +459,7 @@ function DataForm() {
                                 />
                             </div>
 
-                            <div className="form-group">
+                            <div className={formGroupClass}>
                                 <label>{translations[language].region}*</label>
                                 <input
                                     type="text"
@@ -446,8 +471,8 @@ function DataForm() {
                             </div>
                         </div>
 
-                        <div className="form-row">
-                            <div className="form-group">
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6 mb-6 max-md:grid-cols-1 max-md:gap-4">
+                            <div className={formGroupClass}>
                                 <label>{translations[language].nationality}*</label>
                                 <input
                                     type="text"
@@ -458,7 +483,7 @@ function DataForm() {
                                 />
                             </div>
 
-                            <div className="form-group">
+                            <div className={formGroupClass}>
                                 <label>{translations[language].birthday}</label>
                                 <input
                                     type="date"
@@ -469,10 +494,10 @@ function DataForm() {
                             </div>
                         </div>
                     </div>
-                    <div className="form-section">
+                    <div className={formSectionClass}>
                         <h2>{translations[language].physicalChars}</h2>
-                        <div className="form-row">
-                            <div className="form-group">
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6 mb-6 max-md:grid-cols-1 max-md:gap-4">
+                            <div className={formGroupClass}>
                                 <label>{translations[language].age}*</label>
                                 <input
                                     type="number"
@@ -484,7 +509,7 @@ function DataForm() {
                                 />
                             </div>
 
-                            <div className="form-group">
+                            <div className={formGroupClass}>
                                 <label>{translations[language].height}*</label>
                                 <input
                                     type="number"
@@ -497,8 +522,8 @@ function DataForm() {
                             </div>
                         </div>
 
-                        <div className="form-row">
-                            <div className="form-group">
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6 mb-6 max-md:grid-cols-1 max-md:gap-4">
+                            <div className={formGroupClass}>
                                 <label>{translations[language].hairColor}*</label>
                                 <input
                                     type="text"
@@ -509,7 +534,7 @@ function DataForm() {
                                 />
                             </div>
 
-                            <div className="form-group">
+                            <div className={formGroupClass}>
                                 <label>{translations[language].eyeColor}*</label>
                                 <input
                                     type="text"
@@ -521,8 +546,8 @@ function DataForm() {
                             </div>
                         </div>
 
-                        <div className="form-row">
-                            <div className="form-group">
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6 mb-6 max-md:grid-cols-1 max-md:gap-4">
+                            <div className={formGroupClass}>
                                 <label>{translations[language].clothSize}</label>
                                 <input
                                     type="text"
@@ -532,7 +557,7 @@ function DataForm() {
                                 />
                             </div>
 
-                            <div className="form-group">
+                            <div className={formGroupClass}>
                                 <label>{translations[language].shoeSize}</label>
                                 <input
                                     type="text"
@@ -546,8 +571,8 @@ function DataForm() {
                         {/* Agar gender male bo‘lmasa, bust va son inputlarini chiqaramiz */}
                         {formData.gender !== 'male' && (
                             <>
-                                <div className="form-row">
-                                    <div className="form-group">
+                                <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6 mb-6 max-md:grid-cols-1 max-md:gap-4">
+                                    <div className={formGroupClass}>
                                         <label>{translations[language].bust}</label>
                                         <input
                                             type="text"
@@ -557,7 +582,7 @@ function DataForm() {
                                         />
                                     </div>
 
-                                    <div className="form-group">
+                                    <div className={formGroupClass}>
                                         <label>{translations[language].son}</label>
                                         <input
                                             type="text"
@@ -570,7 +595,7 @@ function DataForm() {
                             </>
                         )}
 
-                        <div className="form-group">
+                        <div className={formGroupClass}>
                             <label>{translations[language].waist}</label>
                             <input
                                 type="text"
@@ -580,10 +605,10 @@ function DataForm() {
                             />
                         </div>
                     </div>
-                    <div className="form-section">
+                    <div className={formSectionClass}>
                         <h2>{translations[language].contactInfo}</h2>
-                        <div className="form-row">
-                            <div className="form-group">
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6 mb-6 max-md:grid-cols-1 max-md:gap-4">
+                            <div className={formGroupClass}>
                                 <label>{translations[language].email}*</label>
                                 <input
                                     type="email"
@@ -594,7 +619,7 @@ function DataForm() {
                                 />
                             </div>
 
-                            <div className="form-group">
+                            <div className={formGroupClass}>
                                 <label>{translations[language].phone}*</label>
                                 <input
                                     type="tel"
@@ -606,8 +631,8 @@ function DataForm() {
                             </div>
                         </div>
 
-                        <div className="form-row">
-                            <div className="form-group">
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6 mb-6 max-md:grid-cols-1 max-md:gap-4">
+                            <div className={formGroupClass}>
                                 <label>{translations[language].telegram}</label>
                                 <input
                                     type="text"
@@ -617,7 +642,7 @@ function DataForm() {
                                 />
                             </div>
 
-                            <div className="form-group">
+                            <div className={formGroupClass}>
                                 <label>{translations[language].facebook}</label>
                                 <input
                                     type="text"
@@ -628,7 +653,7 @@ function DataForm() {
                             </div>
                         </div>
 
-                        <div className="form-group">
+                        <div className={formGroupClass}>
                             <label>{translations[language].instagram}</label>
                             <input
                                 type="text"
@@ -640,18 +665,18 @@ function DataForm() {
 
 
                     </div>
-                    <div className="form-section">
+                    <div className={formSectionClass}>
                         <h2>{translations[language].photos}</h2>
-                        <div className="form-group">
+                        <div className={formGroupClass}>
                             <label>{translations[language].uploadPhotos}*</label>
-                            <p className="hint">{translations[language].photoHint}</p>
+                            <p className="text-[0.8rem] text-white opacity-70 mt-2 leading-[1.4]">{translations[language].photoHint}</p>
 
                             {/* Render file inputs dynamically */}
                             {Array.from({ length: MAX_PHOTOS }).map((_, index) => (
-                                <div key={index} className={`file-input-wrapper ${index === currentFileInput ? 'active' : ''}`}>
-                                    <label className="file-input-label">
+                                <div key={index} >
+                                    <label className="block p-4 bg-[#262626] border border-dashed border-[#404040] rounded-lg text-center cursor-pointer mb-4">
                                         {imagePreviews[index] ? (
-                                            <div className="image-preview">
+                                            <div className="group relative w-[100px] h-[100px] m-[5px] rounded-lg overflow-hidden shadow-[0_4px_6px_rgba(0,0,0,0.1)] transition-all duration-300 hover:-translate-y-[3px] hover:shadow-[0_6px_12px_rgba(0,0,0,0.15)] [&_img]:w-full [&_img]:h-full [&_img]:object-cover">
                                                 <img src={imagePreviews[index]} alt={`Preview ${index}`} />
                                                 <button
                                                     type="button"
@@ -659,13 +684,13 @@ function DataForm() {
                                                         e.preventDefault();
                                                         removeImage(index);
                                                     }}
-                                                    className="remove-image"
+                                                    className="absolute top-2 right-2 bg-[#f72585] text-white border-none w-6 h-6 rounded-full flex items-center justify-center cursor-pointer text-[0.9rem] p-0 transition-all duration-300 opacity-0 group-hover:opacity-100 hover:bg-[#d32f2f] hover:scale-110"
                                                 >
                                                     {translations[language].remove}
                                                 </button>
                                             </div>
                                         ) : (
-                                            <div className="file-input-placeholder">
+                                            <div>
                                                 {translations[language].uploadPhotos} {index + 1}
                                             </div>
                                         )}
@@ -682,10 +707,10 @@ function DataForm() {
                         </div>
                     </div>
 
-                    <div className="form-actions">
+                    <div className="flex justify-center mt-10">
                         <button
                             type="submit"
-                            className="submit-button"
+                            className="bg-[linear-gradient(135deg,#4361ee,#4895ef)] text-white border-none px-10 py-4 text-base font-semibold rounded-lg cursor-pointer transition-all duration-300 shadow-[0_4px_12px_rgba(67,97,238,0.3)] relative overflow-hidden disabled:bg-[#666] disabled:bg-none disabled:shadow-none disabled:cursor-not-allowed max-md:w-full max-md:p-4"
                             disabled={!isFormValid() || loading}
                         >
                             {loading ? '...' : translations[language].submit}

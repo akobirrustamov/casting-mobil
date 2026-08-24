@@ -143,8 +143,17 @@ async function request(method, url, { data, params, retried } = {}) {
 
 export const api = {
   get: (url, params) => request('get', url, { params }),
-  post: (url, data) => request('post', url, { data }),
-  put: (url, data) => request('put', url, { data }),
+  /**
+   * ⚠️ Uchinchi argument — QUERY parametrlari.
+   *
+   * Backend ba'zi amallarda ma'lumotni tanada emas, so'rov satrida
+   * kutadi: `POST /staff/{id}/block?reason=...` va
+   * `PUT /staff/{id}/role?role=...`. Ularni qo'lda URL'ga yopishtirish
+   * har chaqiruvda `encodeURIComponent` ni unutish xavfini tug'dirardi —
+   * sabab matnida `&` bo'lsa so'rov jimgina buzilardi.
+   */
+  post: (url, data, params) => request('post', url, { data, params }),
+  put: (url, data, params) => request('put', url, { data, params }),
   del: (url) => request('delete', url),
   /** Chiqish — token serverda ham bekor qilinadi (§61). */
   logout: () => request('post', '/api/v1/app/admin/auth/logout'),
@@ -271,6 +280,13 @@ export const adminApi = {
   refreshSession: () => api.refresh(),
   me: () => api.get('/api/v1/app/admin/auth/me'),
   dashboard: () => api.get('/api/v1/app/admin/dashboard/summary'),
+  // --- Dashboard grafiklari va jadvallari (ТЗ §48 · BOSQICH F3) ---
+  //
+  // ⚠️ `summary` dan ATAYLAB alohida: kartochkalar yengil va tez keladi,
+  // grafiklar esa og'irroq. Ularni bitta javobga qo'shish sahifaning
+  // BIRINCHI ko'rinishini sekinlashtirardi.
+  dashboardCharts: (days) => api.get('/api/v1/app/admin/dashboard/charts', { days }),
+  dashboardTables: (limit) => api.get('/api/v1/app/admin/dashboard/tables', { limit }),
 
   content: (params) => api.get('/api/v1/app/admin/content', params),
   contentById: (id) => api.get(`/api/v1/app/admin/content/${id}`),
@@ -295,10 +311,14 @@ export const adminApi = {
   categories: (params) => api.get('/api/v1/app/admin/categories', params),
   createCategory: (body) => api.post('/api/v1/app/admin/categories', body),
   updateCategory: (id, body) => api.put(`/api/v1/app/admin/categories/${id}`, body),
+  /** ⚠️ Bog'langan kontenti bo'lsa backend 409 `CATEGORY_IN_USE` qaytaradi (ТЗ §16). */
+  deleteCategory: (id) => api.del(`/api/v1/app/admin/categories/${id}`),
 
   genres: (params) => api.get('/api/v1/app/admin/genres', params),
   createGenre: (body) => api.post('/api/v1/app/admin/genres', body),
   updateGenre: (id, body) => api.put(`/api/v1/app/admin/genres/${id}`, body),
+  /** ⚠️ Bog'langan kontenti bo'lsa backend 409 `GENRE_IN_USE` qaytaradi (ТЗ §17). */
+  deleteGenre: (id) => api.del(`/api/v1/app/admin/genres/${id}`),
 
   advertisements: () => api.get('/api/v1/app/admin/advertisements'),
   createAd: (body) => api.post('/api/v1/app/admin/advertisements', body),
@@ -313,8 +333,30 @@ export const adminApi = {
   homepageSections: () => api.get('/api/v1/app/admin/homepage/sections'),
   updateHomepageSection: (id, body) => api.put(`/api/v1/app/admin/homepage/sections/${id}`, body),
 
+  // --- Bosh sahifa: tartib, qo'lda tanlash, ijodkorlar (ТЗ §31 · F4) ---
+  //
+  // ⚠️ Tartib BITTA atomar so'rovda yuboriladi. Bittalab o'zgartirishda
+  // oraliq holat yuzaga kelardi va o'sha lahzada `/app/home` ni so'ragan
+  // foydalanuvchi aralashib ketgan bosh sahifani ko'rardi.
+  reorderHomepageSections: (sectionIds) =>
+    api.put('/api/v1/app/admin/homepage/sections/order', { sectionIds }),
+  homepageSectionItems: (id) =>
+    api.get(`/api/v1/app/admin/homepage/sections/${id}/items`),
+  /** ⚠️ Bo'sh ro'yxat — «qatorni tozalash», ya'ni avtomatik qoidaga qaytarish. */
+  replaceHomepageSectionItems: (id, contentIds) =>
+    api.put(`/api/v1/app/admin/homepage/sections/${id}/items`, { contentIds }),
+  homepageCreators: (limit) =>
+    api.get('/api/v1/app/admin/homepage/creators', { limit }),
+
+  // --- Media kutubxonasi (ТЗ §26 · BOSQICH F2) ---
   media: (params) => api.get('/api/v1/app/admin/media', params),
   uploadMedia: uploadFile,
+  /** Fayl qayerda ishlatilyapti — o'chirishdan OLDIN ko'rsatiladi. */
+  mediaUsage: (id) => api.get(`/api/v1/app/admin/media/${id}/usage`),
+  archiveMedia: (id) => api.post(`/api/v1/app/admin/media/${id}/archive`),
+  restoreMedia: (id) => api.post(`/api/v1/app/admin/media/${id}/restore`),
+  /** ⚠️ Ishlatilayotgan fayl uchun backend 409 `MEDIA_IN_USE` qaytaradi. */
+  deleteMedia: (id) => api.del(`/api/v1/app/admin/media/${id}`),
 
   comments: (params) => api.get('/api/v1/app/admin/comments', params),
   setCommentStatus: (id, status) => api.put(`/api/v1/app/admin/comments/${id}/status/${status}`),
@@ -327,6 +369,8 @@ export const adminApi = {
   cancelNotification: (id) => api.post(`/api/v1/app/admin/notifications/${id}/cancel`),
 
   users: (params) => api.get('/api/v1/app/admin/users', params),
+  /** Bitta foydalanuvchi (ТЗ §35 · BOSQICH F6). */
+  userById: (id) => api.get(`/api/v1/app/admin/users/${id}`),
   blockUser: (id, reason) => api.post(`/api/v1/app/admin/users/${id}/block`, { reason }),
   unblockUser: (id) => api.post(`/api/v1/app/admin/users/${id}/unblock`),
   grantPremium: (id, body) => api.post(`/api/v1/app/admin/users/${id}/premium`, body),
@@ -360,7 +404,40 @@ export const adminApi = {
 
   reportOverview: (params) => api.get('/api/v1/app/admin/reports/overview', params),
 
+  // --- Bitta obyekt bo'yicha hisobotlar (ТЗ §81, §33, §46 · F5) ---
+  //
+  // ⚠️ Umumiy hisobotda faqat TOP-10 chiqadi. 30 ta banneri bor admin
+  // 25-chisining natijasini umuman ko'ra olmasdi — shuning uchun har bir
+  // obyekt uchun alohida endpoint bor.
+  adStatistics: (id, days) =>
+    api.get(`/api/v1/app/admin/advertisements/${id}/statistics`, { days }),
+  contentStatistics: (id, days) =>
+    api.get(`/api/v1/app/admin/reports/content/${id}/statistics`, { days }),
+  /** ⚠️ O'lchanmaydigan ko'rsatkich `available: false` bilan keladi — nol EMAS. */
+  notificationReport: (id) =>
+    api.get(`/api/v1/app/admin/notifications/${id}/report`),
+
   auditLogs: (params) => api.get('/api/v1/app/admin/audit-logs', params),
 
+  // --- Xodimlar (ТЗ §12, §78 · BOSQICH F1) ---
+  //
+  // ⚠️ Rol, ruxsat va parol ATAYLAB alohida endpointlarda: har birining
+  // o'z xavfsizlik qoidasi bor (ierarxiya, «o'zida bo'lmaganini bera
+  // olmaydi») va ularni oddiy tahrirlash bilan qo'shib yuborish
+  // tekshiruvlarni yashirib qo'yardi.
   staff: (params) => api.get('/api/v1/app/admin/staff', params),
+  createStaff: (body) => api.post('/api/v1/app/admin/staff', body),
+  updateStaff: (id, body) => api.put(`/api/v1/app/admin/staff/${id}`, body),
+  changeStaffRole: (id, role) =>
+    api.put(`/api/v1/app/admin/staff/${id}/role`, null, { role }),
+  setStaffPermissions: (id, permissions) =>
+    api.put(`/api/v1/app/admin/staff/${id}/permissions`, permissions),
+  resetStaffPassword: (id, password) =>
+    api.put(`/api/v1/app/admin/staff/${id}/password`, { password }),
+  activateStaff: (id) => api.post(`/api/v1/app/admin/staff/${id}/activate`),
+  deactivateStaff: (id, reason) =>
+    api.post(`/api/v1/app/admin/staff/${id}/deactivate`, null, { reason: reason || undefined }),
+  blockStaff: (id, reason) =>
+    api.post(`/api/v1/app/admin/staff/${id}/block`, null, { reason: reason || undefined }),
+  unblockStaff: (id) => api.post(`/api/v1/app/admin/staff/${id}/unblock`),
 };

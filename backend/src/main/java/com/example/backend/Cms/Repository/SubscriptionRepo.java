@@ -25,15 +25,35 @@ public interface SubscriptionRepo extends JpaRepository<Subscription, Long> {
      * {@code active} — hozir amal qilayotganlar: bekor qilinmagan va
      * muddati tugamagan.
      */
+    /*
+     * ⚠️ `cast(:param as ...)` — bezak emas, MAJBURIY.
+     *
+     * `:param is null` shartida parametr boshqa hech qayerda
+     * ishlatilmaydi: Hibernate har bir nomlangan parametr uchun
+     * ALOHIDA pozitsion `?` yasaydi, ya'ni `$N` faqat `is null`
+     * kontekstida qoladi. PostgreSQL 18 uchun bunday parametrning
+     * turi noma'lum va u so'rovni butunlay rad etadi:
+     *
+     *   ERROR: could not determine data type of parameter $N
+     *
+     * Xato FAQAT filtr bo'sh bo'lganda chiqadi — ya'ni sahifa
+     * birinchi marta, filtrsiz ochilganda. Bu esa eng ko'p
+     * uchraydigan holat.
+     *
+     * `String` ga o'girish `is null` ma'nosini o'zgartirmaydi
+     * (`cast(null as ...)` baribir null), lekin parametrga tur
+     * beradi. Haqiqiy solishtirishda esa parametr o'z turida
+     * qoladi — u alohida `?`.
+     */
     @org.springframework.data.jpa.repository.Query(value = """
             select s from Subscription s
             left join fetch s.user u
             left join fetch s.tariff t
             where (:source is null or s.source = :source)
               and (:tariffId is null or t.id = :tariffId)
-              and (:from is null or s.startAt >= :from)
-              and (:to is null or s.startAt <= :to)
-              and (:active is null
+              and (cast(:from as LocalDateTime) is null or s.startAt >= :from)
+              and (cast(:to as LocalDateTime) is null or s.startAt <= :to)
+              and (cast(:active as String) is null
                    or (:active = true  and s.revokedAt is null and s.endAt > :now)
                    or (:active = false and (s.revokedAt is not null or s.endAt <= :now)))
               and (:q is null
@@ -47,9 +67,9 @@ public interface SubscriptionRepo extends JpaRepository<Subscription, Long> {
             left join s.tariff t
             where (:source is null or s.source = :source)
               and (:tariffId is null or t.id = :tariffId)
-              and (:from is null or s.startAt >= :from)
-              and (:to is null or s.startAt <= :to)
-              and (:active is null
+              and (cast(:from as LocalDateTime) is null or s.startAt >= :from)
+              and (cast(:to as LocalDateTime) is null or s.startAt <= :to)
+              and (cast(:active as String) is null
                    or (:active = true  and s.revokedAt is null and s.endAt > :now)
                    or (:active = false and (s.revokedAt is not null or s.endAt <= :now)))
               and (:q is null

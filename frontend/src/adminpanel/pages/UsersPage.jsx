@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { adminApi } from '../api/client';
 import { useApi } from '../api/useApi';
 import { useAuth } from '../auth/AuthContext';
@@ -99,7 +100,15 @@ export default function UsersPage() {
               <tbody>
                 {data.items.map((u) => (
                   <tr key={u.id}>
-                    <td style={{ fontWeight: 600 }}>{u.name || '—'}</td>
+                    <td style={{ fontWeight: 600 }}>
+                      {/* Ism — sahifaga havola. Amal tugmalari qatorda
+                          qoladi: ko'p uchraydigan ishlar (bloklash,
+                          premium) uchun sahifaga o'tish ortiqcha qadam. */}
+                      <Link to={`/app/panel/users/${u.id}`}
+                            style={{ color: 'var(--p-accent)', textDecoration: 'none' }}>
+                        {u.name || u.phone || t('ud.open')}
+                      </Link>
+                    </td>
                     <td className="uz-mono uz-muted" style={{ fontSize: 13 }}>{u.phone || u.email}</td>
                     <td>
                       {u.premiumActive

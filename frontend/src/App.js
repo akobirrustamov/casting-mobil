@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import './App.css';
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import ApiCall from "./config/index"
 

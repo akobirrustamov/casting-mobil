@@ -8,6 +8,7 @@ import { Badge, PageHeader, Pagination, SearchInput, StatusBadge, TableWrap } fr
 import { toBackendLocale, usePanelI18n } from '../i18n';
 import { count, money } from '../utils/format';
 import ContentEditor from './ContentEditor';
+import ContentStatsModal from './reports/ContentStatsModal';
 
 const STATUSES = ['PUBLISHED', 'DRAFT', 'SCHEDULED', 'IN_REVIEW', 'ARCHIVED', 'BLOCKED'];
 const TYPES = ['MOVIE', 'SERIES', 'MINI_SERIES', 'SHORT_FILM', 'PODCAST', 'SHOW', 'INTERVIEW', 'STREAM', 'CLIP'];
@@ -21,6 +22,8 @@ export default function ContentPage() {
   const [status, setStatus] = useState('');
   const [type, setType] = useState('');
   const [q, setQ] = useState('');
+  // Bitta kontent bo'yicha tomosha voronkasi (ТЗ §46).
+  const [statsFor, setStatsFor] = useState(null);
 
   const confirmer = useConfirm(() => reload());
 
@@ -157,6 +160,22 @@ export default function ContentPage() {
                         {count(item.viewCount)}
                       </td>
                       <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        {/* ⚠️ Statistika `REPORT_VIEW` ruxsatini talab
+                            qiladi — kontentni ko'rish huquqi analitikani
+                            ko'rish huquqini bermaydi. Ruxsat yo'q
+                            xodimga tugmani ko'rsatish uni 403 ga olib
+                            borardi. */}
+                        {can('REPORT_VIEW') && (
+                          <button
+                            type="button"
+                            className="uz-btn uz-btn-ghost"
+                            style={{ minHeight: 34, padding: '0 12px', fontSize: 13, marginRight: 8 }}
+                            onClick={() => setStatsFor(item)}
+                            title={t('stat.title')} aria-label={t('stat.title')}
+                          >
+                            📊
+                          </button>
+                        )}
                         {can('CONTENT_EDIT') && (
                           <button
                             type="button"
@@ -202,6 +221,14 @@ export default function ContentPage() {
         onClose={() => setEditorOpen(false)}
         onSaved={reload}
       />
+      {statsFor && (
+        <ContentStatsModal
+          content={statsFor}
+          name={titleOf(statsFor)}
+          onClose={() => setStatsFor(null)}
+        />
+      )}
+
       <ConfirmDialog {...confirmer.props} />
     </>
   );

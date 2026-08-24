@@ -15,6 +15,23 @@
     <description>backend</description>
     <properties>
         <java.version>17</java.version>
+
+        <!--
+          ⚠️ Lombok versiyasi Spring Boot ota-pom'idagidan (1.18.28) ATAYLAB
+          yuqoriroq.
+
+          Lombok annotatsiya protsessori JDK ning ichki API'lariga tayanadi va
+          har bir yangi JDK bilan uni yangilash kerak. 1.18.28 JDK 21 gacha
+          ishlaydi; JDK 24-25 da esa u JIM ISHDAN CHIQADI — xato bermaydi,
+          shunchaki hech qanday getter/builder generatsiya qilinmaydi va
+          kompilyator yuzlab «cannot find symbol» beradi.
+
+          Loyiha `<java.version>17</java.version>` bilan quriladi, lekin
+          ishlab chiquvchining mashinasida yangiroq JDK turishi mumkin.
+          1.18.44 JDK 17 dan 25 gacha ishlaydi, ya'ni bu ko'tarish hech
+          narsani buzmaydi.
+        -->
+        <lombok.version>1.18.44</lombok.version>
     </properties>
     <dependencies>
 
@@ -186,10 +203,46 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
+                <!--
+                  ⚠️ 3.11.0 dan ko'tarildi. Sabab `proc` parametri: u faqat
+                  3.13.0 dan boshlab mavjud, quyida esa usiz ilojimiz yo'q.
+                -->
+                <version>3.13.0</version>
                 <configuration>
-                    <source>17</source>
-                    <target>17</target>
+                    <!--
+                      `source`/`target` o'rniga `release`: u JDK ning ichki
+                      API'larini ham bloklaydi, ya'ni 17 da yo'q metod
+                      tasodifan ishlatilsa kompilyatsiya paytida tutiladi,
+                      ishga tushganda emas.
+                    -->
+                    <release>${java.version}</release>
+
+                    <!--
+                      ⚠️ `full` MAJBURIY.
+
+                      JDK 23 dan boshlab `javac` faqat classpath'da topilgan
+                      annotatsiya protsessorlarini SUKUT BO'YICHA O'CHIRADI
+                      (JEP 'Prepare to Restrict The Use of JDK-Internal APIs'
+                      bilan bir qatorda kelgan o'zgarish). Natijada Lombok
+                      indamay ishlamay qo'yadi va butun loyiha
+                      «cannot find symbol: method builder()» bilan yiqiladi —
+                      xatoda Lombok so'zi umuman uchramaydi, shuning uchun
+                      sababni topish qiyin.
+                    -->
+                    <proc>full</proc>
+
+                    <!--
+                      Protsessor yo'lini OCHIQ ko'rsatamiz: shunda u
+                      classpath'dagi tasodifiy tartibga bog'liq bo'lmaydi va
+                      qurilish har qanday JDK da bir xil ishlaydi.
+                    -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
         </plugins>

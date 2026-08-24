@@ -7,6 +7,7 @@ import Modal from '../components/Modal';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, TableWrap } from '../components/Ui';
 import { toBackendLocale, usePanelI18n } from '../i18n';
+import { money } from '../utils/format';
 
 const emptyTariff = () => ({
   code: '', durationMonths: 1, price: '', currency: 'UZS',

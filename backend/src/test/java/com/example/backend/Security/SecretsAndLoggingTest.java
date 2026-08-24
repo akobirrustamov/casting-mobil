@@ -150,8 +150,18 @@ class SecretsAndLoggingTest {
         void sqlIsNotLoggedInProduction() throws IOException {
             // SQL loglari parametrlarni ham chiqaradi - parol xeshi,
             // telefon raqami, to'lov summasi.
-            assertThat(Files.readString(Path.of("src/main/resources/application.properties")))
-                    .doesNotContain("spring.jpa.show-sql=true");
+            //
+            // Namuna doim tekshiriladi, lokal nusxa esa faqat mavjud
+            // bo'lsa — sabab yuqoridagi izohda.
+            for (Path p : List.of(
+                    Path.of("src/main/resources/application.properties.example"),
+                    Path.of("src/main/resources/application.properties"))) {
+                if (Files.exists(p)) {
+                    assertThat(Files.readString(p))
+                            .as(p.getFileName() + " da show-sql")
+                            .doesNotContain("spring.jpa.show-sql=true");
+                }
+            }
         }
     }
 
@@ -164,13 +174,31 @@ class SecretsAndLoggingTest {
         @Test
         @DisplayName("Stacktrace klientga yuborilmaydi")
         void stacktraceIsNeverSent() throws IOException {
-            String props = Files.readString(
-                    Path.of("src/main/resources/application.properties"));
+            // ⚠️ Majburiy fayl — NAMUNA, lokal nusxa emas.
+            //
+            // `application.properties` `.gitignore` da: toza klonda u
+            // umuman yo'q va test `NoSuchFileException` bilan
+            // yiqilardi. Yangi muhit esa aynan namunadan quriladi,
+            // ya'ni qoida o'sha yerda turishi kerak. Lokal nusxa
+            // mavjud bo'lsa — u ham tekshiriladi.
+            for (Path p : configsToCheck()) {
+                String props = Files.readString(p);
+                assertThat(props).as(p.getFileName() + " da stacktrace")
+                        .contains("server.error.include-stacktrace=never");
+                assertThat(props).as(p.getFileName() + " da exception")
+                        .contains("server.error.include-exception=false");
+            }
+        }
 
-            // ⚠️ Sukut qiymatga tayanilmaydi: u Spring versiyasi bilan
-            // o'zgarishi mumkin va bu jimgina o'zgarish bo'lardi.
-            assertThat(props).contains("server.error.include-stacktrace=never");
-            assertThat(props).contains("server.error.include-exception=false");
+        /** Namuna doim, lokal nusxa esa faqat mavjud bo'lsa. */
+        private List<Path> configsToCheck() {
+            List<Path> checked = new java.util.ArrayList<>();
+            checked.add(Path.of("src/main/resources/application.properties.example"));
+            Path local = Path.of("src/main/resources/application.properties");
+            if (Files.exists(local)) {
+                checked.add(local);
+            }
+            return checked;
         }
 
         @Test

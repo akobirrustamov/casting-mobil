@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ApiCall from "../../config";
-import Header from "./HeaderAdmin";
+import { AdminPage, AdminPageHeader, AdminError, AdminLoading } from "./AdminLayout";
 import { useNavigate } from 'react-router-dom';
 
 const AdminHome = () => {
@@ -55,19 +55,13 @@ const AdminHome = () => {
     const donutSegments = calculateDonutSegments();
 
     return (
-        <div className="min-h-screen bg-black text-white">
-            <Header props='admin' />
-            <div className="container mx-auto px-4 py-8">
-                <h1 className="text-3xl font-bold text-center mb-8 text-blue-400">Admin Statistikasi</h1>
+        <AdminPage headerProps='admin'>
+            <AdminPageHeader title="Admin Statistikasi" />
 
                 {loading ? (
-                    <div className="flex justify-center items-center h-64">
-                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                    </div>
+                    <AdminLoading />
                 ) : error ? (
-                    <div className="bg-red-900 text-red-200 p-4 rounded-lg text-center max-w-md mx-auto">
-                        {error}
-                    </div>
+                    <AdminError>{error}</AdminError>
                 ) : stats && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center max-w-4xl mx-auto">
                         {/* Umumiy topshirganlar - Donut chart */}
@@ -155,7 +149,7 @@ const AdminHome = () => {
                             <h2 className="text-xl font-semibold mb-4 text-center text-blue-300">Kunlik topshirganlar</h2>
                             <div className="w-32 h-48 flex items-end justify-center mb-4">
                                 <div
-                                    className="w-16 bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-lg transition-all duration-500"
+                                    className="w-16 bg-[linear-gradient(0deg,#3b82f6,#93c5fd)] rounded-t-lg transition-all duration-500"
                                     style={{
                                         height: `${Math.min(100, (stats.dailyCount / Math.max(1, stats.totalCount)) * 100)}%`
                                     }}
@@ -168,8 +162,7 @@ const AdminHome = () => {
                     </div>
                 )
                 }
-            </div >
-        </div >
+        </AdminPage>
     );
 };
 

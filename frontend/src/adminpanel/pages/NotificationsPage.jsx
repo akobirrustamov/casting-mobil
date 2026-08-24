@@ -10,6 +10,7 @@ import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, SearchInput, TableWrap } from '../components/Ui';
 import { count } from '../utils/format';
 import { usePanelI18n } from '../i18n';
+import NotificationReportModal from './reports/NotificationReportModal';
 
 const TYPES = ['APP_NOTIFICATION', 'CASTING_NOTIFICATION'];
 const AUDIENCES = ['ALL', 'PREMIUM_ONLY', 'NON_PREMIUM'];
@@ -45,6 +46,7 @@ export default function NotificationsPage() {
   const [formLocale, setFormLocale] = useState('UZ');
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState(null);
+  const [reportFor, setReportFor] = useState(null);
 
   const audienceLabel = (a) => ({
     ALL: t('nt.audienceAll'),
@@ -205,6 +207,16 @@ export default function NotificationsPage() {
                         {n.scheduledAt ? n.scheduledAt.slice(0, 16).replace('T', ' ') : '—'}
                       </td>
                       <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        {/* Hisobot HAR QANDAY holatda ochiladi — hatto
+                            yuborilmagan xabarda ham auditoriya hajmi
+                            foydali: «bu xabar necha kishiga tegadi?»
+                            degan savolga javob yuborishdan OLDIN kerak. */}
+                        <button type="button" className="uz-btn uz-btn-ghost"
+                                style={{ minHeight: 30, padding: '0 10px', fontSize: 12,
+                                         marginRight: 6 }}
+                                onClick={() => setReportFor(n)}>
+                          {t('stat.report')}
+                        </button>
                         {n.status !== 'SENT' && can('NOTIFICATION_CREATE') && (
                           <button type="button" className="uz-btn uz-btn-ghost"
                                   style={{ minHeight: 30, padding: '0 10px', fontSize: 12 }}
@@ -302,6 +314,14 @@ export default function NotificationsPage() {
 
         <LinkFields value={form.link} onChange={(link) => setForm({ ...form, link })} />
       </Modal>
+
+      {reportFor && (
+        <NotificationReportModal
+          notification={reportFor}
+          name={reportFor.translations?.UZ?.title || `#${reportFor.id}`}
+          onClose={() => setReportFor(null)}
+        />
+      )}
     </>
   );
 }

@@ -18,8 +18,33 @@ export function LoadingState({ rows = 5 }) {
   );
 }
 
-export function EmptyState({ title, body, icon = '📭' }) {
+/**
+ * Ma'lumot yo'qligini bildiradi.
+ *
+ * <h2>`compact` nima uchun kerak</h2>
+ * Dashboardda beshta kichik jadval yonma-yon turadi, foydalanuvchi
+ * sahifasida esa qurilmalar va obunalar ro'yxati. Ularning har birida
+ * to'liq balandlikdagi bo'sh holat sahifani bir necha ekranga
+ * cho'zib yuborardi.
+ *
+ * ⚠️ Buning yechimi «u yerda oddiy `<p>` yozib qo'yish» EMAS edi.
+ * Aynan shunday qilingan edi va natijada bo'sh holat har joyda
+ * boshqacha ko'rinardi — matni, rangi, joylashuvi. Bitta komponent,
+ * ikkita zichlik: ko'rinish bir xil qoladi, o'lchami esa joyiga
+ * moslashadi (§72).
+ */
+export function EmptyState({ title, body, icon = '📭', compact = false }) {
   const { t } = usePanelI18n();
+
+  if (compact) {
+    return (
+      <div className="flex items-center gap-3 px-5 py-6">
+        <span style={{ fontSize: 20 }} aria-hidden="true">{icon}</span>
+        <span className="uz-muted text-sm">{title || t('empty.title')}</span>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center text-center px-6 py-16">
       <div style={{ fontSize: 44 }} aria-hidden="true">{icon}</div>

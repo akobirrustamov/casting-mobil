@@ -3,7 +3,7 @@
 > Hozirgi holat + qurilayotgan admin panel arxitekturasi.
 > Task ro'yxati → [FRONTEND_ROADMAP.md](./FRONTEND_ROADMAP.md)
 
-Oxirgi yangilanish: 19.08.2026 — admin panel qurildi
+Oxirgi yangilanish: 23.08.2026 — BOSQICH F1–F6 bajarildi
 
 ---
 
@@ -247,10 +247,33 @@ src/
     ├── layout/AdminLayout.jsx
     ├── components/
     │   ├── States.jsx      Loading/Empty/Error/Forbidden
+    │   ├── TrendChart.jsx  inline SVG; qatorlar `series` prop'idan
     │   └── Ui.jsx          PageHeader, StatusBadge, SearchInput,
     │                       Pagination, LanguageSwitcher, TableWrap
     └── pages/              Login, Dashboard, Content, Creators,
-                            Taxonomy (category+genre), Media, Staff
+                            Taxonomy (category+genre), Media,
+                            Homepage, Banner, Comments, Notifications,
+                            Users, UserDetail, Tariffs, Settings, Audit
+        ├── staff/          StaffPage, StaffForm, PermissionPicker,
+        │                   permissionGroups.js  (F1)
+        ├── homepage/       SectionItemsModal, CreatorsPreviewModal (F4)
+        └── reports/        AdStatsModal, ContentStatsModal,
+                            NotificationReportModal, StatBits.jsx (F5)
 ```
+
+⚠️ **Uch sahifa o'z papkasiga bo'lindi** (`staff/`, `homepage/`,
+`reports/`). Sabab bir xil: sahifaga bir nechta mustaqil oyna
+qo'shildi va ular bitta faylda 800+ qatorga cho'zilardi. Bo'linish
+chegarasi — «oyna o'z ma'lumotini o'zi yuklaydimi». Yuklasa, u
+alohida fayl.
+
+### Har ochilishda yangi mount
+
+`{modalFor && <SomeModal ... />}` namunasi paneldа ataylab
+ishlatiladi: oyna boshlang'ich holatini prop'dan oladi. Doim chizilib
+faqat `open` bilan yashirilsa, ikkinchi marta ochilganda holat
+eskisidan qolardi — parol oynasida oldingi matn, ruxsatlar oynasida
+boshqa xodimning qutichalari, media oynasida eskirgan «qayerda
+ishlatilgan» ro'yxati.
 
 `App.js` ga faqat BITTA qator qo'shildi: `<Route path="/app/panel/*" element={<PanelApp />} />`.
