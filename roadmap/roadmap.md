@@ -269,9 +269,9 @@ tegilmagan (§75) — ogohlantirishlar ham o'sha holida.
 
 | Buyruq | Natija |
 |---|---|
-| `./mvnw test` | ✅ **745 test**, yiqilish yo'q |
+| `./mvnw test` | ✅ **763 test**, yiqilish yo'q |
 | `./mvnw -DskipTests package` | ✅ SUCCESS |
-| `react-scripts test` | ✅ **16 test** (3 to'plam) |
+| `react-scripts test` | ✅ **38 test** (8 to'plam) |
 | `react-scripts build` | ✅ SUCCESS — `adminpanel` da ogohlantirish yo'q |
 
 ---
@@ -621,7 +621,7 @@ Til tanlovi `localStorage` da saqlanadi va kontent tarjimasiga ham ta'sir qiladi
 | 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma: rejalashtirish ishlaydi, hisobot halol (ТЗ §32–§33). FCM ulanmagan |
 | 7 | Users & Monetization — tariffs, premium, Stars, Coin | `[x]` foydalanuvchi, tarif, balans, qurilma, donat |
 | 8 | Analytics — events, aggregation, dashboard, reports | `[x]` ikki qatlamli: xom hodisa + kunlik jamlanma |
-| 9 | Hardening — tests, performance, security, indexes | `[~]` 745 backend + 16 frontend test; migratsiyalar V1–V26 |
+| 9 | Hardening — tests, performance, security, indexes | `[~]` 763 backend + 38 frontend test; migratsiyalar V1–V26 |
 
 ---
 
@@ -1438,37 +1438,48 @@ qo'shilsa — test yiqiladi.
 > Build yashil: backend **679 test**, frontend **5 test**, migratsiyalar
 > **V1–V26**.
 
-### Keyingi aniq qadamlar — ADMIN PANEL FRONTENDI
+### Keyingi aniq qadamlar
 
-> To'liq ТЗ: `FRONTEND_ROADMAP.md → ADMIN PANEL — BOSQICHMA-BOSQICH ТЗ`
->
-> ⚠️ **Eski kodga tegilmaydi.** `/aadmin/*`, `/admin/*` va ommaviy
-> sahifalar ishlab turadi, ma'lumot saqlanadi. Mobil dastur
-> (`mobile/`) **umuman tegilmaydi**. Ish faqat
-> `frontend/src/adminpanel/` ichida.
+> ⚠️ **24.08.2026 da qayta tekshirildi.** Oldingi ro'yxatda F1–F6
+> bosqichlari yozilgan edi (xodimlar, media, dashboard, bosh sahifa,
+> hisobotlar, foydalanuvchi sahifasi). **Ular bajarilgan** — merge
+> orqali kelgan ish. Roadmap haqiqatga moslashtirildi.
 
-**Auditda topilgani:** backend 74 ta admin endpoint taklif qiladi,
-panel ularning bir qismini umuman chaqirmaydi — ya'ni yozilgan va
-sinalgan ish frontendда ko'rinmaydi.
+**Panel holati:** backendning 74 endpointidan **71 tasi** ishlatiladi,
+38 ta frontend testi yashil. To'liq moslik jadvali:
+`FRONTEND_ROADMAP.md → Backend ↔ Frontend moslik jadvali`.
 
-| Bosqich | Nima | Nega |
-|---|---|---|
-| **F1** | Xodimlar boshqaruvi — 8 amal | ⚠️ Hozir paneldan **xodim yaratib bo'lmaydi**. RBAC butun tizim asosi |
-| **F2** | Media: arxiv, tiklash, ishlatilishi, o'chirish | Admin faylni xavfsiz o'chira olmaydi |
-| **F3** | Dashboard grafiklari va jadvallari | §48 da yozilgan `charts`/`tables` ishlatilmayapti |
-| **F4** | Bosh sahifa: tartiblash + qo'lda tanlash | §31 ning yarmi UI'siz |
-| **F5** | Hisobotlar: reklama CTR, bildirishnoma, kontent | §33, §46, §81 |
-| **F6** | Foydalanuvchi sahifasi | `GET /users/{id}` ishlatilmayapti |
-| **F7** | **Foydalanuvchi (USER) qismi** | ⚠️ **ENG OXIRGI.** Backend ham tayyor emas |
+#### Frontend — qolgan uchta band
 
-**Boshlash tartibi: F1 → F2 → F3 → F4 → F5 → F6 → F7.**
+1. **Eng ko'p donat qilganlar.** `GET /donations/top` tayyor, lekin
+   `DonationsPage` uni chaqirmaydi.
+   ⚠️ Valyutalar qo'shilmaydi — STARS va COIN kursi hali 0.
 
-### Oldingi ro'yxatdan qolganlari (backend, kichik)
+2. **Yuklashni davom ettirish va bekor qilish.** Sahifa yopilib qayta
+   ochilsa katta video yuklash boshidan boshlanadi.
+   `GET /uploads/{id}` yarim qolgan seansni qaytaradi,
+   `DELETE /uploads/{id}` bo'laklarni tozalaydi — ikkalasi ham
+   ishlatilmaydi.
 
-1. Bildirishnoma yuborishda oluvchi tilini tanlash (FCM kelganda).
-2. `AdminAuthController` ni bo'lish — `AuthCookieService` ajratilsin.
-3. Eski `/api/v1/auth/refresh` ni cookie'ga o'tkazish.
-4. `ContentService.apply()` dagi shartsiz `clear()`.
+3. **Ro'yxatlarda saralash.** Hozir filtr va sahifalash bor, ustun
+   bo'yicha saralash yo'q.
+
+#### Backend — kichik qarzlar
+
+4. **`GET /users/{id}/purchases`** — bir martalik xaridlar tarixi.
+   Foydalanuvchi sahifasida obuna tarixi bor, xaridlar yo'q.
+   `Purchase` entity bor, admin endpointi yo'q.
+5. Bildirishnoma yuborishda oluvchi tilini tanlash (FCM kelganda).
+6. `AdminAuthController` ni bo'lish — `AuthCookieService` ajratilsin.
+7. Eski `/api/v1/auth/refresh` ni cookie'ga o'tkazish.
+8. `ContentService.apply()` dagi shartsiz `clear()`.
+
+#### Foydalanuvchi (USER) qismi — **eng oxirgi**
+
+⚠️ Hozir boshlanmaydi. Buyurtmachi tartibi shunday va **backend ham
+tayyor emas**: `/app/auth/**` (OTP kirish), `/app/catalog`,
+`/app/content/{slug}`, `/app/search`, `/app/me`, `/app/purchases`,
+`/app/comments` — yozilmagan.
 
 ### Qaror kutilayotgan (kod yozilmaydi)
 
