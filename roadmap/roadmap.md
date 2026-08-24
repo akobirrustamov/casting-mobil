@@ -269,9 +269,9 @@ tegilmagan (§75) — ogohlantirishlar ham o'sha holida.
 
 | Buyruq | Natija |
 |---|---|
-| `./mvnw test` | ✅ **763 test**, yiqilish yo'q |
+| `./mvnw test` | ✅ **767 test**, yiqilish yo'q |
 | `./mvnw -DskipTests package` | ✅ SUCCESS |
-| `react-scripts test` | ✅ **38 test** (8 to'plam) |
+| `react-scripts test` | ✅ **44 test** (9 to'plam) |
 | `react-scripts build` | ✅ SUCCESS — `adminpanel` da ogohlantirish yo'q |
 
 ---
@@ -621,7 +621,7 @@ Til tanlovi `localStorage` da saqlanadi va kontent tarjimasiga ham ta'sir qiladi
 | 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma: rejalashtirish ishlaydi, hisobot halol (ТЗ §32–§33). FCM ulanmagan |
 | 7 | Users & Monetization — tariffs, premium, Stars, Coin | `[x]` foydalanuvchi, tarif, balans, qurilma, donat |
 | 8 | Analytics — events, aggregation, dashboard, reports | `[x]` ikki qatlamli: xom hodisa + kunlik jamlanma |
-| 9 | Hardening — tests, performance, security, indexes | `[~]` 763 backend + 38 frontend test; migratsiyalar V1–V26 |
+| 9 | Hardening — tests, performance, security, indexes | `[~]` 767 backend + 44 frontend test; migratsiyalar V1–V26 |
 
 ---
 
@@ -1449,20 +1449,23 @@ qo'shilsa — test yiqiladi.
 38 ta frontend testi yashil. To'liq moslik jadvali:
 `FRONTEND_ROADMAP.md → Backend ↔ Frontend moslik jadvali`.
 
-#### Frontend — qolgan uchta band
+#### Frontend — bajarildi (24.08)
 
-1. **Eng ko'p donat qilganlar.** `GET /donations/top` tayyor, lekin
-   `DonationsPage` uni chaqirmaydi.
-   ⚠️ Valyutalar qo'shilmaydi — STARS va COIN kursi hali 0.
+1. ✅ **Donat kimga berilgani.** Dastlabki tashxis noto'g'ri edi:
+   `/donations/top` ortiqcha ekan, `/donations/report` allaqachon shu
+   ma'lumotni beradi. Haqiqiy nuqson — nishon nomi hech qayerda
+   ko'rinmasdi (`#5`), holbuki yuboruvchining ismi qaytarilardi.
+   `DonationTargetNames` qo'shildi, nomlar to'plam bo'lib yuklanadi.
 
-2. **Yuklashni davom ettirish va bekor qilish.** Sahifa yopilib qayta
-   ochilsa katta video yuklash boshidan boshlanadi.
-   `GET /uploads/{id}` yarim qolgan seansni qaytaradi,
-   `DELETE /uploads/{id}` bo'laklarni tozalaydi — ikkalasi ham
-   ishlatilmaydi.
+2. ✅ **Yuklashni davom ettirish.** `uploadId` saqlanadi, sahifa
+   yangilangach yarim qolgan seans davom etadi.
 
-3. **Ro'yxatlarda saralash.** Hozir filtr va sahifalash bor, ustun
-   bo'yicha saralash yo'q.
+3. ✅ **Bekor qilish.** `DELETE /uploads/{id}` — server bo'laklarni
+   tozalaydi.
+
+#### Frontend — qolgani
+
+4. Ro'yxatlarda ustun bo'yicha saralash.
 
 #### Backend — kichik qarzlar
 

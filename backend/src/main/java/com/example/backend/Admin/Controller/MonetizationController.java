@@ -51,6 +51,7 @@ public class MonetizationController {
     private final com.example.backend.Cms.Service.CurrencyPricingService currencyPricingService;
     private final PermissionService permissionService;
     private final com.example.backend.Cms.Repository.SubscriptionRepo subscriptionRepo;
+    private final com.example.backend.Cms.Service.DonationTargetNames targetNames;
 
     private void require(Permission permission) {
         if (!permissionService.hasPermission(CurrentUser.get(), permission)) {
@@ -227,7 +228,21 @@ public class MonetizationController {
         int safeSize = Math.min(Math.max(size, 1), 200);
         var result = monetizationService.donationTransactions(
                 org.springframework.data.domain.PageRequest.of(Math.max(page, 0), safeSize));
-        return ResponseEntity.ok(PageResponse.of(result, DonationTransactionDto::from));
+
+        // ⚠️ Nomlar SAHIFA uchun bir yo'la yuklanadi. Har bir qator
+        // uchun alohida so'rov N+1 bo'lardi (§66).
+        var names = targetNames.resolve(result.getContent().stream()
+                .map(d -> new com.example.backend.Cms.Service.DonationTargetNames.Ref(
+                        d.getTargetType(), d.getTargetId()))
+                .toList());
+
+        return ResponseEntity.ok(PageResponse.of(result, d -> {
+            var dto = DonationTransactionDto.from(d);
+            dto.setTargetName(names.get(
+                    com.example.backend.Cms.Service.DonationTargetNames.key(
+                            d.getTargetType(), d.getTargetId())));
+            return dto;
+        }));
     }
 
     // ------------------------------------------------------------ sozlamalar

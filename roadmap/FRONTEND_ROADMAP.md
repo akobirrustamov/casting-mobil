@@ -16,10 +16,10 @@ solishtirildi.
 |---|---|
 | Panel sahifalari | 23 ta `pages/*.jsx` + `editor/`, `staff/`, `homepage/`, `reports/` bo'limlari |
 | API metodlari | `client.js` da **105 ta** |
-| Frontend testlari | **38 ta**, 8 to'plam — hammasi yashil |
-| Backend testlari | **763 ta** — hammasi yashil |
+| Frontend testlari | **44 ta**, 9 to'plam — hammasi yashil |
+| Backend testlari | **767 ta** — hammasi yashil |
 | Build | `react-scripts build` ✅ — `adminpanel` da ogohlantirish **yo'q** |
-| Backend qamrovi | 74 endpointdan **71 tasi** ishlatiladi |
+| Backend qamrovi | 74 endpointdan **73 tasi** ishlatiladi |
 
 ⚠️ **Bu fayl 24.08 da tuzatildi.** Ilgari unda **yolg'on da'volar** bor
 edi: PHASE 2–8 `[ ]` deb belgilangan, holbuki ular bajarilgan; «bitta
@@ -58,45 +58,71 @@ panelda ko'rinsin.**
 | `/reports/overview` · `/content/{id}/statistics` | `ReportsPage`, `reports/ContentStatsModal`, `ReportFilters` | `[x]` |
 | `/audit-logs` | `AuditPage` | `[x]` |
 | `/api/v1/casting-user/web` (eski modul) | `CastingPage` | `[x]` |
-| **`GET /donations/top`** | — | `[ ]` **ishlatilmaydi** |
-| **`GET /uploads/{id}`** (yuklash holati) | — | `[ ]` **ishlatilmaydi** |
-| **`DELETE /uploads/{id}`** (bekor qilish) | — | `[ ]` **ishlatilmaydi** |
+| `GET /uploads/{id}` (yuklash holati) | `client.js` → `findResumable` | `[x]` |
+| `DELETE /uploads/{id}` (bekor qilish) | `client.js` → `cancelUpload` | `[x]` |
+| `GET /donations/top` | — | `[!]` **ataylab ishlatilmaydi** — pastga qarang |
 
 ---
 
-## Yetishmayotgan uchta narsa
+## Uchta band — bajarildi (24.08.2026)
 
-### 1. Eng ko'p donat qilganlar `[ ]`
+### 1. Donat kimga berilgani `[x]`
 
-`GET /donations/top` tayyor va sinalgan, lekin `DonationsPage` uni
-chaqirmaydi. Sahifada faqat umumiy hisobot va tranzaksiyalar bor.
+⚠️ **Dastlabki tashxis noto'g'ri edi.** «`GET /donations/top` ishlatilmaydi»
+deb yozgandim, lekin tekshirsam `/donations/report` **allaqachon** shu
+ma'lumotni beradi (`topCreators`, `topContent`) va sahifa uni
+ko'rsatadi. Ikkinchi chaqiruv qo'shish §103 ogohlantirgan «duplicate
+API calls» bo'lardi.
 
-**Vazifa:** `DonationsPage` ga «Eng faol qo'llab-quvvatlovchilar»
-bloki — ism, jami summa, tranzaksiyalar soni.
+**Haqiqiy nuqson boshqa joyda edi:** donat **kimga** berilgani hech
+qayerda ko'rinmasdi — hamma joyda `#5`. Asimmetriya buni e'tibordan
+chetda qolgan deb ko'rsatadi: yuboruvchining ismi qaytarilardi
+(`senderName`), oluvchiniki esa yo'q.
 
-⚠️ Valyutalar **qo'shilmaydi**: STARS va COIN kursi hali 0 (§40, §41),
-ularni so'mga qo'shish 10 so'm va 10 dollarni qo'shishday bo'lardi.
+- `[x]` `DonationTargetNames` — ijodkor ismi yoki kontent sarlavhasi
+- `[x]` Nomlar **to'plam bo'lib** yuklanadi, bittalab emas (§66)
+- `[x]` Topilmasa `null` → panel `#5` ko'rsatadi. O'chirilgan
+  ijodkorga berilgan eski donat shu holatda bo'ladi va nom **to'qib
+  chiqarilmaydi** (§45)
 
-### 2. Yuklashni davom ettirish va bekor qilish `[ ]`
+`GET /donations/top` shu sababdan ishlatilmaydi va bu **qaror**, kamchilik
+emas.
 
-Katta video bo'laklab yuklanadi va bo'lak yiqilsa qayta uriniladi.
-Lekin **sahifa yopilib qayta ochilsa** yuklash boshidan boshlanadi —
-`GET /uploads/{id}` yarim qolgan seansni qaytaradi, panel esa uni
-so'ramaydi.
+### 2. Yuklashni davom ettirish `[x]`
 
-**Vazifa:**
-- Yarim qolgan yuklashni aniqlash va davom ettirish
-- «Bekor qilish» tugmasi → `DELETE /uploads/{id}` (server bo'laklarni
-  tozalasin, aks holda ular diskda qoladi)
+Bo'laklab yuklash bir necha daqiqa davom etadi. Server seansni saqlab
+turadi va qaysi bo'laklar yetganini aytadi, lekin klient `uploadId` ni
+unutsa — bir gigabaytlik video **boshidan** yuklanardi.
 
-### 3. Xaridlar tarixi `[!]` — backend yo'q
+- `[x]` `uploadId` `localStorage` da, fayl imzosi bo'yicha
+  (nom + o'lcham + o'zgartirilgan vaqt)
+- `[x]` Sahifa yangilangach yarim qolgan seans topiladi va davom etadi
+- `[x]` Server seansni unutgan bo'lsa — toza boshlanadi, eski yozuv
+  o'chiriladi
+- `[x]` Tugagach seans esdan chiqariladi (tugagan seansga bo'lak
+  yuborish 404 berardi)
 
-Foydalanuvchi sahifasida obuna tarixi bor, lekin **bir martalik
-xaridlar** (qism, premyera, valyuta paketi) ko'rinmaydi.
+⚠️ Bu maxfiy ma'lumot emas — shunchaki seans identifikatori. Ruxsat
+baribir serverda tekshiriladi.
 
-⚠️ Bu frontend ishi emas: `Purchase` entity bor, lekin **admin
-endpointi yo'q**. Avval backendda `GET /users/{id}/purchases` yozilishi
-kerak.
+### 3. Yuklashni bekor qilish `[x]`
+
+- `[x]` `cancelUpload(file, uploadId)` → `DELETE /uploads/{id}`
+- `[x]` Server xato bersa ham klient seansni **unutadi** — u baribir
+  yaroqsiz
+- `[x]` `signal` bilan oqim to'xtatiladi: bekor qilingandan keyin
+  keyingi bo'lak yuborilmaydi
+
+⚠️ Chaqirilmasa server bo'laklari diskda qolib ketardi.
+
+---
+
+## Qolgan ish
+
+- `[ ]` Ro'yxatlarda ustun bo'yicha **saralash** (hozir filtr va
+  sahifalash bor)
+- `[!]` **Xaridlar tarixi** — frontend ishi emas: `Purchase` entity bor,
+  lekin `GET /users/{id}/purchases` admin endpointi **yozilmagan**
 
 ---
 

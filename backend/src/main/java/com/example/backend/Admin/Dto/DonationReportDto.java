@@ -56,6 +56,9 @@ public class DonationReportDto {
     public static class TargetRow {
         private DonationTargetType targetType;
         private Long targetId;
+
+        /** Ijodkor ismi yoki kontent sarlavhasi; topilmasa {@code null}. */
+        private String targetName;
         private CurrencyKind kind;
         private Long total;
         private Long transactions;

@@ -89,8 +89,13 @@ export default function DonationsPage() {
                         {d.createdAt?.replace('T', ' ').slice(0, 16)}
                       </td>
                       <td>{d.senderName || '—'}</td>
-                      <td className="uz-muted text-sm">
-                        {d.targetType} #{d.targetId}
+                      <td>
+                        {d.targetName
+                          ? <div style={{ fontWeight: 600 }}>{d.targetName}</div>
+                          : <div className="uz-muted text-sm">#{d.targetId}</div>}
+                        <div className="uz-muted" style={{ fontSize: 11 }}>
+                          {d.targetType}
+                        </div>
                       </td>
                       <td><Badge tone="info">{d.kind}</Badge></td>
                       <td className="text-right font-semibold">{d.amount}</td>
@@ -122,7 +127,14 @@ function TopList({ title, rows, emptyIcon }) {
             <tbody>
               {rows.map((r) => (
                 <tr key={`${r.targetType}-${r.targetId}-${r.kind}`}>
-                  <td className="uz-muted text-sm">#{r.targetId}</td>
+                  <td>
+                    {/* ⚠️ Nom topilmasa `#5` qoladi - bu halol.
+                        O'chirilgan ijodkorga berilgan eski donat shu
+                        holatda bo'ladi va uni to'qib chiqarmaymiz. */}
+                    {r.targetName
+                      ? <span style={{ fontWeight: 600 }}>{r.targetName}</span>
+                      : <span className="uz-muted text-sm">#{r.targetId}</span>}
+                  </td>
                   <td><Badge tone="info">{r.kind}</Badge></td>
                   <td className="text-right font-semibold">{r.total}</td>
                 </tr>

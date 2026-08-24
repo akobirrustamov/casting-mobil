@@ -45,6 +45,7 @@ public class MonetizationService {
     private final CurrencyPackageRepo packageRepo;
     private final DonationRepo donationRepo;
     private final PurchaseRepo purchaseRepo;
+    private final DonationTargetNames targetNames;
     private final AuditService auditService;
 
     // ---------------------------------------------------------------- tarif
@@ -250,10 +251,20 @@ public class MonetizationService {
     }
 
     private List<DonationReportDto.TargetRow> targetRows(DonationTargetType type, int limit) {
-        return donationRepo.topTargetsOfType(type, PageRequest.of(0, limit)).stream()
+        var rows = donationRepo.topTargetsOfType(type, PageRequest.of(0, limit));
+
+        // ⚠️ Nomlar BITTALAB emas, to'plam bo'lib yuklanadi: aks holda
+        // har bir qator uchun alohida so'rov ketardi (§66).
+        var names = targetNames.resolve(rows.stream()
+                .map(r -> new DonationTargetNames.Ref(r.getTargetType(), r.getTargetId()))
+                .toList());
+
+        return rows.stream()
                 .map(r -> DonationReportDto.TargetRow.builder()
                         .targetType(r.getTargetType())
                         .targetId(r.getTargetId())
+                        .targetName(names.get(
+                                DonationTargetNames.key(r.getTargetType(), r.getTargetId())))
                         .kind(r.getKind())
                         .total(r.getTotal())
                         .transactions(r.getTransactions())

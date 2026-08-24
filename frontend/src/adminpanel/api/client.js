@@ -195,14 +195,88 @@ async function uploadSingle(file, folder, onProgress) {
 }
 
 /**
+ * Yarim qolgan yuklashlar ro'yxati.
+ *
+ * ⚠️ Nega `localStorage`. Bo'laklab yuklash bir necha daqiqa davom
+ * etadi va shu orada sahifa yangilanishi yoki brauzer yopilishi
+ * mumkin. Server seansni saqlab turadi va qaysi bo'laklar yetganini
+ * aytadi, lekin klient `uploadId` ni unutsa - butun fayl BOSHIDAN
+ * yuklanadi. Bir gigabaytlik video uchun bu bir necha daqiqa.
+ *
+ * Bu maxfiy ma'lumot emas: shunchaki seans identifikatori. Ruxsat
+ * baribir serverda tekshiriladi - begona `uploadId` ga tegib bo'lmaydi.
+ */
+const RESUME_KEY = 'uzpanel.uploads';
+
+/** Fayl imzosi: nom + o'lcham + o'zgartirilgan vaqt. */
+function fileSignature(file) {
+  return `${file.name}|${file.size}|${file.lastModified || 0}`;
+}
+
+function readResumable() {
+  try {
+    return JSON.parse(localStorage.getItem(RESUME_KEY) || '{}');
+  } catch {
+    // Buzilgan JSON butun yuklashni to'xtatmasin.
+    return {};
+  }
+}
+
+function rememberUpload(file, uploadId) {
+  try {
+    const all = readResumable();
+    all[fileSignature(file)] = uploadId;
+    localStorage.setItem(RESUME_KEY, JSON.stringify(all));
+  } catch {
+    // Saqlash imkoni bo'lmasa yuklash baribir ishlaydi, faqat
+    // uzilganda davom ettirib bo'lmaydi.
+  }
+}
+
+function forgetUpload(file) {
+  try {
+    const all = readResumable();
+    delete all[fileSignature(file)];
+    localStorage.setItem(RESUME_KEY, JSON.stringify(all));
+  } catch {
+    /* e'tiborsiz */
+  }
+}
+
+/**
+ * Yarim qolgan seansni topadi.
+ *
+ * Server seansni o'chirgan yoki muddati o'tgan bo'lsa `null` qaytadi
+ * va yuklash boshidan boshlanadi — bu to'g'ri xatti-harakat, chunki
+ * eski `uploadId` ga bo'lak yuborish 404 berardi.
+ */
+async function findResumable(file) {
+  const uploadId = readResumable()[fileSignature(file)];
+  if (!uploadId) {
+    return null;
+  }
+  try {
+    const session = await request('get', `/api/v1/app/admin/uploads/${uploadId}`);
+    return session?.uploadId ? session : null;
+  } catch {
+    forgetUpload(file);
+    return null;
+  }
+}
+
+/**
  * Katta fayl - bo'laklab yuklash.
  *
  * Har bir bo'lak alohida so'rov, ya'ni bittasi uzilsa faqat o'sha qayta
  * yuboriladi - butun fayl emas. Server allaqachon qabul qilgan bo'laklarni
  * aytadi, shuning uchun qayta urinishda ular o'tkazib yuboriladi.
+ *
+ * Sahifa yangilansa ham yuklash davom etadi: `uploadId` saqlanadi va
+ * server yetib kelgan bo'laklarni aytadi.
  */
-async function uploadChunked(file, folder, onProgress) {
-  const session = await request('post', '/api/v1/app/admin/uploads', {
+async function uploadChunked(file, folder, onProgress, options = {}) {
+  const resumed = await findResumable(file);
+  const session = resumed || await request('post', '/api/v1/app/admin/uploads', {
     data: {
       filename: file.name,
       sizeBytes: file.size,
@@ -210,12 +284,18 @@ async function uploadChunked(file, folder, onProgress) {
       folder,
     },
   });
+  rememberUpload(file, session.uploadId);
 
   const { uploadId, chunkSize, totalChunks } = session;
   const alreadyHave = new Set(session.receivedChunks || []);
 
   for (let index = 0; index < totalChunks; index += 1) {
     if (alreadyHave.has(index)) continue;
+
+    // Bekor qilingan bo'lsa keyingi bo'lakni yubormaymiz.
+    if (options.signal?.aborted) {
+      throw normalizeError(new Error('Yuklash bekor qilindi'));
+    }
 
     const blob = file.slice(index * chunkSize, (index + 1) * chunkSize);
 
@@ -249,6 +329,7 @@ async function uploadChunked(file, folder, onProgress) {
   }
 
   const media = await request('post', `/api/v1/app/admin/uploads/${uploadId}/complete`, { data: {} });
+  forgetUpload(file);
   if (onProgress) onProgress(100);
   return media;
 }
@@ -259,10 +340,10 @@ async function uploadChunked(file, folder, onProgress) {
  * O'lchamga qarab o'zi tanlaydi: kichik bo'lsa bitta so'rov, katta bo'lsa
  * bo'laklab. Chaqiruvchi uchun farqi yo'q.
  */
-async function uploadFile(file, folder = 'content', onProgress) {
+async function uploadFile(file, folder = 'content', onProgress, options = {}) {
   try {
     return file.size > CHUNKED_THRESHOLD
-      ? await uploadChunked(file, folder, onProgress)
+      ? await uploadChunked(file, folder, onProgress, options)
       : await uploadSingle(file, folder, onProgress);
   } catch (error) {
     // uploadChunked allaqachon normalizatsiya qilgan bo'lishi mumkin.
@@ -351,6 +432,22 @@ export const adminApi = {
   // --- Media kutubxonasi (ТЗ §26 · BOSQICH F2) ---
   media: (params) => api.get('/api/v1/app/admin/media', params),
   uploadMedia: uploadFile,
+
+  /**
+   * Yarim qolgan yuklashni bekor qiladi.
+   *
+   * ⚠️ Server bo'laklarni tozalaydi. Chaqirilmasa ular diskda qolib
+   * ketardi: bir gigabaytlik video bekor qilinsa ham joy egallardi.
+   */
+  cancelUpload: async (file, uploadId) => {
+    try {
+      await api.del(`/api/v1/app/admin/uploads/${uploadId}`);
+    } finally {
+      // Server javobidan qat'i nazar klient eslab qolmasin: seans
+      // baribir yaroqsiz va uni davom ettirishga urinish 404 berardi.
+      if (file) forgetUpload(file);
+    }
+  },
   /** Fayl qayerda ishlatilyapti — o'chirishdan OLDIN ko'rsatiladi. */
   mediaUsage: (id) => api.get(`/api/v1/app/admin/media/${id}/usage`),
   archiveMedia: (id) => api.post(`/api/v1/app/admin/media/${id}/archive`),
