@@ -141,6 +141,20 @@ public class CmsCatalogController {
      *
      * open-in-view sozlamasiga tayanmaymiz — u o'chirilishi mumkin.
      */
+    /**
+     * Kontent ro'yxati saralanadigan ustunlar (§95).
+     *
+     * ⚠️ Sarlavha bu yerda YO'Q: u tarjima jadvalida va tanlangan
+     * tilga bog'liq. Uning bo'yicha saralash `join` talab qiladi va
+     * har til uchun boshqa natija berardi — panel buni kutmaydi.
+     */
+    private static final com.example.backend.Admin.SortWhitelist CONTENT_SORT =
+            com.example.backend.Admin.SortWhitelist.of("createdAt")
+                    .add("updatedAt")
+                    .add("views", "viewCount")
+                    .add("publicationDate")
+                    .add("premiereDate");
+
     @GetMapping("/content")
     @Transactional(readOnly = true)
     public ResponseEntity<PageResponse<ContentListDto>> content(
@@ -148,10 +162,12 @@ public class CmsCatalogController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) PublicationStatus status,
             @RequestParam(required = false) ContentType type,
-            @RequestParam(required = false) String q) {
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String dir) {
 
         require(Permission.CONTENT_VIEW);
-        Pageable p = pageable(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable p = pageable(page, size, CONTENT_SORT.resolve(sort, dir));
 
         Page<Content> result;
         if (q != null && q.trim().length() >= 2) {

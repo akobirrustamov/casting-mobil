@@ -73,6 +73,19 @@ public class MonetizationController {
      * {@code TARIFF_VIEW} tarif narxini ko'rsatadi — u ommaviy ma'lumot.
      * Bu ro'yxat esa KIM qancha to'laganini ochadi.
      */
+    /**
+     * Obunalar ro'yxati saralanadigan ustunlar (§95).
+     *
+     * ⚠️ To'langan summa bo'yicha saralash mumkin, lekin sovg'a
+     * obunalarda u {@code null} — ular oxirida turadi
+     * ({@code nulls last} bazaning standarti). Bu to'g'ri: «sotilmagan»
+     * nol emas va uni nol qatorida ko'rsatish chalkashtirardi.
+     */
+    private static final com.example.backend.Admin.SortWhitelist SUBSCRIPTION_SORT =
+            com.example.backend.Admin.SortWhitelist.of("startAt")
+                    .add("endAt")
+                    .add("paidAmount");
+
     @GetMapping("/subscriptions")
     @RequirePermission(Permission.SUBSCRIPTION_VIEW)
     public ResponseEntity<PageResponse<SubscriptionDto>> subscriptions(
@@ -87,12 +100,15 @@ public class MonetizationController {
             @RequestParam(required = false) java.time.LocalDate from,
             @org.springframework.format.annotation.DateTimeFormat(iso =
                     org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
-            @RequestParam(required = false) java.time.LocalDate to) {
+            @RequestParam(required = false) java.time.LocalDate to,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String dir) {
 
         require(Permission.SUBSCRIPTION_VIEW);
 
         var pageable = org.springframework.data.domain.PageRequest.of(
-                Math.max(0, page), Math.min(Math.max(1, size), 100));
+                Math.max(0, page), Math.min(Math.max(1, size), 100),
+                SUBSCRIPTION_SORT.resolve(sort, dir));
 
         var result = subscriptionRepo.search(
                 source, tariffId, active,

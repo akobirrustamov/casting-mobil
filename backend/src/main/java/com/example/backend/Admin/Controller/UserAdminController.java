@@ -50,16 +50,32 @@ public class UserAdminController {
      * 100 000 ta foydalanuvchida panelni ochish har safar 100 000 satr
      * degani edi.
      */
+    /**
+     * Foydalanuvchi ro'yxati saralanadigan ustunlar (§95).
+     *
+     * ⚠️ Balans va premium bu yerda YO'Q: ular boshqa jadvallarda
+     * (`UserBalance`, `UserAccount`) va ular bo'yicha saralash `join`
+     * talab qiladi. Hisobi yo'q foydalanuvchi esa natijadan tushib
+     * qolardi — bu jimgina ma'lumot yo'qotish bo'lardi.
+     */
+    private static final com.example.backend.Admin.SortWhitelist USER_SORT =
+            com.example.backend.Admin.SortWhitelist.of("createdAt")
+                    .add("name")
+                    .add("phone");
+
     @GetMapping
     public ResponseEntity<PageResponse<AppUserDto>> list(
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String dir) {
 
         require(Permission.USER_VIEW);
         int safeSize = Math.min(Math.max(size, 1), 200);
         var result = userAdminService.searchPage(q,
-                org.springframework.data.domain.PageRequest.of(Math.max(page, 0), safeSize));
+                org.springframework.data.domain.PageRequest.of(
+                        Math.max(page, 0), safeSize, USER_SORT.resolve(sort, dir)));
 
         return ResponseEntity.ok(PageResponse.of(result, row -> AppUserDto.from(
                 row.user(), row.account(), row.balance(), row.activeDevices())));

@@ -269,7 +269,7 @@ tegilmagan (§75) — ogohlantirishlar ham o'sha holida.
 
 | Buyruq | Natija |
 |---|---|
-| `./mvnw test` | ✅ **767 test**, yiqilish yo'q |
+| `./mvnw test` | ✅ **775 test**, yiqilish yo'q |
 | `./mvnw -DskipTests package` | ✅ SUCCESS |
 | `react-scripts test` | ✅ **44 test** (9 to'plam) |
 | `react-scripts build` | ✅ SUCCESS — `adminpanel` da ogohlantirish yo'q |
@@ -621,7 +621,7 @@ Til tanlovi `localStorage` da saqlanadi va kontent tarjimasiga ham ta'sir qiladi
 | 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma: rejalashtirish ishlaydi, hisobot halol (ТЗ §32–§33). FCM ulanmagan |
 | 7 | Users & Monetization — tariffs, premium, Stars, Coin | `[x]` foydalanuvchi, tarif, balans, qurilma, donat |
 | 8 | Analytics — events, aggregation, dashboard, reports | `[x]` ikki qatlamli: xom hodisa + kunlik jamlanma |
-| 9 | Hardening — tests, performance, security, indexes | `[~]` 767 backend + 44 frontend test; migratsiyalar V1–V26 |
+| 9 | Hardening — tests, performance, security, indexes | `[~]` 775 backend + 44 frontend test; migratsiyalar V1–V26 |
 
 ---
 
@@ -1463,9 +1463,13 @@ qo'shilsa — test yiqiladi.
 3. ✅ **Bekor qilish.** `DELETE /uploads/{id}` — server bo'laklarni
    tozalaydi.
 
+4. ✅ **Ustun bo'yicha saralash.** `SortWhitelist` — har bir endpoint
+   o'zi ruxsat berilgan ustunlarni sanaydi, ro'yxatda yo'q nom 422
+   beradi. Kontent, foydalanuvchi va obunalarga ulandi.
+
 #### Frontend — qolgani
 
-4. Ro'yxatlarda ustun bo'yicha saralash.
+5. Saralashni qolgan ro'yxatlarga yoyish (mexanizm tayyor).
 
 #### Backend — kichik qarzlar
 

@@ -201,4 +201,68 @@ class SubscriptionListTest {
         u.setRoles(new ArrayList<>(List.of(role)));
         return userRepo.save(u);
     }
+
+    // ------------------------------------------------- saralash (ТЗ §95)
+
+    @Nested
+    @DisplayName("Saralash")
+    class Sorting {
+
+        /**
+         * ⚠️ Ilgari so'rov ichida {@code order by s.startAt desc}
+         * turardi. Spring uni {@code Pageable} tartibi bilan
+         * BIRLASHTIRARDI — avval qat'iy ustun, keyin so'ralgani. Ya'ni
+         * klient so'ragan saralash jimgina bosib ketilardi.
+         */
+        @Test
+        @DisplayName("To'langan summa bo'yicha saralanadi")
+        void sortsByPaidAmount() {
+            User u = user("Saralash");
+            LocalDateTime now = LocalDateTime.now();
+
+            // ⚠️ Sanalar summa bilan QARAMA-QARSHI qo'yilgan: yangi
+            // obuna qimmatroq, eskisi arzonroq. Agar so'rov ichida
+            // qat'iy `order by startAt desc` qolsa, u birinchi
+            // ishlaydi va qimmatini oldinga chiqaradi — ya'ni test
+            // farqni ko'radi. Sanalar bir xil bo'lganda esa test
+            // hech nimani isbotlamasdi.
+            subscriptionRepo.save(Subscription.builder()
+                    .user(u).startAt(now.minusDays(1)).endAt(now.plusMonths(1))
+                    .source(SubscriptionSource.PURCHASE)
+                    .paidAmount(new BigDecimal("50000.00")).build());
+            subscriptionRepo.save(Subscription.builder()
+                    .user(u).startAt(now.minusMonths(6)).endAt(now.plusMonths(1))
+                    .source(SubscriptionSource.PURCHASE)
+                    .paidAmount(new BigDecimal("10000.00")).build());
+
+            var asc = subscriptionRepo.search(null, null, null, null, null, u.getName(),
+                    LocalDateTime.now(),
+                    PageRequest.of(0, 10, org.springframework.data.domain.Sort
+                            .by(org.springframework.data.domain.Sort.Direction.ASC, "paidAmount")))
+                    .getContent();
+
+            assertThat(asc).hasSize(2);
+            assertThat(asc.get(0).getPaidAmount())
+                    .as("o'sish tartibida arzoni birinchi")
+                    .isEqualByComparingTo("10000.00");
+        }
+
+        @Test
+        @DisplayName("Boshlanish sanasi bo'yicha saralanadi")
+        void sortsByStartDate() {
+            User u = user("Sana");
+            sub(u, SubscriptionSource.PURCHASE, new BigDecimal("1.00"), false);
+            sub(u, SubscriptionSource.PURCHASE, new BigDecimal("1.00"), true);
+
+            var desc = subscriptionRepo.search(null, null, null, null, null, u.getName(),
+                    LocalDateTime.now(),
+                    PageRequest.of(0, 10, org.springframework.data.domain.Sort
+                            .by(org.springframework.data.domain.Sort.Direction.DESC, "startAt")))
+                    .getContent();
+
+            assertThat(desc.get(0).getStartAt())
+                    .as("kamayish tartibida yangisi birinchi")
+                    .isAfter(desc.get(1).getStartAt());
+        }
+    }
 }

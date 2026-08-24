@@ -17,7 +17,7 @@ solishtirildi.
 | Panel sahifalari | 23 ta `pages/*.jsx` + `editor/`, `staff/`, `homepage/`, `reports/` bo'limlari |
 | API metodlari | `client.js` da **105 ta** |
 | Frontend testlari | **44 ta**, 9 to'plam — hammasi yashil |
-| Backend testlari | **767 ta** — hammasi yashil |
+| Backend testlari | **775 ta** — hammasi yashil |
 | Build | `react-scripts build` ✅ — `adminpanel` da ogohlantirish **yo'q** |
 | Backend qamrovi | 74 endpointdan **73 tasi** ishlatiladi |
 
@@ -64,7 +64,7 @@ panelda ko'rinsin.**
 
 ---
 
-## Uchta band — bajarildi (24.08.2026)
+## To'rtta band — bajarildi (24.08.2026)
 
 ### 1. Donat kimga berilgani `[x]`
 
@@ -117,12 +117,50 @@ baribir serverda tekshiriladi.
 
 ---
 
+### 4. Ustun bo'yicha saralash `[x]`
+
+Backendda saralash umuman yo'q edi — har bir endpoint qat'iy tartibda
+qaytarardi.
+
+⚠️ **Klientga istalgan maydonni ochib bo'lmaydi.** Uch xil muammo
+chiqadi: indekssiz ustun butun jadvalni skanerlaydi (§66), mavjud
+bo'lmagan maydon **500** beradi, va sinov yo'li bilan ichki tuzilishni
+aniqlash mumkin bo'ladi.
+
+Shuning uchun `SortWhitelist`: har bir endpoint **o'zi** ruxsat
+berilgan ustunlarni sanaydi. Ro'yxatda yo'q nom — **422** va xabarda
+qaysi ustunlar mumkinligi aytiladi.
+
+| Ro'yxat | Saralanadigan ustunlar |
+|---|---|
+| Kontent | `createdAt`, `updatedAt`, `views`, `publicationDate`, `premiereDate` |
+| Foydalanuvchilar | `createdAt`, `name`, `phone` |
+| Obunalar | `startAt`, `endAt`, `paidAmount` |
+
+**Ataylab chiqarib tashlanganlar** va sabablari:
+
+- **Kontent sarlavhasi** — tarjima jadvalida va tanlangan tilga
+  bog'liq: `join` talab qiladi va har til uchun boshqa natija berardi
+- **Balans va premium** — boshqa jadvallarda; ular bo'yicha saralash
+  `join` talab qiladi va **hisobi yo'q foydalanuvchi natijadan tushib
+  qolardi** (jimgina ma'lumot yo'qotish)
+
+⚠️ Obunalar so'rovidan qat'iy `order by s.startAt desc` **olib
+tashlandi**: Spring uni Pageable tartibi bilan birlashtirardi va
+klient so'ragan saralash jimgina bosib ketilardi.
+
+**Panelda:** `SortableTh` komponenti — bosilganda yo'nalish almashadi,
+faol ustun ko'rinadi, `aria-sort` **`<th>` da** (tugmada u e'tiborsiz
+qolardi). Ustun o'zgarganda sahifa boshiga qaytariladi.
+
+---
+
 ## Qolgan ish
 
-- `[ ]` Ro'yxatlarda ustun bo'yicha **saralash** (hozir filtr va
-  sahifalash bor)
 - `[!]` **Xaridlar tarixi** — frontend ishi emas: `Purchase` entity bor,
   lekin `GET /users/{id}/purchases` admin endpointi **yozilmagan**
+- `[ ]` Saralashni qolgan ro'yxatlarga ham yoyish (izohlar, media,
+  ijodkorlar) — mexanizm tayyor, har biriga oq ro'yxat qo'shiladi
 
 ---
 
