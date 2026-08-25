@@ -114,9 +114,9 @@ function refreshAccessToken() {
   return refreshing;
 }
 
-async function request(method, url, { data, params, retried } = {}) {
+async function request(method, url, { data, params, retried, timeout } = {}) {
   try {
-    const res = await http.request({ method, url, data, params });
+    const res = await http.request({ method, url, data, params, timeout });
     return res.data;
   } catch (error) {
     const normalized = normalizeError(error);
@@ -128,7 +128,7 @@ async function request(method, url, { data, params, retried } = {}) {
     if (normalized.status === 401 && !retried && !isAuthCall) {
       try {
         await refreshAccessToken();
-        return await request(method, url, { data, params, retried: true });
+        return await request(method, url, { data, params, timeout, retried: true });
       } catch {
         // Yangilash ham o'tmadi — sessiya haqiqatan tugagan.
       }
@@ -173,24 +173,69 @@ export const mediaUrl = (id) => (id ? `${BASE_URL}/api/v1/app/media/${id}/raw` :
  */
 const CHUNKED_THRESHOLD = 8 * 1024 * 1024;
 
-/** Bo'lak yuborish uchun alohida, uzoqroq kutish - 5 MB sekin internetda vaqt oladi. */
-const CHUNK_TIMEOUT_MS = 120000;
+/** Fayl so'rovlari uchun alohida, uzoqroq kutish - 5 MB sekin internetda vaqt oladi. */
+const FILE_TIMEOUT_MS = 120000;
+
+/**
+ * Yig'ish uchun kutish.
+ *
+ * ⚠️ `complete` — bu «bir necha bayt qaytar» emas: server BUTUN faylni
+ * bo'laklardan qayta yozadi. Lokal SSD'da 500 MB 0.7 soniya oldi, lekin
+ * prod'da saqlash tarmoq diskida bo'lishi mumkin. 5 GB video 100 MB/s
+ * da 50 soniya oladi — standart 20 soniya buni ko'tarmaydi va klient
+ * server ISHNI TUGATGANIDA uzilib ketardi (fayl saqlanadi, admin esa
+ * xato ko'radi va boshidan yuklaydi).
+ */
+const COMPLETE_TIMEOUT_MS = 300000;
 
 /** Bitta bo'lak necha marta qayta urinadi. */
 const CHUNK_RETRIES = 3;
+
+/**
+ * Fayl so'rovi — 401 da tokenni yangilab QAYTA uradi.
+ *
+ * ⚠️ Nega alohida. Fayl so'rovlari `request()` dan o'tmaydi: ular xom
+ * tana (bo'lak) yoki `FormData` yuboradi va progress hodisasi kerak.
+ * Shu sababli ular `request()` dagi 401→yangilash mantig'idan CHETDA
+ * qolgan edi.
+ *
+ * Oqibati og'ir edi: access token 15 daqiqada tugaydi
+ * (`app.jwt.access-token-ms`), bir gigabaytlik video esa 10 Mbit/s
+ * kanalda ~14 daqiqa yuklanadi. Ya'ni katta video yuklashda tokenning
+ * tugashi ISTISNO EMAS. Tugagan zahoti bo'lak 401 olardi, yuklash
+ * to'xtardi va admin tizimdan CHIQARIB yuborilardi — 40 daqiqalik ish
+ * bir zumda yo'qolardi.
+ */
+async function fileRequest(send, refreshed = false) {
+  try {
+    return await send();
+  } catch (error) {
+    if (error.response?.status === 401 && !refreshed) {
+      // Yangilash ham o'tmasa xato yuqoriga ketadi va `uploadFile`
+      // uni sessiya tugagani deb qabul qiladi — bu to'g'ri.
+      await refreshAccessToken();
+      return fileRequest(send, true);
+    }
+    throw error;
+  }
+}
 
 /** Kichik fayl - bitta multipart so'rov. */
 async function uploadSingle(file, folder, onProgress) {
   const form = new FormData();
   form.append('file', file);
   form.append('folder', folder);
-  const res = await http.post('/api/v1/app/admin/media', form, {
+  const res = await fileRequest(() => http.post('/api/v1/app/admin/media', form, {
+    // ⚠️ Standart 20 soniya bu yerda YETMAYDI: chegaraga yaqin 8 MB
+    // fayl uchun u 3.4 Mbit/s barqaror tezlik talab qiladi. Sekinroq
+    // kanalda yuklash «Server bilan aloqa yo'q» bilan uzilardi.
+    timeout: FILE_TIMEOUT_MS,
     onUploadProgress: (e) => {
       if (onProgress && e.total) {
         onProgress(Math.round((e.loaded * 100) / e.total));
       }
     },
-  });
+  }));
   return res.data;
 }
 
@@ -302,10 +347,12 @@ async function uploadChunked(file, folder, onProgress, options = {}) {
     let lastError = null;
     for (let attempt = 1; attempt <= CHUNK_RETRIES; attempt += 1) {
       try {
-        await http.put(`/api/v1/app/admin/uploads/${uploadId}/chunks/${index}`, blob, {
-          headers: { 'Content-Type': 'application/octet-stream' },
-          timeout: CHUNK_TIMEOUT_MS,
-        });
+        await fileRequest(() => http.put(
+          `/api/v1/app/admin/uploads/${uploadId}/chunks/${index}`, blob, {
+            headers: { 'Content-Type': 'application/octet-stream' },
+            timeout: FILE_TIMEOUT_MS,
+          },
+        ));
         lastError = null;
         break;
       } catch (error) {
@@ -328,7 +375,8 @@ async function uploadChunked(file, folder, onProgress, options = {}) {
     }
   }
 
-  const media = await request('post', `/api/v1/app/admin/uploads/${uploadId}/complete`, { data: {} });
+  const media = await request('post', `/api/v1/app/admin/uploads/${uploadId}/complete`,
+    { data: {}, timeout: COMPLETE_TIMEOUT_MS });
   forgetUpload(file);
   if (onProgress) onProgress(100);
   return media;
@@ -431,6 +479,8 @@ export const adminApi = {
 
   // --- Media kutubxonasi (ТЗ §26 · BOSQICH F2) ---
   media: (params) => api.get('/api/v1/app/admin/media', params),
+  /** Bitta fayl — media maydonida faqat `mediaId` bo'lgani uchun kerak. */
+  mediaAsset: (id) => api.get(`/api/v1/app/admin/media/${id}`),
   uploadMedia: uploadFile,
 
   /**

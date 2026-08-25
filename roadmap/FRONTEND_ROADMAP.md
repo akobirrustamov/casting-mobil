@@ -227,6 +227,81 @@ mavjud bo'lmaydi.
 | `DataTable` | ⚠️ **ataylab yaratilmadi** — ustunlar sahifadan sahifaga juda farq qiladi, bitta komponentga tiqish §72 ogohlantirgan «haddan tashqari abstraction» bo'lardi |
 | `FilterPanel` | ⚠️ ataylab yaratilmadi — filtrlar sahifaga xos |
 
+### `.mkv` va `.avi` qo'shildi `[x]` (25.08.2026)
+
+Ruxsat etilgan video formatlar: **mp4, mov, webm, m4v, mkv, avi**.
+
+**⚠️ Lekin mkv va avi TOMOSHA uchun emas.** HTML5 pleyer ularni
+ochmaydi — brauzer ham, mobil ilova ham. Ular ARXIV formati sifatida
+qabul qilinadi: admin manba faylni omborga qo'yishi mumkin, lekin
+epizod videosi sifatida biriktirsa foydalanuvchi QORA EKRAN ko'radi.
+
+Bu jimgina nosozlik bo'lardi (yuklash o'tadi, fayl ko'rinadi, panel
+hech narsa demaydi), shuning uchun uch joyda ogohlantiriladi:
+
+| Joy | Ko'rinishi |
+|---|---|
+| `MediaAsset` DTO | `playable` bayrog'i — VIDEO uchun `true`/`false`, rasm va hujjatda `null` |
+| Kutubxona kartochkasi | sariq «Pleyerda ochilmaydi» yorlig'i |
+| Tanlangan video maydoni | to'liq izoh: «tomosha uchun mp4 (H.264) yuklang» |
+
+`playable` **`null`** bo'lishi ataylab: rasm uchun bu «o'ynatib
+bo'lmaydi» emas, «bu savol umuman tegishli emas». Panel `=== false`
+ni tekshiradi — `!m.playable` bo'lsa har bir rasmga ogohlantirish
+yopishardi.
+
+**Yangi endpoint:** `GET /api/v1/app/admin/media/{id}`. Media
+maydoniga faqat `mediaId` uziladi, ya'ni mavjud epizod ochilganda
+panel `.mkv` biriktirilganini boshqa yo'l bilan bilolmasdi.
+Arxivlangan faylni ham qaytaradi (mavjud kontentda havola bo'lishi
+mumkin) — kutubxona ro'yxatidan farqli, u yangi fayl TANLASH uchun.
+
+**Yangi qo'riqchi test:** `UploadFormatContractTest`. Kengaytmalar
+ro'yxati ikki joyda yozilgan — serverda va panelning `accept`
+atributida — va ular bir-birini ko'rmaydi. Test JSX manbasini o'qib
+solishtiradi. Ajralish ikkala yo'nalishda ham nosozlik sifatida
+ko'rinmasdi: panelda ortiq bo'lsa admin uzoq yuklab 422 olardi,
+serverda ortiq bo'lsa format jimgina foydalanib bo'lmas edi.
+
+Testlar: `ChunkedUploadTest` (15 ta, +2), `UploadFormatContractTest`
+(4 ta, yangi), `mediaPlayable.test.jsx` (6 ta, yangi). Mutatsiya
+sinovi oltita buzilishni ushladi.
+
+**Hal qilinmagan:** transkodlash yo'q. `.mkv` ni mp4 ga o'girish
+kerak bo'lsa — bu alohida ish (FFmpeg yoki Bunny Stream, §hali
+tanlanmagan).
+
+---
+
+### Video yuklash auditi `[x]` (24.08.2026)
+
+Yetti nosozlik topildi, oltitasi tuzatildi, bittasi xavf sifatida qayd etildi.
+
+| # | Nosozlik | Oqibati | Holat |
+|---|---|---|---|
+| 1 | Bo'lak so'rovlari `request()` dan CHETDA — 401 da token yangilanmasdi | Token 15 daq., 1 GB video ~14 daq. Katta video o'rtasida yuklash to'xtardi va admin tizimdan CHIQARIB yuborilardi | `[x]` `fileRequest()` |
+| 2 | Fayl turi FAQAT MIME bo'yicha | Brauzer `.m4v` uchun MIME bermaydi → video `DOCUMENT` bo'lardi va video tanlash oynasida KO'RINMASDI. Admin uchun «yuklanmadi» | `[x]` `MediaType.detect` |
+| 3 | Yig'ishda barcha bo'lak oqimlari birdan ochilardi | 5 GB = 1024 ta bo'lak, Linux chegarasi 1024. Eng katta fayllar oxirgi qadamda «Too many open files» bilan yiqilardi | `[x]` `SequenceInputStream` + lazy `Enumeration` |
+| 4 | `uploadSingle` da 20 soniyalik standart kutish | 8 MB fayl uchun 3.4 Mbit/s barqaror tezlik talab qilardi; sekinroq kanalda «Server bilan aloqa yo'q» | `[x]` 120 s |
+| 5 | `complete` da 20 soniyalik kutish | Server BUTUN faylni qayta yozadi. Lokal SSD'da 500 MB → 0.7 s, lekin tarmoq diskida 5 GB → ~50 s. Klient server ishni tugatganda uzilardi | `[x]` 300 s |
+| 6 | `MediaField` VIDEO uchun ham `<img>` chizardi | Har bir video qismi SINGAN rasm belgisi | `[x]` |
+| 7 | Bo'lak chegaradan oshsa `.tmp` diskda qolardi | `BusinessException` `IOException` emas — tozalash bandiga tushmasdi | `[x]` |
+
+**Yo'l-yo'lakay:** `app.upload.temp-dir` sozlanadigan qilindi. Ilgari yo'l
+qat'iy edi va TESTLAR ham dev omboriga yozardi; test sessiyalari boshqa
+bazada yashagani uchun sutkalik tozalash ularni topa olmasdi. Dev
+muhitida 334 ta yetim papka, 1.6 GB to'plangan edi — tozalandi.
+
+**Qayd etilgan xavf:** `complete()` butun faylni `@Transactional` ichida
+yig'adi, ya'ni katta video uchun baza ulanishi bir necha daqiqa band
+turadi. Lokal SSD'da sezilmaydi (500 MB = 0.7 s), prod'da tarmoq diski
+bilan qayta o'lchash kerak.
+
+Testlar: `ChunkedUploadTest` (13 ta, +4), `uploadResume.test.js` (7 ta, +1).
+Mutatsiya sinovi ikkala tuzatishni ham tasdiqladi.
+
+---
+
 ### Qidiruvli tanlash `[x]` — ТЗ §53
 
 Panelda nativ `<select>` **qolmadi** — 31 ta chaqiruv joyi

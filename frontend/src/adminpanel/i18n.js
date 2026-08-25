@@ -140,6 +140,8 @@ const dict = {
     'media.upload': 'Fayl yuklash',
     'media.change': 'Almashtirish',
     'media.clear': 'Olib tashlash',
+    'media.notPlayable': 'Pleyerda ochilmaydi',
+    'media.notPlayableHint': "Bu format (.mkv, .avi) omborda saqlanadi, lekin brauzer va mobil ilova uni to'g'ridan-to'g'ri o'ynata olmaydi. Tomosha uchun mp4 (H.264) yuklang.",
 
     'editor.new': 'Yangi kontent',
     'editor.edit': 'Kontentni tahrirlash',
@@ -829,6 +831,8 @@ const dict = {
     'media.upload': 'Загрузить файл',
     'media.change': 'Заменить',
     'media.clear': 'Убрать',
+    'media.notPlayable': 'Не воспроизводится',
+    'media.notPlayableHint': 'Этот формат (.mkv, .avi) хранится в библиотеке, но браузер и мобильное приложение не могут его воспроизвести напрямую. Для просмотра загрузите mp4 (H.264).',
 
     'editor.new': 'Новый контент',
     'editor.edit': 'Редактирование контента',
@@ -1518,6 +1522,8 @@ const dict = {
     'media.upload': 'Upload file',
     'media.change': 'Replace',
     'media.clear': 'Clear',
+    'media.notPlayable': 'Not playable',
+    'media.notPlayableHint': 'This format (.mkv, .avi) is stored in the library, but browsers and the mobile app cannot play it directly. Upload mp4 (H.264) for viewing.',
 
     'editor.new': 'New content',
     'editor.edit': 'Edit content',

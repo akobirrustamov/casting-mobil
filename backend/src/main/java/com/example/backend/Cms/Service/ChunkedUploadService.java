@@ -7,7 +7,6 @@ import com.example.backend.Cms.Enums.MediaType;
 import com.example.backend.Cms.Repository.MediaAssetRepo;
 import com.example.backend.Cms.Repository.UploadSessionRepo;
 import com.example.backend.exceptions.BusinessException;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -16,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
@@ -26,6 +26,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -55,7 +56,6 @@ import java.util.stream.Stream;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ChunkedUploadService {
 
     /** Bo'lak o'lchami. Kichik bo'lsa so'rov ko'p, katta bo'lsa qayta yuborish qimmat. */
@@ -68,8 +68,29 @@ public class ChunkedUploadService {
     private static final String COMPLETED = "COMPLETED";
     private static final String ABORTED = "ABORTED";
 
-    /** Tugallanmagan bo'laklar shu yerda. Xizmat ko'rsatiladigan daraxtdan tashqarida. */
-    private static final Path TEMP_ROOT = Paths.get("backend", "files", ".uploads");
+    /**
+     * Tugallanmagan bo'laklar shu yerda. Xizmat ko'rsatiladigan
+     * daraxtdan tashqarida.
+     *
+     * ⚠️ Sozlanadi. Ilgari bu qat'iy `backend/files/.uploads` edi va
+     * TEST ishga tushirishlari ham aynan shu papkaga yozardi. Test
+     * sessiyalari esa boshqa bazada yashaydi, ya'ni sutkalik tozalash
+     * ({@link #cleanUpAbandoned}) ularni HECH QACHON topa olmasdi:
+     * u faqat bazadagi PENDING yozuvlar bo'yicha yuradi. Natijada
+     * ishlab chiqish muhitida yetim bo'laklar to'planib borardi —
+     * bir necha kunda gigabaytlab.
+     */
+    private final Path tempRoot;
+
+    public ChunkedUploadService(UploadSessionRepo sessionRepo,
+                                MediaAssetRepo mediaAssetRepo,
+                                StorageService storageService,
+                                @Value("${app.upload.temp-dir:backend/files/.uploads}") String tempDir) {
+        this.sessionRepo = sessionRepo;
+        this.mediaAssetRepo = mediaAssetRepo;
+        this.storageService = storageService;
+        this.tempRoot = Paths.get(tempDir);
+    }
 
     private final UploadSessionRepo sessionRepo;
     private final MediaAssetRepo mediaAssetRepo;
@@ -152,6 +173,15 @@ public class ChunkedUploadService {
             log.error("Bo'lak saqlanmadi: sessiya={} bo'lak={}", session.getId(), index, e);
             throw new BusinessException("STORAGE_ERROR", "Bo'lak saqlanmadi",
                     HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (RuntimeException e) {
+            // ⚠️ `copyLimited` chegaradan oshganda BusinessException
+            // ko'taradi — u IOException EMAS. Ilgari shu holatda
+            // yarim yozilgan `.tmp` diskda qolib ketardi va uni hech
+            // kim tozalamasdi: sessiya papkasi faqat `complete` yoki
+            // `abort` da o'chiriladi, bunday yuklash esa ikkalasiga
+            // ham yetib bormasdi.
+            quietlyDelete(tmp);
+            throw e;
         }
     }
 
@@ -209,20 +239,23 @@ public class ChunkedUploadService {
         String key;
         try (InputStream joined = concatenated(session, received)) {
             key = storageService.store(joined, session.getOriginalFilename(), session.getFolder());
-        } catch (IOException e) {
+        } catch (IOException | UncheckedIOException e) {
+            // ⚠️ `UncheckedIOException` ham: bo'lak oqimlari endi yig'ish
+            // PAYTIDA ochiladi va u yerda tekshirilgan xato ko'tarilmaydi.
             log.error("Bo'laklarni yig'ib bo'lmadi: {}", session.getId(), e);
             throw new BusinessException("STORAGE_ERROR", "Fayl yig'ilmadi",
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         long actualSize = storageService.load(key).exists() ? sizeOf(key) : 0L;
-        String mime = session.getMimeType() == null ? "" : session.getMimeType();
 
         MediaAsset asset = mediaAssetRepo.save(MediaAsset.builder()
                 .storageKey(key)
                 .originalFilename(session.getOriginalFilename())
-                .type(mime.startsWith("video") ? MediaType.VIDEO
-                        : mime.startsWith("image") ? MediaType.IMAGE : MediaType.DOCUMENT)
+                // ⚠️ Kengaytma ham hisobga olinadi: brauzer `.m4v` uchun
+                // MIME bermasligi mumkin va video `DOCUMENT` bo'lib
+                // qolardi — ya'ni video tanlash oynasida KO'RINMASDI.
+                .type(MediaType.detect(session.getMimeType(), session.getOriginalFilename()))
                 .mimeType(session.getMimeType())
                 .sizeBytes(actualSize > 0 ? actualSize : session.getSizeBytes())
                 .status(MediaStatus.READY)
@@ -275,22 +308,52 @@ public class ChunkedUploadService {
     private Path sessionDir(String sessionId) {
         // Id server tomonida UUID sifatida yasaladi, lekin tekshiruv baribir
         // turadi: kalit bazadan kelsa ham ildizdan chiqib ketmasin.
-        Path dir = TEMP_ROOT.resolve(sessionId).normalize();
-        if (!dir.startsWith(TEMP_ROOT)) {
+        Path dir = tempRoot.resolve(sessionId).normalize();
+        if (!dir.startsWith(tempRoot)) {
             throw BusinessException.validation("Sessiya identifikatori noto'g'ri");
         }
         return dir;
     }
 
-    /** Bo'laklarni tartib bilan bitta uzluksiz oqimga ulaydi. */
-    private InputStream concatenated(UploadSession session, List<Integer> ordered)
-            throws IOException {
+    /**
+     * Bo'laklarni tartib bilan bitta uzluksiz oqimga ulaydi.
+     *
+     * ⚠️ Oqimlar BIRMA-BIR ochiladi, hammasi birdan emas.
+     *
+     * Ilgari bu yerda barcha bo'laklar oldindan ochilib ro'yxatga
+     * yig'ilardi. 5 GB video = 5 MB lik 1024 ta bo'lak, ya'ni 1024 ta
+     * bir vaqtda ochiq fayl deskriptori. Linux'da standart yumshoq
+     * chegara — 1024 ta. Natijada eng KATTA fayllar, ya'ni aynan shu
+     * mexanizm yaratilgan fayllar, butun yuklash tugagach oxirgi
+     * qadamda "Too many open files" bilan yiqilardi.
+     *
+     * {@link SequenceInputStream} tugagan oqimni o'zi yopadi, shuning
+     * uchun bir vaqtda faqat BITTA bo'lak ochiq turadi.
+     */
+    private InputStream concatenated(UploadSession session, List<Integer> ordered) {
         Path dir = sessionDir(session.getId());
-        List<InputStream> streams = new ArrayList<>();
-        for (Integer index : ordered.stream().sorted(Comparator.naturalOrder()).toList()) {
-            streams.add(Files.newInputStream(dir.resolve(index + ".part")));
-        }
-        return new SequenceInputStream(Collections.enumeration(streams));
+        List<Integer> sorted = ordered.stream().sorted(Comparator.naturalOrder()).toList();
+
+        return new SequenceInputStream(new Enumeration<>() {
+            private int next = 0;
+
+            @Override
+            public boolean hasMoreElements() {
+                return next < sorted.size();
+            }
+
+            @Override
+            public InputStream nextElement() {
+                Path part = dir.resolve(sorted.get(next++) + ".part");
+                try {
+                    return Files.newInputStream(part);
+                } catch (IOException e) {
+                    // `Enumeration` tekshirilgan xatoni ko'tara olmaydi.
+                    // `complete` uni ochib, odatiy STORAGE_ERROR beradi.
+                    throw new UncheckedIOException(e);
+                }
+            }
+        });
     }
 
     /** Bo'lak chegaradan oshsa yozishni to'xtatadi - disk to'ldirilmasin. */

@@ -29,7 +29,10 @@ public class LocalStorageService implements StorageService {
     /** Ruxsat etilgan kengaytmalar. Boshqasi qabul qilinmaydi. */
     private static final Set<String> ALLOWED = Set.of(
             "jpg", "jpeg", "png", "webp", "gif", "svg",
-            "mp4", "mov", "webm", "m4v",
+            // ⚠️ `mkv` va `avi` — ARXIV formatlari. Ular qabul qilinadi,
+            // lekin brauzer va mobil pleyer ularni to'g'ridan-to'g'ri
+            // O'YNATA OLMAYDI (batafsil: MediaType.VIDEO_EXTENSIONS).
+            "mp4", "mov", "webm", "m4v", "mkv", "avi",
             "pdf");
 
     @Override

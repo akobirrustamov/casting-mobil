@@ -82,7 +82,14 @@ export default function MediaPicker({ open, onClose, onSelect, type = 'IMAGE' })
         <input
           ref={fileRef}
           type="file"
-          accept={type === 'VIDEO' ? 'video/*' : 'image/*'}
+          /* ⚠️ `video/*` EMAS — ro'yxat server bilan AYNAN bir xil
+             (`LocalStorageService.ALLOWED`). `video/*` bo'lsa brauzer
+             `.flv` yoki `.wmv` ni ham taklif qilardi va admin faylni
+             tanlagach 422 xato olardi, nima uchun ekanini tushunmasdan. */
+          accept={type === 'VIDEO'
+            ? '.mp4,.mov,.webm,.m4v,.mkv,.avi'
+              + ',video/mp4,video/quicktime,video/webm,video/x-matroska,video/x-msvideo'
+            : '.jpg,.jpeg,.png,.webp,.gif,.svg,image/*'}
           onChange={handleUpload}
           style={{ display: 'none' }}
           id="uz-media-upload"
@@ -118,6 +125,15 @@ export default function MediaPicker({ open, onClose, onSelect, type = 'IMAGE' })
                 <img src={mediaUrl(m.id)} alt="" loading="lazy" />
               ) : (
                 <span style={{ fontSize: 28 }} aria-hidden="true">🎞</span>
+              )}
+              {/* ⚠️ `=== false` ataylab: rasm va hujjatda `playable`
+                  `null` bo'ladi — «o'ynatib bo'lmaydi» emas, «bu savol
+                  tegishli emas». `!m.playable` bo'lsa har bir rasmga
+                  ogohlantirish yopishtirilardi. */}
+              {m.playable === false && (
+                <span className="uz-media-warn" title={t('media.notPlayableHint')}>
+                  ⚠ {t('media.notPlayable')}
+                </span>
               )}
             </button>
           ))}

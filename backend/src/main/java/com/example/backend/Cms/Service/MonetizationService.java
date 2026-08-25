@@ -22,6 +22,7 @@ import com.example.backend.Cms.Entity.DonationTransaction;
 import com.example.backend.Cms.Enums.DonationTargetType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
@@ -283,7 +284,16 @@ public class MonetizationService {
         // ⚠️ Tartib metod NOMIGA singdirilmagan: u `Pageable` orqali
         // keladi. `findAllByOrderByCreatedAtDesc` klient so'ragan
         // saralashni jimgina bosib ketardi.
-        return donationRepo.findAll(pageable);
+        //
+        // ⚠️ Lekin tartib BERILMASA ham ro'yxat tasodifiy chiqmasin.
+        // Moliyaviy tarixni tartibsiz ko'rsatish — jimgina buziladigan
+        // yo'nalish: sahifada raqamlar to'g'ri, faqat qatorlar aralash
+        // bo'ladi va buni hech kim darhol sezmaydi.
+        Pageable effective = pageable.getSort().isSorted()
+                ? pageable
+                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                        Sort.by(Sort.Direction.DESC, "createdAt"));
+        return donationRepo.findAll(effective);
     }
 
     public long donationCount() {
