@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useIsFocused } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
@@ -41,6 +41,10 @@ export default function HomeScreen() {
   const feed = useHomeFeed();
   const creators = useCreators();
   const isOffline = useIsOffline();
+  // Вкладка остаётся смонтированной, когда человек ушёл в «Профиль».
+  // Без этого рекламная карусель продолжала бы листаться и записывать
+  // показы баннерам, которых никто в этот момент не видел.
+  const isFocused = useIsFocused();
 
   const isRu = i18n.language === 'ru';
   const popular = withPhotos(creators.data).slice(0, 12);
@@ -70,7 +74,7 @@ export default function HomeScreen() {
         <Text className="text-body text-text-muted">{t('common.search')}</Text>
       </Pressable>
 
-      <HomeFeedBlock feed={feed} isOffline={isOffline} />
+      <HomeFeedBlock feed={feed} isOffline={isOffline} active={isFocused} />
 
       <Rail title={t('home.categories')} onSeeAll={() => router.push('/catalog/all')}>
         {CATEGORIES.map((c) => (
@@ -161,9 +165,11 @@ export default function HomeScreen() {
 function HomeFeedBlock({
   feed,
   isOffline,
+  active,
 }: {
   feed: ReturnType<typeof useHomeFeed>;
   isOffline: boolean;
+  active: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -205,7 +211,7 @@ function HomeFeedBlock({
   return (
     <View className="gap-4">
       {feed.data.sections.map((section) => (
-        <HomeSectionView key={section.id} section={section} />
+        <HomeSectionView key={section.id} section={section} active={active} />
       ))}
     </View>
   );

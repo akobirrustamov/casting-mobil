@@ -32,7 +32,8 @@
     "premiere": "Премьера",
     "years": "{{count}} лет",
     "premium": "Premium",
-    "free": "Бесплатно"
+    "free": "Бесплатно",
+    "ad": "Реклама"
   },
   "splash": {
     "subtitle": "Платформа для креаторов"

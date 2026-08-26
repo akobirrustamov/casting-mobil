@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking } from 'react-native';
 
@@ -7,6 +8,8 @@ import { HeroCarousel, type HeroItem } from '@/components/ui/HeroCarousel';
 import { PosterCard, type PosterBadge } from '@/components/ui/PosterCard';
 import { Rail } from '@/components/ui/Rail';
 import { StoryCircle } from '@/components/ui/StoryCircle';
+import { trackAdClick, trackAdImpression } from '@/features/analytics/api';
+import { cardRatio } from '@/features/content/orientation';
 import { mediaUrl } from '@/lib/api';
 import { colors } from '@/theme/tokens';
 
@@ -25,6 +28,15 @@ import type { AccessPolicy, BannerCard, ContentCard, HomeSection } from './types
 
 /** Плитки категорий приходят без цвета — акцент подбираем по позиции. */
 const TILE_ACCENTS = [colors.purple, colors.magenta, colors.cyan, colors.gold];
+
+/**
+ * Через сколько карусель показывает следующий баннер.
+ *
+ * Наше решение: ни ТЗ, ни настройки бэкенда интервала не задают. 6 секунд —
+ * достаточно, чтобы прочитать заголовок и нажать, и достаточно мало, чтобы
+ * третий баннер в очереди вообще кто-то увидел.
+ */
+const AD_ROTATION_MS = 6_000;
 
 /**
  * Бейдж на постере — из политики доступа.
@@ -49,6 +61,13 @@ function accessBadge(
   }
 }
 
+/**
+ * Карточка контента.
+ *
+ * Форму задаёт `orientation`, а не секция, в которой карточка оказалась:
+ * вертикальный клип может попасть и в «Популярное», и в ручной ряд — там он
+ * тоже должен выглядеть рилсом (ТЗ §13: формат и тип — разные оси).
+ */
 export function ContentPoster({
   card,
   width,
@@ -62,6 +81,7 @@ export function ContentPoster({
   return (
     <PosterCard
       width={width}
+      ratio={cardRatio(card.orientation)}
       title={card.title ?? ''}
       subtitle={card.shortDescription ?? undefined}
       imageUrl={mediaUrl(card.posterMediaId)}
@@ -124,40 +144,19 @@ function openBanner(banner: BannerCard) {
   }
 }
 
-export function HomeSectionView({ section }: { section: HomeSection }) {
-  const { t } = useTranslation();
+export function HomeSectionView({
+  section,
+  active = true,
+}: {
+  section: HomeSection;
+  /** Экран на переднем плане — от этого зависят автолистание и счёт показов. */
+  active?: boolean;
+}) {
   const title = section.title ?? '';
 
   // ---- баннеры: реклама и премьеры приходят одной формой
   if (section.banners.length > 0) {
-    const isPremiere = section.type === 'NEW_PREMIERES';
-
-    const items: HeroItem[] = section.banners
-      // Баннер без заголовка и без картинки нечем показать.
-      .filter((b) => b.title || b.imageMediaId)
-      .map((b) => ({
-        id: String(b.id),
-        title: b.title ?? title,
-        subtitle: b.subtitle ?? b.description ?? undefined,
-        badgeLabel: isPremiere ? t('common.premiere') : undefined,
-        ctaLabel: bannerCta(b, t('common.watch')),
-        imageUrl: mediaUrl(b.imageMediaId),
-      }));
-
-    if (items.length === 0) return null;
-
-    const byId = new Map(section.banners.map((b) => [String(b.id), b]));
-
-    return (
-      <HeroCarousel
-        items={items}
-        badgeTone={isPremiere ? 'premiere' : 'info'}
-        onPressItem={(item) => {
-          const banner = byId.get(item.id);
-          if (banner) openBanner(banner);
-        }}
-      />
-    );
+    return <BannerSection section={section} title={title} active={active} />;
   }
 
   // ---- категории каталога
@@ -208,4 +207,92 @@ export function HomeSectionView({ section }: { section: HomeSection }) {
   }
 
   return null;
+}
+
+/**
+ * Карусель баннеров: рекламный блок и «Новые премьеры».
+ *
+ * <h2>Реклама названа рекламой</h2>
+ * Раньше рекламный баннер отличался от премьеры только тоном бейджа —
+ * то есть ничем, потому что бейджа у него не было вовсе. Человек не мог
+ * отличить оплаченное размещение от анонса самой платформы. Теперь у него
+ * есть подпись.
+ *
+ * <h2>Порядок и показы</h2>
+ * Последовательность баннеров задаёт админ, бэкенд отдаёт её готовой
+ * (`sortOrder`, окно показа, аудитория). Карусель листает её сама, а каждый
+ * реально показанный кадр отправляет `AD_IMPRESSION` — иначе отчёты по
+ * рекламе в панели остаются пустыми не потому, что рекламу не смотрят, а
+ * потому, что о показах никто не сообщает.
+ */
+function BannerSection({
+  section,
+  title,
+  active,
+}: {
+  section: HomeSection;
+  title: string;
+  active: boolean;
+}) {
+  const { t } = useTranslation();
+
+  const isPremiere = section.type === 'NEW_PREMIERES';
+  const isAd = section.type === 'ADVERTISEMENT_CAROUSEL';
+
+  const byId = useMemo(
+    () => new Map(section.banners.map((b) => [String(b.id), b])),
+    [section.banners]
+  );
+
+  const items: HeroItem[] = section.banners
+    // Баннер без заголовка и без картинки нечем показать.
+    .filter((b) => b.title || b.imageMediaId)
+    .map((b) => ({
+      id: String(b.id),
+      title: b.title ?? title,
+      subtitle: b.subtitle ?? b.description ?? undefined,
+      badgeLabel: isPremiere
+        ? t('common.premiere')
+        : isAd
+          ? t('common.ad')
+          : undefined,
+      ctaLabel: bannerCta(b, t('common.watch')),
+      imageUrl: mediaUrl(b.imageMediaId),
+      pressable: bannerTarget(b) !== null,
+    }));
+
+  const onPress = useCallback(
+    (id: string) => {
+      const banner = byId.get(id);
+      if (!banner) return;
+      if (isAd) trackAdClick(banner.id);
+      openBanner(banner);
+    },
+    [byId, isAd]
+  );
+
+  const onVisible = useCallback(
+    (id: string) => {
+      if (!isAd) return;
+      const banner = byId.get(id);
+      if (banner) trackAdImpression(banner.id);
+    },
+    [byId, isAd]
+  );
+
+  if (items.length === 0) return null;
+
+  return (
+    <HeroCarousel
+      items={items}
+      badgeTone={isPremiere ? 'premiere' : 'info'}
+      active={active}
+      // Листается только рекламная очередь: у премьер порядок — это витрина,
+      // а не оплаченная последовательность, и уезжающий из-под пальца анонс
+      // раздражает больше, чем помогает.
+      autoAdvanceMs={isAd ? AD_ROTATION_MS : undefined}
+      onItemVisible={onVisible}
+      onPressItem={onPress}
+    />
+  );
 }

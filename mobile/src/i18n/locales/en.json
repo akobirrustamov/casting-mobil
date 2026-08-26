@@ -32,7 +32,8 @@
     "premiere": "Premiere",
     "years": "{{count}} y.o.",
     "premium": "Premium",
-    "free": "Free"
+    "free": "Free",
+    "ad": "Ad"
   },
   "splash": {
     "subtitle": "A platform for creators"
