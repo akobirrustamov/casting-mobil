@@ -7,6 +7,7 @@ import { Pressable, Text, View } from 'react-native';
 import { ScreenState } from '@/components/states/ScreenState';
 import { Badge, type BadgeTone } from '@/components/ui/Badge';
 import { Screen } from '@/components/ui/Screen';
+import { isVertical } from '@/features/content/orientation';
 import { useContentCard } from '@/features/home/api';
 import { mediaUrl } from '@/lib/api';
 import { useIsOffline } from '@/lib/network';
@@ -82,6 +83,9 @@ export function EpisodeListScreen({
   const activeSeason = season ?? (seasons.length > 0 ? seasons[0].id : null);
   const visible = episodesOfSeason(list, seasons.length > 0 ? activeSeason : null);
 
+  // Формат общий у всего контента — кадры серий рилс-сериала вертикальные.
+  const vertical = isVertical(list.orientation);
+
   return (
     <Screen
       title={title}
@@ -122,7 +126,7 @@ export function EpisodeListScreen({
       ) : (
         <View className="gap-3">
           {visible.map((episode) => (
-            <EpisodeRow key={episode.id} episode={episode} />
+            <EpisodeRow key={episode.id} episode={episode} vertical={vertical} />
           ))}
         </View>
       )}
@@ -145,7 +149,13 @@ function groupDigits(amount: number): string {
   return String(Math.round(amount)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
-function EpisodeRow({ episode }: { episode: EpisodeCard }) {
+function EpisodeRow({
+  episode,
+  vertical,
+}: {
+  episode: EpisodeCard;
+  vertical: boolean;
+}) {
   const { t } = useTranslation();
   const badge = stateBadge(episode);
 
@@ -164,7 +174,13 @@ function EpisodeRow({ episode }: { episode: EpisodeCard }) {
       accessibilityRole="button"
       className="flex-row items-center gap-3 rounded-card bg-surface p-3 active:opacity-70"
     >
-      <View className="h-16 w-24 overflow-hidden rounded-md bg-surface-2">
+      {/* Кадр серии в пропорции формата: обрезанный до 3:2 вертикальный
+          кадр показывал бы середину головы вместо кадра. */}
+      <View
+        className={`overflow-hidden rounded-md bg-surface-2 ${
+          vertical ? 'h-24 w-[54px]' : 'h-16 w-24'
+        }`}
+      >
         {thumbnail ? (
           <Image
             source={{ uri: thumbnail }}

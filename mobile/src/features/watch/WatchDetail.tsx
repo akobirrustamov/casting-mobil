@@ -1,17 +1,18 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { VideoView, useVideoPlayer } from 'expo-video';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 
 import { ScreenState } from '@/components/states/ScreenState';
 import { Badge, type BadgeTone } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
+import { trackContentView } from '@/features/analytics/api';
+import { frameRatio, isVertical } from '@/features/content/orientation';
 import { contentCards, useHomeFeed } from '@/features/home/api';
 import type { ContentCard } from '@/features/home/types';
-import { BASE_URL, authHeaders, mediaUrl } from '@/lib/api';
+import { mediaUrl } from '@/lib/api';
 import { useIsOffline } from '@/lib/network';
 
 import {
@@ -19,7 +20,8 @@ import {
   WatchUnavailableError,
   type useWatchContent,
 } from './api';
-import type { RequiredAction, VideoSource, WatchInfo } from './types';
+import { Player } from './Player';
+import type { RequiredAction, WatchInfo } from './types';
 
 /**
  * Экран просмотра — общий для цельного контента (17) и отдельной серии.
@@ -68,6 +70,14 @@ export function WatchDetail({ query }: { query: WatchQuery }) {
 function Loaded({ info, query }: { info: WatchInfo; query: WatchQuery }) {
   // Для серии карточки в фиде нет — берём родительский контент, он и даёт афишу.
   const card = useFeedCard(info.contentId);
+
+  // Открытие карточки — отдельное событие от запуска видео: человек может
+  // зайти, увидеть цену и уйти, и в отчётах это разные вещи.
+  const contentId = info.contentId;
+  const episodeId = info.episodeId;
+  useEffect(() => {
+    if (contentId !== null) trackContentView(contentId, episodeId);
+  }, [contentId, episodeId]);
 
   return (
     <Screen
@@ -148,7 +158,9 @@ function WatchError({
  * Верх экрана: плеер, если смотреть можно, иначе афиша под замком.
  *
  * Афиша при отказе — это не «почти доступ»: сам файл сервер не отдаст, а
- * обложку платного фильма видно и на главной.
+ * обложку платного фильма видно и на главной. Форма афиши повторяет формат
+ * контента: у рилса она вертикальная, иначе под замком человек увидел бы
+ * широкий кадр, а после покупки — узкий.
  */
 function Stage({ info, card }: { info: WatchInfo; card: ContentCard | undefined }) {
   const { t } = useTranslation();
@@ -169,7 +181,13 @@ function Stage({ info, card }: { info: WatchInfo; card: ContentCard | undefined 
       <View className="gap-3">
         {/* key: смена части пересоздаёт плеер — надёжнее ручной подмены
             источника у живого плеера и не тащит позицию из прошлой части. */}
-        <Player key={source.mediaId ?? part} source={source} />
+        <Player
+          key={source.mediaId ?? part}
+          source={source}
+          orientation={info.orientation}
+          contentId={info.contentId}
+          episodeId={info.episodeId}
+        />
 
         {info.sources.length > 1 ? (
           <View className="flex-row flex-wrap gap-2">
@@ -196,48 +214,54 @@ function Stage({ info, card }: { info: WatchInfo; card: ContentCard | undefined 
     );
   }
 
-  const poster = mediaUrl(card?.posterMediaId);
-
-  return (
-    <View className="h-56 overflow-hidden rounded-card bg-surface-2">
-      {poster ? (
-        <Image
-          source={{ uri: poster }}
-          style={{ width: '100%', height: '100%' }}
-          contentFit="cover"
-        />
-      ) : null}
-      <View className="absolute inset-0 items-center justify-center">
-        <Text className="text-display">🔒</Text>
-      </View>
-    </View>
-  );
+  return <LockedPoster info={info} card={card} />;
 }
 
-/**
- * Плеер.
- *
- * Заголовок `Authorization` обязателен: изображения бэкенд отдаёт всем, а
- * видео проверяет право доступа — без токена плеер получил бы отказ вместо
- * файла, при том что `/watch` доступ только что подтвердил.
- */
-function Player({ source }: { source: VideoSource }) {
-  const player = useVideoPlayer(
-    { uri: `${BASE_URL}${source.url}`, headers: authHeaders() },
-    (p) => {
-      p.loop = false;
-    }
-  );
+/** Обложка закрытого контента — в пропорции его формата. */
+function LockedPoster({
+  info,
+  card,
+}: {
+  info: WatchInfo;
+  card: ContentCard | undefined;
+}) {
+  const { height: windowHeight } = useWindowDimensions();
+  const poster = mediaUrl(card?.posterMediaId);
+
+  const vertical = isVertical(info.orientation);
+  const [boxWidth, setBoxWidth] = useState(0);
+
+  // Рамка та же, что у плеера: закрытый экран не должен менять раскладку
+  // после покупки — иначе кадр прыгнет, как только доступ появится.
+  const ratio = frameRatio(info.orientation);
+
+  // Вертикальная афиша во всю высоту вытолкнула бы цену за нижний край —
+  // а именно её человек и должен увидеть на этом экране.
+  const full = boxWidth > 0 ? Math.round(boxWidth / ratio) : 224;
+  const height = vertical ? Math.min(full, Math.round(windowHeight * 0.45)) : full;
+  const width = vertical ? Math.round(height * ratio) : boxWidth;
 
   return (
-    <VideoView
-      player={player}
-      style={{ width: '100%', height: 220, borderRadius: 16, backgroundColor: '#000' }}
-      contentFit="contain"
-      nativeControls
-      fullscreenOptions={{ enable: true }}
-      allowsPictureInPicture={false}
-    />
+    <View
+      onLayout={(e) => setBoxWidth(e.nativeEvent.layout.width)}
+      className="items-center"
+    >
+      <View
+        style={{ width: boxWidth > 0 ? width : '100%', height }}
+        className="overflow-hidden rounded-card bg-surface-2"
+      >
+        {poster ? (
+          <Image
+            source={{ uri: poster }}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="cover"
+          />
+        ) : null}
+        <View className="absolute inset-0 items-center justify-center">
+          <Text className="text-display">🔒</Text>
+        </View>
+      </View>
+    </View>
   );
 }
 

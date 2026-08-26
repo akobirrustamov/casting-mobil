@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 
+import type { Orientation } from '@/features/content/orientation';
 import { useFeedLanguage } from '@/features/home/api';
 import type { Language } from '@/i18n';
 import { api } from '@/lib/api';
@@ -44,6 +45,14 @@ export type SeasonCard = {
 export type EpisodeList = {
   contentId: number | null;
   structureType: string | null;
+  /**
+   * Формат кадра — общий для всего контента.
+   *
+   * У серии своего формата НЕТ: части одного сериала не бывают в разной
+   * ориентации, и повторять поле в каждой строке значило бы обещать, что
+   * бывают.
+   */
+  orientation: Orientation | null;
   /** Заполняется только у сезонного контента. */
   seasons: SeasonCard[];
   episodes: EpisodeCard[];
@@ -109,6 +118,7 @@ function mapList(raw: unknown): EpisodeList {
   return {
     contentId: num(r.contentId),
     structureType: str(r.structureType),
+    orientation: str(r.orientation),
     seasons: Array.isArray(r.seasons)
       ? r.seasons.map(mapSeason).filter((s): s is SeasonCard => s !== null)
       : [],

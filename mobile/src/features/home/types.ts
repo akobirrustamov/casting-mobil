@@ -10,6 +10,8 @@
  * заголовка секции, а неизвестный тип секции не ломает экран (см. `sections.tsx`).
  */
 
+import type { Orientation } from '@/features/content/orientation';
+
 /** Типы, которые сегодня отдаёт бэкенд. Список может вырасти без релиза приложения. */
 export type HomeSectionType =
   | 'ADVERTISEMENT_CAROUSEL'
@@ -46,7 +48,8 @@ export type ContentCard = {
   title: string | null;
   shortDescription: string | null;
   contentType: string | null;
-  orientation: string | null;
+  /** `LANDSCAPE` или `VERTICAL` — форма карточки и плеера. */
+  orientation: Orientation | null;
   accessPolicy: AccessPolicy | null;
   ageRating: string | null;
   posterMediaId: number | null;
