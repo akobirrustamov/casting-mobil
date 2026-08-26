@@ -1,5 +1,6 @@
 package com.example.backend.Cms.Service;
 
+import com.example.backend.Cms.Service.Storage.StorageKeys;
 import com.example.backend.exceptions.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
@@ -11,9 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.*;
-import java.util.Locale;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * Lokal diskda saqlash. Mavjud casting moduli bilan bir xil ildiz
@@ -26,14 +24,6 @@ public class LocalStorageService implements StorageService {
 
     private static final Path ROOT = Paths.get("backend", "files");
 
-    /** Ruxsat etilgan kengaytmalar. Boshqasi qabul qilinmaydi. */
-    private static final Set<String> ALLOWED = Set.of(
-            "jpg", "jpeg", "png", "webp", "gif", "svg",
-            // ⚠️ `mkv` va `avi` — ARXIV formatlari. Ular qabul qilinadi,
-            // lekin brauzer va mobil pleyer ularni to'g'ridan-to'g'ri
-            // O'YNATA OLMAYDI (batafsil: MediaType.VIDEO_EXTENSIONS).
-            "mp4", "mov", "webm", "m4v", "mkv", "avi",
-            "pdf");
 
     @Override
     public String store(MultipartFile file, String folder) {
@@ -51,18 +41,11 @@ public class LocalStorageService implements StorageService {
 
     @Override
     public String store(InputStream in, String originalFilename, String folder) {
-        String extension = extensionOf(originalFilename);
-        if (!ALLOWED.contains(extension)) {
-            throw BusinessException.validation("Bu turdagi fayl qabul qilinmaydi: " + extension);
-        }
+        // ⚠️ Kalit yasash va kengaytma tekshiruvi StorageKeys da — S3
+        // implementatsiyasi bilan BITTA manbadan foydalanadi.
+        String key = StorageKeys.newKey(originalFilename, folder);
 
-        // Nom butunlay server tomonida yasaladi - foydalanuvchi nomidan faqat
-        // kengaytma olinadi. Shu sababli "../../etc/passwd" kabi yo'l bo'lishi mumkin emas.
-        String safeFolder = folder == null ? "misc" : folder.replaceAll("[^a-zA-Z0-9_-]", "");
-        String fileName = UUID.randomUUID() + "." + extension;
-        String key = "/" + safeFolder + "/" + fileName;
-
-        Path target = ROOT.resolve(safeFolder).resolve(fileName).normalize();
+        Path target = resolve(key);
         if (!target.startsWith(ROOT)) {
             throw BusinessException.validation("Yo'l noto'g'ri");
         }
@@ -81,7 +64,7 @@ public class LocalStorageService implements StorageService {
 
     @Override
     public boolean accepts(String originalFilename) {
-        return ALLOWED.contains(extensionOf(originalFilename));
+        return StorageKeys.accepts(originalFilename);
     }
 
     @Override
@@ -119,14 +102,4 @@ public class LocalStorageService implements StorageService {
         return path;
     }
 
-    private String extensionOf(String originalName) {
-        if (originalName == null) {
-            return "";
-        }
-        int dot = originalName.lastIndexOf('.');
-        if (dot < 0 || dot == originalName.length() - 1) {
-            return "";
-        }
-        return originalName.substring(dot + 1).toLowerCase(Locale.ROOT);
-    }
 }
