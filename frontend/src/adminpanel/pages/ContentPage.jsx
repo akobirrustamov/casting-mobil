@@ -9,6 +9,7 @@ import { toBackendLocale, usePanelI18n } from '../i18n';
 import { count, money } from '../utils/format';
 import ContentEditor from './ContentEditor';
 import ContentStatsModal from './reports/ContentStatsModal';
+import Select from '../components/Select';
 
 const STATUSES = ['PUBLISHED', 'DRAFT', 'SCHEDULED', 'IN_REVIEW', 'ARCHIVED', 'BLOCKED'];
 const TYPES = ['MOVIE', 'SERIES', 'MINI_SERIES', 'SHORT_FILM', 'PODCAST', 'SHOW', 'INTERVIEW', 'STREAM', 'CLIP'];
@@ -56,22 +57,22 @@ export default function ContentPage() {
         right={
           <>
             <SearchInput value={q} onChange={(v) => { setQ(v); setPage(0); }} placeholder={t('content.search')} />
-            <select
+            <Select
               className="uz-select" style={{ width: 'auto' }} value={status}
               aria-label={t('content.col.status')}
               onChange={(e) => { setStatus(e.target.value); setPage(0); }}
             >
               <option value="">{t('content.allStatuses')}</option>
               {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <select
+            </Select>
+            <Select
               className="uz-select" style={{ width: 'auto' }} value={type}
               aria-label={t('content.col.type')}
               onChange={(e) => { setType(e.target.value); setPage(0); }}
             >
               <option value="">{t('content.allTypes')}</option>
               {TYPES.map((s) => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
-            </select>
+            </Select>
             {can('CONTENT_CREATE') && (
               <button
                 type="button"

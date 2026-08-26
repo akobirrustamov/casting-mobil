@@ -4,6 +4,7 @@ import { useFieldErrors } from '../../api/useFieldErrors';
 import Modal from '../../components/Modal';
 import { usePanelI18n } from '../../i18n';
 import PermissionPicker from './PermissionPicker';
+import Select from '../../components/Select';
 
 /** Backenddagi `StaffCreateRequest.phone` bilan bir xil (ТЗ formati). */
 const PHONE_RE = /^\+998\s?\d{2}\s?\d{3}\s?\d{2}\s?\d{2}$/;
@@ -247,14 +248,14 @@ export default function StaffForm({ open, staff, creatableRoles, onClose, onSave
                   (`/auth/me` dagi `creatableRoles`). Bu qulaylik uchun —
                   backend baribir `canCreateRole` ni tekshiradi va
                   403 qaytaradi. */}
-              <select
+              <Select
                 id="st-role" className="uz-select" value={form.role}
                 aria-invalid={Boolean(roleError)}
                 onChange={(e) => set({ role: e.target.value })}
               >
                 <option value="">{t('common.selectPlaceholder')}</option>
                 {roles.map((r) => <option key={r} value={r}>{r}</option>)}
-              </select>
+              </Select>
               {roleError && <div className="uz-field-error">{roleError}</div>}
             </div>
           </div>

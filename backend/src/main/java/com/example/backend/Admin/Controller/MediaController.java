@@ -168,17 +168,30 @@ public class MediaController {
      *
      * @param q asl fayl nomi bo'yicha qidiruv
      */
+    /**
+     * Media kutubxonasi saralanadigan ustunlar (§95).
+     *
+     * ⚠️ Hajm bo'yicha saralash amaliy: eng katta fayllarni topib,
+     * ishlatilmayotganlarini tozalash uchun kerak bo'ladi.
+     */
+    private static final com.example.backend.Admin.SortWhitelist MEDIA_SORT =
+            com.example.backend.Admin.SortWhitelist.of("createdAt")
+                    .add("filename", "originalFilename")
+                    .add("size", "sizeBytes");
+
     @GetMapping("/api/v1/app/admin/media")
     public ResponseEntity<PageResponse<MediaDto>> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "40") int size,
             @RequestParam(required = false) MediaType type,
             @RequestParam(required = false) MediaStatus status,
-            @RequestParam(required = false) String q) {
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String dir) {
 
         require(Permission.MEDIA_VIEW);
         var pageable = PageRequest.of(Math.max(0, page), Math.min(Math.max(1, size), 100),
-                Sort.by(Sort.Direction.DESC, "createdAt"));
+                MEDIA_SORT.resolve(sort, dir));
 
         // Holat ko'rsatilmasa - faqat tayyor fayllar.
         MediaStatus effectiveStatus = status == null ? MediaStatus.READY : status;
@@ -187,6 +200,27 @@ public class MediaController {
         return ResponseEntity.ok(PageResponse.of(
                 mediaAssetRepo.library(type, effectiveStatus, needle, pageable),
                 MediaDto::from));
+    }
+
+    /**
+     * Bitta fayl haqida ma'lumot.
+     *
+     * <h2>Nima uchun kerak</h2>
+     * Media maydonlariga (`MediaField`) faqat `mediaId` uziladi — fayl
+     * nomi ham, formati ham u yerda yo'q. Mavjud epizod ochilganda
+     * panel `.mkv` biriktirilganini boshqa hech qanday yo'l bilan
+     * bilolmaydi va admin faylni jimgina qora ekran bilan qoldirardi.
+     *
+     * ⚠️ Arxivlangan fayl ham QAYTARILADI. Bu ataylab: mavjud
+     * kontentda arxivlangan faylga havola bo'lishi mumkin va panel
+     * uni ko'rsata olishi kerak. Kutubxona ro'yxati (`list`) esa
+     * arxivlanganlarni yashiradi — u yangi fayl TANLASH uchun.
+     */
+    @GetMapping("/api/v1/app/admin/media/{id}")
+    public ResponseEntity<MediaDto> one(@PathVariable Long id) {
+        require(Permission.MEDIA_VIEW);
+        return ResponseEntity.ok(MediaDto.from(mediaAssetRepo.findById(id)
+                .orElseThrow(() -> BusinessException.notFound("Media", id))));
     }
 
     /**
@@ -233,8 +267,8 @@ public class MediaController {
         MediaAsset asset = mediaAssetRepo.save(MediaAsset.builder()
                 .storageKey(key)
                 .originalFilename(file.getOriginalFilename())
-                .type(contentType.startsWith("video") ? MediaType.VIDEO
-                        : contentType.startsWith("image") ? MediaType.IMAGE : MediaType.DOCUMENT)
+                // ⚠️ Kengaytma ham hisobga olinadi — sabab MediaType.detect da.
+                .type(MediaType.detect(contentType, file.getOriginalFilename()))
                 .mimeType(file.getContentType())
                 .sizeBytes(file.getSize())
                 .status(MediaStatus.READY)
@@ -319,6 +353,19 @@ public class MediaController {
         /** READY yoki ARCHIVED — panel arxivlanganini ajratib ko'rsatadi. */
         private MediaStatus status;
 
+        /**
+         * Pleyer bu faylni to'g'ridan-to'g'ri o'ynata oladimi.
+         *
+         * ⚠️ VIDEO uchungina ma'noli; rasm va hujjatda `null`.
+         *
+         * `.mkv` va `.avi` omborga qabul qilinadi (manba fayl kerak
+         * bo'lishi mumkin), lekin HTML5 pleyer ularni ochmaydi.
+         * Panel shu bayroq bo'yicha ogohlantiradi — usiz admin
+         * videoni epizodga biriktirib, foydalanuvchida QORA EKRAN
+         * yaratardi va buni hech kim darhol sezmasdi.
+         */
+        private Boolean playable;
+
         private LocalDateTime createdAt;
 
         static MediaDto from(MediaAsset a) {
@@ -333,6 +380,11 @@ public class MediaController {
                     .height(a.getHeight())
                     .durationSeconds(a.getDurationSeconds())
                     .status(a.getStatus())
+                    // Rasm/hujjat uchun `null`: "o'ynatib bo'lmaydi" EMAS,
+                    // "bu savol umuman tegishli emas".
+                    .playable(a.getType() == MediaType.VIDEO
+                            ? MediaType.isPlayable(a.getOriginalFilename())
+                            : null)
                     .createdAt(a.getCreatedAt())
                     .build();
         }

@@ -51,6 +51,7 @@ public class MonetizationController {
     private final com.example.backend.Cms.Service.CurrencyPricingService currencyPricingService;
     private final PermissionService permissionService;
     private final com.example.backend.Cms.Repository.SubscriptionRepo subscriptionRepo;
+    private final com.example.backend.Cms.Service.DonationTargetNames targetNames;
 
     private void require(Permission permission) {
         if (!permissionService.hasPermission(CurrentUser.get(), permission)) {
@@ -72,6 +73,19 @@ public class MonetizationController {
      * {@code TARIFF_VIEW} tarif narxini ko'rsatadi — u ommaviy ma'lumot.
      * Bu ro'yxat esa KIM qancha to'laganini ochadi.
      */
+    /**
+     * Obunalar ro'yxati saralanadigan ustunlar (§95).
+     *
+     * ⚠️ To'langan summa bo'yicha saralash mumkin, lekin sovg'a
+     * obunalarda u {@code null} — ular oxirida turadi
+     * ({@code nulls last} bazaning standarti). Bu to'g'ri: «sotilmagan»
+     * nol emas va uni nol qatorida ko'rsatish chalkashtirardi.
+     */
+    private static final com.example.backend.Admin.SortWhitelist SUBSCRIPTION_SORT =
+            com.example.backend.Admin.SortWhitelist.of("startAt")
+                    .add("endAt")
+                    .add("paidAmount");
+
     @GetMapping("/subscriptions")
     @RequirePermission(Permission.SUBSCRIPTION_VIEW)
     public ResponseEntity<PageResponse<SubscriptionDto>> subscriptions(
@@ -86,12 +100,15 @@ public class MonetizationController {
             @RequestParam(required = false) java.time.LocalDate from,
             @org.springframework.format.annotation.DateTimeFormat(iso =
                     org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
-            @RequestParam(required = false) java.time.LocalDate to) {
+            @RequestParam(required = false) java.time.LocalDate to,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String dir) {
 
         require(Permission.SUBSCRIPTION_VIEW);
 
         var pageable = org.springframework.data.domain.PageRequest.of(
-                Math.max(0, page), Math.min(Math.max(1, size), 100));
+                Math.max(0, page), Math.min(Math.max(1, size), 100),
+                SUBSCRIPTION_SORT.resolve(sort, dir));
 
         var result = subscriptionRepo.search(
                 source, tariffId, active,
@@ -218,16 +235,45 @@ public class MonetizationController {
      * ⚠️ Faqat o'qish. Moliyaviy tarix o'zgarmas — tahrirlash va o'chirish
      * endpointi ataylab yo'q.
      */
+    /**
+     * Donat tranzaksiyalari saralanadigan ustunlar (§95).
+     *
+     * ⚠️ Summa bo'yicha saralashda VALYUTA ARALASHADI: 100 yulduz va
+     * 100 tanga bir xil son. Panel qatorda valyutani ham ko'rsatadi,
+     * lekin tartib ma'nosiz bo'lib qolishi mumkin. Shuning uchun
+     * standarti — sana.
+     */
+    private static final com.example.backend.Admin.SortWhitelist DONATION_SORT =
+            com.example.backend.Admin.SortWhitelist.of("createdAt")
+                    .add("amount");
+
     @GetMapping("/donations/transactions")
     public ResponseEntity<PageResponse<DonationTransactionDto>> donationTransactions(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String dir) {
 
         require(Permission.DONATION_VIEW);
         int safeSize = Math.min(Math.max(size, 1), 200);
         var result = monetizationService.donationTransactions(
-                org.springframework.data.domain.PageRequest.of(Math.max(page, 0), safeSize));
-        return ResponseEntity.ok(PageResponse.of(result, DonationTransactionDto::from));
+                org.springframework.data.domain.PageRequest.of(
+                        Math.max(page, 0), safeSize, DONATION_SORT.resolve(sort, dir)));
+
+        // ⚠️ Nomlar SAHIFA uchun bir yo'la yuklanadi. Har bir qator
+        // uchun alohida so'rov N+1 bo'lardi (§66).
+        var names = targetNames.resolve(result.getContent().stream()
+                .map(d -> new com.example.backend.Cms.Service.DonationTargetNames.Ref(
+                        d.getTargetType(), d.getTargetId()))
+                .toList());
+
+        return ResponseEntity.ok(PageResponse.of(result, d -> {
+            var dto = DonationTransactionDto.from(d);
+            dto.setTargetName(names.get(
+                    com.example.backend.Cms.Service.DonationTargetNames.key(
+                            d.getTargetType(), d.getTargetId())));
+            return dto;
+        }));
     }
 
     // ------------------------------------------------------------ sozlamalar

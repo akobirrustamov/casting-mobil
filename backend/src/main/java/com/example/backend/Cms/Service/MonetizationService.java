@@ -22,6 +22,7 @@ import com.example.backend.Cms.Entity.DonationTransaction;
 import com.example.backend.Cms.Enums.DonationTargetType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,7 @@ public class MonetizationService {
     private final CurrencyPackageRepo packageRepo;
     private final DonationRepo donationRepo;
     private final PurchaseRepo purchaseRepo;
+    private final DonationTargetNames targetNames;
     private final AuditService auditService;
 
     // ---------------------------------------------------------------- tarif
@@ -250,10 +252,20 @@ public class MonetizationService {
     }
 
     private List<DonationReportDto.TargetRow> targetRows(DonationTargetType type, int limit) {
-        return donationRepo.topTargetsOfType(type, PageRequest.of(0, limit)).stream()
+        var rows = donationRepo.topTargetsOfType(type, PageRequest.of(0, limit));
+
+        // ⚠️ Nomlar BITTALAB emas, to'plam bo'lib yuklanadi: aks holda
+        // har bir qator uchun alohida so'rov ketardi (§66).
+        var names = targetNames.resolve(rows.stream()
+                .map(r -> new DonationTargetNames.Ref(r.getTargetType(), r.getTargetId()))
+                .toList());
+
+        return rows.stream()
                 .map(r -> DonationReportDto.TargetRow.builder()
                         .targetType(r.getTargetType())
                         .targetId(r.getTargetId())
+                        .targetName(names.get(
+                                DonationTargetNames.key(r.getTargetType(), r.getTargetId())))
                         .kind(r.getKind())
                         .total(r.getTotal())
                         .transactions(r.getTransactions())
@@ -269,7 +281,19 @@ public class MonetizationService {
      */
     @Transactional(readOnly = true)
     public Page<DonationTransaction> donationTransactions(Pageable pageable) {
-        return donationRepo.findAllByOrderByCreatedAtDesc(pageable);
+        // ⚠️ Tartib metod NOMIGA singdirilmagan: u `Pageable` orqali
+        // keladi. `findAllByOrderByCreatedAtDesc` klient so'ragan
+        // saralashni jimgina bosib ketardi.
+        //
+        // ⚠️ Lekin tartib BERILMASA ham ro'yxat tasodifiy chiqmasin.
+        // Moliyaviy tarixni tartibsiz ko'rsatish — jimgina buziladigan
+        // yo'nalish: sahifada raqamlar to'g'ri, faqat qatorlar aralash
+        // bo'ladi va buni hech kim darhol sezmaydi.
+        Pageable effective = pageable.getSort().isSorted()
+                ? pageable
+                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                        Sort.by(Sort.Direction.DESC, "createdAt"));
+        return donationRepo.findAll(effective);
     }
 
     public long donationCount() {

@@ -25,6 +25,19 @@ public class DonationTransactionDto {
     private String senderName;
     private DonationTargetType targetType;
     private Long targetId;
+
+    /**
+     * Nishon nomi — ijodkor ismi yoki kontent sarlavhasi.
+     *
+     * ⚠️ Ilgari panelda faqat «CREATOR #5» ko'rinardi va admin donat
+     * KIMGA berilganini bila olmasdi. Yuboruvchining ismi qaytarilardi,
+     * oluvchiniki esa yo'q — asimmetriya buni e'tibordan chetda
+     * qolgan deb ko'rsatadi.
+     *
+     * O'chirilgan yoki topilmagan nishonda {@code null} — panel
+     * o'shanda «#5» ko'rsatadi. Bu halol: nom yo'q, taxmin qilinmaydi.
+     */
+    private String targetName;
     private CurrencyKind kind;
     private Long amount;
     private LocalDateTime createdAt;

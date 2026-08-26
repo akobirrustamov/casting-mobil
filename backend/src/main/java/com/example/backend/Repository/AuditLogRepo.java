@@ -21,6 +21,11 @@ public interface AuditLogRepo extends JpaRepository<AuditLog, Long> {
      * esa X ning barcha amallari chiqardi. Audit vositasida bu shunchaki
      * noqulaylik emas — noto'g'ri xulosa.
      *
+     * ⚠️ Tartib so'rov ichida QAT'IY yozilmagan: u {@code Pageable}
+     * orqali keladi. Qat'iy {@code order by} klient so'ragan
+     * saralashni jimgina bosib ketardi — Spring ikkalasini
+     * birlashtirib, avval qat'iy ustunni qo'yardi.
+     *
      * <b>Action bo'yicha qismiy moslik.</b> Panelda bu maydon qidiruv
      * darchasi. Aniq tenglik bo'lsa «content» deb yozgan admin bo'sh
      * ro'yxat ko'rib, «bunday hodisa bo'lmagan» deb o'ylardi.
@@ -52,7 +57,6 @@ public interface AuditLogRepo extends JpaRepository<AuditLog, Long> {
               and (:entityId is null or a.entityId = :entityId)
               and (cast(:from as LocalDateTime) is null or a.createdAt >= :from)
               and (cast(:to as LocalDateTime) is null or a.createdAt <= :to)
-            order by a.createdAt desc
             """,
             countQuery = """
             select count(a) from AuditLog a

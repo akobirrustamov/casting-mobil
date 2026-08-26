@@ -24,6 +24,11 @@ public interface SubscriptionRepo extends JpaRepository<Subscription, Long> {
      *
      * {@code active} — hozir amal qilayotganlar: bekor qilinmagan va
      * muddati tugamagan.
+     *
+     * ⚠️ Tartib so'rov ichida QAT'IY yozilmagan: u {@code Pageable}
+     * orqali keladi. Ilgari bu yerda {@code order by s.startAt desc}
+     * turardi va u klient so'ragan saralashni jimgina bosib ketardi —
+     * Spring ikkalasini birlashtirib, avval qat'iy ustunni qo'yardi.
      */
     /*
      * ⚠️ `cast(:param as ...)` — bezak emas, MAJBURIY.
@@ -59,7 +64,6 @@ public interface SubscriptionRepo extends JpaRepository<Subscription, Long> {
               and (:q is null
                    or lower(u.phone) like lower(concat('%', :q, '%'))
                    or lower(u.name) like lower(concat('%', :q, '%')))
-            order by s.startAt desc
             """,
             countQuery = """
             select count(s) from Subscription s

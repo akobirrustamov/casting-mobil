@@ -7,6 +7,7 @@ import MediaField from '../components/MediaField';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, StatusBadge } from '../components/Ui';
 import { LOCALES, toBackendLocale, usePanelI18n } from '../i18n';
+import Select from '../components/Select';
 
 const STATUSES = ['DRAFT', 'IN_REVIEW', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED'];
 const POLICIES = ['FREE', 'PREMIUM_ONLY', 'PURCHASE_ONLY', 'PREMIUM_OR_PURCHASE'];
@@ -157,14 +158,14 @@ export default function EpisodesTab({ contentId, structureType, contentAccessPol
           </div>
           <div className="uz-col">
             <label className="uz-label" htmlFor="s-st">{t('editor.status')}</label>
-            <select id="s-st" className="uz-select" value={seasonForm.status}
+            <Select id="s-st" className="uz-select" value={seasonForm.status}
                     onChange={(e) => setSeasonForm({ ...seasonForm, status: e.target.value })}>
               {STATUSES.map((x) => (
                 <option key={x} value={x} disabled={x === 'PUBLISHED' && !can('CONTENT_PUBLISH')}>
                   {x.replace(/_/g, ' ')}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <div className="uz-col">
             <label className="uz-label" htmlFor="s-pd">{t('editor.premiereDate')}</label>
@@ -262,13 +263,13 @@ export default function EpisodesTab({ contentId, structureType, contentAccessPol
           {isSeasonal && (
             <div className="uz-col">
               <label className="uz-label" htmlFor="e-se">{t('ep.season')}</label>
-              <select id="e-se" className="uz-select" value={episodeForm.seasonId}
+              <Select id="e-se" className="uz-select" value={episodeForm.seasonId}
                       onChange={(e) => setEpisodeForm({ ...episodeForm, seasonId: e.target.value })}>
                 <option value="">{t('common.none')}</option>
                 {seasons.map((s) => (
                   <option key={s.id} value={s.id}>{s.seasonNumber}. {titleOf(s)}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           )}
           <div className="uz-col">
@@ -307,21 +308,21 @@ export default function EpisodesTab({ contentId, structureType, contentAccessPol
           </div>
           <div className="uz-col">
             <label className="uz-label" htmlFor="e-st">{t('editor.status')}</label>
-            <select id="e-st" className="uz-select" value={episodeForm.status}
+            <Select id="e-st" className="uz-select" value={episodeForm.status}
                     onChange={(e) => setEpisodeForm({ ...episodeForm, status: e.target.value })}>
               {STATUSES.map((x) => (
                 <option key={x} value={x} disabled={x === 'PUBLISHED' && !can('CONTENT_PUBLISH')}>
                   {x.replace(/_/g, ' ')}
                 </option>
               ))}
-            </select>
+            </Select>
 
             <label className="uz-label mt-4" htmlFor="e-ap">{t('ep.access')}</label>
-            <select id="e-ap" className="uz-select" value={episodeForm.accessPolicyOverride}
+            <Select id="e-ap" className="uz-select" value={episodeForm.accessPolicyOverride}
                     onChange={(e) => setEpisodeForm({ ...episodeForm, accessPolicyOverride: e.target.value })}>
               <option value="">{t('ep.inherit', { policy: (contentAccessPolicy || 'FREE').replace(/_/g, ' ') })}</option>
               {POLICIES.map((x) => <option key={x} value={x}>{x.replace(/_/g, ' ')}</option>)}
-            </select>
+            </Select>
 
             <label className="uz-label mt-4" htmlFor="e-pr">{t('ep.price')}</label>
             <input id="e-pr" className="uz-input" type="number" min="0" step="1000" value={episodeForm.price}
@@ -360,7 +361,7 @@ export default function EpisodesTab({ contentId, structureType, contentAccessPol
                 </div>
                 <div className="uz-col" style={{ flex: '0 0 180px' }}>
                   <label className="uz-label">{t('ep.dubLocale')}</label>
-                  <select className="uz-select" value={v.locale || ''}
+                  <Select className="uz-select" value={v.locale || ''}
                           onChange={(e) => {
                             const next = [...episodeForm.videos];
                             next[i] = { ...v, locale: e.target.value };
@@ -370,7 +371,7 @@ export default function EpisodesTab({ contentId, structureType, contentAccessPol
                     {LOCALES.map((l) => (
                       <option key={l} value={toBackendLocale(l)}>{l.toUpperCase()}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <div className="uz-col" style={{ maxWidth: 220 }}>
                   <MediaField label="" type="VIDEO" value={v.mediaId}

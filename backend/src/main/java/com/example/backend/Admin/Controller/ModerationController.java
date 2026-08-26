@@ -48,6 +48,29 @@ public class ModerationController {
 
     // ---------------------------------------------------------------- izohlar
 
+    /**
+     * Izohlar saralanadigan ustunlar (§95).
+     *
+     * ⚠️ Shikoyatlar soni bo'yicha saralash moderator uchun eng
+     * kerakli tartib: ko'p shikoyat qilingan izoh birinchi navbatda
+     * ko'riladi.
+     */
+    private static final com.example.backend.Admin.SortWhitelist COMMENT_SORT =
+            com.example.backend.Admin.SortWhitelist.of("createdAt")
+                    .add("reports", "reportsCount");
+
+    /**
+     * Bildirishnomalar saralanadigan ustunlar (§95).
+     *
+     * ⚠️ Ilgari tartib umuman yo'q edi ({@code Sort.unsorted()}) —
+     * ya'ni ro'yxat bazaning ixtiyoriga qolgan va sahifalar orasida
+     * takrorlanishi mumkin edi.
+     */
+    private static final com.example.backend.Admin.SortWhitelist NOTIFICATION_SORT =
+            com.example.backend.Admin.SortWhitelist.of("createdAt")
+                    .add("scheduledAt")
+                    .add("status");
+
     @GetMapping("/comments")
     public ResponseEntity<PageResponse<CommentDto>> comments(
             @RequestParam(defaultValue = "0") int page,
@@ -64,14 +87,16 @@ public class ModerationController {
                     iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
             java.time.LocalDateTime to,
             @RequestParam(required = false) String q,
-            @RequestParam(defaultValue = "false") boolean reportedOnly) {
+            @RequestParam(defaultValue = "false") boolean reportedOnly,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String dir) {
 
         require(Permission.COMMENT_VIEW);
         // ⚠️ Filtrlar BIRGA ishlaydi. Ilgari ular bir-birini inkor qilardi
         // va tanlangan filtrlardan biri jimgina e'tiborsiz qolardi (§34).
         var result = moderationService.comments(status, contentId, userId, from, to,
                 q, reportedOnly,
-                page(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+                page(page, size, COMMENT_SORT.resolve(sort, dir)));
         // ⚠️ Telefon raqami — shaxsiy ma'lumot va u boshqa vazifaga
         // tegishli. Izohni moderatsiya qilish uchun muallifning ismi va
         // ID'si yetarli. Aks holda faqat COMMENT_VIEW ruxsati berilgan
@@ -101,9 +126,12 @@ public class ModerationController {
     public ResponseEntity<PageResponse<NotificationDto>> notifications(
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String dir) {
         require(Permission.NOTIFICATION_VIEW);
-        var result = notificationService.list(q, page(page, size, Sort.unsorted()));
+        var result = notificationService.list(q,
+                page(page, size, NOTIFICATION_SORT.resolve(sort, dir)));
         return ResponseEntity.ok(PageResponse.of(result, NotificationDto::from));
     }
 

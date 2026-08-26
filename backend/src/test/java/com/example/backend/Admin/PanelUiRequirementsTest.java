@@ -215,11 +215,18 @@ class PanelUiRequirementsTest {
                             if (!lines.get(i).contains("adminApi." + action)) {
                                 continue;
                             }
-                            // Chaqiruvdan oldingi bir necha qatorda
-                            // tasdiqlash bo'lishi kerak.
-                            String window = String.join("\n",
-                                    lines.subList(Math.max(0, i - 8), i + 1));
-                            if (!window.contains("confirm")) {
+                            // ⚠️ Qat'iy oyna ishlamaydi. Tasdiqlash
+                            // `confirmer.ask({ ... run: async () => {...} })`
+                            // ichida bo'ladi va o'chirish chaqirig'i undan
+                            // o'n qatorlab pastda turishi mumkin — xabar,
+                            // izoh va tugma matni oralig'ida. Sakkiz
+                            // qatorlik oyna `TaxonomyPage` ni YOLG'ON
+                            // ushlagan edi.
+                            //
+                            // Shuning uchun orqaga qarab yuriladi:
+                            // tasdiqlash topilsa — yaxshi; ishlovchining
+                            // boshiga yetsak — tasdiqlash yo'q.
+                            if (!isConfirmed(lines, i)) {
                                 offenders.add(file.getFileName() + ":" + (i + 1)
                                         + " → " + action);
                             }
@@ -233,6 +240,30 @@ class PanelUiRequirementsTest {
                             + "Tasdiqlashsiz amal bitta tasodifiy bosishda "
                             + "bajariladi va uni QAYTARIB BO'LMAYDI.")
                     .isEmpty();
+        }
+
+        /**
+         * O'chirish chaqirig'i tasdiqlash ichidami.
+         *
+         * Chaqiruvdan orqaga qarab yuriladi. `confirm` uchrasa —
+         * tasdiqlangan. Yangi ishlovchi boshlanishi uchrasa
+         * ({@code onClick={} yoki {@code const x = ...}) — demak
+         * tasdiqlashsiz.
+         */
+        private boolean isConfirmed(List<String> lines, int callLine) {
+            for (int i = callLine; i >= 0 && callLine - i < 40; i--) {
+                String line = lines.get(i);
+                if (line.contains("confirm")) {
+                    return true;
+                }
+                // Ishlovchi chegarasi: yangi `onClick` yoki funksiya
+                // e'loni. Undan narisi boshqa amalga tegishli.
+                if (i < callLine && (line.contains("onClick={")
+                        || line.matches("^\\s{0,4}(const|function|async function)\\s+\\w+.*"))) {
+                    return false;
+                }
+            }
+            return false;
         }
 
         @Test

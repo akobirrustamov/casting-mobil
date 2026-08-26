@@ -33,6 +33,17 @@ public class AuditLogController {
     private final AuditLogRepo auditLogRepo;
     private final PermissionService permissionService;
 
+    /**
+     * Audit jurnali saralanadigan ustunlar (§95).
+     *
+     * ⚠️ Standarti — yangidan eskiga. Jurnal odatda «hozir nima
+     * bo'ldi» degan savol bilan ochiladi.
+     */
+    private static final com.example.backend.Admin.SortWhitelist AUDIT_SORT =
+            com.example.backend.Admin.SortWhitelist.of("createdAt")
+                    .add("action")
+                    .add("actorRole");
+
     @GetMapping
     public ResponseEntity<PageResponse<AuditLogDto>> list(
             @RequestParam(defaultValue = "0") int page,
@@ -46,14 +57,17 @@ public class AuditLogController {
             @RequestParam(required = false) java.time.LocalDate from,
             @org.springframework.format.annotation.DateTimeFormat(iso =
                     org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
-            @RequestParam(required = false) java.time.LocalDate to) {
+            @RequestParam(required = false) java.time.LocalDate to,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String dir) {
 
         PlatformRole role = permissionService.roleOf(CurrentUser.get());
         if (role == null || !role.isAtLeast(PlatformRole.ADMIN)) {
             throw BusinessException.accessDenied("Audit jurnali uchun ruxsat yo'q");
         }
 
-        var pageable = PageRequest.of(Math.max(0, page), Math.min(Math.max(1, size), 200));
+        var pageable = PageRequest.of(Math.max(0, page), Math.min(Math.max(1, size), 200),
+                AUDIT_SORT.resolve(sort, dir));
 
         // Kun oxirigacha: «to = 15-avgust» deganda 15-avgustdagi yozuvlar
         // ham kirsin, yarim tundan keyingisi emas.

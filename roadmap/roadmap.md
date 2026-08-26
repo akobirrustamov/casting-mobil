@@ -269,9 +269,9 @@ tegilmagan (§75) — ogohlantirishlar ham o'sha holida.
 
 | Buyruq | Natija |
 |---|---|
-| `./mvnw test` | ✅ **745 test**, yiqilish yo'q |
+| `./mvnw test` | ✅ **787 test**, yiqilish yo'q |
 | `./mvnw -DskipTests package` | ✅ SUCCESS |
-| `react-scripts test` | ✅ **16 test** (3 to'plam) |
+| `react-scripts test` | ✅ **44 test** (9 to'plam) |
 | `react-scripts build` | ✅ SUCCESS — `adminpanel` da ogohlantirish yo'q |
 
 ---
@@ -621,7 +621,7 @@ Til tanlovi `localStorage` da saqlanadi va kontent tarjimasiga ham ta'sir qiladi
 | 6 | Engagement — Comments, Notifications | `[x]` moderatsiya + bildirishnoma: rejalashtirish ishlaydi, hisobot halol (ТЗ §32–§33). FCM ulanmagan |
 | 7 | Users & Monetization — tariffs, premium, Stars, Coin | `[x]` foydalanuvchi, tarif, balans, qurilma, donat |
 | 8 | Analytics — events, aggregation, dashboard, reports | `[x]` ikki qatlamli: xom hodisa + kunlik jamlanma |
-| 9 | Hardening — tests, performance, security, indexes | `[~]` 745 backend + 16 frontend test; migratsiyalar V1–V26 |
+| 9 | Hardening — tests, performance, security, indexes | `[~]` 787 backend + 44 frontend test; migratsiyalar V1–V26 |
 
 ---
 
@@ -1432,43 +1432,80 @@ ro'yxat endpointi **sababi yozilgan** ro'yxatda bo'lishi shart
 qo'shilsa — test yiqiladi.
 
 
+**D21 — Panel hisoblari AutoRun orqali, parol sozlamada (§92).**
+AutoRun endi to'rttala rol uchun ham hisob yaratadi: HYPER_ADMIN,
+SUPER_ADMIN, ADMIN, WORKER. Ilgari faqat ikkita master hisob va eski
+casting adminlari bor edi — panel ADMIN va WORKER rollarini sinash
+uchun ularni baza orqali qo'lda qo'shishga to'g'ri kelardi.
+
+Parollar `application.properties` da. ⚠️ **Bu fayl `.gitignore` da**,
+ya'ni parol repozitoriyga tushmaydi. Environment qiymati (masalan
+`APP_ADMIN_PASSWORD`) undan ustun turadi.
+
+**Nima ATAYLAB qilinmadi:** parol `AutoRun.java` ichiga yozilmadi. U
+fayl commit qilinadi, ya'ni parol repozitoriyda abadiy qolardi va
+ishlab chiqarishga ham o'sha qiymat bilan chiqardi (§92, §109).
+
+⚠️ WORKER hech qanday **ruxsatsiz** yaratiladi. ТЗ §12 bo'yicha
+ruxsatni Admin beradi va bu amal auditga tushadi; avtomatik berish
+o'sha izni hech kim bermagan holga keltirardi.
+
+
 ## 14. Next Exact Steps
 
 > ⚠️ **23.08.2026 holati.** ТЗ §29–§83 va §93–§106 ko'rib chiqildi.
 > Build yashil: backend **679 test**, frontend **5 test**, migratsiyalar
 > **V1–V26**.
 
-### Keyingi aniq qadamlar — ADMIN PANEL FRONTENDI
+### Keyingi aniq qadamlar
 
-> To'liq ТЗ: `FRONTEND_ROADMAP.md → ADMIN PANEL — BOSQICHMA-BOSQICH ТЗ`
->
-> ⚠️ **Eski kodga tegilmaydi.** `/aadmin/*`, `/admin/*` va ommaviy
-> sahifalar ishlab turadi, ma'lumot saqlanadi. Mobil dastur
-> (`mobile/`) **umuman tegilmaydi**. Ish faqat
-> `frontend/src/adminpanel/` ichida.
+> ⚠️ **24.08.2026 da qayta tekshirildi.** Oldingi ro'yxatda F1–F6
+> bosqichlari yozilgan edi (xodimlar, media, dashboard, bosh sahifa,
+> hisobotlar, foydalanuvchi sahifasi). **Ular bajarilgan** — merge
+> orqali kelgan ish. Roadmap haqiqatga moslashtirildi.
 
-**Auditda topilgani:** backend 74 ta admin endpoint taklif qiladi,
-panel ularning bir qismini umuman chaqirmaydi — ya'ni yozilgan va
-sinalgan ish frontendда ko'rinmaydi.
+**Panel holati:** backendning 74 endpointidan **71 tasi** ishlatiladi,
+38 ta frontend testi yashil. To'liq moslik jadvali:
+`FRONTEND_ROADMAP.md → Backend ↔ Frontend moslik jadvali`.
 
-| Bosqich | Nima | Nega |
-|---|---|---|
-| **F1** | Xodimlar boshqaruvi — 8 amal | ⚠️ Hozir paneldan **xodim yaratib bo'lmaydi**. RBAC butun tizim asosi |
-| **F2** | Media: arxiv, tiklash, ishlatilishi, o'chirish | Admin faylni xavfsiz o'chira olmaydi |
-| **F3** | Dashboard grafiklari va jadvallari | §48 da yozilgan `charts`/`tables` ishlatilmayapti |
-| **F4** | Bosh sahifa: tartiblash + qo'lda tanlash | §31 ning yarmi UI'siz |
-| **F5** | Hisobotlar: reklama CTR, bildirishnoma, kontent | §33, §46, §81 |
-| **F6** | Foydalanuvchi sahifasi | `GET /users/{id}` ishlatilmayapti |
-| **F7** | **Foydalanuvchi (USER) qismi** | ⚠️ **ENG OXIRGI.** Backend ham tayyor emas |
+#### Frontend — bajarildi (24.08)
 
-**Boshlash tartibi: F1 → F2 → F3 → F4 → F5 → F6 → F7.**
+1. ✅ **Donat kimga berilgani.** Dastlabki tashxis noto'g'ri edi:
+   `/donations/top` ortiqcha ekan, `/donations/report` allaqachon shu
+   ma'lumotni beradi. Haqiqiy nuqson — nishon nomi hech qayerda
+   ko'rinmasdi (`#5`), holbuki yuboruvchining ismi qaytarilardi.
+   `DonationTargetNames` qo'shildi, nomlar to'plam bo'lib yuklanadi.
 
-### Oldingi ro'yxatdan qolganlari (backend, kichik)
+2. ✅ **Yuklashni davom ettirish.** `uploadId` saqlanadi, sahifa
+   yangilangach yarim qolgan seans davom etadi.
 
-1. Bildirishnoma yuborishda oluvchi tilini tanlash (FCM kelganda).
-2. `AdminAuthController` ni bo'lish — `AuthCookieService` ajratilsin.
-3. Eski `/api/v1/auth/refresh` ni cookie'ga o'tkazish.
-4. `ContentService.apply()` dagi shartsiz `clear()`.
+3. ✅ **Bekor qilish.** `DELETE /uploads/{id}` — server bo'laklarni
+   tozalaydi.
+
+4. ✅ **Ustun bo'yicha saralash.** `SortWhitelist` — har bir endpoint
+   o'zi ruxsat berilgan ustunlarni sanaydi, ro'yxatda yo'q nom 422
+   beradi. Kontent, foydalanuvchi va obunalarga ulandi.
+
+#### Frontend — qolgani
+
+5. Saralashni qolgan ro'yxatlarga yoyish (mexanizm tayyor).
+
+#### Backend — kichik qarzlar
+
+4. **`GET /users/{id}/purchases`** — bir martalik xaridlar tarixi.
+   Foydalanuvchi sahifasida obuna tarixi bor, xaridlar yo'q.
+   `Purchase` entity bor, admin endpointi yo'q.
+5. Bildirishnoma yuborishda oluvchi tilini tanlash (FCM kelganda).
+6. `AdminAuthController` ni bo'lish — `AuthCookieService` ajratilsin.
+7. Eski `/api/v1/auth/refresh` ni cookie'ga o'tkazish.
+8. `ContentService.apply()` dagi shartsiz `clear()`.
+
+#### Foydalanuvchi (USER) qismi — **eng oxirgi**
+
+⚠️ Hozir boshlanmaydi. Buyurtmachi tartibi shunday va **backend ham
+tayyor emas**: `/app/auth/**` (OTP kirish), `/app/catalog`,
+`/app/content/{slug}`, `/app/search`, `/app/me`, `/app/purchases`,
+`/app/comments` — yozilmagan.
 
 ### Qaror kutilayotgan (kod yozilmaydi)
 

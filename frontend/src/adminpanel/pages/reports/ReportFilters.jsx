@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { adminApi } from '../../api/client';
 import SearchableSelect from '../../components/SearchableSelect';
 import { toBackendLocale, usePanelI18n } from '../../i18n';
+import Select from '../../components/Select';
 
 const PERIODS = ['today', 'yesterday', 'last7', 'last30'];
 
@@ -182,23 +183,23 @@ export default function ReportFilters({ value, onChange }) {
       <div className="uz-row mt-3">
         <div className="uz-col">
           <label className="uz-label" htmlFor="rp-tariff">{t('rp.filterTariff')}</label>
-          <select id="rp-tariff" className="uz-select" value={value.tariffId}
+          <Select id="rp-tariff" className="uz-select" value={value.tariffId}
                   onChange={(e) => set({ tariffId: e.target.value })}>
             <option value="">{t('rp.allTariffs')}</option>
             {options.tariffs.map((o) => (
               <option key={o.id} value={o.id}>{o.label}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="uz-col">
           <label className="uz-label" htmlFor="rp-ad">{t('rp.filterAd')}</label>
-          <select id="rp-ad" className="uz-select" value={value.advertisementId}
+          <Select id="rp-ad" className="uz-select" value={value.advertisementId}
                   onChange={(e) => set({ advertisementId: e.target.value })}>
             <option value="">{t('rp.allAds')}</option>
             {options.ads.map((o) => (
               <option key={o.id} value={o.id}>{o.label}</option>
             ))}
-          </select>
+          </Select>
         </div>
       </div>
 

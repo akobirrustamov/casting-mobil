@@ -6,7 +6,7 @@ import { useAuth } from '../auth/AuthContext';
 import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
 import Modal from '../components/Modal';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
-import { Badge, PageHeader, Pagination, SearchInput, TableWrap } from '../components/Ui';
+import { Badge, PageHeader, Pagination, SearchInput, SortableTh, TableWrap, useSort } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
 import { money } from '../utils/format';
 
@@ -28,9 +28,14 @@ export default function UsersPage() {
   // ⚠️ Ilgari `limit: 100` yuborilardi — backend §35 da `page`/`size` ga
   // o'tkazilgan va eski parametr JIMGINA e'tiborsiz qolardi: sahifa
   // standart 20 ta qator olib, qolganini umuman ko'rsatmasdi.
+  // ⚠️ Ustun o'zgarganda sahifa boshiga qaytariladi: 3-sahifada turib
+  // tartibni o'zgartirsangiz, o'sha sahifadagi qatorlar butunlay
+  // boshqa bo'lib qoladi.
+  const { sort, dir, onSort } = useSort('createdAt', 'desc', () => setPage(0));
+
   const { data, error, loading, reload } = useApi(
-    () => adminApi.users({ q: q || undefined, page, size: 20 }),
-    [q, page]
+    () => adminApi.users({ q: q || undefined, page, size: 20, sort, dir }),
+    [q, page, sort, dir]
   );
 
   const onSearch = (value) => { setQ(value); setPage(0); };
@@ -87,13 +92,20 @@ export default function UsersPage() {
             <table className="uz-table">
               <thead>
                 <tr>
-                  <th>{t('staff.col.name')}</th>
-                  <th>{t('staff.col.phone')}</th>
+                  <SortableTh field="name" sort={sort} dir={dir} onSort={onSort}>
+                    {t('staff.col.name')}
+                  </SortableTh>
+                  <SortableTh field="phone" sort={sort} dir={dir} onSort={onSort}>
+                    {t('staff.col.phone')}
+                  </SortableTh>
                   <th>{t('us.premium')}</th>
                   <th>{t('us.balance')}</th>
                   <th>{t('us.devices')}</th>
                   <th>{t('us.language')}</th>
                   <th>{t('content.col.status')}</th>
+                  <SortableTh field="createdAt" sort={sort} dir={dir} onSort={onSort}>
+                    {t('us.registered')}
+                  </SortableTh>
                   <th />
                 </tr>
               </thead>
@@ -139,6 +151,9 @@ export default function UsersPage() {
                       <Badge tone={u.status === 'BLOCKED' ? 'blocked' : 'published'}>
                         {u.status}
                       </Badge>
+                    </td>
+                    <td className="uz-mono uz-muted" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                      {u.createdAt?.slice(0, 10) || '—'}
                     </td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                       {can('USER_PREMIUM_MANAGE') && (

@@ -7,6 +7,7 @@ import Modal from '../components/Modal';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, SearchInput } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
+import Select from '../components/Select';
 
 /** Baytlarni o'qiladigan ko'rinishga keltiradi. */
 const humanSize = (bytes) => {
@@ -67,19 +68,19 @@ export default function MediaPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <SearchInput value={q} onChange={onFilter(setQ)}
                          placeholder={t('media.search')} />
-            <select className="uz-select" value={type} aria-label={t('media.allTypes')}
+            <Select className="uz-select" value={type} aria-label={t('media.allTypes')}
                     onChange={(e) => onFilter(setType)(e.target.value)}>
               <option value="">{t('media.allTypes')}</option>
               <option value="IMAGE">IMAGE</option>
               <option value="VIDEO">VIDEO</option>
               <option value="AUDIO">AUDIO</option>
               <option value="DOCUMENT">DOCUMENT</option>
-            </select>
-            <select className="uz-select" value={status} aria-label={t('media.allStatuses')}
+            </Select>
+            <Select className="uz-select" value={status} aria-label={t('media.allStatuses')}
                     onChange={(e) => onFilter(setStatus)(e.target.value)}>
               <option value="">{t('media.status.READY')}</option>
               <option value="ARCHIVED">{t('media.status.ARCHIVED')}</option>
-            </select>
+            </Select>
           </div>
         )}
       />

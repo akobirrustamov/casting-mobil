@@ -36,7 +36,6 @@ public interface MediaAssetRepo extends JpaRepository<MediaAsset, Long> {
             where (:type is null or m.type = :type)
               and (:status is null or m.status = :status)
               and (:q is null or lower(m.originalFilename) like lower(concat('%', :q, '%')))
-            order by m.createdAt desc
             """)
     Page<MediaAsset> library(@Param("type") MediaType type,
                              @Param("status") MediaStatus status,

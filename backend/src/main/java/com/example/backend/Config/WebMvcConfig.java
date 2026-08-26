@@ -3,6 +3,7 @@ package com.example.backend.Config;
 import com.example.backend.Admin.PermissionInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -35,9 +36,43 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(permissionInterceptor).addPathPatterns("/api/**");
     }
 
+    /**
+     * Ruxsat berilgan manbalar. Standarti — hammasi, ya'ni avvalgi
+     * xatti-harakat saqlanadi. Ishlab chiqarishda toraytirish uchun:
+     * {@code app.cors.allowed-origins=https://uzcasting.site}
+     */
+    @Value("${app.cors.allowed-origins:*}")
+    private String allowedOrigins;
+
+    /**
+     * CORS sozlamasi.
+     *
+     * <h2>⚠️ Nega {@code allowedOriginPatterns}, {@code allowedOrigins} emas</h2>
+     * Panel refresh tokenni {@code httpOnly} cookie'da oladi va
+     * shuning uchun so'rovlarni {@code withCredentials} bilan
+     * yuboradi (§61). Brauzer bunday so'rovda IKKI narsani talab
+     * qiladi:
+     *
+     * <ul>
+     *   <li>{@code Access-Control-Allow-Credentials: true};</li>
+     *   <li>{@code Access-Control-Allow-Origin} ANIQ manba bo'lsin —
+     *       {@code *} qabul qilinmaydi.</li>
+     * </ul>
+     *
+     * {@code allowedOrigins("*")} aynan yulduzcha yuboradi, ya'ni
+     * brauzer javobni BLOKLAYDI va klient «server bilan aloqa yo'q»
+     * xatosini ko'radi — server esa 200 qaytargan bo'ladi.
+     *
+     * {@code allowedOriginPatterns} esa so'rovdagi manbani qaytaradi
+     * va shart bajariladi.
+     */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**").allowedOrigins("*").allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH");
+        registry.addMapping("/**")
+                .allowedOriginPatterns(allowedOrigins.split("\\s*,\\s*"))
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
     }
 
     @Override

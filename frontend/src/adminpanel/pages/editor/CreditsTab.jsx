@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import CreatorQuickCreate from '../../components/CreatorQuickCreate';
 import { mediaUrl } from '../../api/client';
 import { PROFESSIONS } from './constants';
+import Select from '../../components/Select';
 /**
  * Ijodkorlar va ularning kasblari (ТЗ §24).
  *
@@ -131,14 +132,14 @@ export default function CreditsTab({ form, set, t, locale, creators, onCreatorCr
                   </span>
                 </div>
                 <div className="uz-col">
-                  <select className="uz-select" value={cr.profession} aria-label={t('editor.profession')}
+                  <Select className="uz-select" value={cr.profession} aria-label={t('editor.profession')}
                           onChange={(e) => {
                             const next = [...form.credits];
                             next[i] = { ...cr, profession: e.target.value };
                             set({ credits: next });
                           }}>
                     {PROFESSIONS.map((p) => <option key={p} value={p}>{p}</option>)}
-                  </select>
+                  </Select>
                 </div>
                 <div className="uz-col">
                   <input className="uz-input" placeholder={t('editor.characterName')}

@@ -55,6 +55,7 @@ class DonationFlowTest {
     @Autowired private ContentService contentService;
     @Autowired private MonetizationService monetizationService;
     @Autowired private DonationRepo donationRepo;
+    @Autowired private com.example.backend.Cms.Service.DonationTargetNames targetNames;
     @Autowired private UserBalanceRepo balanceRepo;
     @Autowired private CreatorRepo creatorRepo;
     @Autowired private UserRepo userRepo;
@@ -304,13 +305,27 @@ class DonationFlowTest {
     }
 
     private Creator creator() {
-        return creatorRepo.save(Creator.builder()
-                .slug("ijodkor-" + SEQ.incrementAndGet())
+        int n = SEQ.incrementAndGet();
+        Creator c = Creator.builder()
+                .slug("ijodkor-" + n)
                 .active(true)
                 .featured(false)
                 .sortOrder(0)
                 .starsReceived(0L)
-                .build());
+                .build();
+
+        // ⚠️ Tarjimalar SHART. Faol ijodkor uch tilsiz saqlanmaydi
+        // (`TranslationRules`), ya'ni tarjimasiz ijodkor ishlab
+        // chiqarishda uchramaydi. Tarjimasiz fikstura hisobotdagi
+        // nomni sinab bo'lmaydigan qilib qo'yardi.
+        for (com.example.backend.Cms.Enums.Locale loc
+                : com.example.backend.Cms.Enums.Locale.values()) {
+            c.addTranslation(com.example.backend.Cms.Entity.CreatorTranslation.builder()
+                    .locale(loc)
+                    .displayName("Ijodkor " + loc + " " + n)
+                    .build());
+        }
+        return creatorRepo.save(c);
     }
 
     private Content publishedContent() {
@@ -326,5 +341,89 @@ class DonationFlowTest {
         req.setVisibility(ContentVisibility.PUBLIC);
         req.setTranslations(Translations.all("Donat filmi " + SEQ.incrementAndGet()));
         return contentService.create(null, req);
+    }
+
+    // ---------------------------------------------- nishon nomi (ТЗ §42)
+
+    @Nested
+    @DisplayName("Donat kimga berilgani ko'rinadi")
+    class TargetNames {
+
+        /**
+         * ⚠️ Ilgari panelda faqat «CREATOR #5» ko'rinardi.
+         *
+         * Asimmetriya buni e'tibordan chetda qolgan deb ko'rsatadi:
+         * YUBORUVCHINING ismi qaytarilardi ({@code senderName}),
+         * oluvchiniki esa yo'q. Admin donat kimga berilganini bila
+         * olmasdi.
+         */
+        @Test
+        @DisplayName("Hisobotda ijodkor ismi qaytadi")
+        void reportCarriesCreatorName() {
+            User sender = userWith(100L, 0L);
+            Creator creator = creator();
+            donationService.donate(sender, DonationTargetType.CREATOR,
+                    creator.getId(), CurrencyKind.STARS, 10L);
+
+            var report = monetizationService.donationReport(10, 30);
+
+            assertThat(report.getTopCreators())
+                    .as("nom bo'lmasa panel `#5` ko'rsatardi")
+                    .isNotEmpty()
+                    .allSatisfy(row -> assertThat(row.getTargetName()).isNotBlank());
+        }
+
+        @Test
+        @DisplayName("Hisobotda kontent sarlavhasi qaytadi")
+        void reportCarriesContentTitle() {
+            User sender = userWith(0L, 100L);
+            Content film = publishedContent();
+            donationService.donate(sender, DonationTargetType.CONTENT,
+                    film.getId(), CurrencyKind.UZCASTING_COIN, 10L);
+
+            assertThat(monetizationService.donationReport(10, 30).getTopContent())
+                    .isNotEmpty()
+                    .allSatisfy(row -> assertThat(row.getTargetName()).isNotBlank());
+        }
+
+        /**
+         * ⚠️ Nom topilmasa `null` qaytadi, to'qib chiqarilmaydi.
+         *
+         * O'chirilgan ijodkorga berilgan eski donat shu holatda
+         * bo'ladi. Panel o'shanda `#5` ko'rsatadi — bu halol.
+         */
+        @Test
+        @DisplayName("Topilmagan nishonda nom `null`")
+        void unknownTargetHasNullName() {
+            var names = targetNames.resolve(java.util.List.of(
+                    new com.example.backend.Cms.Service.DonationTargetNames.Ref(
+                            DonationTargetType.CREATOR, 999_999L)));
+
+            assertThat(names).isEmpty();
+        }
+
+        /**
+         * Nomlar TO'PLAM bo'lib yuklanadi.
+         *
+         * Bittalab yuklansa sahifadagi har bir qator uchun alohida
+         * so'rov ketardi (§66).
+         */
+        @Test
+        @DisplayName("Bir nechta nishon bitta chaqiruvda yechiladi")
+        void namesResolveInBatch() {
+            Creator a = creator();
+            Creator b = creator();
+            Content film = publishedContent();
+
+            var names = targetNames.resolve(java.util.List.of(
+                    new com.example.backend.Cms.Service.DonationTargetNames.Ref(
+                            DonationTargetType.CREATOR, a.getId()),
+                    new com.example.backend.Cms.Service.DonationTargetNames.Ref(
+                            DonationTargetType.CREATOR, b.getId()),
+                    new com.example.backend.Cms.Service.DonationTargetNames.Ref(
+                            DonationTargetType.CONTENT, film.getId())));
+
+            assertThat(names).hasSize(3);
+        }
     }
 }

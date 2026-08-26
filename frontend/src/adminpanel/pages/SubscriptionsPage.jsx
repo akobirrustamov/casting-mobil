@@ -3,9 +3,10 @@ import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../api/client';
 import { useApi } from '../api/useApi';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
-import { Badge, PageHeader, Pagination, SearchInput, TableWrap } from '../components/Ui';
+import { Badge, PageHeader, Pagination, SearchInput, SortableTh, TableWrap, useSort } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
 import { money } from '../utils/format';
+import Select from '../components/Select';
 
 /**
  * Obunalar ro'yxati (ТЗ §71, §107).
@@ -41,6 +42,8 @@ export default function SubscriptionsPage() {
 
   const reset = (setter) => (value) => { setter(value); setPage(0); };
 
+  const { sort, dir, onSort } = useSort('startAt', 'desc', () => setPage(0));
+
   const { data, error, loading, reload } = useApi(
     () => adminApi.subscriptions({
       page,
@@ -48,8 +51,10 @@ export default function SubscriptionsPage() {
       q: q || undefined,
       active: active === '' ? undefined : active === 'true',
       source: source || undefined,
+      sort,
+      dir,
     }),
-    [page, q, active, source]
+    [page, q, active, source, sort, dir]
   );
 
   return (
@@ -65,21 +70,21 @@ export default function SubscriptionsPage() {
            gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <label>
           <span className="uz-label">{t('sub.status')}</span>
-          <select className="uz-select" value={active}
+          <Select className="uz-select" value={active}
                   onChange={(e) => reset(setActive)(e.target.value)}>
             <option value="">{t('common.all')}</option>
             <option value="true">{t('sub.active')}</option>
             <option value="false">{t('sub.ended')}</option>
-          </select>
+          </Select>
         </label>
         <label>
           <span className="uz-label">{t('sub.source')}</span>
-          <select className="uz-select" value={source}
+          <Select className="uz-select" value={source}
                   onChange={(e) => reset(setSource)(e.target.value)}>
             <option value="">{t('common.all')}</option>
             <option value="PURCHASE">{t('sub.purchase')}</option>
             <option value="ADMIN_GIFT">{t('sub.gift')}</option>
-          </select>
+          </Select>
         </label>
         {(q || active || source) && (
           <button type="button" className="uz-btn uz-btn-ghost"
@@ -100,9 +105,13 @@ export default function SubscriptionsPage() {
                   <tr>
                     <th>{t('sub.user')}</th>
                     <th>{t('sub.tariff')}</th>
-                    <th>{t('sub.period')}</th>
+                    <SortableTh field="startAt" sort={sort} dir={dir} onSort={onSort}>
+                      {t('sub.period')}
+                    </SortableTh>
                     <th>{t('sub.source')}</th>
-                    <th>{t('sub.paid')}</th>
+                    <SortableTh field="paidAmount" sort={sort} dir={dir} onSort={onSort}>
+                      {t('sub.paid')}
+                    </SortableTh>
                     <th>{t('sub.status')}</th>
                   </tr>
                 </thead>

@@ -10,6 +10,7 @@ import { Badge, PageHeader, Pagination, SearchInput, TableWrap } from '../../com
 import { usePanelI18n } from '../../i18n';
 import PermissionPicker from './PermissionPicker';
 import StaffForm from './StaffForm';
+import Select from '../../components/Select';
 
 const ROLE_TONE = {
   HYPER_ADMIN: 'gold',
@@ -121,18 +122,18 @@ export default function StaffPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <SearchInput value={q} onChange={onFilter(setQ)}
                          placeholder={t('staff.search')} />
-            <select className="uz-select" value={role} aria-label={t('staff.role')}
+            <Select className="uz-select" value={role} aria-label={t('staff.role')}
                     onChange={(e) => onFilter(setRole)(e.target.value)}>
               <option value="">{t('staff.allRoles')}</option>
               {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
-            <select className="uz-select" value={status} aria-label={t('staff.col.status')}
+            </Select>
+            <Select className="uz-select" value={status} aria-label={t('staff.col.status')}
                     onChange={(e) => onFilter(setStatus)(e.target.value)}>
               <option value="">{t('staff.allStatuses')}</option>
               {STATUSES.map((s) => (
                 <option key={s} value={s}>{t(`staff.status.${s}`)}</option>
               ))}
-            </select>
+            </Select>
             <input type="date" className="uz-input" style={{ maxWidth: 165 }}
                    value={createdFrom} aria-label={t('staff.createdFrom')}
                    title={t('staff.createdFrom')}
@@ -480,7 +481,7 @@ function RoleModal({ staff, creatableRoles, onClose, onSaved }) {
       }
     >
       <label className="uz-label" htmlFor="st-role-change">{t('staff.role')}</label>
-      <select id="st-role-change" className="uz-select" value={value}
+      <Select id="st-role-change" className="uz-select" value={value}
               disabled={saving} onChange={(e) => setValue(e.target.value)}>
         {/* Joriy rol ham ro'yxatda — aks holda tanlangan qiymat bo'sh
             ko'rinardi va admin nima o'zgarayotganini bilmasdi. */}
@@ -488,7 +489,7 @@ function RoleModal({ staff, creatableRoles, onClose, onSaved }) {
           <option value={staff.role}>{staff.role}</option>
         )}
         {creatableRoles.map((r) => <option key={r} value={r}>{r}</option>)}
-      </select>
+      </Select>
       <p className="uz-muted mt-3" style={{ fontSize: 12, lineHeight: 1.6 }}>
         {t('staff.roleNote')}
       </p>

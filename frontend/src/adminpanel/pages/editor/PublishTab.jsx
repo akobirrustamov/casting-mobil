@@ -1,4 +1,5 @@
 import { STATUSES } from './constants';
+import Select from '../../components/Select';
 /**
  * Nashr holati, sanalar va bayroqlar (ТЗ §22 Step 6).
  *
@@ -10,7 +11,7 @@ export default function PublishTab({ form, set, t, can }) {
     <div className="uz-row">
       <div className="uz-col">
         <label className="uz-label" htmlFor="stt">{t('editor.status')}</label>
-        <select id="stt" className="uz-select" value={form.status}
+        <Select id="stt" className="uz-select" value={form.status}
                 onChange={(e) => set({ status: e.target.value })}>
           {STATUSES.map((x) => (
             <option key={x} value={x}
@@ -18,7 +19,7 @@ export default function PublishTab({ form, set, t, can }) {
               {x.replace(/_/g, ' ')}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
       <div className="uz-col">
         {/* ⚠️ NASHR sanasi — rejalashtirish uchun (ТЗ §53).

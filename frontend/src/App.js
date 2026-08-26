@@ -106,10 +106,8 @@ function App() {
         <Route path={"/aadmin/login"} element={<LoginPage />} />
         <Route path={"/aadmin/casting-users/web"} element={<CastingUser />} />
         <Route path={"/aadmin/casting-users/:castingUserId"} element={<CastingUserDetail />} />
-
         {/* UZCASTING admin paneli - o'z ichida marshrutlanadi */}
         <Route path={"/app/panel/*"} element={<PanelApp />} />
-
         <Route path={"/*"} element={<PageNotFound />} />
         <Route path={"/"} element={<Home />} />
 

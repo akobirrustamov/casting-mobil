@@ -126,3 +126,70 @@ export function LanguageSwitcher() {
 export function TableWrap({ children }) {
   return <div className="uz-table-wrap">{children}</div>;
 }
+
+/**
+ * Saralanadigan ustun sarlavhasi (ТЗ §95).
+ *
+ * ⚠️ Nega alohida komponent. Saralash uch narsani birga talab qiladi:
+ * bosilganda yo'nalishni almashtirish, faol ustunni ko'rsatish va
+ * ekran o'quvchisi uchun holatni e'lon qilish. Buni har bir sahifada
+ * qo'lda yozish §72 ogohlantirgan takrorlanish bo'lardi.
+ *
+ * @param field  bu ustunning backenddagi kaliti
+ * @param sort   hozir saralanayotgan ustun
+ * @param dir    `asc` yoki `desc`
+ * @param onSort (field, dir) chaqiriladi
+ */
+export function SortableTh({ field, sort, dir, onSort, children }) {
+  const active = sort === field;
+  // Faol ustunni qayta bosish yo'nalishni almashtiradi. Yangi ustun
+  // esa kamayish tartibida boshlanadi - ro'yxatlar odatda yangidan
+  // eskiga qaraladi.
+  const next = active && dir === 'desc' ? 'asc' : 'desc';
+
+  return (
+    // ⚠️ `aria-sort` `<th>` da bo'lishi SHART. Tugmada u e'tiborsiz
+    // qoladi va ekran o'quvchisi ustun saralanganini aytmaydi.
+    <th aria-sort={active ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+      <button
+        type="button"
+        onClick={() => onSort(field, next)}
+        style={{
+          background: 'none',
+          border: 0,
+          padding: 0,
+          font: 'inherit',
+          color: 'inherit',
+          cursor: 'pointer',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 4,
+        }}>
+        {children}
+        <span aria-hidden="true" style={{ opacity: active ? 1 : 0.25, fontSize: 11 }}>
+          {active && dir === 'asc' ? '▲' : '▼'}
+        </span>
+      </button>
+    </th>
+  );
+}
+
+/**
+ * Saralash holati.
+ *
+ * ⚠️ Ustun o'zgarganda sahifa boshiga qaytariladi: 3-sahifada turib
+ * saralash tartibini o'zgartirsangiz, o'sha sahifadagi qatorlar
+ * butunlay boshqa bo'lib qoladi va bu chalkashtiradi.
+ */
+export function useSort(defaultField, defaultDir = 'desc', onChange) {
+  const [sort, setSort] = useState(defaultField);
+  const [dir, setDir] = useState(defaultDir);
+
+  const apply = (field, direction) => {
+    setSort(field);
+    setDir(direction);
+    if (onChange) onChange();
+  };
+
+  return { sort, dir, onSort: apply };
+}
