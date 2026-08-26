@@ -14,8 +14,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
 import { Wordmark } from '@/components/ui/Wordmark';
-import { exchangeGoogleToken } from '@/features/auth/api';
+import { exchangeGoogleToken, sendOtp } from '@/features/auth/api';
 import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton';
+import { otpErrorKey } from '@/features/auth/otpErrors';
 import { useAuthStore } from '@/features/auth/store';
 import { colors } from '@/theme/tokens';
 
@@ -26,9 +27,9 @@ import { colors } from '@/theme/tokens';
  *
  * Принцип с подписи к макету: один экран — одно действие.
  *
- * ⚠️ Отправки кода нет: эндпоинта OTP на бэкенде не существует
- * (docs/API.md §5), бэкенд под телефон писать пока не решили.
- * Кнопка ведёт на экран-заглушку.
+ * Код отправляется через Eskiz SMS (`POST /api/v1/auth/otp/send`,
+ * см. docs/API.md §5). Экран otp.tsx проверяет его и делает
+ * вход/регистрацию одним запросом.
  */
 const PHONE_DIGITS = 9; // после +998
 
@@ -39,17 +40,29 @@ export default function SignInScreen() {
 
   const [phone, setPhone] = useState('');
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
 
   const digits = phone.replace(/\D/g, '');
   const isPhoneValid = digits.length === PHONE_DIGITS;
 
   const onChangePhone = (raw: string) => {
     setPhone(formatPhone(raw.replace(/\D/g, '').slice(0, PHONE_DIGITS)));
+    setOtpError(null);
   };
 
-  const onContinue = () => {
-    // TODO: POST на отправку OTP, когда появится эндпоинт
-    router.push({ pathname: '/(auth)/otp', params: { phone: `+998${digits}` } });
+  const onContinue = async () => {
+    const fullPhone = `+998${digits}`;
+    setOtpError(null);
+    setSending(true);
+    try {
+      await sendOtp(fullPhone);
+      router.push({ pathname: '/(auth)/otp', params: { phone: fullPhone } });
+    } catch (e) {
+      setOtpError(t(otpErrorKey(e)));
+    } finally {
+      setSending(false);
+    }
   };
 
   const onGoogleSuccess = async (idToken: string) => {
@@ -131,10 +144,15 @@ export default function SignInScreen() {
             {' ' + t('auth.consentTail')}
           </Text>
 
+          {otpError ? (
+            <Text className="text-center text-caption text-danger">{otpError}</Text>
+          ) : null}
+
           <Button
             variant="primary"
             shape="card"
-            disabled={!isPhoneValid}
+            loading={sending}
+            disabled={!isPhoneValid || sending}
             onPress={onContinue}
           >
             {t('auth.continue')}

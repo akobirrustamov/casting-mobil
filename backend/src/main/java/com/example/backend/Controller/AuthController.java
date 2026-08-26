@@ -1,6 +1,8 @@
 package com.example.backend.Controller;
 
 import com.example.backend.DTO.GoogleLoginDTO;
+import com.example.backend.DTO.OtpSendDTO;
+import com.example.backend.DTO.OtpVerifyDTO;
 import com.example.backend.DTO.UserDTO;
 import com.example.backend.Entity.User;
 import com.example.backend.Repository.UserRepo;
@@ -32,6 +34,18 @@ public class AuthController {
     @PostMapping(value = "/google", consumes = "application/json")
     public HttpEntity<?> googleLogin(@RequestBody GoogleLoginDTO dto) {
         return service.googleLogin(dto.getIdToken());
+    }
+
+    /** Mobil ilova: telefonga SMS-kod so'raydi (Eskiz orqali). Ro'yxatdan o'tish ham shu bilan boshlanadi. */
+    @PostMapping(value = "/otp/send", consumes = "application/json")
+    public HttpEntity<?> sendOtp(@RequestBody OtpSendDTO dto) {
+        return service.sendOtp(dto.getPhone());
+    }
+
+    /** Kodni tasdiqlaydi: hisob yo'q bo'lsa yaratadi, bor bo'lsa kirgizadi. Javob login/google bilan bir xil shaklda. */
+    @PostMapping(value = "/otp/verify", consumes = "application/json")
+    public HttpEntity<?> verifyOtp(@RequestBody OtpVerifyDTO dto) {
+        return service.verifyOtp(dto.getPhone(), dto.getCode());
     }
 
     @PostMapping("/refresh")

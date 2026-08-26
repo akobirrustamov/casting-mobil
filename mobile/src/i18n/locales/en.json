@@ -72,7 +72,17 @@
     "google": "Continue with Google",
     "googleUnavailable": "Google sign-in is not configured yet",
     "cancelled": "Sign-in cancelled",
-    "skip": "Later"
+    "skip": "Later",
+    "otpTitle": "SMS code",
+    "otpSubtitle": "Enter the code sent to {{phone}}",
+    "resend": "Resend",
+    "resendIn": "Resend ({{seconds}}s)",
+    "otpSendFailed": "Couldn't send the code, try again shortly",
+    "otpInvalid": "Incorrect code",
+    "otpExpired": "Code expired, request a new one",
+    "otpLocked": "Too many attempts, request a new code",
+    "otpCooldown": "Code already sent, please wait",
+    "smsUnavailable": "SMS sign-in is not configured yet"
   },
   "home": {
     "todayPremieres": "Today's premieres",

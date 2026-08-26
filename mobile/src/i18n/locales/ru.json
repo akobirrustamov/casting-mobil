@@ -72,7 +72,17 @@
     "google": "Войти через Google",
     "googleUnavailable": "Вход через Google пока не настроен",
     "cancelled": "Вход отменён",
-    "skip": "Позже"
+    "skip": "Позже",
+    "otpTitle": "SMS-код",
+    "otpSubtitle": "Введите код, отправленный на {{phone}}",
+    "resend": "Отправить повторно",
+    "resendIn": "Повторно ({{seconds}}с)",
+    "otpSendFailed": "Не удалось отправить код, попробуйте позже",
+    "otpInvalid": "Неверный код",
+    "otpExpired": "Код истёк, запросите новый",
+    "otpLocked": "Слишком много попыток, запросите новый код",
+    "otpCooldown": "Код уже отправлен, подождите",
+    "smsUnavailable": "Вход по SMS пока не настроен"
   },
   "home": {
     "todayPremieres": "Сегодняшние премьеры",

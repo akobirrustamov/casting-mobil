@@ -66,6 +66,26 @@ APP_GIPERSUPERADMIN_PASSWORD=
 # --- Google OAuth (mobil ilova uchun) ---
 APP_GOOGLE_CLIENT_IDS=
 
+# --- SMS (Eskiz.uz) — telefon orqali ro'yxatdan o'tish/kirish uchun OTP ---
+# https://notify.eskiz.uz kabinetidagi email/parol. Berilmasa
+# /api/v1/auth/otp/send 503 (SMS_NOT_CONFIGURED) qaytaradi — soxta
+# muvaffaqiyat yo'q, xuddi Google login sozlanmaganda kabi.
+ESKIZ_EMAIL=
+ESKIZ_PASSWORD=
+# Tasdiqlangan nickname (Eskiz kabinetida "Nicknames"). Moderatsiyadan
+# o'tmagan hisobda standart "4546" bilan FAQAT test matnlari ketadi
+# ("Bu Eskiz dan test" va sh.k.) va FAQAT whitelist raqamiga — haqiqiy
+# OTP matni ("UzCasting platformasida ro'yxatdan o'tish uchun tasdiqlash
+# kod: ...", kabinetda shablon #85892 sifatida yuborilgan) moderatsiya
+# tasdiqlanmaguncha yetib bormaydi. Bu Eskiz tomonidagi cheklov.
+ESKIZ_SMS_FROM=4546
+
+# Kod necha soniya amal qiladi / qayta yuborish oralig'i / urinishlar chegarasi.
+# Qayta yuborish - 2 daqiqa: undan oldin so'ralsa 429 OTP_COOLDOWN qaytadi.
+APP_OTP_TTL_SECONDS=180
+APP_OTP_RESEND_COOLDOWN_SECONDS=120
+APP_OTP_MAX_ATTEMPTS=5
+
 # --- Hali ulanmagan servislar ---
 # ⚠️ Bular berilmaguncha tegishli imkoniyat SOXTA muvaffaqiyat
 # qaytarmaydi: bildirishnoma FAILED holatda saqlanadi, to'lov esa 503

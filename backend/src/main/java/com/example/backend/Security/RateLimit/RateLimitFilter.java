@@ -45,6 +45,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
             // Login: brute-force'ga qarshi qattiq cheklov
             new Rule("/api/v1/auth/login", 10, 60),
             new Rule("/api/v1/app/admin/auth/login", 10, 60),
+            // OTP: bitta IP'dan turli raqamlarga SMS-flud'ni to'xtatadi.
+            // Bitta raqamga qayta yuborish OtpService cooldown'i bilan
+            // alohida cheklanadi - bu yerdagi qoida faqat IP darajasida.
+            new Rule("/api/v1/auth/otp/send", 5, 60),
+            new Rule("/api/v1/auth/otp/verify", 15, 60),
             // Yangilash ham cheklanadi: aks holda o'g'irlangan cookie bilan
             // cheksiz token yasash mumkin bo'lardi (§61).
             new Rule("/api/v1/app/admin/auth/refresh", 30, 60),

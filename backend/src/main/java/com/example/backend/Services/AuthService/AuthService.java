@@ -16,4 +16,10 @@ public interface AuthService {
     User decode(String token);
 
     User password(UUID adminId, String password);
+
+    /** SMS-kod yuboradi. Foydalanuvchi topilmasa ham ruxsat — bu ro'yxatdan o'tish oqimi. */
+    HttpEntity<?> sendOtp(String phone);
+
+    /** Kodni tekshiradi, kerak bo'lsa hisob yaratadi va JWT qaytaradi. */
+    HttpEntity<?> verifyOtp(String phone, String code);
 }

@@ -49,6 +49,8 @@
 | Метод | Путь | Назначение |
 |---|---|---|
 | `POST` | `/api/v1/auth/google` | **новый.** Google ID-token → наш JWT |
+| `POST` | `/api/v1/auth/otp/send` | **новый.** SMS-код на телефон (Eskiz) |
+| `POST` | `/api/v1/auth/otp/verify` | **новый.** код → наш JWT (вход или регистрация) |
 | `POST` | `/api/v1/casting-user` | создать анкету |
 | `POST` | `/api/v1/file/upload` | загрузить фото (multipart) |
 | `GET` | `/api/v1/casting-user/my/` | мои заявки |
@@ -59,6 +61,39 @@
 `/api/v1/auth/login` · `/api/v1/admin/statistic` · `/api/v1/casting-user/status/{id}/{status}/{price}` · `/api/v1/casting-user/price/{id}/{price}` · `/api/v1/casting-user/payed/{id}` · `/api/v1/casting-user/web-show/{id}` · `/api/v1/security`
 
 Авторизация — заголовок `Authorization` с токеном (на сайте лежит в `localStorage.access_token`). В мобильном будем хранить в `expo-secure-store`.
+
+### Телефон + OTP (Eskiz SMS)
+
+Вход и регистрация — один поток: `otp/verify` находит хозяина номера или создаёт
+нового пользователя с ролью `ROLE_USER`, как это делает `auth/google` для Google.
+Экраны: `app/(auth)/sign-in.tsx` → `app/(auth)/otp.tsx`.
+
+```jsonc
+POST /api/v1/auth/otp/send    { "phone": "+998901234567" }
+→ { "sent": true, "expiresInSeconds": 180 }
+
+POST /api/v1/auth/otp/verify  { "phone": "+998901234567", "code": "1234" }
+→ { "access_token": "...", "refresh_token": "...",
+    "roles": [{ "name": "ROLE_USER" }],
+    "user": { "id": "...", "name": "", "phone": "998901234567" } }
+```
+
+- Код 4-значный, живёт 3 минуты, хранится хешем (BCrypt) в памяти сервера.
+- Повторная отправка — не раньше чем через **2 минуты**, иначе `429 OTP_COOLDOWN`.
+  Экран `otp.tsx` держит свой отсчёт, чтобы не жать зря.
+- 5 неверных попыток закрывают код: `429 OTP_LOCKED`, нужен новый.
+- Телефон нормализуется к `998XXXXXXXXX`, формат ввода клиента значения не имеет.
+
+Ошибки приходят обычным `ApiError { code, message }` (ТЗ §94). Текст оттуда —
+только на узбекском, поэтому приложение переводит по `code`
+(`src/features/auth/otpErrors.ts`): `OTP_COOLDOWN`, `OTP_INVALID`, `OTP_EXPIRED`,
+`OTP_LOCKED`, `SMS_NOT_CONFIGURED`, `SMS_SEND_FAILED`.
+
+**⚠️ Без `ESKIZ_EMAIL` / `ESKIZ_PASSWORD` в `application.properties` отправка
+падает `503 SMS_NOT_CONFIGURED`** — намеренно, как и Google без ключей: молчаливый
+«успех» без SMS был бы хуже. Текст сообщения задан шаблоном
+`app.otp.message-template` и должен совпадать с одобренным в кабинете Eskiz,
+иначе шлюз отклонит отправку.
 
 ---
 
@@ -291,7 +326,6 @@ id из фида в старом эндпоинте даст 404.
 - баланс, история платежей, вывод средств
 - Creator Studio: контент, статистика, 50/50
 - оформление Premium из приложения
-- регистрация обычного пользователя по телефону + OTP
 - пуш-уведомления
 
 Из-за этого `src/lib/placeholder.ts` пока жив — но в нём остались только

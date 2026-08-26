@@ -78,6 +78,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/google").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh").permitAll()
+                        // Telefon orqali ro'yxatdan o'tish/kirish (Eskiz SMS-kod).
+                        // Ikkalasi ham anonim: send bosqichida hisob hali yo'q bo'lishi mumkin.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/otp/send").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/otp/verify").permitAll()
                         // Admin panelga kirish. Faqat LOGIN ochiq - /auth/me token talab qiladi.
                         // Rol tekshiruvi controller ichida: USER admin panelga kira olmaydi.
                         .requestMatchers(HttpMethod.POST, "/api/v1/app/admin/auth/login").permitAll()
