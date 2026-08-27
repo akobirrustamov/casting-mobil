@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -63,11 +64,17 @@ public class DonationController {
         var user = CurrentUser.get();
         return ResponseEntity.ok(balanceRepo.findByUserId(user.getId())
                 .map(b -> BalanceDto.builder()
+                        .moneyBalance(b.getMoneyBalance() == null
+                                ? BigDecimal.ZERO : b.getMoneyBalance())
                         .starsBalance(b.getStarsBalance() == null ? 0L : b.getStarsBalance())
                         .coinBalance(b.getCoinBalance() == null ? 0L : b.getCoinBalance())
                         .build())
                 // Hisob hali yaratilmagan — nol, bu haqiqiy nol.
-                .orElse(BalanceDto.builder().starsBalance(0L).coinBalance(0L).build()));
+                .orElse(BalanceDto.builder()
+                        .moneyBalance(BigDecimal.ZERO)
+                        .starsBalance(0L)
+                        .coinBalance(0L)
+                        .build()));
     }
 
     /**
@@ -183,6 +190,17 @@ public class DonationController {
     @Data
     @Builder
     public static class BalanceDto {
+        /**
+         * Hisobdagi pul (so'm).
+         *
+         * <h2>Nima uchun qo'shildi</h2>
+         * {@code UserBalance} da bu maydon BOR edi, lekin DTO uni
+         * bermasdi. Natijada ilova profilida uchta sondan biri manbasiz
+         * qolardi — maketda esa u aynan birinchi turadi
+         * («Balance 56 000 so'm»). Sonni o'ylab topib bo'lmaydi: odam
+         * o'zida yo'q pulni ko'rgan bo'lardi.
+         */
+        private BigDecimal moneyBalance;
         private Long starsBalance;
         private Long coinBalance;
     }

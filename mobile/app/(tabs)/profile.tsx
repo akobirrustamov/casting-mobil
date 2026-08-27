@@ -20,13 +20,12 @@ import { colors, gradients, radius } from '@/theme/tokens';
 /**
  * Аккаунт — экран 21, раскладка с макета заказчика «Screen 4».
  *
- * <h2>Что на макете и чего нет в данных</h2>
- * Макет показывает три числа: Balance 56 000 so'm, Yulduzlar 456,
- * Uzcasting 56. Реально бэкенд отдаёт только два — звёзды и монеты
- * (`GET /api/v1/app/donations/balance`). **Баланса в сумах в модели нет
- * вообще.** Поэтому третье число не выдумывается: колонка на месте, а
- * вместо суммы — прочерк. Нарисовать «56 000 so'm» значило бы показать
- * человеку деньги, которых у него нет.
+ * <h2>Откуда три числа</h2>
+ * Все три — из `GET /api/v1/app/donations/balance`: сумы, Yulduzlar и
+ * Uzcasting. Ни одно не выдумано; пока запрос не ответил, стоит прочерк.
+ *
+ * ⚠️ Сумовый баланс сначала показывался прочерком: поле в `UserBalance`
+ * было, но DTO его не отдавал, и я ошибочно решил, что его нет в модели.
  *
  * <h2>Пункты без экранов не притворяются рабочими</h2>
  * Из списка на макете сегодня существуют «Sevimlilarim», язык и выход.
@@ -155,6 +154,11 @@ export default function ProfileScreen() {
   );
 }
 
+/** Разряды пробелами: 56000 → «56 000». Считает сервер, мы только читаем. */
+function groupDigits(amount: number): string {
+  return String(Math.round(amount)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
 /** Шапка аккаунта: аватар, имя, метки, три числа. */
 function ProfileCard() {
   const { t } = useTranslation();
@@ -193,13 +197,11 @@ function ProfileCard() {
 
         {isAuthorized ? (
           <View className="flex-row items-stretch rounded-card bg-surface-2 py-3">
-            {/* ⚠️ Баланса в сумах бэкенд не отдаёт — на макете он есть,
-                в модели данных его нет. Прочерк вместо выдуманной суммы. */}
             <Stat
               icon="cash-outline"
               tint={colors.lime}
               label={t('profile.balance')}
-              value={null}
+              value={balance.data ? groupDigits(balance.data.money) : null}
             />
             <Divider />
             <Stat

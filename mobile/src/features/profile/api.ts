@@ -6,17 +6,22 @@ import { api } from '@/lib/api';
 /**
  * Баланс во внутренних валютах — `GET /api/v1/app/donations/balance`.
  *
- * <h2>Что здесь есть и чего нет</h2>
- * Бэкенд знает две величины: `starsBalance` (Yulduzlar) и `coinBalance`
- * (UZCASTING coin). Баланса в сумах в модели НЕТ — на макете Screen 4 он
- * есть («Balance 56 000 so'm»), но подставлять туда число неоткуда, и
- * придумать его нельзя: человек решит, что у него есть деньги.
+ * <h2>Три величины с макета Screen 4</h2>
+ * `moneyBalance` (Balance, сумы), `starsBalance` (Yulduzlar) и
+ * `coinBalance` (Uzcasting).
+ *
+ * ⚠️ Сумовый баланс в `UserBalance` был всегда, но DTO его не отдавал —
+ * поэтому сначала на экране стоял прочерк. Поле добавлено в ответ, и
+ * теперь все три числа приходят с сервера. Придумывать их нельзя:
+ * человек решит, что у него есть деньги.
  *
  * <h2>Почему только для вошедших</h2>
  * Эндпоинт берёт пользователя из токена — id в параметрах нет намеренно,
  * иначе чужой баланс читался бы подменой числа в URL.
  */
 export type Balance = {
+  /** Сумы. Дробная часть у сумм не используется, но приходит как число. */
+  money: number;
   stars: number;
   coins: number;
 };
@@ -35,14 +40,17 @@ function count(value: unknown): number | null {
 
 function mapBalance(raw: unknown): Balance {
   const r = raw as Record<string, unknown> | null;
+  const money = count(r?.moneyBalance);
   const stars = count(r?.starsBalance);
   const coins = count(r?.coinBalance);
 
   // Ноль здесь — настоящий ноль (бэкенд отдаёт его для нового счёта),
   // а вот отсутствие чисел означает, что ответил не тот сервер.
-  if (stars === null || coins === null) throw new BalanceUnavailableError();
+  if (money === null || stars === null || coins === null) {
+    throw new BalanceUnavailableError();
+  }
 
-  return { stars, coins };
+  return { money, stars, coins };
 }
 
 export function useBalance() {
