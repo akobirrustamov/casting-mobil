@@ -6,6 +6,7 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
+import { GlowBackdrop } from '@/components/ui/GlowBackdrop';
 import { sendOtp, verifyOtp } from '@/features/auth/api';
 import { otpErrorKey } from '@/features/auth/otpErrors';
 import { useAuthStore } from '@/features/auth/store';
@@ -83,6 +84,8 @@ export default function OtpScreen() {
       className="flex-1 bg-ink px-6"
       style={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }}
     >
+      <GlowBackdrop intensity="hero" />
+
       <Pressable onPress={() => router.back()} hitSlop={12} className="w-10 py-2">
         <Ionicons name="arrow-back" size={24} color={colors.white} />
       </Pressable>
@@ -108,8 +111,13 @@ export default function OtpScreen() {
           maxLength={CODE_LENGTH}
           autoFocus
           editable={!verifying}
-          className="rounded-card bg-surface py-4 text-center text-h1"
-          style={{ color: colors.white, letterSpacing: 12 }}
+          className="rounded-card border bg-surface py-4 text-center text-h1"
+          style={{
+            color: colors.white,
+            letterSpacing: 12,
+            // Тот же сигнал, что и на экране с номером: поле заполнено.
+            borderColor: isValid ? colors.blue : colors.border,
+          }}
         />
 
         {error ? (

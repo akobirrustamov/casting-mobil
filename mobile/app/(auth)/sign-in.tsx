@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
+import { GlowBackdrop } from '@/components/ui/GlowBackdrop';
 import { Wordmark } from '@/components/ui/Wordmark';
 import { exchangeGoogleToken, sendOtp } from '@/features/auth/api';
 import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton';
@@ -87,22 +88,27 @@ export default function SignInScreen() {
       className="flex-1 bg-ink"
       style={{ paddingTop: insets.top }}
     >
+      {/* Свечение с референса заказчика: на пустом экране входа оно и
+          делает всю картинку, поэтому здесь оно ярче обычного. */}
+      <GlowBackdrop intensity="hero" />
+
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 16 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View className="items-center pb-8 pt-4">
-          <Wordmark />
+        <View className="items-center pb-10 pt-10">
+          <Wordmark size="lg" />
         </View>
 
         <View className="gap-6 px-6">
           <Text className="text-center text-h2 text-text">{t('auth.phoneTitle')}</Text>
 
-          {/* Рамка подсвечивается фиолетовым, когда номер введён полностью */}
+          {/* Рамка загорается синим — началом фирменной шкалы, — когда
+              номер введён полностью */}
           <View
             className="flex-row items-center gap-3 rounded-card border bg-surface px-4"
-            style={{ borderColor: isPhoneValid ? colors.purple : colors.border }}
+            style={{ borderColor: isPhoneValid ? colors.blue : colors.border }}
           >
             <Ionicons name="call-outline" size={18} color={colors.textMuted} />
             <Text className="text-body text-text">+998</Text>

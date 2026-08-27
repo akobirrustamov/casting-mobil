@@ -1,7 +1,10 @@
 /** @type {import('tailwindcss').Config} */
-// Палитра и UI-правила зафиксированы в ТЗ:
-// UzCasting_Premium_UIUX_Texnik_Topshiriq_V2.pdf, стр. 18 «PREMIUM DESIGN SYSTEM».
-// Значения из ТЗ менять нельзя — это утверждённые токены.
+// Палитра и UI-правила: ТЗ V2 стр. 18 «PREMIUM DESIGN SYSTEM» плюс референс
+// заказчика от 26.08.2026 (синий конец градиента, лаймовый акцент, более
+// глубокий фон). Разбор — в src/theme/tokens.ts.
+//
+// ⚠️ Тот же набор продублирован в src/theme/tokens.ts для мест без className.
+// Меняем палитру — правим ОБА файла.
 module.exports = {
   content: ['./app/**/*.{js,jsx,ts,tsx}', './src/**/*.{js,jsx,ts,tsx}'],
   presets: [require('nativewind/preset')],
@@ -11,16 +14,21 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // --- Из ТЗ ---
-        ink: '#07070D', // Deep Black — фон
-        surface: '#11111F', // Midnight — карточка
-        purple: '#7C3AED', // Neon Purple — основной CTA
-        magenta: '#EC4899', // Magenta — premium / highlight
-        cyan: '#22D3EE', // Electric Cyan — info / secondary
-        gold: '#F5C542', // Gold — premium / verified
-        // --- Производные, для 8 обязательных состояний ---
-        'surface-2': '#1A1A2E', // приподнятая карточка / skeleton
-        border: '#252540',
+        // --- Фон и поверхности ---
+        ink: '#05050A', // почти чёрный: на нём читается свечение
+        surface: '#0D0D17', // карточка
+        'surface-2': '#15152A', // приподнятая карточка / skeleton
+        border: '#23233C',
+        // --- Фирменная шкала: синий → фиолетовый → маджента ---
+        blue: '#2563EB', // начало градиента (референс заказчика)
+        purple: '#7C3AED', // Neon Purple — основной CTA (ТЗ)
+        violet: '#A855F7', // светлый конец фиолетового
+        magenta: '#EC4899', // Magenta — premium / highlight (ТЗ)
+        // --- Акценты ---
+        cyan: '#22D3EE', // Electric Cyan — info / secondary (ТЗ)
+        gold: '#F5C542', // Gold — premium / verified / VIP (ТЗ)
+        lime: '#7DF06B', // акцент-указатель (референс заказчика)
+        // --- Текст и статусы ---
         text: '#FFFFFF',
         'text-muted': '#9A9AB8',
         'text-disabled': '#5A5A75',

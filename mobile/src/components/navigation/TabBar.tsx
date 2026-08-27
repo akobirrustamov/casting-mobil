@@ -182,8 +182,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    // BlurView на Android слабее, поэтому под ним лежит почти непрозрачная база
-    backgroundColor: 'rgba(17, 17, 31, 0.86)',
+    // BlurView на Android слабее, поэтому под ним лежит почти непрозрачная база.
+    // ⚠️ Это `colors.surface` с прозрачностью — при смене палитры править
+    // вместе с ней, иначе капсула окажется светлее всех карточек.
+    backgroundColor: 'rgba(13, 13, 23, 0.86)',
   },
   item: {
     flex: 1,

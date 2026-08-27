@@ -6,6 +6,7 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
+import { GlowBackdrop } from '@/components/ui/GlowBackdrop';
 import { colors } from '@/theme/tokens';
 
 /**
@@ -37,6 +38,8 @@ export default function PhoneLinkScreen() {
       className="flex-1 justify-center gap-8 bg-ink px-6"
       style={{ paddingTop: insets.top, paddingBottom: insets.bottom + 16 }}
     >
+      <GlowBackdrop intensity="hero" />
+
       <Text className="text-center text-h2 text-text">{t('auth.phoneTitle')}</Text>
 
       <View className="flex-row items-center gap-3 rounded-card bg-surface px-4">

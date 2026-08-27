@@ -6,9 +6,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTabBarHeight } from '@/components/navigation/TabBar';
 import { TOUCH_TARGET, colors } from '@/theme/tokens';
 
+import { GlowBackdrop } from './GlowBackdrop';
+
 /**
- * Каркас экрана: тёмный фон из ТЗ, safe area сверху,
- * заголовок + подзаголовок как в мокапах V4.
+ * Каркас экрана: тёмный фон, safe area сверху, заголовок + подзаголовок
+ * как в мокапах V4.
+ *
+ * Свечение фона лежит здесь, а не на каждом экране: иначе один забытый
+ * экран выпадал бы из общего вида, и это заметили бы только на скриншотах.
  *
  * Таб-бар плавающий, поэтому снизу оставляем место под него —
  * иначе последний блок уезжает под капсулу.
@@ -28,6 +33,8 @@ export function Screen({
   /** Потянуть вниз для обновления. Без обработчика жест не включается. */
   onRefresh,
   refreshing = false,
+  /** Убрать свечение — для экранов, где фон занят своим изображением. */
+  glow = true,
   children,
 }: {
   title?: string;
@@ -39,6 +46,7 @@ export function Screen({
   headerRight?: ReactNode;
   onRefresh?: () => void;
   refreshing?: boolean;
+  glow?: boolean;
   children: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
@@ -48,6 +56,7 @@ export function Screen({
   if (!scroll) {
     return (
       <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
+        {glow ? <GlowBackdrop /> : null}
         <Header
           title={title}
           titleContent={titleContent}
@@ -64,6 +73,7 @@ export function Screen({
 
   return (
     <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
+      {glow ? <GlowBackdrop /> : null}
       <Header
         title={title}
         titleContent={titleContent}
