@@ -126,6 +126,30 @@ export function bannerTarget(banner: BannerCard): BannerTarget | null {
   }
 }
 
+/**
+ * Что написано на бейдже баннера — или `null`, если бейджа нет.
+ *
+ * <h2>Три разных случая в одном блоке</h2>
+ *   - премьера (`NEW_PREMIERES`) — «PREMYERA»;
+ *   - платное размещение (`ADVERTISEMENT`) — «Reklama». Выдавать оплаченный
+ *     баннер за собственный анонс нельзя;
+ *   - собственный анонс платформы (`ADMIN_ANNOUNCEMENT`) — без бейджа.
+ *     Заказчик: «bu premyeralar reklamasi, foydalanuvchi bilmasligi kerak».
+ *     Платформа не рекламирует себя третьей стороне, и называть свой же
+ *     анонс рекламой значит сбивать человека с толку.
+ *
+ * Отдельная функция, а не тернарник внутри разметки: это правило заказчика,
+ * и оно должно проверяться тестом, а не читаться из JSX.
+ */
+export function bannerBadgeKey(
+  banner: BannerCard,
+  sectionType: string
+): string | null {
+  if (sectionType === 'NEW_PREMIERES') return 'common.premiere';
+  if (banner.audience === 'ADVERTISEMENT') return 'common.ad';
+  return null;
+}
+
 /** Подпись кнопки — только если по ней есть куда пойти. */
 function bannerCta(banner: BannerCard, fallback: string): string | undefined {
   if (!banner.buttonEnabled) return undefined;
@@ -212,11 +236,19 @@ export function HomeSectionView({
 /**
  * Карусель баннеров: рекламный блок и «Новые премьеры».
  *
- * <h2>Реклама названа рекламой</h2>
- * Раньше рекламный баннер отличался от премьеры только тоном бейджа —
- * то есть ничем, потому что бейджа у него не было вовсе. Человек не мог
- * отличить оплаченное размещение от анонса самой платформы. Теперь у него
- * есть подпись.
+ * <h2>Что помечается словом «Реклама», а что нет</h2>
+ * В блоке лежат два разных вида баннеров (`AdAudience` на бэкенде):
+ *
+ *   - `ADVERTISEMENT` — платное размещение. Оно помечено: выдавать оплаченный
+ *     баннер за собственный анонс нельзя, это ровно то, от чего защищает
+ *     подпись.
+ *   - `ADMIN_ANNOUNCEMENT` — анонс самой платформы, чаще всего премьера.
+ *     Метки нет: заказчик про эти баннеры написал «bu premyeralar reklamasi,
+ *     foydalanuvchi bilmasligi kerak», и он прав — платформа не рекламирует
+ *     себя третьей стороне, а называть свой же анонс рекламой сбивает с толку.
+ *
+ * Раньше метки не было ни у тех, ни у других, то есть оплаченное размещение
+ * выглядело точно так же, как анонс.
  *
  * <h2>Порядок и показы</h2>
  * Последовательность баннеров задаёт админ, бэкенд отдаёт её готовой
@@ -239,6 +271,11 @@ function BannerSection({
   const isPremiere = section.type === 'NEW_PREMIERES';
   const isAd = section.type === 'ADVERTISEMENT_CAROUSEL';
 
+  const badgeKeyOf = (b: BannerCard) => {
+    const key = bannerBadgeKey(b, section.type);
+    return key === null ? null : t(key);
+  };
+
   const byId = useMemo(
     () => new Map(section.banners.map((b) => [String(b.id), b])),
     [section.banners]
@@ -251,11 +288,7 @@ function BannerSection({
       id: String(b.id),
       title: b.title ?? title,
       subtitle: b.subtitle ?? b.description ?? undefined,
-      badgeLabel: isPremiere
-        ? t('common.premiere')
-        : isAd
-          ? t('common.ad')
-          : undefined,
+      badgeLabel: badgeKeyOf(b) ?? undefined,
       ctaLabel: bannerCta(b, t('common.watch')),
       imageUrl: mediaUrl(b.imageMediaId),
       pressable: bannerTarget(b) !== null,

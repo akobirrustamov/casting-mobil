@@ -58,6 +58,14 @@ export type ContentCard = {
 /** Реклама и премьера приходят одной формой — широкий баннер. */
 export type BannerCard = {
   id: number;
+  /**
+   * `ADVERTISEMENT` — платное размещение, `ADMIN_ANNOUNCEMENT` — собственный
+   * анонс платформы. У премьер — `null`.
+   *
+   * Оба вида приходят одним массивом, но это разные вещи, и подпись у них
+   * тоже должна быть разной.
+   */
+  audience: string | null;
   title: string | null;
   subtitle: string | null;
   description: string | null;

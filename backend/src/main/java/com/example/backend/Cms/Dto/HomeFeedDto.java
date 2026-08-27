@@ -70,6 +70,18 @@ public class HomeFeedDto {
     @Builder
     public static class BannerCard {
         private Long id;
+        /**
+         * {@code ADVERTISEMENT} yoki {@code ADMIN_ANNOUNCEMENT}. Premyerada
+         * — {@code null}.
+         *
+         * <h2>Nima uchun klientga kerak</h2>
+         * Ikkalasi ham bitta ro'yxatda keladi, lekin bu BOSHQA narsalar:
+         * biri — pullik joylashtirish, ikkinchisi — platformaning o'z
+         * e'loni. Ilova ularni ajrata olmasa, o'z premyerasini «Reklama»
+         * deb belgilashi yoki, aksincha, pullik bannerni e'lon qilib
+         * ko'rsatishi kerak bo'lardi — ikkalasi ham noto'g'ri.
+         */
+        private String audience;
         private String title;
         private String subtitle;
         private String description;
