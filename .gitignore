@@ -131,6 +131,17 @@ uploads/
 files/
 storage/
 
+# ⚠️ Yuqoridagi `storage/` qoidasi YUKLANGAN FAYLLAR uchun yozilgan,
+# lekin u istalgan chuqurlikdagi `storage` papkasiga mos keladi —
+# jumladan Java MANBA paketiga (macOS'da registr ham hisobga
+# olinmaydi, ya'ni `Storage/` ham tushadi).
+#
+# Natijada `Cms/Service/Storage/` paketining 8 ta fayli commit'ga
+# TUSHMAY QOLDI va repozitoriy kompilyatsiya qilinmaydigan holatga
+# keldi: `LocalStorageService` mavjud bo'lmagan `StorageKeys` ni
+# import qilardi. Bu faqat boshqa mashinada klon qilinganda bilinardi.
+!backend/src/main/java/com/example/backend/Cms/Service/Storage/
+
 # ======================
 
 # Misc

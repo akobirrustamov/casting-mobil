@@ -133,3 +133,32 @@ spring.flyway.clean-disabled=true
 # mumkin va bu jimgina o'zgarish bo'lardi.
 server.error.include-stacktrace=never
 server.error.include-exception=false
+
+# ── Fayl saqlash: lokal disk yoki Timeweb S3 ─────────────────────────
+#
+# `local`  — fayllar `backend/files/` da (sukut, hech narsa o'zgarmaydi)
+# `s3`     — YANGI fayllar Timeweb Object Storage'ga
+#
+# ⚠️ `s3` tanlansa-yu quyidagi to'rt qiymatdan biri berilmasa, ilova
+# ISHGA TUSHMAYDI va nima yetishmayotganini aytadi. Bu ataylab: yarim
+# sozlangan S3 jimgina lokal diskka qaytardi va buni faqat prod'da,
+# fayllar noto'g'ri joyda ekanini ko'rib bilinardi.
+#
+# ⚠️ Eski fayllar S3 yoqilgandan keyin ham LOKAL diskdan o'qilishda
+# davom etadi (`RoutingStorageService`). Ularni ko'chirish alohida
+# qaror talab qiladi.
+app.storage.provider=${STORAGE_PROVIDER:local}
+
+app.storage.s3.endpoint=${S3_ENDPOINT:https://s3.twcstorage.ru}
+app.storage.s3.region=${S3_REGION:ru-1}
+app.storage.s3.bucket=${S3_BUCKET:}
+
+# ⚠️ MAXFIY. Bu yerga YOZMANG — environment orqali bering:
+#   export S3_ACCESS_KEY='...'
+#   export S3_SECRET_KEY='...'
+app.storage.s3.access-key=${S3_ACCESS_KEY:}
+app.storage.s3.secret-key=${S3_SECRET_KEY:}
+
+# Presigned havolaning amal qilish muddati. 20 GB lik faylni sekin
+# kanalda yuklashga yetishi kerak, lekin bir ish kunidan qisqa bo'lsin.
+app.storage.s3.upload-url-ttl=${S3_UPLOAD_URL_TTL:6h}

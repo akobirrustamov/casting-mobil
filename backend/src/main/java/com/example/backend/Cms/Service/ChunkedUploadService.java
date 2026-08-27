@@ -4,6 +4,10 @@ import com.example.backend.Cms.Entity.MediaAsset;
 import com.example.backend.Cms.Entity.UploadSession;
 import com.example.backend.Cms.Enums.MediaStatus;
 import com.example.backend.Cms.Enums.MediaType;
+import com.example.backend.Cms.Enums.UploadMode;
+import com.example.backend.Cms.Service.Storage.S3MultipartUploadService;
+import com.example.backend.Cms.Service.Storage.StorageKeys;
+import com.example.backend.Cms.Service.Video.TranscodingJobService;
 import com.example.backend.Cms.Repository.MediaAssetRepo;
 import com.example.backend.Cms.Repository.UploadSessionRepo;
 import com.example.backend.exceptions.BusinessException;
@@ -29,6 +33,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -82,13 +87,28 @@ public class ChunkedUploadService {
      */
     private final Path tempRoot;
 
+    /**
+     * S3 multipart — FAQAT {@code app.storage.provider=s3} bo'lganda.
+     *
+     * ⚠️ {@code Optional}, chunki bin shartli. Majburiy bog'liqlik
+     * bo'lsa lokal rejimda kontekst ko'tarilmasdi.
+     */
+    private final Optional<S3MultipartUploadService> s3Multipart;
+
+    /** Yuklangan video transcoding navbatiga tushadi. */
+    private final TranscodingJobService transcodingJobs;
+
     public ChunkedUploadService(UploadSessionRepo sessionRepo,
                                 MediaAssetRepo mediaAssetRepo,
                                 StorageService storageService,
+                                Optional<S3MultipartUploadService> s3Multipart,
+                                TranscodingJobService transcodingJobs,
                                 @Value("${app.upload.temp-dir:backend/files/.uploads}") String tempDir) {
         this.sessionRepo = sessionRepo;
         this.mediaAssetRepo = mediaAssetRepo;
         this.storageService = storageService;
+        this.s3Multipart = s3Multipart;
+        this.transcodingJobs = transcodingJobs;
         this.tempRoot = Paths.get(tempDir);
     }
 
@@ -121,22 +141,63 @@ public class ChunkedUploadService {
             throw BusinessException.validation("Bu turdagi fayl qabul qilinmaydi: " + filename);
         }
 
-        int totalChunks = (int) ((sizeBytes + CHUNK_SIZE - 1) / CHUNK_SIZE);
+        String safeFolder = folder == null || folder.isBlank() ? "content" : folder;
 
-        UploadSession session = UploadSession.builder()
+        UploadSession.UploadSessionBuilder session = UploadSession.builder()
                 .id(UUID.randomUUID().toString())
                 .originalFilename(filename)
                 .mimeType(mimeType)
                 .sizeBytes(sizeBytes)
-                .chunkSize(CHUNK_SIZE)
-                .totalChunks(totalChunks)
-                .folder(folder == null || folder.isBlank() ? "content" : folder)
+                .folder(safeFolder)
                 .status(PENDING)
                 .createdBy(actorId)
-                .createdAt(LocalDateTime.now())
-                .build();
+                .createdAt(LocalDateTime.now());
 
-        return sessionRepo.save(session);
+        if (s3Multipart.isPresent()) {
+            // ⚠️ Obyekt kaliti SHU YERDA yasaladi va o'zgarmaydi:
+            // bo'laklar aynan shu kalitga yuboriladi, ya'ni yig'ish
+            // paytida uni qayta hisoblab bo'lmaydi.
+            S3MultipartUploadService s3 = s3Multipart.get();
+            String storageKey = StorageKeys.newKey(filename, safeFolder);
+
+            session.uploadMode(UploadMode.S3_MULTIPART)
+                    .storageKey(storageKey)
+                    .s3UploadId(s3.begin(storageKey, filename))
+                    .chunkSize(s3.partSize())
+                    .totalChunks(s3.partCount(sizeBytes));
+        } else {
+            session.uploadMode(UploadMode.CHUNKED)
+                    .chunkSize(CHUNK_SIZE)
+                    .totalChunks((int) ((sizeBytes + CHUNK_SIZE - 1) / CHUNK_SIZE));
+        }
+
+        return sessionRepo.save(session.build());
+    }
+
+    /**
+     * Bo'lak uchun imzolangan havola — faqat S3 rejimida.
+     *
+     * ⚠️ Bo'lak raqami klientda 0 dan, S3 da esa 1 dan boshlanadi.
+     * Aylantirish SHU YERDA qilinadi, aks holda har bir chaqiruv joyi
+     * uni eslab qolishi kerak bo'lardi va bittasi unutilsa birinchi
+     * yoki oxirgi bo'lak jimgina yo'qolardi.
+     */
+    public String presignedPartUrl(UploadSession session, int chunkIndex) {
+        requireS3(session);
+        if (chunkIndex < 0 || chunkIndex >= session.getTotalChunks()) {
+            throw BusinessException.validation(
+                    "Bo'lak raqami noto'g'ri: " + chunkIndex
+                            + " (jami " + session.getTotalChunks() + ")");
+        }
+        return s3Multipart.orElseThrow().presignPart(
+                session.getStorageKey(), session.getS3UploadId(), chunkIndex + 1);
+    }
+
+    private void requireS3(UploadSession session) {
+        if (session.getUploadMode() != UploadMode.S3_MULTIPART || s3Multipart.isEmpty()) {
+            throw BusinessException.validation(
+                    "Bu sessiya S3 rejimida emas: " + session.getUploadMode());
+        }
     }
 
     // ------------------------------------------------------------------ bo'lak
@@ -149,6 +210,18 @@ public class ChunkedUploadService {
      * yuborish XAVFSIZ bo'lishi kerak (idempotent).
      */
     public long saveChunk(UploadSession session, int index, InputStream body) {
+        // ⚠️ S3 rejimida bo'lak server orqali O'TMAYDI.
+        //
+        // Usiz klient eski yo'ldan foydalanishda davom etardi va butun
+        // maqsad yo'qolardi: 10 GB baribir server orqali oqardi. Undan
+        // ham yomoni — bo'laklar diskka yozilardi, S3 ga esa hech narsa
+        // tushmasdi va yig'ish paytida «bo'laklar to'liq emas» chiqardi,
+        // sababi tushunarsiz bo'lgan holda.
+        if (session.getUploadMode() == UploadMode.S3_MULTIPART) {
+            throw BusinessException.validation(
+                    "Bu sessiya S3 rejimida: bo'lak imzolangan havola orqali "
+                            + "to'g'ridan-to'g'ri omborga yuboriladi");
+        }
         if (index < 0 || index >= session.getTotalChunks()) {
             throw BusinessException.validation(
                     "Bo'lak raqami noto'g'ri: " + index + " (jami " + session.getTotalChunks() + ")");
@@ -185,8 +258,26 @@ public class ChunkedUploadService {
         }
     }
 
-    /** Diskda haqiqatan yotgan bo'laklar - davom ettirish uchun. */
+    /**
+     * Haqiqatan yetib kelgan bo'laklar — davom ettirish uchun.
+     *
+     * ⚠️ Manba REJIMGA qarab boshqa, lekin prinsip bir xil: ro'yxatni
+     * bazadan emas, OMBORNING O'ZIDAN so'raymiz. Baza va ombor
+     * bir-biriga mos kelmay qolishi mumkin (yozildi, keyin xato),
+     * ombor esa o'zini o'zi tekshiradi.
+     *
+     * S3 bo'lak raqamlari 1 dan boshlanadi, klientniki 0 dan —
+     * aylantirish shu yerda.
+     */
     public List<Integer> receivedChunks(UploadSession session) {
+        if (session.getUploadMode() == UploadMode.S3_MULTIPART) {
+            return s3Multipart.orElseThrow()
+                    .receivedParts(session.getStorageKey(), session.getS3UploadId())
+                    .stream()
+                    .map(partNumber -> partNumber - 1)
+                    .toList();
+        }
+
         Path dir = sessionDir(session.getId());
         if (!Files.isDirectory(dir)) {
             return List.of();
@@ -237,17 +328,27 @@ public class ChunkedUploadService {
         }
 
         String key;
-        try (InputStream joined = concatenated(session, received)) {
-            key = storageService.store(joined, session.getOriginalFilename(), session.getFolder());
-        } catch (IOException | UncheckedIOException e) {
-            // ⚠️ `UncheckedIOException` ham: bo'lak oqimlari endi yig'ish
-            // PAYTIDA ochiladi va u yerda tekshirilgan xato ko'tarilmaydi.
-            log.error("Bo'laklarni yig'ib bo'lmadi: {}", session.getId(), e);
-            throw new BusinessException("STORAGE_ERROR", "Fayl yig'ilmadi",
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        long actualSize;
 
-        long actualSize = storageService.load(key).exists() ? sizeOf(key) : 0L;
+        if (session.getUploadMode() == UploadMode.S3_MULTIPART) {
+            // Fayl allaqachon S3 da — yig'ish S3 tomonida bo'ladi va
+            // bironta bayt server orqali o'tmaydi.
+            key = session.getStorageKey();
+            actualSize = s3Multipart.orElseThrow()
+                    .complete(key, session.getS3UploadId(), session.getTotalChunks());
+        } else {
+            try (InputStream joined = concatenated(session, received)) {
+                key = storageService.store(joined,
+                        session.getOriginalFilename(), session.getFolder());
+            } catch (IOException | UncheckedIOException e) {
+                // ⚠️ `UncheckedIOException` ham: bo'lak oqimlari endi yig'ish
+                // PAYTIDA ochiladi va u yerda tekshirilgan xato ko'tarilmaydi.
+                log.error("Bo'laklarni yig'ib bo'lmadi: {}", session.getId(), e);
+                throw new BusinessException("STORAGE_ERROR", "Fayl yig'ilmadi",
+                        HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            actualSize = storageService.load(key).exists() ? sizeOf(key) : 0L;
+        }
 
         MediaAsset asset = mediaAssetRepo.save(MediaAsset.builder()
                 .storageKey(key)
@@ -268,12 +369,29 @@ public class ChunkedUploadService {
         session.setMediaAssetId(asset.getId());
         sessionRepo.save(session);
 
+        // ⚠️ Video NAVBATGA qo'shiladi, shu yerda transcoding
+        // QILINMAYDI. FFmpeg o'nlab daqiqa ishlaydi — uni HTTP so'rovi
+        // ichida chaqirish klient uzilgunicha kutishga majbur qilardi
+        // va yuklash «yiqilgan» deb ko'rinardi, aslida ish davom
+        // etayotgan bo'lardi.
+        //
+        // Rasm va hujjat uchun ish yaratilmaydi (`enqueue` o'zi
+        // tekshiradi).
+        transcodingJobs.enqueue(asset);
+
         deleteSessionDir(session.getId());
         return asset;
     }
 
     @Transactional
     public void abort(UploadSession session) {
+        // ⚠️ S3 multipart ham bekor qilinadi. Bekor qilinmagan bo'laklar
+        // bucketda qoladi, ro'yxatda KO'RINMAYDI va ular uchun pul
+        // olinaveradi — bu jimgina o'sadigan xarajat.
+        if (session.getUploadMode() == UploadMode.S3_MULTIPART) {
+            s3Multipart.ifPresent(s3 ->
+                    s3.abort(session.getStorageKey(), session.getS3UploadId()));
+        }
         session.setStatus(ABORTED);
         sessionRepo.save(session);
         deleteSessionDir(session.getId());
@@ -294,6 +412,14 @@ public class ChunkedUploadService {
         List<UploadSession> stale =
                 sessionRepo.findAllByStatusAndCreatedAtBefore(PENDING, cutoff);
         for (UploadSession session : stale) {
+            // ⚠️ `abort` chaqirilmaydi (u @Transactional va o'zimiz
+            // tranzaksiya ichidamiz) — lekin S3 bo'laklarini tozalash
+            // MAJBURIY, aks holda tashlab ketilgan yuklashlar uchun
+            // pul olinaveradi.
+            if (session.getUploadMode() == UploadMode.S3_MULTIPART) {
+                s3Multipart.ifPresent(s3 ->
+                        s3.abort(session.getStorageKey(), session.getS3UploadId()));
+            }
             deleteSessionDir(session.getId());
             session.setStatus(ABORTED);
             sessionRepo.save(session);

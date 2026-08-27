@@ -3,6 +3,7 @@ package com.example.backend.Admin.Controller;
 import com.example.backend.Admin.CurrentUser;
 import com.example.backend.Cms.Entity.MediaAsset;
 import com.example.backend.Cms.Entity.UploadSession;
+import com.example.backend.Cms.Enums.UploadMode;
 import com.example.backend.Cms.Repository.UploadSessionRepo;
 import com.example.backend.Cms.Service.ChunkedUploadService;
 import com.example.backend.Entity.User;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -96,6 +98,48 @@ public class UploadController {
                 .build());
     }
 
+    /**
+     * Bo'laklar uchun imzolangan havolalar — FAQAT S3 rejimida.
+     *
+     * <h2>Nega hammasi birdan emas</h2>
+     * 20 GB lik fayl 2048 ta bo'lakdan iborat. Hammasini bitta javobda
+     * berish ~600 KB JSON degani va ularning ko'pi ishlatilmasdan
+     * muddati o'tardi.
+     *
+     * Klient kerak bo'lganda keyingi guruhni so'raydi.
+     *
+     * ⚠️ Havolalar LOGGA yozilmaydi — ular imzo bilan birga o'sha
+     * bo'lakka to'liq yozish huquqini beradi.
+     */
+    @PostMapping("/{id}/parts")
+    public ResponseEntity<PartUrls> partUrls(@PathVariable String id,
+                                             @RequestBody PartUrlRequest request) {
+        UploadSession session = ownSession(id);
+
+        int from = request.getFrom() == null ? 0 : request.getFrom();
+        int count = request.getCount() == null ? DEFAULT_PART_BATCH : request.getCount();
+        if (count < 1 || count > MAX_PART_BATCH) {
+            throw BusinessException.validation(
+                    "count 1 dan " + MAX_PART_BATCH + " gacha bo'lishi kerak");
+        }
+
+        int last = Math.min(from + count, session.getTotalChunks());
+        List<PartUrl> urls = new ArrayList<>();
+        for (int index = from; index < last; index++) {
+            urls.add(PartUrl.builder()
+                    .index(index)
+                    .url(uploadService.presignedPartUrl(session, index))
+                    .build());
+        }
+
+        return ResponseEntity.ok(PartUrls.builder()
+                .uploadId(session.getId())
+                .chunkSize(session.getChunkSize())
+                .totalChunks(session.getTotalChunks())
+                .parts(urls)
+                .build());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<UploadSessionDto> status(@PathVariable String id) {
         UploadSession session = ownSession(id);
@@ -161,6 +205,36 @@ public class UploadController {
         private String folder;
     }
 
+    /** Bir so'rovda beriladigan havolalar soni — sukut. */
+    private static final int DEFAULT_PART_BATCH = 20;
+
+    /** Ko'pi bilan. Chegarasiz bo'lsa klient 10 000 tasini so'rashi mumkin edi. */
+    private static final int MAX_PART_BATCH = 200;
+
+    @Data
+    public static class PartUrlRequest {
+        /** Qaysi bo'lakdan boshlab. 0 dan. */
+        private Integer from;
+        private Integer count;
+    }
+
+    @Data
+    @Builder
+    public static class PartUrls {
+        private String uploadId;
+        private Integer chunkSize;
+        private Integer totalChunks;
+        private List<PartUrl> parts;
+    }
+
+    @Data
+    @Builder
+    public static class PartUrl {
+        /** Klient raqami — 0 dan. S3 ga 1 dan yuboriladi, aylantirishni server qiladi. */
+        private int index;
+        private String url;
+    }
+
     @Data
     @Builder
     public static class UploadSessionDto {
@@ -174,8 +248,19 @@ public class UploadController {
         private List<Integer> receivedChunks;
         private Long mediaAssetId;
 
+        /**
+         * {@code CHUNKED} — bo'lak {@code PUT .../chunks/{n}} orqali;
+         * {@code S3_MULTIPART} — {@code POST .../parts} dan havola olinadi.
+         *
+         * ⚠️ Klient rejimni O'ZI tanlamaydi va taxmin qilmaydi: server
+         * aytadi. Aks holda sozlama o'zgarganda klient eski yo'ldan
+         * yuborishda davom etardi.
+         */
+        private UploadMode uploadMode;
+
         static UploadSessionDto of(UploadSession s, List<Integer> received) {
             return UploadSessionDto.builder()
+                    .uploadMode(s.getUploadMode())
                     .uploadId(s.getId())
                     .originalFilename(s.getOriginalFilename())
                     .sizeBytes(s.getSizeBytes())

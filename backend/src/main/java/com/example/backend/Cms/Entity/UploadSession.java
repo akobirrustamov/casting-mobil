@@ -1,5 +1,6 @@
 package com.example.backend.Cms.Entity;
 
+import com.example.backend.Cms.Enums.UploadMode;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -75,4 +76,34 @@ public class UploadSession {
     /** Yig'ilgandan keyin yaratilgan media yozuvi. */
     @Column(name = "media_asset_id")
     private Long mediaAssetId;
+
+    // ------------------------------------------------------- S3 (V27)
+
+    /**
+     * {@code CHUNKED} — bo'laklar Spring Boot orqali diskka;
+     * {@code S3_MULTIPART} — bo'laklar to'g'ridan-to'g'ri S3 ga.
+     *
+     * ⚠️ Sukut qiymat {@code CHUNKED}: yarim qolgan eski sessiyalar
+     * davom ettirilishi mumkin bo'lib qoladi.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "upload_mode", nullable = false, length = 16)
+    @Builder.Default
+    private UploadMode uploadMode = UploadMode.CHUNKED;
+
+    /** S3 bergan multipart identifikatori. Lokal rejimda null. */
+    @Column(name = "s3_upload_id", length = 512)
+    private String s3UploadId;
+
+    /**
+     * Yakuniy obyekt kaliti.
+     *
+     * ⚠️ S3 rejimida BOSHIDA yasaladi va o'zgarmaydi: bo'laklar aynan
+     * shu kalitga yuboriladi, ya'ni yig'ish paytida uni qayta hisoblab
+     * bo'lmaydi.
+     *
+     * Lokal rejimda null — u yerda kalit yig'ish paytida yasaladi.
+     */
+    @Column(name = "storage_key", length = 512)
+    private String storageKey;
 }

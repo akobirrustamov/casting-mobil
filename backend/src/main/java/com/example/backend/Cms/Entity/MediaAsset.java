@@ -73,6 +73,30 @@ public class MediaAsset {
     @Builder.Default
     private MediaStatus status = MediaStatus.READY;
 
+    // ------------------------------------------------- HLS (V28)
+
+    /**
+     * HLS master playlist kaliti. {@code null} = HLS yo'q.
+     *
+     * ⚠️ To'liq URL EMAS, aynan KALIT. CDN domeni sozlamadan olinadi
+     * va runtime'da qo'shiladi — shunda domen almashtirish bitta
+     * sozlama o'zgarishi bo'ladi, ming qatorli {@code UPDATE} emas.
+     *
+     * ⚠️ Transcoding HOLATI bu yerda yo'q va bu ataylab: u
+     * {@code TranscodingJob} da yashaydi. Ikki joyda bo'lsa ular
+     * ajralib ketardi.
+     */
+    @Column(name = "hls_master_key", length = 512)
+    private String hlsMasterKey;
+
+    /** {@code ffprobe} aniqlagan video kodeki — masalan {@code h264}. */
+    @Column(name = "video_codec", length = 32)
+    private String videoCodec;
+
+    /** {@code ffprobe} aniqlagan audio kodeki — masalan {@code aac}. */
+    @Column(name = "audio_codec", length = 32)
+    private String audioCodec;
+
     @Column(name = "created_by")
     private UUID createdBy;
 

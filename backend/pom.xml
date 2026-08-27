@@ -30,6 +30,16 @@
         -->
         <lombok.version>1.18.44</lombok.version>
 
+        <!--
+            AWS SDK for Java 2.x - Timeweb S3 uchun.
+
+            Timeweb Object Storage Amazon S3 bilan MOS, shuning uchun
+            alohida SDK kerak emas: endpoint almashtiriladi, qolgani bir xil.
+            Versiya BOM orqali boshqariladi (`dependencyManagement`), aks
+            holda `s3` va `auth` modullari turli versiyada kelib qolardi.
+        -->
+        <aws.sdk.version>2.25.60</aws.sdk.version>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
@@ -174,7 +184,31 @@
             <version>2.2.0</version>
         </dependency>
 
+        <!--
+            S3 - Timeweb Object Storage.
+
+            ⚠️ `apache-client` ataylab QO'SHILGAN va standart URL-connection
+            mijozi o'chirilgan: presigned multipart upload'da bo'lak
+            yuborish uchun ishonchli connection pool kerak.
+        -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+        </dependency>
+
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${aws.sdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
 
