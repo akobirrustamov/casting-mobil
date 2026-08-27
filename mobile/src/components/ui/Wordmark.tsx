@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Text, View, type LayoutChangeEvent } from 'react-native';
+import { Platform, Text, View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 
 import { colors } from '@/theme/tokens';
@@ -7,26 +7,21 @@ import { colors } from '@/theme/tokens';
 import { Logo } from './Logo';
 
 /**
- * Знак + название в одну строку — «◆ UZCASTING» с макета.
+ * Знак и название UzCasting.
  *
- * Заказчик разрешил ставить логотип вместо названия или рядом с ним;
- * на макете он рядом, поэтому связка едет вместе и не расходится по экранам.
+ * Два вида:
+ *   `inline`  — знак и слово в строку. Шапка главной, узкие места.
+ *   `stacked` — знак сверху, под ним название и слоган. Экран входа,
+ *               по референсу заказчика от 27.08.2026.
  *
- * <h2>Почему название нарисовано в SVG</h2>
- * На референсе заказчика фирменный приём — переход из белого в фиолетовый.
- * В React Native текст градиентом не заливается: нужен либо маска-компонент
- * (в проекте его нет), либо SVG. SVG уже стоит — на нём сам знак.
+ * <h2>Почему в `inline` название нарисовано в SVG</h2>
+ * Там оно с градиентом, а в React Native текст градиентом не заливается:
+ * нужен либо маска-компонент (в проекте его нет), либо SVG. Размер бокса
+ * берётся у настоящего `<Text>` — угадывать ширину строки нельзя, метрики
+ * шрифта на iOS и Android разные.
  *
- * <h2>Почему размер бокса меряется, а не задан числом</h2>
- * Сначала ширина и высота были вписаны на глаз. Это разъехалось:
- * бокс `lg` был 240×38 при настоящей надписи около 190 в ширину, поэтому
- * между знаком и словом оставался лишний воздух, а буквы стояли в верхней
- * части бокса и не совпадали по центру со знаком.
- *
- * Угадать метрики нельзя в принципе: ширина строки зависит от системного
- * шрифта, а он на iOS и Android разный. Поэтому размер берётся у настоящего
- * `<Text>` с теми же параметрами — он и задаёт раскладку, а SVG рисуется
- * поверх него ровно по измеренному месту.
+ * В `stacked` градиента нет: на референсе «Uz» синий, «Casting» белый —
+ * это две заливки, а не переход. Поэтому обычный текст, без измерений.
  */
 const SIZES = {
   md: { mark: 22, font: 22, tracking: 1.8 },
@@ -37,19 +32,107 @@ const SIZES = {
  * Доля кегля, которую занимает высота прописной буквы.
  *
  * Нужна, чтобы поставить базовую линию: в слове нет ни одной буквы с
- * нижним выносным элементом, поэтому центрировать надо именно капитель,
- * а не всю строку с запасом под «у» и «р».
+ * нижним выносным элементом, поэтому центрировать надо именно капитель.
  */
 const CAP_HEIGHT_RATIO = 0.72;
 
+/**
+ * Слоган с референса.
+ *
+ * Не переводится и не лежит в i18n: это часть знака, как и само слово
+ * «UzCasting». Перевод превратил бы его в подпись, которая на трёх языках
+ * разной длины и ломала бы композицию.
+ */
+const TAGLINE = 'PLAY.  WATCH.  INSPIRE.';
+
+/**
+ * ⚠️ Системные шрифты, а не тот, что на референсе.
+ *
+ * В проекте нет ни одного своего шрифта (`expo-font` подключён, но ничего
+ * не грузит), а по картинке шрифт не опознать. Взяты ближайшие системные:
+ * засечковый для названия и моноширинный для слогана — начертания те же,
+ * рисунок букв другой.
+ *
+ * Когда заказчик пришлёт `.ttf`, подключается через `expo-font` и меняется
+ * здесь в двух строках.
+ */
+const BRAND_FONT = Platform.select({
+  ios: 'Georgia',
+  android: 'serif',
+  default: 'serif',
+});
+
+const TAGLINE_FONT = Platform.select({
+  ios: 'Courier',
+  android: 'monospace',
+  default: 'monospace',
+});
+
 export function Wordmark({
   size = 'md',
+  variant = 'inline',
   /** Одноцветное название — там, где градиент спорит с фоном. */
   plain = false,
+  /** Размер знака в `stacked`. По референсу он крупный. */
+  markSize = 132,
+  showTagline = true,
 }: {
   size?: 'md' | 'lg';
+  variant?: 'inline' | 'stacked';
   plain?: boolean;
+  markSize?: number;
+  showTagline?: boolean;
 }) {
+  if (variant === 'stacked') {
+    return <StackedWordmark markSize={markSize} showTagline={showTagline} />;
+  }
+  return <InlineWordmark size={size} plain={plain} />;
+}
+
+/** Знак сверху, название и слоган под ним — композиция с референса. */
+function StackedWordmark({
+  markSize,
+  showTagline,
+}: {
+  markSize: number;
+  showTagline: boolean;
+}) {
+  return (
+    <View className="items-center">
+      <Logo size={markSize} />
+
+      <Text
+        style={{
+          fontFamily: BRAND_FONT,
+          fontSize: Math.round(markSize * 0.27),
+          color: colors.white,
+          marginTop: 14,
+        }}
+      >
+        {/* «Uz» синим — единственный цветной кусок надписи на референсе. */}
+        <Text style={{ color: colors.blue }}>Uz</Text>
+        Casting
+      </Text>
+
+      {showTagline ? (
+        <Text
+          style={{
+            fontFamily: TAGLINE_FONT,
+            fontSize: Math.round(markSize * 0.093),
+            letterSpacing: 2,
+            color: colors.textDisabled,
+            marginTop: 8,
+          }}
+        >
+          {TAGLINE}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+/** Знак и название в строку — шапка главной. */
+function InlineWordmark({ size, plain }: { size: 'md' | 'lg'; plain: boolean }) {
   const s = SIZES[size];
   const [box, setBox] = useState<{ width: number; height: number } | null>(null);
 

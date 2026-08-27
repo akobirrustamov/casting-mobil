@@ -107,8 +107,11 @@ export default function SignInScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View className="items-center pb-10 pt-10">
-          <Wordmark size="lg" />
+        {/* Композиция с референса заказчика: знак крупно, под ним название
+            и слоган. На экране входа это единственный «герой», поэтому
+            блок стоит отдельно и с воздухом. */}
+        <View className="items-center pb-8 pt-6">
+          <Wordmark variant="stacked" />
         </View>
 
         <View className="gap-6 px-6">
