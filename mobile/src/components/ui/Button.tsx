@@ -2,8 +2,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   ActivityIndicator,
   Pressable,
+  StyleSheet,
   Text,
-  View,
   type PressableProps,
 } from 'react-native';
 
@@ -17,10 +17,19 @@ import { TOUCH_TARGET, colors, gradients, radius } from '@/theme/tokens';
  * gold      — Gold, вывод денег и «Premium'ga o'tish» по макету Screen 4
  * secondary — контурная, второстепенное действие
  *
- * <h2>Почему главная кнопка стала градиентной</h2>
+ * <h2>Почему главная кнопка градиентная</h2>
  * На референсе заказчика фирменный цвет — это ПЕРЕХОД от синего к
  * фиолетовому, а не одна заливка. Плоский `bg-purple` рядом со свечением
  * фона выглядел выцветшим: тот же тон, но без глубины.
+ *
+ * <h2>⚠️ Градиент лежит ПОД содержимым, а не оборачивает его</h2>
+ * Сначала он был обёрткой с `flex: 1` — и кнопка растянулась на всю
+ * доступную высоту. На баннере премьеры это дало магентовый купол в пол-карточки,
+ * который вытолкнул заголовок за края.
+ *
+ * Раскладку задаёт сам `Pressable`, ровно как до появления градиента:
+ * строка, отступы, минимальная высота. Градиент — фон в `absoluteFill`,
+ * на размеры он не влияет вообще.
  */
 type Variant = 'primary' | 'premium' | 'gold' | 'secondary';
 
@@ -70,19 +79,6 @@ export function Button({
 }: Props) {
   const isInactive = disabled || loading;
   const corner = shape === 'card' ? radius.card : radius.pill;
-
-  const body = (
-    <>
-      {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === 'gold' ? colors.ink : colors.white}
-        />
-      ) : null}
-      <Text className={`text-body font-semibold ${FG[variant]}`}>{children}</Text>
-    </>
-  );
-
   const stripe = GRADIENT[variant];
 
   return (
@@ -91,7 +87,7 @@ export function Button({
       accessibilityState={{ disabled: isInactive, busy: loading }}
       disabled={isInactive}
       style={{ minHeight: TOUCH_TARGET, borderRadius: corner, overflow: 'hidden' }}
-      className={`${FLAT_BG[variant]} ${
+      className={`flex-row items-center justify-center gap-2 px-6 ${FLAT_BG[variant]} ${
         isInactive ? 'opacity-40' : 'active:opacity-80'
       } ${className}`}
       {...rest}
@@ -101,33 +97,17 @@ export function Button({
           colors={stripe}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={{
-            flex: 1,
-            minHeight: TOUCH_TARGET,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            paddingHorizontal: 24,
-          }}
-        >
-          {body}
-        </LinearGradient>
-      ) : (
-        <View
-          style={{
-            flex: 1,
-            minHeight: TOUCH_TARGET,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            paddingHorizontal: 24,
-          }}
-        >
-          {body}
-        </View>
-      )}
+          style={StyleSheet.absoluteFill}
+        />
+      ) : null}
+
+      {loading ? (
+        <ActivityIndicator
+          size="small"
+          color={variant === 'gold' ? colors.ink : colors.white}
+        />
+      ) : null}
+      <Text className={`text-body font-semibold ${FG[variant]}`}>{children}</Text>
     </Pressable>
   );
 }

@@ -9,7 +9,7 @@ import { PosterCard, type PosterBadge } from '@/components/ui/PosterCard';
 import { Rail } from '@/components/ui/Rail';
 import { StoryCircle } from '@/components/ui/StoryCircle';
 import { trackAdClick, trackAdImpression } from '@/features/analytics/api';
-import { cardRatio } from '@/features/content/orientation';
+import { cardRatio, rowRatio } from '@/features/content/orientation';
 import { mediaUrl } from '@/lib/api';
 import { colors } from '@/theme/tokens';
 
@@ -71,9 +71,12 @@ function accessBadge(
 export function ContentPoster({
   card,
   width,
+  ratio,
 }: {
   card: ContentCard;
   width?: number;
+  /** Пропорция ряда. Без неё карточка берёт форму по своему формату. */
+  ratio?: number;
 }) {
   const { t } = useTranslation();
   const badge = accessBadge(card.accessPolicy);
@@ -81,7 +84,7 @@ export function ContentPoster({
   return (
     <PosterCard
       width={width}
-      ratio={cardRatio(card.orientation)}
+      ratio={ratio ?? cardRatio(card.orientation)}
       title={card.title ?? ''}
       subtitle={card.shortDescription ?? undefined}
       imageUrl={mediaUrl(card.posterMediaId)}
@@ -221,10 +224,14 @@ export function HomeSectionView({
 
   // ---- ряды контента: тип, «Танланган», «Машҳур», ручной ряд
   if (section.content.length > 0) {
+    // Одна форма на ряд: иначе вертикальная карточка рядом с обычной
+    // делает строку разновысокой и подписи разъезжаются по вертикали.
+    const ratio = rowRatio(section.content.map((c) => c.orientation));
+
     return (
       <Rail title={title}>
         {section.content.map((card) => (
-          <ContentPoster key={card.id} card={card} />
+          <ContentPoster key={card.id} card={card} ratio={ratio} />
         ))}
       </Rail>
     );

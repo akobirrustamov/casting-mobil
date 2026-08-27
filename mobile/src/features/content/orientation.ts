@@ -36,7 +36,7 @@ export function frameRatio(orientation: Orientation | null | undefined): number 
 }
 
 /**
- * Отношение сторон КАРТОЧКИ в ряду.
+ * Отношение сторон КАРТОЧКИ.
  *
  * У горизонтального контента это не 16:9: постер в каталоге — вертикальный
  * 2:3, как в мокапах и у Yangi.TV. Отличается именно рилс — он повторяет
@@ -44,4 +44,22 @@ export function frameRatio(orientation: Orientation | null | undefined): number 
  */
 export function cardRatio(orientation: Orientation | null | undefined): number {
   return isVertical(orientation) ? 9 / 16 : 2 / 3;
+}
+
+/**
+ * Одна пропорция на весь ряд.
+ *
+ * <h2>Зачем не по каждой карточке отдельно</h2>
+ * Формат — независимая ось (ТЗ §13), поэтому в «Mini seriallar» может
+ * лежать и вертикальный мини-сериал, и обычный. Когда каждая карточка
+ * выбирала форму сама, соседи в одном ряду выходили разной высоты:
+ * подписи вставали на разных уровнях, и ряд читался как сломанный.
+ *
+ * Правило: ряд целиком вертикальный — 9:16, иначе обычный постер 2:3.
+ * То есть «Reels seriallar» остаётся рилсами, а смешанный ряд
+ * выравнивается по стандартной карточке.
+ */
+export function rowRatio(orientations: (Orientation | null | undefined)[]): number {
+  if (orientations.length === 0) return 2 / 3;
+  return orientations.every(isVertical) ? 9 / 16 : 2 / 3;
 }

@@ -6,6 +6,7 @@ import { ScreenState } from '@/components/states/ScreenState';
 import { Screen } from '@/components/ui/Screen';
 import { SkeletonGrid } from '@/components/ui/Skeleton';
 import { contentCards, HomeFeedUnavailableError, useHomeFeed } from '@/features/home/api';
+import { rowRatio } from '@/features/content/orientation';
 import { ContentPoster, HomeSectionView } from '@/features/home/sections';
 import type { ContentCard } from '@/features/home/types';
 import { useIsOffline } from '@/lib/network';
@@ -141,10 +142,14 @@ function PremiereGrid({
     );
   }
 
+  // Сетка переносит карточки по строкам, поэтому форма должна быть одна:
+  // вертикальная карточка рядом с обычной делает строку разновысокой.
+  const ratio = rowRatio(cards.map((c) => c.orientation));
+
   return (
     <View className="flex-row flex-wrap justify-between gap-y-4">
       {cards.map((card) => (
-        <ContentPoster key={card.id} card={card} width={CARD_WIDTH} />
+        <ContentPoster key={card.id} card={card} width={CARD_WIDTH} ratio={ratio} />
       ))}
     </View>
   );
