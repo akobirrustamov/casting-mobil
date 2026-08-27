@@ -9,6 +9,7 @@ import { PosterCard, type PosterBadge } from '@/components/ui/PosterCard';
 import { Rail } from '@/components/ui/Rail';
 import { StoryCircle } from '@/components/ui/StoryCircle';
 import { trackAdClick, trackAdImpression } from '@/features/analytics/api';
+import { categoryIcon } from '@/features/content/categoryIcons';
 import { cardRatio, rowRatio } from '@/features/content/orientation';
 import { mediaUrl } from '@/lib/api';
 import { colors } from '@/theme/tokens';
@@ -195,6 +196,7 @@ export function HomeSectionView({
             key={c.id}
             title={c.name ?? ''}
             accent={TILE_ACCENTS[i % TILE_ACCENTS.length]}
+            icon={categoryIcon(c.slug)}
             // ⚠️ `iconMediaId` намеренно не передаётся: в этом поле лежит
             // изображение размером с постер, а не глиф (см. CategoryTile).
             //

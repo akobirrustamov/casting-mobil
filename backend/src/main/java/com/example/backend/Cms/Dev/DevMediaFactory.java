@@ -59,6 +59,12 @@ public class DevMediaFactory {
     }
 
     private MediaAsset image(String label, int variant, int w, int h, String kind) {
+        // Qo'lda qo'yilgan haqiqiy rasm bo'lsa — o'sha ishlatiladi.
+        File custom = customFor(label);
+        if (custom != null) {
+            return saveCustom(custom, w, h);
+        }
+
         String fileName = "dev-" + kind + "-" + slug(label) + "-" + variant + ".jpg";
         File file = new File(FILES_ROOT + PREFIX + "/" + fileName);
         try {
@@ -76,6 +82,61 @@ public class DevMediaFactory {
                 .type(MediaType.IMAGE)
                 .mimeType("image/jpeg")
                 .sizeBytes(file.isFile() ? file.length() : 0L)
+                .width(w)
+                .height(h)
+                .status(MediaStatus.READY)
+                .build());
+    }
+
+    /**
+     * Qo'lda qo'yilgan rasm: {@code backend/files/cms-dev/custom/<slug>.jpg}.
+     *
+     * <h2>Nima uchun kerak</h2>
+     * Generatsiya qilingan rasm — gradient va ustidagi yozuv. Ishlashga
+     * yetarli, lekin ilova skrinshotida u «tayyor emas» bo'lib ko'rinadi:
+     * afishaning o'rnida matnli to'rtburchak turadi.
+     *
+     * Endi shu papkaga haqiqiy fayl tashlash kifoya — kod o'zgarmaydi,
+     * sid uni avtomatik oladi. Fayl bo'lmasa hammasi eskicha ishlaydi.
+     *
+     * ⚠️ Papka {@code .gitignore} da: bu birovning rasmi bo'lishi mumkin,
+     * repozitoriyga tushishi kerak emas.
+     */
+    private File customFor(String label) {
+        String base = FILES_ROOT + PREFIX + "/custom/" + slug(label);
+        for (String ext : new String[]{".jpg", ".jpeg", ".png", ".webp"}) {
+            File f = new File(base + ext);
+            if (f.isFile()) {
+                return f;
+            }
+        }
+        return null;
+    }
+
+    /** O'lchamlar fayldan o'qiladi: metadata haqiqiy bo'lishi kerak. */
+    private MediaAsset saveCustom(File file, int fallbackW, int fallbackH) {
+        int w = fallbackW;
+        int h = fallbackH;
+        try {
+            BufferedImage read = ImageIO.read(file);
+            if (read != null) {
+                w = read.getWidth();
+                h = read.getHeight();
+            }
+        } catch (IOException e) {
+            log.warn("Qo'lda qo'yilgan rasm o'qilmadi: {}", file.getName(), e);
+        }
+
+        String name = file.getName();
+        String mime = name.endsWith(".png") ? "image/png"
+                : name.endsWith(".webp") ? "image/webp" : "image/jpeg";
+
+        return mediaAssetRepo.save(MediaAsset.builder()
+                .storageKey(PREFIX + "/custom/" + name)
+                .originalFilename(name)
+                .type(MediaType.IMAGE)
+                .mimeType(mime)
+                .sizeBytes(file.length())
                 .width(w)
                 .height(h)
                 .status(MediaStatus.READY)

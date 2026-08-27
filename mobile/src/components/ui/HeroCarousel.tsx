@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
+  StyleSheet,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Pressable,
@@ -130,9 +131,14 @@ export function HeroCarousel({
             className="justify-end overflow-hidden rounded-card-lg bg-surface-2 p-4 active:opacity-90"
           >
             {item.imageUrl ? (
+              // ⚠️ `absoluteFill`, а НЕ `width/height: '100%'`. Проценты у
+              // абсолютного элемента считаются от контентной области, то есть
+              // от карточки МИНУС `p-4`, и без `top/left` он вдобавок встаёт
+              // внутрь отступа. Кадр не доставал до краёв, а вокруг него
+              // висела тёмная рамка в 16px.
               <Image
                 source={{ uri: item.imageUrl }}
-                style={{ position: 'absolute', width: '100%', height: '100%' }}
+                style={StyleSheet.absoluteFill}
                 contentFit="cover"
                 transition={200}
               />

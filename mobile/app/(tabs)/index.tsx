@@ -82,6 +82,7 @@ export default function HomeScreen() {
             key={c.id}
             title={isRu ? c.titleRu : c.titleUz}
             accent={c.accent}
+            icon={c.icon}
             onPress={() => router.push(`/catalog/${c.id}`)}
           />
         ))}
