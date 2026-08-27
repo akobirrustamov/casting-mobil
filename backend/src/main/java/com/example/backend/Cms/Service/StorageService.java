@@ -41,6 +41,27 @@ public interface StorageService {
      */
     boolean accepts(String originalFilename);
 
+    /**
+     * ANIQ kalitga saqlaydi.
+     *
+     * <h2>Nega {@code store} dan farqli</h2>
+     * {@code store} kalitni O'ZI yasaydi (tasodifiy UUID) — bu yuklangan
+     * fayl uchun to'g'ri, chunki foydalanuvchi nomi yo'l bo'lib
+     * qolmasligi kerak.
+     *
+     * HLS esa BOG'LIQ fayllar to'plami: {@code master.m3u8} ichida
+     * {@code 720p/index.m3u8} ga havola bor, u esa o'z segmentlariga.
+     * Kalitlar tasodifiy bo'lsa havolalar buzilardi.
+     *
+     * ⚠️ Kalit SERVER tomonida yasaladi (media id + variant nomi), ya'ni
+     * foydalanuvchi kiritgan matn u yerga tushmaydi.
+     *
+     * @param in          metod o'zi yopadi
+     * @param key         to'liq kalit, masalan {@code /videos/7/hls/master.m3u8}
+     * @param contentType MIME turi — CDN ham shuni qaytaradi
+     */
+    void storeAt(InputStream in, String key, String contentType);
+
     /** Kalit bo'yicha faylni o'qish uchun ochadi. */
     Resource load(String storageKey);
 

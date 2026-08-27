@@ -62,6 +62,30 @@ public class LocalStorageService implements StorageService {
         return key;
     }
 
+    /**
+     * ⚠️ Kengaytma oq ro'yxati BU YERDA qo'llanmaydi.
+     *
+     * HLS fayllari ({@code .m3u8}, {@code .m4s}) ro'yxatda yo'q va
+     * bo'lishi ham shart emas: ularni foydalanuvchi yuklamaydi, ularni
+     * SERVER yaratadi. Oq ro'yxat foydalanuvchi bergan nomdan himoya
+     * qiladi, bu yerda esa nom butunlay bizniki.
+     *
+     * Yo'l himoyasi esa QOLADI — {@code resolve} ildizdan chiqishga
+     * yo'l qo'ymaydi.
+     */
+    @Override
+    public void storeAt(InputStream in, String key, String contentType) {
+        Path target = resolve(key);
+        try (InputStream stream = in) {
+            Files.createDirectories(target.getParent());
+            Files.copy(stream, target, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            log.error("Fayl saqlanmadi: {}", key, e);
+            throw new BusinessException("STORAGE_ERROR", "Fayl saqlanmadi",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @Override
     public boolean accepts(String originalFilename) {
         return StorageKeys.accepts(originalFilename);

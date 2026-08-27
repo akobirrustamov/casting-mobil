@@ -500,48 +500,243 @@ edi — navbat esa o'sib boraverardi.
 bo'sh natija qaytarilmaydi: u «video 0×0» ma'nosini berardi va profil
 tanlash uni tushunarsiz tarzda rad etardi.
 
-### 4.5. Profil tanlash `[ ]`
+### 4.5. Profil tanlash `[x]`
 
-- `[ ]` `app.video.transcoding.profiles[]` konfiguratsiyasi
-- `[ ]` `VideoProfileSelector` — original balandligidan **yuqoriga chiqmaydi**
+- `[x]` `TranscodingProfile` · `VideoTranscodingProperties`
+      (`app.video.transcoding.profiles[]`)
+- `[x]` `VideoProfileSelector` — manbadan **yuqoriga chiqmaydi**
+- `[x]` `VideoProfileSelectorTest` — 17 test, 6 mutatsiya bilan tasdiqlangan
 
 ```
 2160p manba → 1080p · 720p · 480p
 1080p manba → 1080p · 720p · 480p
  720p manba →  720p · 480p
  480p manba →  480p
- 360p manba →  360p (eng past profil, o'zgarishsiz)
+ 360p manba →  360p (o'z o'lchamida, cho'zilmaydi)
 ```
 
-- `[ ]` Testlar: har bir manba balandligi uchun kutilgan ro'yxat
+Standart zinapoya: 1080p/5000k · 720p/2800k · 480p/1200k. Sozlamada
+tartib buzilgan bo'lsa u **o'zi tuzatiladi** — `master.m3u8` da
+variantlar sifat bo'yicha tartiblangan bo'lishi kerak, aks holda ba'zi
+pleyerlar birinchisini sukut deb oladi va u eng past sifat bo'lib
+qolardi.
 
-⚠️ Upscale **qilinmaydi**: 720p ni 1080p ga cho'zish sifat qo'shmaydi,
-faqat disk va CPU sarflaydi (§9).
+#### ⚠️ Vertikal video — «1080p», «1920p» EMAS
 
-### 4.6. FFmpeg → HLS `[ ]`
+Loyihada vertikal kontent birinchi darajali (ТЗ §19 — Reels,
+`Content.orientation`), ya'ni bu chekka holat emas.
 
-- `[ ]` `Cms/Service/Video/HlsTranscodingService`
-- `[ ]` H.264 (`libx264`) + AAC — mobil moslik uchun (§10)
-- `[ ]` fMP4 segmentlar, 6 soniyalik (HLS tavsiyasi)
-- `[ ]` `master.m3u8` — `BANDWIDTH`, `RESOLUTION`, `CODECS` atributlari bilan
-- `[ ]` Bitratelar konfiguratsiyadan, kodda qattiq yozilmaydi (§10)
-- `[ ]` Progress: `ffmpeg -progress` chiqishidan foiz hisoblanadi (§19 Phase 2)
+1080×1920 lik videoni odamlar «1080p vertikal» deyishadi. Balandlik
+bo'yicha taqqoslasak, 1920 ≥ 1080 bo'lib chiqardi va 1080p variant
+yaratilardi — u esa **607×1080**, ya'ni manbadan **past** sifat.
+Aslida manba allaqachon 1080p.
 
-### 4.7. Worker `[ ]`
+Shuning uchun taqqoslash **kichik tomon** bo'yicha boradi va
+masshtablashda ham aynan u belgilanadi. Chiqish vertikal qoladi:
+`1080x1920`, `720x1280`, `480x854`.
 
-- `[ ]` `Cms/Service/Video/TranscodeWorker` — `@Scheduled(fixedDelay)`
-- `[ ]` `app.video.max-concurrent-jobs` (default **1**)
-- `[ ]` Ish olish: `SELECT ... FOR UPDATE SKIP LOCKED` — ikki instans bir
-      ishni ikki marta olmasin
-- `[ ]` `try/finally` bilan kafolatli `/tmp` tozalash (§16)
-- `[ ]` Yiqilishda: `attempts++`, 3 martadan keyin `FAILED`
-- `[ ]` Testlar: holat o'tishlari, tozalash, bir vaqtdagilar chegarasi
+#### ⚠️ O'lchamlar JUFT bo'lishi shart
 
-⚠️ Default `1` — FFmpeg butun protsessorni egallaydi va u **API server bilan
-bitta mashinada** turibdi (Docker yo'q, ajratish yo'q). Ikkitasi API'ni
-sekinlashtiradi.
+H.264 ning `yuv420p` formati toq o'lchamni qabul qilmaydi: xromatik
+kanallar ikki barobar kichik va ular butun songa bo'linishi kerak.
 
-### 4.8. S3 ga HLS yuklash `[ ]`
+1919×1079 lik manbani 720 ga keltirsak kenglik 1281.4 → 1281 chiqadi
+va **FFmpeg xato berardi** — bu faqat transcoding paytida, allaqachon
+yuklangan videoda bilinardi.
+
+#### Eng past profildan kichik manba
+
+360p video, zinapoyaning pastki pog'onasi esa 480p. Hech narsa
+qaytarmaslik videoni HLS'siz qoldirardi va u pleyerda umuman
+ochilmasdi.
+
+Eng past profil olinadi, **lekin o'lchamlar manbaning o'zida qoladi** —
+480p ga cho'zilmaydi.
+
+### 4.6. FFmpeg → HLS `[x]`
+
+- `[x]` `FfmpegCommandBuilder` — buyruq qurish, jarayondan AJRATILGAN
+- `[x]` `HlsTranscodingService` — ishga tushirish, progress, xatolar
+- `[x]` H.264 (`libx264`, `main` profil) + AAC, `yuv420p`
+- `[x]` fMP4 segmentlar, 6 soniyalik
+- `[x]` `master.m3u8` ni **FFmpeg ning o'zi** yozadi
+- `[x]` Bitratelar sozlamadan, `maxrate`/`bufsize` bilan chegaralangan
+- `[x]` Progress `-progress pipe:1` dan
+- `[x]` `FfmpegCommandTest` — 17 test, 6 mutatsiya bilan tasdiqlangan
+
+#### ⚠️ Eng muhim detal: segment chegaralari
+
+ABR ishlashi uchun **barcha variantlarda segmentlar ayni vaqtlarda**
+boshlanishi shart. Aks holda pleyer sifatni almashtirganda kadr
+sakraydi yoki oqim umuman uziladi.
+
+Bu nosozlik transcoding paytida **ko'rinmaydi**: fayllar yaratiladi,
+playlist to'g'ri chiqadi, video ham ochiladi. U faqat qurilmada,
+internet sekinlashib sifat almashgan paytda bilinadi.
+
+Ikki bayroq buni ta'minlaydi:
+
+- `-force_key_frames expr:gte(t,n_forced*6)` — kalit kadr har 6
+  soniyada, **kadr chastotasidan qat'i nazar**. GOP ni qo'lda hisoblash
+  (fps × 6) noto'g'ri fps da chegaralarni siljitardi, `ffprobe` esa fps
+  ni har doim ham bermaydi
+- `-sc_threshold 0` — aks holda FFmpeg sahna almashganda **o'zi** kalit
+  kadr qo'yadi va u variantlarda turli joyda chiqadi
+
+#### Bitta chaqiruv, uchta emas
+
+`-var_stream_map` bilan barcha variantlar **bitta** FFmpeg chaqiruvida
+yasaladi. Alohida chaqiruvlar bo'lsa manba **uch marta** dekodlanardi —
+ikki soatlik film uchun protsessor vaqtining uch barobari.
+
+`name:1080p` qismi `%v` nima bo'lishini belgilaydi. Usiz papkalar `0`,
+`1`, `2` deb atalardi va S3 dagi kalitdan qaysi sifat ekanini bilib
+bo'lmasdi.
+
+#### `master.m3u8` ni FFmpeg yozadi
+
+Qo'lda yozilsa `CODECS` atributini ham qo'lda hisoblash kerak bo'lardi
+(`avc1.4d401f` kabi qatorlar profil va darajaga bog'liq). Noto'g'ri
+qiymat pleyerni oqimni **umuman ochmaslikka** olib boradi — va bu faqat
+qurilmada bilinadi.
+
+#### Boshqa qarorlar
+
+**`-hls_list_size 0`.** Sukut qiymat oxirgi bir nechta segmentni
+qoldirib, qolganini **o'chiradi** — jonli efir uchun to'g'ri, VOD uchun
+esa fayllarning yarmi yo'qolishini bildiradi.
+
+**`maxrate` + `bufsize`.** Ularsiz FFmpeg bitrate'ni o'rtacha deb
+qabul qiladi va murakkab sahnalarda uni bir necha barobar oshirib
+yuborishi mumkin — sekin kanalda bu uzilish demakdir.
+
+**`yuv420p` majburiy.** Manba 10-bitli bo'lsa FFmpeg uni saqlab
+qolardi va natija ko'p qurilmada ochilmasdi.
+
+**Ovozsiz video.** `0:a:0` ni ulashga urinish FFmpeg ni «Stream map
+matches no streams» bilan yiqitardi. Ovoz yo'q bo'lsa u umuman
+ulanmaydi.
+
+**Xato oqimi alohida ipda o'qiladi.** Usiz FFmpeg osilib qolardi:
+operatsion tizim bufer to'lganda yozishni to'xtatadi, biz esa stdout ni
+o'qib turgan bo'lardik va hech kim stderr ni bo'shatmasdi.
+
+**Progress faqat davomiylik ma'lum bo'lganda.** Aks holda bo'linuvchi
+yo'q va har qanday raqam o'ylab topilgan bo'lardi.
+
+#### ✅ HAQIQIY FFmpeg bilan tasdiqlandi (27.08.2026)
+
+FFmpeg 9.0.1 o'rnatildi va `HlsPipelineIntegrationTest` yozildi —
+4 test, haqiqiy kodlash bilan. FFmpeg bo'lmasa test **o'tkazib
+yuboriladi** (`assumeTrue`), ya'ni CI qizil bo'lmaydi.
+
+Buyurtmachining haqiqiy videosi bilan ham sinaldi: **2160×3840
+vertikal 4K**, 59.94 fps, ovozli, 2:44, 591 MB.
+
+**To'liq video → 3 variant: 76 soniya** (real vaqtdan 2.1× tez,
+8 yadroda). 28 ta segment.
+
+⚠️ Uchala variantning `#EXTINF` ro'yxati **bayt-baytiga bir xil** —
+ABR chegaralari 28 nuqtada ham moslashdi. Har variant `master.m3u8`
+orqali xatosiz dekodlandi va to'liq davomiylikni (164.564403s)
+manbaga aynan mos qaytardi.
+
+| | manba | 1080p | 720p | 480p |
+|---|---|---|---|---|
+| hajm | 591 MB | 97 MB | 55 MB | 24 MB |
+
+| Tekshiruv | Natija |
+|---|---|
+| ABR segment chegaralari | `6.006000` va `4.037367` — **uchala variantda bir xil** |
+| Vertikal o'lchamlar | `1080x1920` · `720x1280` · `480x854` — almashmadi |
+| `CODECS` | `avc1.4d402a` (Main 4.2) — `-profile:v main` ga mos |
+| `BANDWIDTH` | 5 104 422 ≈ sozlamadagi `5000k` |
+| HLS versiyasi | 7 (fMP4 uchun majburiy) |
+| Hajmlar | 40 MB manba → 5.8 / 3.3 / 1.5 MB |
+
+#### ⚠️ Haqiqiy ishga tushirish topgan narsa
+
+Mock testlar **hech qachon ko'ra olmaydigan** detal: ko'p variantda
+FFmpeg init faylini **qayta nomlaydi**.
+
+```
+bitta variant    → init.mp4
+uchta variant    → init_0.mp4 · init_1.mp4 · init_2.mp4
+```
+
+Ishlab chiqarish kodi **to'g'ri** edi — `HlsUploadService` papkani
+rekursiv yuklaydi va playlistlar to'g'ri havola qiladi. Xato
+**testda** edi: u har doim `init.mp4` deb hisoblagan.
+
+Test kuchliroq tekshiruvga almashtirildi: **playlist havola qilgan
+fayl haqiqatan bormi**. Bu nom o'zgarsa ham to'g'ri qoladi va
+playlist bilan fayllar mos kelishini kafolatlaydi.
+
+### 4.7. Worker `[x]` · 4.8 bilan BIRGA
+
+- `[x]` `TranscodeWorker` — `@Scheduled(fixedDelay)`, sozlanadigan oraliq
+- `[x]` `app.video.max-concurrent-jobs` (default **1**), semafor bilan
+- `[x]` `try/finally` bilan kafolatli tozalash (§16)
+- `[x]` Uzilib qolgan ishlarni ishga tushishda navbatga qaytarish
+- `[x]` `HlsUploadService` — rekursiv yuklash (4.8)
+- `[x]` `StorageService.storeAt` — aniq kalitga saqlash
+- `[x]` `TranscodeWorkerTest` — 12 test, 5 mutatsiya bilan tasdiqlangan
+
+#### ⚠️ 4.8 nega birga bajarildi
+
+Yuklamaydigan worker ni **sinab bo'lmaydi**: u `READY` ni yuklashsiz
+qo'yardi va bu jimgina noto'g'ri holat bo'lardi. Zanjir to'liq bo'lishi
+kerak edi.
+
+#### Zanjir
+
+```
+navbatdan ol → ombordan yuklab ol → ffprobe → profil tanla
+→ ffmpeg → HLS'ni omborga yukla → READY
+                                   ↓ har qanday xatoda
+                                 FAILED / navbatga qaytish
+va HAR QANDAY holatda → vaqtinchalik fayllarni o'chir
+```
+
+#### Qabul qilingan qarorlar
+
+**Manba lokal diskka tushiriladi.** FFmpeg faylga **tasodifiy joydan**
+murojaat qiladi (indeks odatda faylning oxirida). Uni to'g'ridan-to'g'ri
+S3 dan o'qish har seek uchun yangi HTTP so'rov degani — transcoding bir
+necha barobar sekinlashardi.
+
+**`hlsMasterKey` FAQAT yuklash tugagach yoziladi.** U «video tayyor»
+belgisi. Ilgariroq yozilsa pleyer mavjud bo'lmagan fayllarni so'rardi.
+
+**`master.m3u8` eng oxirida yuklanadi.** Uning paydo bo'lishi «tayyor»
+degani. Birinchi yuklansa, segmentlar hali kelmagan paytda pleyer uni
+o'qib, uzilib qoladigan videoni ko'rsatardi.
+
+**Ish alohida ipda.** Rejalashtiruvchi ipida bajarilsa u o'nlab daqiqa
+band bo'lardi va boshqa barcha vazifalar (`NotificationDispatcher`,
+`AnalyticsService`) to'xtab qolardi.
+
+**Bo'sh joy bo'lmasa navbatga umuman qaralmaydi.** Ish olinib, keyin
+bajarilmay qolsa u `PROBING` da **muzlab** qolardi.
+
+**Uzilib qolgan ishlar ishga tushishda navbatga qaytariladi.** Server
+transcoding paytida qayta ishga tushsa, ish `TRANSCODING` holatida
+muzlab qolardi: uni hech kim olmaydi va hech kim tugatmaydi. Admin
+panelda u abadiy «bajarilmoqda» bo'lib turardi — jimgina nosozlikning
+eng yomon turi.
+
+⚠️ `attempts` bunda **kamaytirilmaydi**: qayta ishga tushish sababi
+transcoding'ning o'zi bo'lishi mumkin (xotira tugashi).
+
+**Kengaytma oq ro'yxati `storeAt` da qo'llanmaydi.** HLS fayllarini
+(`.m3u8`, `.m4s`) **server yaratadi**, foydalanuvchi emas. Oq ro'yxat
+foydalanuvchi bergan nomdan himoya qiladi; yo'l himoyasi esa qoladi.
+
+**Worker testlarda o'chirilgan** (`app.video.worker-enabled=false`).
+Yoqiq qolsa har test konteksti navbatdagi ishlarni haqiqiy FFmpeg bilan
+bajarishga urinardi.
+
+### 4.8. S3 ga HLS yuklash `[x]` — 4.7 bilan birga
 
 - `[ ]` Rekursiv yuklash, har bir fayl uchun to'g'ri `Content-Type`:
 
@@ -619,14 +814,14 @@ Pullik kontent hozirgi `raw` yo'lida qoladi — ya'ni regressiya yo'q.
 - `[x]` Presigned multipart upload
 - `[x]` Upload tugaganini tekshirish (`HEAD`)
 - `[x]` `ffprobe` integratsiyasi
-- `[ ]` Transcoding profillari
-- `[ ]` HLS generatori
-- `[ ]` `master.m3u8`
-- `[ ]` S3 HLS yuklovchi
+- `[x]` Transcoding profillari
+- `[x]` HLS generatori
+- `[x]` `master.m3u8`
+- `[x]` S3 HLS yuklovchi
 - `[x]` Processing holatlari
-- `[ ]` Fon worker
+- `[x]` Fon worker
 - `[x]` Yiqilishni boshqarish va qayta urinish
-- `[ ]` Vaqtinchalik fayllarni tozalash
+- `[x]` Vaqtinchalik fayllarni tozalash
 - `[ ]` CDN URL integratsiyasi
 - `[ ]` ⚠️ Xavfsiz video kirish (Timeweb qarorini kutmoqda)
 - `[ ]` Admin upload progress

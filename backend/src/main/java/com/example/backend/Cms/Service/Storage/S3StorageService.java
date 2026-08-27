@@ -173,6 +173,60 @@ public class S3StorageService implements StorageService {
         return key;
     }
 
+    /**
+     * ⚠️ Kengaytma oq ro'yxati BU YERDA qo'llanmaydi — sabab
+     * {@code LocalStorageService} dagi bilan bir xil: HLS fayllarini
+     * server yaratadi, foydalanuvchi emas.
+     *
+     * Hajm ma'lum emas, shuning uchun {@code store(InputStream…)} kabi
+     * multipart ishlatiladi — bir vaqtda faqat bitta bo'lak xotirada
+     * turadi.
+     */
+    @Override
+    public void storeAt(InputStream in, String key, String contentType) {
+        String objectKey = objectKey(key);
+        String uploadId = s3.createMultipartUpload(CreateMultipartUploadRequest.builder()
+                .bucket(properties.getBucket())
+                .key(objectKey)
+                .contentType(contentType == null ? MediaContentTypes.of(key) : contentType)
+                .build()).uploadId();
+
+        List<CompletedPart> parts = new ArrayList<>();
+        try (InputStream stream = in) {
+            byte[] buffer = new byte[PART_SIZE];
+            int partNumber = 1;
+            while (true) {
+                int filled = readFully(stream, buffer);
+                if (filled == 0 && partNumber > 1) {
+                    break;
+                }
+                String etag = s3.uploadPart(
+                        UploadPartRequest.builder()
+                                .bucket(properties.getBucket())
+                                .key(objectKey)
+                                .uploadId(uploadId)
+                                .partNumber(partNumber)
+                                .build(),
+                        RequestBody.fromBytes(java.util.Arrays.copyOf(buffer, filled))).eTag();
+                parts.add(CompletedPart.builder().partNumber(partNumber).eTag(etag).build());
+                partNumber++;
+                if (filled < PART_SIZE) {
+                    break;
+                }
+            }
+            s3.completeMultipartUpload(CompleteMultipartUploadRequest.builder()
+                    .bucket(properties.getBucket())
+                    .key(objectKey)
+                    .uploadId(uploadId)
+                    .multipartUpload(CompletedMultipartUpload.builder().parts(parts).build())
+                    .build());
+        } catch (IOException | RuntimeException e) {
+            abortQuietly(objectKey, uploadId);
+            log.error("S3 ga saqlanmadi: {}", key, e);
+            throw e instanceof BusinessException business ? business : storageError();
+        }
+    }
+
     // ------------------------------------------------------------- o'qish
 
     @Override

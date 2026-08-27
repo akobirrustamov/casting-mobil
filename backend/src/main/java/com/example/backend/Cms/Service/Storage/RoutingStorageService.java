@@ -75,6 +75,12 @@ public class RoutingStorageService implements StorageService {
         return s3.store(in, originalFilename, folder);
     }
 
+    /** Aniq kalitga yozish ham S3 ga — yangi fayllar faqat u yerda. */
+    @Override
+    public void storeAt(java.io.InputStream in, String key, String contentType) {
+        s3.storeAt(in, key, contentType);
+    }
+
     /** Kengaytma qoidasi ikkala omborda bir xil — {@link StorageKeys}. */
     @Override
     public boolean accepts(String originalFilename) {
