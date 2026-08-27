@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { GlowBackdrop } from '@/components/ui/GlowBackdrop';
 import { Wordmark } from '@/components/ui/Wordmark';
 import { exchangeGoogleToken, sendOtp } from '@/features/auth/api';
+import type { DevLoginResult } from '@/features/auth/devLogin';
 import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton';
 import { otpErrorKey } from '@/features/auth/otpErrors';
 import { useAuthStore } from '@/features/auth/store';
@@ -64,6 +65,15 @@ export default function SignInScreen() {
     } finally {
       setSending(false);
     }
+  };
+
+  /**
+   * Dev-вход: токен и пользователь уже настоящие, менять нечего —
+   * просто кладём сессию и уходим на главную.
+   */
+  const onDevSession = async ({ token, user }: DevLoginResult) => {
+    await signIn(token, user);
+    router.replace('/(tabs)');
   };
 
   const onGoogleSuccess = async (idToken: string) => {
@@ -132,7 +142,10 @@ export default function SignInScreen() {
             <View className="h-px flex-1 bg-border" />
           </View>
 
-          <GoogleSignInButton onSuccess={onGoogleSuccess} />
+          <GoogleSignInButton
+            onSuccess={onGoogleSuccess}
+            onDevSession={onDevSession}
+          />
 
           {googleError ? (
             <Text className="text-center text-caption text-danger">{googleError}</Text>

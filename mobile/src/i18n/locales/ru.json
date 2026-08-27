@@ -83,7 +83,8 @@
     "otpExpired": "Код истёк, запросите новый",
     "otpLocked": "Слишком много попыток, запросите новый код",
     "otpCooldown": "Код уже отправлен, подождите",
-    "smsUnavailable": "Вход по SMS пока не настроен"
+    "smsUnavailable": "Вход по SMS пока не настроен",
+    "devLogin": "Dev-вход: {{phone}}. Google пока не работает."
   },
   "home": {
     "todayPremieres": "Сегодняшние премьеры",
