@@ -107,58 +107,65 @@ export default function SignInScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Композиция с референса заказчика: знак крупно, под ним название
-            и слоган. На экране входа это единственный «герой», поэтому
-            блок стоит отдельно и с воздухом. */}
-        <View className="items-center pb-8 pt-6">
-          <Wordmark variant="stacked" />
-        </View>
+        {/*
+          Знак и форма — одна группа, отцентрованная по вертикали.
 
-        <View className="gap-6 px-6">
-          <Text className="text-center text-h2 text-text">{t('auth.phoneTitle')}</Text>
+          Раньше свободное место собиралось в ОДНУ дыру внизу: всё лежало
+          сверху, а `flex-1` перед согласием отжимал кнопку к краю. Теперь
+          остаток делится поровну над группой и под ней, и пустоты в глаза
+          не бросается ни сверху, ни снизу.
+        */}
+        <View className="flex-1 justify-center gap-7">
+          {/* Композиция с референса заказчика: знак крупно, под ним
+              название и слоган. На экране входа это единственный «герой». */}
+          <View className="items-center">
+            <Wordmark variant="stacked" />
+          </View>
 
-          {/* Рамка загорается синим — началом фирменной шкалы, — когда
-              номер введён полностью */}
-          <View
-            className="flex-row items-center gap-3 rounded-card border bg-surface px-4"
-            style={{ borderColor: isPhoneValid ? colors.blue : colors.border }}
-          >
-            <Ionicons name="call-outline" size={18} color={colors.textMuted} />
-            <Text className="text-body text-text">+998</Text>
-            <View className="h-5 w-px" style={{ backgroundColor: colors.border }} />
-            <TextInput
-              value={phone}
-              onChangeText={onChangePhone}
-              placeholder={t('auth.phonePlaceholder')}
-              placeholderTextColor={colors.textDisabled}
-              keyboardType="phone-pad"
-              inputMode="tel"
-              maxLength={12}
-              className="flex-1 py-4 text-body"
-              style={{ color: colors.white }}
+          <View className="gap-6 px-6">
+            <Text className="text-center text-h2 text-text">{t('auth.phoneTitle')}</Text>
+
+            {/* Рамка загорается синим — началом фирменной шкалы, — когда
+                номер введён полностью */}
+            <View
+              className="flex-row items-center gap-3 rounded-card border bg-surface px-4"
+              style={{ borderColor: isPhoneValid ? colors.blue : colors.border }}
+            >
+              <Ionicons name="call-outline" size={18} color={colors.textMuted} />
+              <Text className="text-body text-text">+998</Text>
+              <View className="h-5 w-px" style={{ backgroundColor: colors.border }} />
+              <TextInput
+                value={phone}
+                onChangeText={onChangePhone}
+                placeholder={t('auth.phonePlaceholder')}
+                placeholderTextColor={colors.textDisabled}
+                keyboardType="phone-pad"
+                inputMode="tel"
+                maxLength={12}
+                className="flex-1 py-4 text-body"
+                style={{ color: colors.white }}
+              />
+            </View>
+
+            <View className="flex-row items-center gap-3">
+              <View className="h-px flex-1 bg-border" />
+              <Text className="text-caption text-text-muted">— {t('auth.or')} —</Text>
+              <View className="h-px flex-1 bg-border" />
+            </View>
+
+            <GoogleSignInButton
+              onSuccess={onGoogleSuccess}
+              onDevSession={onDevSession}
             />
+
+            {googleError ? (
+              <Text className="text-center text-caption text-danger">{googleError}</Text>
+            ) : null}
           </View>
-
-          <View className="flex-row items-center gap-3">
-            <View className="h-px flex-1 bg-border" />
-            <Text className="text-caption text-text-muted">— {t('auth.or')} —</Text>
-            <View className="h-px flex-1 bg-border" />
-          </View>
-
-          <GoogleSignInButton
-            onSuccess={onGoogleSuccess}
-            onDevSession={onDevSession}
-          />
-
-          {googleError ? (
-            <Text className="text-center text-caption text-danger">{googleError}</Text>
-          ) : null}
         </View>
 
-        {/* Прижимает согласие и кнопку к низу, как на макете */}
-        <View className="flex-1" />
-
-        <View className="gap-4 px-6 pt-8">
+        {/* Согласие и главная кнопка — у нижнего края, как на макете. */}
+        <View className="gap-4 px-6 pt-6">
           <Text className="text-center text-caption text-text-muted">
             <Text className="text-cyan underline">{t('auth.termsLink')}</Text>
             {' ' + t('auth.consentMiddle') + ' '}
