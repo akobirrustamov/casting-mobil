@@ -4,7 +4,9 @@
     "casting": "Casting",
     "premiere": "Premiere",
     "messages": "Messages",
-    "profile": "Profile"
+    "profile": "Profile",
+    "media": "Media",
+    "saved": "Saved"
   },
   "states": {
     "emptyTitle": "Nothing here yet",
@@ -124,7 +126,7 @@
     "paymentHistory": "Payment history",
     "applications": "My applications",
     "portfolio": "Portfolio",
-    "favorites": "Favorites",
+    "favorites": "Saved",
     "creatorStudio": "Creator Studio",
     "premium": "Premium",
     "devices": "Active devices",

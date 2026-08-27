@@ -4,7 +4,9 @@
     "casting": "Кастинг",
     "premiere": "Премьера",
     "messages": "Сообщения",
-    "profile": "Профиль"
+    "profile": "Профиль",
+    "media": "Медиа",
+    "saved": "Сохранённые"
   },
   "states": {
     "emptyTitle": "Пока пусто",
@@ -124,7 +126,7 @@
     "paymentHistory": "История платежей",
     "applications": "Мои заявки",
     "portfolio": "Портфолио",
-    "favorites": "Избранное",
+    "favorites": "Сохранённые",
     "creatorStudio": "Creator Studio",
     "premium": "Premium",
     "devices": "Активные устройства",

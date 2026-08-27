@@ -21,10 +21,19 @@ import { TOUCH_TARGET, colors, radius } from '@/theme/tokens';
  * приподнимается и получает мягкую подсветку. ТЗ: «glow эффекты в меру».
  */
 
+/**
+ * Иконки вкладок.
+ *
+ * Ключ — имя файла маршрута, а не подпись: подпись переводится, имя нет.
+ * Порядок в баре задаёт `app/(tabs)/_layout.tsx`, здесь только вид.
+ */
 const ICONS: Record<string, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
   index: { active: 'home', inactive: 'home-outline' },
+  // Вкладка называется «Media» — это каталог контента, отсюда плёнка.
+  premiere: { active: 'film', inactive: 'film-outline' },
   casting: { active: 'star', inactive: 'star-outline' },
-  premiere: { active: 'play-circle', inactive: 'play-circle-outline' },
+  // Сердце, а не закладка: сохраняют тем же сердцем на карточках.
+  favorites: { active: 'heart', inactive: 'heart-outline' },
   messages: { active: 'chatbubble-ellipses', inactive: 'chatbubble-ellipses-outline' },
   profile: { active: 'person', inactive: 'person-outline' },
 };

@@ -2,8 +2,8 @@ import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, useWindowDimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useTabBarHeight } from '@/components/navigation/TabBar';
 import { ScreenState } from '@/components/states/ScreenState';
 import { CreatorCard } from '@/components/ui/CreatorCard';
 import { Screen } from '@/components/ui/Screen';
@@ -13,7 +13,12 @@ import { useFavoritesStore } from '@/features/favorites/store';
 import { useIsOffline } from '@/lib/network';
 
 /**
- * Избранное («Sevimli»).
+ * Сохранённое («Saqlanganlar») — вкладка таб-бара.
+ *
+ * Была отдельным экраном за пределами вкладок; на макете заказчика
+ * (Landing Page) она стоит четвёртой в нижнем баре, поэтому переехала
+ * в `(tabs)`. Путь не изменился: группа `(tabs)` в адрес не входит, и
+ * переход из профиля по `/favorites` работает как раньше.
  *
  * Список id лежит локально, а сами анкеты берём из общего кэша — отдельного
  * запроса не делаем. Побочный эффект: если анкету убрали с витрины, из
@@ -27,7 +32,9 @@ const COLUMNS = 2;
 export default function FavoritesScreen() {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
+  // Таб-бар плавающий: без этого отступа последний ряд карточек уезжает
+  // под капсулу.
+  const tabBarHeight = useTabBarHeight();
 
   const creators = useCreators();
   const isOffline = useIsOffline();
@@ -45,7 +52,7 @@ export default function FavoritesScreen() {
 
   if (creators.isPending) {
     return (
-      <Screen title={title} scroll={false} onBack={() => router.back()} underTabBar={false}>
+      <Screen title={title} scroll={false}>
         <SkeletonGrid cardWidth={cardWidth} />
       </Screen>
     );
@@ -53,7 +60,7 @@ export default function FavoritesScreen() {
 
   if (creators.isError) {
     return (
-      <Screen title={title} scroll={false} onBack={() => router.back()} underTabBar={false}>
+      <Screen title={title} scroll={false}>
         <ScreenState
           kind={isOffline ? 'offline' : 'error'}
           onRetry={() => creators.refetch()}
@@ -67,8 +74,6 @@ export default function FavoritesScreen() {
       title={title}
       subtitle={items.length > 0 ? t('catalog.found', { count: items.length }) : undefined}
       scroll={false}
-      onBack={() => router.back()}
-      underTabBar={false}
     >
       {items.length === 0 ? (
         <ScreenState kind="empty" body={t('favorites.empty')} />
@@ -80,7 +85,7 @@ export default function FavoritesScreen() {
           columnWrapperStyle={{ gap: GAP }}
           contentContainerStyle={{
             paddingHorizontal: PADDING,
-            paddingBottom: insets.bottom + 24,
+            paddingBottom: tabBarHeight + 8,
             gap: GAP,
           }}
           showsVerticalScrollIndicator={false}

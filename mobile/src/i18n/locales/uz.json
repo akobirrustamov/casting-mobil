@@ -4,7 +4,9 @@
     "casting": "Casting",
     "premiere": "Premyera",
     "messages": "Xabarlar",
-    "profile": "Profil"
+    "profile": "Profil",
+    "media": "Media",
+    "saved": "Saqlanganlar"
   },
   "states": {
     "emptyTitle": "Hozircha bo'sh",
@@ -124,7 +126,7 @@
     "paymentHistory": "To'lovlar tarixi",
     "applications": "Arizalarim",
     "portfolio": "Portfolio",
-    "favorites": "Sevimli",
+    "favorites": "Saqlanganlar",
     "creatorStudio": "Creator Studio",
     "premium": "Premium",
     "devices": "Faol qurilmalar",

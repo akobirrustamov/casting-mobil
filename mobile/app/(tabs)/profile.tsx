@@ -114,7 +114,7 @@ export default function ProfileScreen() {
       title={t('profile.account')}
       headerRight={
         <Pressable
-          onPress={() => router.push('/(tabs)/messages')}
+          onPress={() => router.push('/messages')}
           accessibilityRole="button"
           accessibilityLabel={t('profile.notifications')}
           hitSlop={10}
