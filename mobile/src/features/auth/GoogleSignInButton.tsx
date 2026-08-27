@@ -6,7 +6,7 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { colors } from '@/theme/tokens';
 
 import { isGoogleConfigured } from './config';
-import { devLogin, devLoginPhone, isDevLoginEnabled, type DevLoginResult } from './devLogin';
+import { devLogin, isDevLoginEnabled, type DevLoginResult } from './devLogin';
 import { useGoogleSignIn } from './useGoogleSignIn';
 
 /**
@@ -20,8 +20,9 @@ import { useGoogleSignIn } from './useGoogleSignIn';
  * <h2>Dev-режим</h2>
  * На локальном контуре настоящий Google недоступен: в Expo Go его redirect
  * в Google Cloud не зарегистрирован. Когда в `.env` задан dev-пользователь,
- * та же кнопка входит настоящим запросом `/auth/login` — и подписывается
- * так, чтобы это нельзя было принять за рабочий Google (см. `devLogin.ts`).
+ * та же кнопка входит настоящим запросом `/auth/login` под этим
+ * пользователем (см. `devLogin.ts`). Сессия при этом настоящая —
+ * подделки токена нет.
  */
 export function GoogleSignInButton({
   onSuccess,
@@ -39,8 +40,10 @@ export function GoogleSignInButton({
 /**
  * Обходная кнопка для локальной разработки.
  *
- * Подпись обязательна: без неё скриншот этого экрана читался бы как
- * «вход через Google работает», хотя он не работает.
+ * Под кнопкой была подпись «Dev-kirish: …» — заказчик попросил убрать:
+ * экран идёт на скриншоты, служебная пометка там лишняя. Что это обход,
+ * видно по `.env`: без `EXPO_PUBLIC_DEV_LOGIN_*` кнопки просто нет
+ * (см. `devLogin.ts`).
  */
 function DevLoginButton({
   onDevSession,
@@ -71,9 +74,6 @@ function DevLoginButton({
         loading={busy}
         onPress={onPress}
       />
-      <Text className="text-center text-caption text-gold">
-        {t('auth.devLogin', { phone: devLoginPhone ?? '' })}
-      </Text>
       {error ? (
         <Text className="text-center text-caption text-danger">{error}</Text>
       ) : null}

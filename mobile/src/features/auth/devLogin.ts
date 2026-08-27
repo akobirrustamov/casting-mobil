@@ -34,9 +34,6 @@ const DEV_PASSWORD = process.env.EXPO_PUBLIC_DEV_LOGIN_PASSWORD;
 export const isDevLoginEnabled =
   __DEV__ && !READ_ONLY && Boolean(DEV_PHONE) && Boolean(DEV_PASSWORD);
 
-/** Телефон, под которым войдём. Показываем рядом с кнопкой — без сюрпризов. */
-export const devLoginPhone = DEV_PHONE ?? null;
-
 type LoginResponse = {
   access_token: string;
   roles?: { name: string }[];

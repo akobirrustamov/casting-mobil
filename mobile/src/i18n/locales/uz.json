@@ -85,8 +85,7 @@
     "otpExpired": "Kod muddati tugagan, qaytadan so'rang",
     "otpLocked": "Urinishlar soni tugadi, qaytadan so'rang",
     "otpCooldown": "Kod allaqachon yuborilgan, biroz kuting",
-    "smsUnavailable": "SMS xizmati hozircha sozlanmagan",
-    "devLogin": "Dev-kirish: {{phone}}. Google hozircha ishlamaydi."
+    "smsUnavailable": "SMS xizmati hozircha sozlanmagan"
   },
   "home": {
     "todayPremieres": "Bugungi premyeralar",

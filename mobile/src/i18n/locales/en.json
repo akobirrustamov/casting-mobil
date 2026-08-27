@@ -85,8 +85,7 @@
     "otpExpired": "Code expired, request a new one",
     "otpLocked": "Too many attempts, request a new code",
     "otpCooldown": "Code already sent, please wait",
-    "smsUnavailable": "SMS sign-in is not configured yet",
-    "devLogin": "Dev sign-in: {{phone}}. Google is not wired yet."
+    "smsUnavailable": "SMS sign-in is not configured yet"
   },
   "home": {
     "todayPremieres": "Today's premieres",
