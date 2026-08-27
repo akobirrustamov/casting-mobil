@@ -310,6 +310,36 @@ async function findResumable(file) {
 }
 
 /**
+ * Bitta bo'lak uchun imzolangan havola.
+ *
+ * ⚠️ Havolalar guruh bilan olinadi va KESHLANADI. Har bo'lak uchun
+ * alohida so'rov 20 GB lik faylda 2048 ta ortiqcha murojaat bo'lardi.
+ *
+ * Kesh sessiyaga bog'liq: `uploadId` o'zgarsa eski havolalar yaroqsiz.
+ */
+const PART_URL_BATCH = 20;
+const partUrlCache = new Map();
+
+async function partUrl(uploadId, index) {
+  const cached = partUrlCache.get(`${uploadId}:${index}`);
+  if (cached) return cached;
+
+  const batch = await request('post', `/api/v1/app/admin/uploads/${uploadId}/parts`, {
+    data: { from: index, count: PART_URL_BATCH },
+  });
+
+  (batch.parts || []).forEach((part) => {
+    partUrlCache.set(`${uploadId}:${part.index}`, part.url);
+  });
+
+  const url = partUrlCache.get(`${uploadId}:${index}`);
+  if (!url) {
+    throw normalizeError(new Error(`Bo'lak ${index} uchun havola berilmadi`));
+  }
+  return url;
+}
+
+/**
  * Katta fayl - bo'laklab yuklash.
  *
  * Har bir bo'lak alohida so'rov, ya'ni bittasi uzilsa faqat o'sha qayta
@@ -347,12 +377,29 @@ async function uploadChunked(file, folder, onProgress, options = {}) {
     let lastError = null;
     for (let attempt = 1; attempt <= CHUNK_RETRIES; attempt += 1) {
       try {
-        await fileRequest(() => http.put(
-          `/api/v1/app/admin/uploads/${uploadId}/chunks/${index}`, blob, {
-            headers: { 'Content-Type': 'application/octet-stream' },
-            timeout: FILE_TIMEOUT_MS,
-          },
-        ));
+        if (session.uploadMode === 'S3_MULTIPART') {
+          // ⚠️ Bo'lak SERVER ORQALI O'TMAYDI — imzolangan havola
+          // orqali to'g'ridan-to'g'ri omborga ketadi.
+          //
+          // `axios` emas, `fetch`: `axios` bizning interceptor'imizga
+          // ega va u har bir so'rovga `Authorization` sarlavhasini
+          // qo'shadi. Ombor esa imzoni tekshiradi va begona
+          // sarlavhani ko'rib so'rovni RAD ETADI.
+          const url = await partUrl(uploadId, index);
+          const response = await fetch(url, { method: 'PUT', body: blob });
+          if (!response.ok) {
+            const error = new Error(`Bo'lak yuborilmadi (${response.status})`);
+            error.response = { status: response.status };
+            throw error;
+          }
+        } else {
+          await fileRequest(() => http.put(
+            `/api/v1/app/admin/uploads/${uploadId}/chunks/${index}`, blob, {
+              headers: { 'Content-Type': 'application/octet-stream' },
+              timeout: FILE_TIMEOUT_MS,
+            },
+          ));
+        }
         lastError = null;
         break;
       } catch (error) {
@@ -377,6 +424,12 @@ async function uploadChunked(file, folder, onProgress, options = {}) {
 
   const media = await request('post', `/api/v1/app/admin/uploads/${uploadId}/complete`,
     { data: {}, timeout: COMPLETE_TIMEOUT_MS });
+
+  // Havolalar endi keraksiz va ular xotirada joy egallaydi.
+  [...partUrlCache.keys()]
+    .filter((key) => key.startsWith(`${uploadId}:`))
+    .forEach((key) => partUrlCache.delete(key));
+
   forgetUpload(file);
   if (onProgress) onProgress(100);
   return media;

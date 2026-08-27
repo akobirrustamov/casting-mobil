@@ -1,4 +1,4 @@
-# VIDEO — S3 · CDN · HLS · ABR
+    # VIDEO — S3 · CDN · HLS · ABR
 
 Belgilar: `[x]` bajarilgan · `[~]` qisman · `[ ]` bajarilmagan
 `⚠️` — qaror yoki tashqi bog'liqlik kutilmoqda
@@ -319,20 +319,65 @@ safar foydalanuvchi videoni oldinga surganda.
 
 ⚠️ `LocalStorageService` **o'chirilmadi va o'zgartirilmadi** (§33).
 
-### 4.2. Presigned upload `[ ]`
+### 4.2. Presigned upload `[x]`
 
-- `[ ]` `POST /api/v1/app/admin/uploads` — mavjud endpoint **kengaytiriladi**,
-      yangisi yaratilmaydi. Javobga `uploadMode: CHUNKED | S3_MULTIPART` qo'shiladi
-- `[ ]` S3 rejimida: `createMultipartUpload` → `uploadId` + bo'lak URL'lari
-- `[ ]` `POST .../parts` — keyingi N ta bo'lak uchun presigned URL
-- `[ ]` `POST .../complete` — `completeMultipartUpload` + `HEAD` tekshiruvi
-- `[ ]` `DELETE .../{id}` — `abortMultipartUpload` (yarim yuklangan bo'laklar
-      S3 da pul turadi)
-- `[ ]` Frontend: `client.js` da S3 rejimi, progress mavjud UI bilan
-- `[ ]` Testlar: holat o'tishlari, `complete` da obyekt yo'q bo'lsa rad etish
+- `[x]` Migratsiya `V27__upload_session_s3.sql` — uchta ustun, sukut
+      qiymat `CHUNKED` (mavjud sessiyalar davom ettiriladi)
+- `[x]` `UploadMode` enum · `UploadSession` ga `uploadMode · s3UploadId · storageKey`
+- `[x]` `S3MultipartUploadService` — `begin · presignPart · receivedParts ·
+      complete · abort`
+- `[x]` `POST /api/v1/app/admin/uploads` **kengaytirildi**, yangi endpoint
+      yaratilmadi. Javobga `uploadMode` qo'shildi
+- `[x]` `POST .../parts` — guruh bilan imzolangan havolalar (sukut 20 ta)
+- `[x]` `complete` — `ListParts` + yig'ish + `HEAD` tekshiruvi
+- `[x]` `abort` va sutkalik tozalash S3 bo'laklarini ham bekor qiladi
+- `[x]` `saveChunk` S3 rejimida **rad etadi**
+- `[x]` Frontend: `client.js` da S3 rejimi, havolalar keshlanadi
+- `[x]` `S3MultipartUploadTest` 14 test · `uploadResume.test.js` +3 test
+- `[x]` 9 mutatsiya bilan tasdiqlangan (6 backend + 3 frontend)
 
-⚠️ Presigned URL **logga yozilmaydi** (§29) — u imzo bilan birga to'liq
-kirish huquqini beradi.
+#### Qabul qilingan qarorlar
+
+**Bo'lak o'lchami 10 MB, 5 MB emas.** 20 GB lik fayl 10 MB da 2048 ta
+bo'lak beradi (S3 chegarasi 10 000), 5 MB da esa 4096 ta bo'lardi va
+har biri uchun alohida imzolangan havola kerak bo'lardi.
+
+**ETag'lar bazada saqlanmaydi.** Yig'ishda ular S3 dan `ListParts`
+bilan so'raladi. Klient qaytarib yuborishi ham mumkin edi, lekin unda
+yolg'on ma'lumot yuborish imkoni paydo bo'lardi va uzilishdan keyin
+klient ularni unutgan bo'lardi. Bu `ChunkedUploadService` dagi qaror
+bilan bir xil — u ham bo'laklarni bazada emas, **omborning o'zida**
+sanaydi.
+
+**`listPartsPaginator`, oddiy `listParts` emas.** Oddiy chaqiruv bir
+marta atigi 1000 ta bo'lak qaytaradi. 20 GB lik faylda ular 2048 ta va
+ro'yxat **jimgina yarmida kesilardi** — «bo'laklar to'liq emas» xatosi
+sababi tushunarsiz bo'lgan holda.
+
+**Frontendda `fetch`, `axios` emas.** `axios` bizning interceptor'imizga
+ega va u har bir so'rovga `Authorization` qo'shadi. Ombor esa imzoni
+tekshiradi va begona sarlavhani ko'rib so'rovni **rad etadi**.
+
+**`saveChunk` S3 rejimida rad etadi.** Usiz klient eski yo'ldan
+foydalanishda davom etardi va butun maqsad yo'qolardi: 10 GB baribir
+server orqali oqardi. Undan ham yomoni — bo'laklar diskka yozilardi,
+S3 ga esa hech narsa tushmasdi.
+
+#### ⚠️ Ikkinchi marta yo'l qo'ygan xatoim: bo'sh test
+
+`presignPart` uchun yozgan birinchi testim **hech narsani sinamasdi**:
+u `1` berib `1` kutgan. Aylantirish esa `ChunkedUploadService` da
+yashaydi, ya'ni test noto'g'ri qatlamda edi.
+
+Mutatsiya sinovi buni ochdi — `chunkIndex + 1` ni `chunkIndex` ga
+o'zgartirganda test o'tishda **davom etdi**. Klient 0 dan, S3 esa 1 dan
+sanaydi: aylantirish yo'qolsa birinchi bo'lak 0 raqami bilan ketardi va
+S3 uni rad etardi.
+
+Test to'g'ri qatlamga ko'chirildi (`IndexConversion`) va endi
+mutatsiyani ushlaydi.
+
+⚠️ Presigned URL **logga yozilmaydi** (§29).
 
 ### 4.3. Transcoding jadvali va holatlar `[ ]`
 
@@ -483,8 +528,8 @@ Pullik kontent hozirgi `raw` yo'lida qoladi — ya'ni regressiya yo'q.
 - `[x]` Mobil shartnoma buzilishini aniqlash (`hlsUrl`)
 - `[x]` S3 konfiguratsiyasi
 - `[x]` S3 mijoz (`S3StorageService`)
-- `[ ]` Presigned multipart upload
-- `[ ]` Upload tugaganini tekshirish (`HEAD`)
+- `[x]` Presigned multipart upload
+- `[x]` Upload tugaganini tekshirish (`HEAD`)
 - `[ ]` `ffprobe` integratsiyasi
 - `[ ]` Transcoding profillari
 - `[ ]` HLS generatori

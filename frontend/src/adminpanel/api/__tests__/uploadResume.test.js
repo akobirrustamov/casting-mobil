@@ -230,3 +230,89 @@ describe("Token muddati yuklash o'rtasida tugasa", () => {
     expect(kicked).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * S3 rejimi — bo'lak SERVER ORQALI O'TMAYDI.
+ *
+ * ⚠️ Butun ishning maqsadi shu. Agar klient S3 rejimida ham eski
+ * `PUT .../chunks/{n}` yo'lidan yuborsa, 10 GB baribir server orqali
+ * oqardi va hech qanday xato ko'rinmasdi — server uni qabul qilardi.
+ */
+describe('S3 multipart rejimi', () => {
+  let client;
+  let fetchCalls;
+
+  beforeEach(() => {
+    jest.resetModules();
+    [mockRequest, mockPost, mockPut, mockDelete].forEach((m) => m.mockReset());
+    localStorage.clear();
+    fetchCalls = [];
+    global.fetch = jest.fn((url, init) => {
+      fetchCalls.push({ url, method: init.method });
+      return Promise.resolve({ ok: true, status: 200 });
+    });
+    client = require('../client');
+  });
+
+  afterEach(() => { delete global.fetch; });
+
+  function s3Session() {
+    mockRequest.mockImplementation(({ method, url }) => {
+      if (method === 'post' && url.endsWith('/uploads')) {
+        return Promise.resolve({
+          data: {
+            uploadId: 'S3-1',
+            uploadMode: 'S3_MULTIPART',
+            chunkSize: 10 * 1024 * 1024,
+            totalChunks: 2,
+            receivedChunks: [],
+          },
+        });
+      }
+      if (method === 'post' && url.endsWith('/parts')) {
+        return Promise.resolve({
+          data: {
+            parts: [
+              { index: 0, url: 'https://s3.example.invalid/part0' },
+              { index: 1, url: 'https://s3.example.invalid/part1' },
+            ],
+          },
+        });
+      }
+      return Promise.resolve({ data: { id: 99 } });   // complete
+    });
+  }
+
+  test("bo'laklar TO'G'RIDAN-TO'G'RI omborga ketadi", async () => {
+    s3Session();
+
+    const media = await client.adminApi.uploadMedia(bigFile(), 'content');
+
+    expect(media.id).toBe(99);
+    // Ikkala bo'lak ham omborga.
+    expect(fetchCalls).toHaveLength(2);
+    expect(fetchCalls[0].url).toContain('s3.example.invalid');
+    expect(fetchCalls[0].method).toBe('PUT');
+    // ⚠️ Eng muhimi: server orqali BITTA ham bo'lak ketmadi.
+    expect(mockPut).not.toHaveBeenCalled();
+  });
+
+  test("havolalar GURUH bilan olinadi — har bo'lak uchun alohida so'rov emas", async () => {
+    s3Session();
+
+    await client.adminApi.uploadMedia(bigFile(), 'content');
+
+    const partRequests = mockRequest.mock.calls
+      .filter(([{ url }]) => url.endsWith('/parts'));
+    // Ikki bo'lak, lekin havola so'rovi BITTA: birinchi javob
+    // ikkalasini ham qamragan.
+    expect(partRequests).toHaveLength(1);
+  });
+
+  test("ombor rad etsa xato yashirilmaydi", async () => {
+    s3Session();
+    global.fetch = jest.fn(() => Promise.resolve({ ok: false, status: 403 }));
+
+    await expect(client.adminApi.uploadMedia(bigFile(), 'content')).rejects.toBeDefined();
+  });
+});
