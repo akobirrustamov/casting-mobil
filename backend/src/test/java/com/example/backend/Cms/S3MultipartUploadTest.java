@@ -175,6 +175,7 @@ class S3MultipartUploadTest {
                     mock(com.example.backend.Cms.Repository.MediaAssetRepo.class),
                     mock(com.example.backend.Cms.Service.StorageService.class),
                     java.util.Optional.of(s3Multipart),
+                    mock(com.example.backend.Cms.Service.Video.TranscodingJobService.class),
                     "/tmp/test-uploads");
         }
 

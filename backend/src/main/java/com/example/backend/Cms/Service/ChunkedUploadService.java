@@ -7,6 +7,7 @@ import com.example.backend.Cms.Enums.MediaType;
 import com.example.backend.Cms.Enums.UploadMode;
 import com.example.backend.Cms.Service.Storage.S3MultipartUploadService;
 import com.example.backend.Cms.Service.Storage.StorageKeys;
+import com.example.backend.Cms.Service.Video.TranscodingJobService;
 import com.example.backend.Cms.Repository.MediaAssetRepo;
 import com.example.backend.Cms.Repository.UploadSessionRepo;
 import com.example.backend.exceptions.BusinessException;
@@ -94,15 +95,20 @@ public class ChunkedUploadService {
      */
     private final Optional<S3MultipartUploadService> s3Multipart;
 
+    /** Yuklangan video transcoding navbatiga tushadi. */
+    private final TranscodingJobService transcodingJobs;
+
     public ChunkedUploadService(UploadSessionRepo sessionRepo,
                                 MediaAssetRepo mediaAssetRepo,
                                 StorageService storageService,
                                 Optional<S3MultipartUploadService> s3Multipart,
+                                TranscodingJobService transcodingJobs,
                                 @Value("${app.upload.temp-dir:backend/files/.uploads}") String tempDir) {
         this.sessionRepo = sessionRepo;
         this.mediaAssetRepo = mediaAssetRepo;
         this.storageService = storageService;
         this.s3Multipart = s3Multipart;
+        this.transcodingJobs = transcodingJobs;
         this.tempRoot = Paths.get(tempDir);
     }
 
@@ -362,6 +368,16 @@ public class ChunkedUploadService {
         session.setCompletedAt(LocalDateTime.now());
         session.setMediaAssetId(asset.getId());
         sessionRepo.save(session);
+
+        // ⚠️ Video NAVBATGA qo'shiladi, shu yerda transcoding
+        // QILINMAYDI. FFmpeg o'nlab daqiqa ishlaydi — uni HTTP so'rovi
+        // ichida chaqirish klient uzilgunicha kutishga majbur qilardi
+        // va yuklash «yiqilgan» deb ko'rinardi, aslida ish davom
+        // etayotgan bo'lardi.
+        //
+        // Rasm va hujjat uchun ish yaratilmaydi (`enqueue` o'zi
+        // tekshiradi).
+        transcodingJobs.enqueue(asset);
 
         deleteSessionDir(session.getId());
         return asset;

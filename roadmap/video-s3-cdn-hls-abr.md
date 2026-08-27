@@ -379,38 +379,126 @@ mutatsiyani ushlaydi.
 
 ⚠️ Presigned URL **logga yozilmaydi** (§29).
 
-### 4.3. Transcoding jadvali va holatlar `[ ]`
+### 4.3. Transcoding jadvali va holatlar `[x]`
 
-- `[ ]` Migratsiya `V27__video_transcoding.sql`
-- `[ ]` `MediaAsset` ga qo'shiladigan maydonlar:
+- `[x]` Migratsiya `V28__video_transcoding.sql` (V27 upload uchun band edi)
+- `[x]` `VideoProcessingStatus` enum · `TranscodingJob` entity · repo
+- `[x]` `TranscodingJobService` — navbat, holat, yiqilish, qayta urinish
+- `[x]` Yuklash tugagach video AVTOMATIK navbatga tushadi
+- `[x]` `TranscodingJobTest` — 15 test, 6 mutatsiya bilan tasdiqlangan
 
-| Maydon | Nega kerak |
-|---|---|
-| `processing_status` | `MediaStatus` **kengaytirilmaydi** — u `READY/ARCHIVED` va kutubxona ko'rinishini boshqaradi. Transcoding holati boshqa o'q |
-| `hls_master_key` | `null` = HLS yo'q → eski `raw` yo'liga qaytiladi (§33) |
-| `original_object_key` | `storageKey` dan farqli: S3 dagi original |
-| `video_codec` · `audio_codec` | `ffprobe` dan; qayta transcoding kerakligini aniqlash uchun |
-| `processing_error` | Admin panel nima uchun yiqilganini ko'rsatishi kerak (§18) |
+#### ⚠️ Rejadagi uchta qaror TUZATILDI
 
-`duration_seconds`, `width`, `height` **allaqachon bor** — yangi maydon emas,
-faqat endi to'ldiriladi.
+**1. `processing_status` `MediaAsset` ga QO'SHILMADI.**
 
-- `[ ]` `transcoding_job` jadvali: `media_id · status · attempts · progress ·
-      started_at · finished_at · error · created_at`
-- `[ ]` `VideoProcessingStatus` enum: `NONE · QUEUED · PROBING · TRANSCODING ·
-      UPLOADING · READY · FAILED`
+Reja shuni aytardi, lekin o'shanda holat **ikki joyda** yashardi (media
+va ish) va birinchi nosozlikdayoq ajralardi: ish `FAILED` bo'lib, media
+`TRANSCODING` da qolib ketardi. Bu aynan shu loyihada bir necha marta
+uchragan naqsh.
 
-⚠️ `NONE` — eski yozuvlar uchun. Migratsiya mavjud videolarga `NONE` qo'yadi,
-`FAILED` emas: ular buzilgan emas, shunchaki HLS'siz.
+Endi yagona manba — `cms_transcoding_job`. `MediaAsset` faqat
+**natijani** saqlaydi: `hlsMasterKey` bor bo'lsa HLS tayyor.
 
-### 4.4. ffprobe `[ ]`
+**2. `original_object_key` QO'SHILMADI.**
 
-- `[ ]` `Cms/Service/Video/VideoProbeService` — `ffprobe -v quiet -print_format
-      json -show_format -show_streams`
-- `[ ]` JSON tahlili → `width · height · durationSeconds · fps · videoCodec ·
-      audioCodec · bitrate`
-- `[ ]` `ffprobe` topilmasa — aniq xato, jimgina `null` emas
-- `[ ]` Testlar: haqiqiy `ffprobe` JSON namunalari bo'yicha tahlil (mock, real S3 emas)
+U ortiqcha: `storage_key` ning **o'zi** original faylning kaliti.
+Ikkinchi ustun bir xil qiymatni saqlab, ajralib ketish uchun yana bir
+imkoniyat yaratardi.
+
+**3. `NONE` holati YO'Q.**
+
+Reja eski yozuvlarga `NONE` qo'yishni aytardi. Kerak emas: eski
+medialarda ish **umuman yo'q**, ya'ni jadvalda qator ham yo'q. «Ish
+yo'q» — bu allaqachon «transcoding qilinmagan» degani.
+
+#### Boshqa qarorlar
+
+**Har media uchun BITTA ish** (`unique(media_id)`). Qayta urinish
+mavjud qatorni yangilaydi va `attempts` ni oshiradi. Har urinishga
+alohida qator bo'lsa, kutubxona sahifasidagi 40 ta media uchun 40
+marta «eng oxirgi qatorni top» kerak bo'lardi.
+
+**`SKIP LOCKED`** navbatdan olishda: ikki instans bir vaqtda qarasa,
+ikkalasi ham ayni ishni olardi va bitta video **ikki marta** transcoding
+qilinardi.
+
+**`claimNext()` — `REQUIRES_NEW`.** Ish band qilinishi transcoding
+boshlanishidan oldin commit bo'lishi kerak. Bitta tranzaksiyada bo'lsa
+qulf o'nlab daqiqa ushlab turilardi.
+
+**Progress 100 ga faqat `READY` da yetadi.** «Progress 100, lekin hali
+`TRANSCODING`» — admin uchun chalkash holat. Tayyorlikni faqat `status`
+aytadi.
+
+**Xato matni muvaffaqiyatdan keyin tozalanadi.** Aks holda admin
+muvaffaqiyatli videoda eski xatoni ko'rib, uni yangi nosozlik deb
+o'ylardi.
+
+**Urinishlar chegarasi 3.** Cheksiz bo'lsa buzuq fayl navbatni abadiy
+band qilardi va boshqa videolar hech qachon yetib bormasdi.
+
+### 4.4. ffprobe `[x]`
+
+- `[x]` `VideoMetadata` record — barcha maydonlar `null` bo'lishi mumkin
+- `[x]` `FfprobeOutputParser` — tahlil mantig'i, jarayondan AJRATILGAN
+- `[x]` `VideoProbeService` — `ProcessBuilder`, kutish muddati, aniq xatolar
+- `[x]` `VideoProcessingException` — fon ishi uchun, `BusinessException` emas
+- `[x]` `FfprobeParsingTest` — 13 test, 6 mutatsiya bilan tasdiqlangan
+
+#### Nega tahlil jarayondan ajratildi
+
+`ffprobe` ishlab chiqish mashinasida o'rnatilmagan va CI da ham
+kafolatlanmagan. Haqiqiy mantiq esa aynan tahlilda: qaysi oqim video,
+aylantirish qanday hisobga olinadi, `"30000/1001"` kabi kasr qanday
+o'qiladi.
+
+Ajratilgach tahlil `ffprobe`siz ham to'liq sinaladi — haqiqiy chiqish
+namunalari bilan.
+
+#### ⚠️ Ikkita jimgina xato oldi olindi
+
+**1. Muqova rasmi «video oqim» bo'lib ko'rinadi.**
+
+Albom muqovasi joylashtirilgan `.mp4` da **ikkita** video oqim bo'ladi:
+haqiqiy video va `mjpeg` formatidagi bitta kadr. Muqova ko'pincha
+ro'yxatda **birinchi** turadi.
+
+Oddiygina birinchisini olsak, 600×600 muqova o'lchamlari videoning
+o'lchami deb qabul qilinardi — va **1080p film 600×600 ga siqilardi**.
+Parser `disposition.attached_pic = 1` ni o'tkazib yuboradi.
+
+**2. Aylantirilgan video.**
+
+Telefonda vertikal olingan video faylda **gorizontal** bo'lib yotadi va
+90° belgisi bilan keladi. Belgi e'tiborga olinmasa profil tanlash uni
+gorizontal deb hisoblardi va natija cho'zilgan chiqardi.
+
+⚠️ `ffprobe` burchakni **ikki xil joyda** beradi: eski fayllarda
+`tags.rotate`, yangilarida `side_data_list` ichidagi Display Matrix.
+Faqat bittasiga qarash yarim holatlarni o'tkazib yuborardi — ikkalasi
+ham o'qiladi.
+
+#### Boshqa qarorlar
+
+**`N/A` → `null`, `0` emas.** «Nol soniya» va «noma'lum» butunlay
+boshqa narsa; ikkinchisi pleyer uchun muhim.
+
+**Davomiylik: avval `format`, keyin oqim.** `.mkv` da umumiy
+davomiylik ko'rsatilmasligi mumkin, lekin oqim darajasida bo'ladi.
+
+**`0/0` chastotasi** — `ffprobe` ning odatiy javobi. Nolga bo'lish shu
+yerda kutib olinadi.
+
+**`ProcessBuilder` ro'yxat bilan, qobiq orqali EMAS.** Fayl nomidagi
+bo'sh joy yoki `;` buyruqni bo'lib yuborardi.
+
+**Kutish muddati 30s.** Chegarasiz bo'lsa buzuq fayl `ffprobe` ni
+abadiy osib qo'yishi va u bilan birga butun worker to'xtashi mumkin
+edi — navbat esa o'sib boraverardi.
+
+⚠️ `ffprobe` o'rnatilmagan bo'lsa xabar buni **aniq aytadi**. Jimgina
+bo'sh natija qaytarilmaydi: u «video 0×0» ma'nosini berardi va profil
+tanlash uni tushunarsiz tarzda rad etardi.
 
 ### 4.5. Profil tanlash `[ ]`
 
@@ -530,14 +618,14 @@ Pullik kontent hozirgi `raw` yo'lida qoladi — ya'ni regressiya yo'q.
 - `[x]` S3 mijoz (`S3StorageService`)
 - `[x]` Presigned multipart upload
 - `[x]` Upload tugaganini tekshirish (`HEAD`)
-- `[ ]` `ffprobe` integratsiyasi
+- `[x]` `ffprobe` integratsiyasi
 - `[ ]` Transcoding profillari
 - `[ ]` HLS generatori
 - `[ ]` `master.m3u8`
 - `[ ]` S3 HLS yuklovchi
-- `[ ]` Processing holatlari
+- `[x]` Processing holatlari
 - `[ ]` Fon worker
-- `[ ]` Yiqilishni boshqarish va qayta urinish
+- `[x]` Yiqilishni boshqarish va qayta urinish
 - `[ ]` Vaqtinchalik fayllarni tozalash
 - `[ ]` CDN URL integratsiyasi
 - `[ ]` ⚠️ Xavfsiz video kirish (Timeweb qarorini kutmoqda)
