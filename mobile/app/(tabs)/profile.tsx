@@ -111,7 +111,7 @@ export default function ProfileScreen() {
 
   return (
     <Screen
-      title={t('profile.account')}
+      title={t('profile.title')}
       headerRight={
         <Pressable
           onPress={() => router.push('/messages')}

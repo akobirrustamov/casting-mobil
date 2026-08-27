@@ -195,7 +195,9 @@ export function HomeSectionView({
             key={c.id}
             title={c.name ?? ''}
             accent={TILE_ACCENTS[i % TILE_ACCENTS.length]}
-            imageUrl={mediaUrl(c.iconMediaId)}
+            // ⚠️ `iconMediaId` намеренно не передаётся: в этом поле лежит
+            // изображение размером с постер, а не глиф (см. CategoryTile).
+            //
             // ⚠️ Это разделы каталога контента («O'zbek kinosi», «Bolalar uchun»),
             // а не 10 направлений кастинга из `features/catalog/categories`.
             // Переход на `/catalog/{id}` открыл бы совсем другую сущность,
