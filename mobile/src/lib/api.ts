@@ -82,6 +82,23 @@ export function fileUrl(id: string): string {
 }
 
 /**
+ * Метка запуска — только для локального бэкенда.
+ *
+ * <h2>Зачем</h2>
+ * `expo-image` кэширует картинку по URL, и это правильно: в проде id медиа
+ * постоянен, а его содержимое неизменно — новая загрузка получает новый id.
+ *
+ * На локальном стенде наоборот: база H2 живёт в памяти и пересоздаётся при
+ * каждом рестарте, раздавая те же самые id ДРУГИМ файлам. Адрес
+ * `/media/90/raw` не меняется, содержимое меняется — и телефон продолжает
+ * показывать вчерашнюю заглушку, сколько ни перезапускай бэкенд.
+ *
+ * Поэтому в дев-режиме к адресу добавляется метка запуска приложения.
+ * В проде она пустая и на кэш никак не влияет.
+ */
+const MEDIA_CACHE_BUST = READ_ONLY ? '' : `?v=${Date.now()}`;
+
+/**
  * Медиа новой платформы — другой namespace, чем `fileUrl`.
  *
  * `fileUrl` — вложения старого кастингового модуля (`Attachment`, UUID),
@@ -92,5 +109,7 @@ export function fileUrl(id: string): string {
  * возвращает 404 — поэтому в постерах достаточно обычного URL.
  */
 export function mediaUrl(id: number | null | undefined): string | undefined {
-  return id == null ? undefined : `${BASE_URL}/api/v1/app/media/${id}/raw`;
+  return id == null
+    ? undefined
+    : `${BASE_URL}/api/v1/app/media/${id}/raw${MEDIA_CACHE_BUST}`;
 }
