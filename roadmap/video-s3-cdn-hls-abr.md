@@ -1183,7 +1183,7 @@ O'rniga ikkita narsa qilindi:
 Mutatsiya sinovi buni tasdiqladi — mobil kodini buzganda **backend
 testi yiqiladi**.
 
-### 4.13. Infratuzilma `[~]`
+### 4.13. Infratuzilma `[~]` — kod tayyor, server kutilmoqda
 
 #### Server — TANLANGAN (27.08.2026)
 
@@ -1390,13 +1390,65 @@ Video transcoding tayyor: ffmpeg version … · ffprobe version … · diskda �
 ⚠️ Bu buyruqlar **bu yerda ishga tushirilmadi** — server hali sotib
 olinmagan. Ular tekshirilishi kerak.
 
+#### Manbani 1080p bilan cheklash `[x]` (28.08.2026)
+
+**Qaror: brauzerda, yuklashdan OLDIN ogohlantirish. Rad etish yo'q.**
+
+##### Nima uchun rad etilmaydi
+
+Auditda muhim narsa aniqlandi: **chiqish allaqachon 1080p bilan
+cheklangan** — `VideoProfileSelector` manbadan yuqori variant
+yasamaydi. Ya'ni 4K manba SIFAT bermaydi; u faqat qayta ishlashni
+~2.4 barobar uzaytiradi, chunki har kadr baribir dekodlanishi kerak.
+
+Bu tezlik masalasi, to'g'ri-noto'g'ri masalasi emas — shuning uchun
+qaror admin qo'lida qoladi.
+
+##### Nima uchun brauzerda
+
+O'lcham server tomonda faqat transcoding paytida, ya'ni fayl to'liq
+yuklab bo'lingandan KEYIN ma'lum bo'ladi. 4 GB lik faylni yuklab
+bo'lgach «bu 4K ekan» deyish kech.
+
+Brauzer esa faylni serverga yubormasdan o'qiy oladi.
+
+- `[x]` `probeVideoSize()` — `<video preload="metadata">` orqali.
+
+  ⚠️ Butun fayl yuklanmaydi: u bir necha gigabayt bo'lishi mumkin va
+  uni xotiraga tortish brauzerni qotirardi
+
+- `[x]` Aniqlab bo'lmasa — **yuklash to'xtatilmaydi**. Brauzer `.mkv`
+      va `.avi` ni odatda ocholmaydi; «bilmayman» sababli to'xtatish
+      adminni yaroqli faylni yuklay olmaydigan holga qo'yardi
+- `[x]` 5 soniyalik chegara — ba'zi fayllarda `<video>` na
+      `loadedmetadata`, na `error` beradi va jimgina osilib qoladi
+- `[x]` Tasdiqlash oynasi: «Baribir yuklash» / «Bekor qilish».
+      Tugma **qizil emas** — bu maslahat, xato emas
+- `[x]` Fayl saqlanadi: «baribir yuklash» desa qaytadan tanlash
+      kerak bo'lmaydi
+
+##### ⚠️ Vertikal video tuzog'i — topilgan XATO
+
+Birinchi yozilishida chegara **balandlik** bo'yicha hisoblangan edi.
+1080×1920 (Reels) esa «1080p vertikal», «1920p» emas — backend uni
+tushirmaydi (`Math.min(width, height)`).
+
+Ya'ni **har bir oddiy vertikal rolik** ogohlantirish oynasini
+ochardi. Loyihada vertikal kontent birinchi darajali (§19), ya'ni bu
+chekka holat emas — u har kuni takrorlanardi.
+
+Va aynan shu ogohlantirishni o'ldirardi: har safar chiqadigan oyna
+o'qilmasdan yopiladigan bo'lib qoladi, keyin esa haqiqiy 4K fayl
+kelganda ham ishlamaydi.
+
+- `[x]` Chegara **qisqa tomon** bo'yicha — backend bilan bir xil
+- `[x]` `VideoProfileSelectorTest$PanelContract` ikkalasi ajralib
+      ketmasligini qo'riqlaydi (manba matnini o'qiydi)
+
 #### Qolgan vazifalar
 
 - `[ ]` FFmpeg serverga o'rnatish (yuqoridagi buyruqlar) — **server
       sotib olingandan keyin**
-- `[ ]` ⚠️ **Manbani 1080p bilan cheklash** — panelda ogohlantirish yoki
-      qattiq chegara. Yuk 2.4 barobar kamayadi, foydalanuvchi esa
-      zinapoyaning eng yuqorisi 1080p bo'lgani uchun farqni ko'rmaydi
 - `[ ]` Timeweb'da 12 yadro toifasi bor-yo'qligini tasdiqlash
       (odatiy toifalar 2/4/8/16)
 
@@ -1548,7 +1600,8 @@ sozlanmaganda soxta muvaffaqiyat qaytarilmaydi.
 - `[x]` Mobil HLS ijro
 - `[x]` ABR tekshiruvi (4.6 da haqiqiy FFmpeg bilan)
 - `[x]` Testlar
-- `[ ]` FFmpeg o'rnatish / Docker qarori
+- `[~]` FFmpeg o'rnatish — kod tomoni tayyor (tekshiruv, banner,
+      buyruqlar §4.13 da), o'rnatishning o'zi server sotib olingach
 - `[x]` Hujjat
 
 ---
@@ -1605,3 +1658,30 @@ Butun zanjir haqiqiy MinIO bilan uchma-uch sinaldi: playlist ombordan
 o'qildi, qayta yozildi, undagi segment havolasi haqiqatdan fayl qaytardi.
 
 Qolgan: 4.13 (serverga FFmpeg o'rnatish, disk monitoringi).
+
+**28.08.2026 (davomi)** — **4.13 ning kod qismi bajarildi** (1013
+backend + 121 frontend test).
+
+Uchta jimgina nosozlik yopildi:
+
+- **FFmpeg yo'qligi** endi bir joyda ko'rinadi. Ilgari har bir video
+  alohida yiqilardi va admin buzuq fayl izlab yurardi. Tekshiruv
+  kodlovchilarni ham ko'radi (`libx264`, `aac`) — ularsiz FFmpeg
+  o'rnatilgan bo'lib ko'rinadi, lekin transcoding «Unknown encoder»
+  bilan yiqiladi.
+
+- **Disk to'lishi** endi ishni to'xtatadi, urinishlarni sarflamaydi.
+  Ilgari disk to'lgach uchala urinish ham yarim fayl yozib, diskni
+  yanada to'ldirardi — va PostgreSQL ham yozolmay qolardi.
+
+- **Navbat endpointi** hech bir sahifada ishlatilmasdi. Backend uni
+  berardi, `client.js` da chaqiruv ham bor edi, lekin panel uni
+  so'ramasdi.
+
+4K ogohlantirishi brauzerda, yuklashdan oldin. Ishlab chiqish paytida
+xato topildi: chegara balandlik bo'yicha hisoblangan edi va har bir
+oddiy vertikal rolik (1080×1920) bekorga ogohlantirilardi — vertikal
+kontent esa loyihada birinchi darajali.
+
+Qolgan: FFmpeg'ni serverga o'rnatish va Timeweb toifasini tasdiqlash —
+ikkalasi ham server sotib olingandan keyin.

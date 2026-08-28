@@ -258,4 +258,63 @@ class VideoProfileSelectorTest {
             assertThat(selected.get(0).profile().getAudioBitrate()).isEqualTo("192k");
         }
     }
+
+    @Nested
+    @DisplayName("⚠️ Panel bilan shartnoma (§4.13)")
+    class PanelContract {
+
+        private static final java.nio.file.Path PROBE = java.nio.file.Path.of(
+                "../frontend/src/adminpanel/utils/videoProbe.js");
+
+        /**
+         * ⚠️ Panel yuklashdan OLDIN ogohlantiradi, backend esa keyin
+         * profil tanlaydi. Ikkalasi BIR XIL qoidani ishlatishi shart.
+         *
+         * Panel balandlik bo'yicha hisoblasa, har bir oddiy vertikal
+         * rolik (1080×1920) «juda katta» deb ogohlantirilardi —
+         * backend esa uni tushirmasdi. Loyihada vertikal kontent
+         * birinchi darajali (§19), ya'ni bu har kuni takrorlanardi va
+         * ogohlantirish tezda o'qilmaydigan bo'lib qolardi.
+         *
+         * Bu test manba matnini o'qiydi — mo'rt ko'rinadi, lekin
+         * boshqa yo'l bilan ikki tildagi bu bog'liqlikni ushlab
+         * bo'lmaydi.
+         */
+        @Test
+        @DisplayName("Panel ham QISQA tomon bo'yicha hisoblaydi")
+        void panelUsesTheShortSideToo() throws java.io.IOException {
+            if (!java.nio.file.Files.isRegularFile(PROBE)) {
+                // Frontend papkasi bo'lmasa test o'tkazib yuboriladi —
+                // backend uni talab qilmaydi.
+                return;
+            }
+            String source = java.nio.file.Files.readString(PROBE);
+
+            assertThat(source)
+                    .as("panel qisqa tomonni olmayapti — har bir vertikal "
+                            + "rolik bekorga ogohlantirilardi")
+                    .contains("Math.min(size.width, size.height)");
+
+            assertThat(source)
+                    .as("chegara backend'dagi eng yuqori profildan ajralib ketgan")
+                    .contains("MAX_RECOMMENDED_HEIGHT = 1080");
+        }
+
+        /**
+         * Backend tomonidagi qoida — panel unga tayanadi.
+         *
+         * ⚠️ Bu o'zgarsa yuqoridagi test ham, panel ham yangilanishi
+         * kerak.
+         */
+        @Test
+        @DisplayName("Tik 1080×1920 TUSHIRILMAYDI")
+        void verticalFullHdIsNotDownscaled() {
+            var selected = selector.select(source(1080, 1920));
+
+            assertThat(selected.get(0).resolution())
+                    .as("vertikal 1080p tushirilyapti — panel ogohlantirishi ham "
+                            + "noto'g'ri bo'lib qolardi")
+                    .isEqualTo("1080x1920");
+        }
+    }
 }

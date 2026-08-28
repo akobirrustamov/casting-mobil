@@ -3,7 +3,9 @@ import { adminApi, mediaUrl } from '../api/client';
 import { usePanelI18n } from '../i18n';
 import { LoadingState, ErrorState, EmptyState } from './States';
 import Modal from './Modal';
+import ConfirmDialog from './ConfirmDialog';
 import TranscodingBadge from './TranscodingBadge';
+import { needsDownscaleWarning, probeVideoSize } from '../utils/videoProbe';
 
 /**
  * Media kutubxonadan fayl tanlash yoki yangisini yuklash.
@@ -19,6 +21,15 @@ export default function MediaPicker({ open, onClose, onSelect, type = 'IMAGE' })
   const [selected, setSelected] = useState(null);
   const [progress, setProgress] = useState(null);
   const fileRef = useRef(null);
+
+  /**
+   * Yuklash uchun tasdiq kutayotgan 4K fayl.
+   *
+   * ⚠️ Fayl SAQLANADI, `<input>` esa tozalanadi. Admin «baribir
+   * yuklash» desa, faylni qaytadan tanlashi kerak bo'lardi — va bu
+   * ogohlantirishni foydali emas, xalaqit beruvchi qilardi.
+   */
+  const [oversized, setOversized] = useState(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -37,9 +48,29 @@ export default function MediaPicker({ open, onClose, onSelect, type = 'IMAGE' })
     }
   }, [open, load]);
 
+  /**
+   * Fayl tanlandi.
+   *
+   * ⚠️ VIDEO uchun avval o'lcham o'qiladi — yuklash BOSHLANMASDAN
+   * oldin. 4 GB yuklab bo'lgach «bu 4K ekan» deyish kech bo'lardi.
+   */
   async function handleUpload(event) {
     const file = event.target.files?.[0];
+    if (fileRef.current) fileRef.current.value = '';
     if (!file) return;
+
+    if (type === 'VIDEO') {
+      const size = await probeVideoSize(file);
+      if (needsDownscaleWarning(size)) {
+        setOversized({ file, size });
+        return;
+      }
+    }
+
+    await upload(file);
+  }
+
+  async function upload(file) {
     setProgress(0);
     setError(null);
     try {
@@ -50,7 +81,6 @@ export default function MediaPicker({ open, onClose, onSelect, type = 'IMAGE' })
       setError(err);
     } finally {
       setProgress(null);
-      if (fileRef.current) fileRef.current.value = '';
     }
   }
 
@@ -104,6 +134,30 @@ export default function MediaPicker({ open, onClose, onSelect, type = 'IMAGE' })
           </div>
         )}
       </div>
+
+      {/*
+        ⚠️ Xavfli amal EMAS, shuning uchun tugma qizil emas: bu
+        tezlik haqidagi maslahat, xato haqidagi ogohlantirish emas.
+        Qizil tugma adminni «nimadir buzildi» deb o'ylatardi.
+      */}
+      <ConfirmDialog
+        open={Boolean(oversized)}
+        danger={false}
+        title={t('media.bigVideo.title')}
+        message={oversized
+          ? t('media.bigVideo.message')
+              .replace('{w}', oversized.size.width)
+              .replace('{h}', oversized.size.height)
+          : ''}
+        note={t('media.bigVideo.note')}
+        confirmLabel={t('media.bigVideo.confirm')}
+        onConfirm={() => {
+          const pending = oversized.file;
+          setOversized(null);
+          upload(pending);
+        }}
+        onCancel={() => setOversized(null)}
+      />
 
       {loading ? (
         <LoadingState rows={3} />
