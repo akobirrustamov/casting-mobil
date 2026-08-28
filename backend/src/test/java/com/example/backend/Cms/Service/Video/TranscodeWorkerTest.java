@@ -50,6 +50,7 @@ class TranscodeWorkerTest {
     private VideoProbeService probe;
     private HlsTranscodingService transcoding;
     private HlsUploadService upload;
+    private VideoSystemHealth health;
 
     private TranscodeWorker worker;
     private Path tempRoot;
@@ -67,6 +68,10 @@ class TranscodeWorkerTest {
         probe = mock(VideoProbeService.class);
         transcoding = mock(HlsTranscodingService.class);
         upload = mock(HlsUploadService.class);
+
+        // Sukut bo'yicha diskda joy bor — disk testlari buni o'zgartiradi.
+        health = mock(VideoSystemHealth.class);
+        when(health.hasRoomFor(any())).thenReturn(true);
 
         media = MediaAsset.builder()
                 .id(7L)
@@ -100,7 +105,7 @@ class TranscodeWorkerTest {
 
         worker = new TranscodeWorker(jobs, jobRepo, mediaAssetRepo, storage, probe,
                 new VideoProfileSelector(new VideoTranscodingProperties()),
-                transcoding, upload, 1, tempRoot.toString());
+                transcoding, upload, health, 1, tempRoot.toString());
     }
 
     @AfterEach
@@ -301,6 +306,63 @@ class TranscodeWorkerTest {
             // baza uzilishidan keyin navbat hech qachon qayta
             // ishlamasdi.
             assertThat(semaphore.availablePermits()).isEqualTo(1);
+        }
+    }
+
+    @Nested
+    @DisplayName("⚠️ Disk to'lganda (§4.13)")
+    class LowDisk {
+
+        /**
+         * ⚠️ ENG MUHIM TEKSHIRUV.
+         *
+         * Ish OLINSA u yiqilardi, urinishlar soni o'sardi va uch marta
+         * yiqilgach video `FAILED` bo'lib qolardi — sabab esa videoda
+         * emas, serverda edi. Joy bo'shagach adminning o'zi har birini
+         * qo'lda qayta ishga tushirishi kerak bo'lardi.
+         *
+         * Tegilmagan ish esa navbatda kutadi va joy bo'shashi bilan
+         * o'z-o'zidan bajariladi.
+         */
+        @Test
+        @DisplayName("Ish navbatdan UMUMAN olinmaydi")
+        void queueIsNotTouched() {
+            when(health.hasRoomFor(null)).thenReturn(false);
+
+            worker.pollQueue();
+
+            verify(jobs, never()).claimNext();
+        }
+
+        /**
+         * Umumiy chegara va AYNAN shu fayl — boshqa savollar. Disk
+         * bo'sh bo'lsa ham 30 GB lik manba sig'masligi mumkin.
+         */
+        @Test
+        @DisplayName("Manba sig'masa ish FAILED bo'ladi")
+        void oversizedSourceFails() {
+            when(health.hasRoomFor(1000L)).thenReturn(false);
+            when(health.requiredBytesFor(1000L)).thenReturn(2500L);
+
+            worker.process(job);
+
+            verify(jobs).fail(eq(1L), org.mockito.ArgumentMatchers.contains("joy"));
+        }
+
+        /**
+         * ⚠️ Manba YUKLAB OLINMAYDI ham.
+         *
+         * Yuklab olingach disk yanada to'lardi va nosozlik butun
+         * serverga tarqalardi — PostgreSQL ham yozolmay qolardi.
+         */
+        @Test
+        @DisplayName("Sig'masa manba yuklab olinmaydi")
+        void oversizedSourceIsNotDownloaded() {
+            when(health.hasRoomFor(1000L)).thenReturn(false);
+
+            worker.process(job);
+
+            verify(storage, never()).load(any());
         }
     }
 }

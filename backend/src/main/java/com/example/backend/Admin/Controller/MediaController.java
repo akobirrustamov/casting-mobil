@@ -5,6 +5,7 @@ import com.example.backend.Admin.Dto.PageResponse;
 import com.example.backend.Cms.Entity.MediaAsset;
 import com.example.backend.Cms.Entity.TranscodingJob;
 import com.example.backend.Cms.Service.Video.TranscodingJobService;
+import com.example.backend.Cms.Service.Video.VideoSystemHealth;
 import com.example.backend.Cms.Enums.VideoProcessingStatus;
 import com.example.backend.Cms.Enums.MediaStatus;
 import com.example.backend.Cms.Enums.MediaType;
@@ -58,6 +59,15 @@ public class MediaController {
 
     /** Transcoding holati — panel uni ko'rsatadi. */
     private final TranscodingJobService transcodingJobs;
+
+    /**
+     * Server transcoding uchun tayyormi.
+     *
+     * ⚠️ Navbat bilan BIRGA qaytariladi, alohida endpoint emas.
+     * Alohida bo'lsa panel uni so'rashni unutardi va admin yana
+     * «videolar nega yiqilyapti» degan savol bilan qolardi.
+     */
+    private final VideoSystemHealth videoSystemHealth;
     private final AccessService accessService;
     private final MediaUsageService mediaUsageService;
 
@@ -281,6 +291,7 @@ public class MediaController {
                         VideoProcessingStatus.TRANSCODING,
                         VideoProcessingStatus.UPLOADING))
                 .failed(transcodingJobs.count(VideoProcessingStatus.FAILED))
+                .system(videoSystemHealth.check())
                 .build());
     }
 
@@ -426,6 +437,15 @@ public class MediaController {
         private long queued;
         private long running;
         private long failed;
+
+        /**
+         * Server holati: FFmpeg bormi, diskda joy bormi.
+         *
+         * ⚠️ Bu navbat sonlaridan ko'ra MUHIMROQ. «3 ta yiqildi»
+         * degan raqam adminni buzuq fayl izlashga yuborardi, sabab
+         * esa FFmpeg umuman o'rnatilmagani bo'lishi mumkin.
+         */
+        private VideoSystemHealth.Report system;
 
         /** Panel davriy yangilashni davom ettirishi kerakmi. */
         public boolean isActive() {

@@ -7,6 +7,7 @@ import Modal from '../components/Modal';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, SearchInput } from '../components/Ui';
 import TranscodingBadge from '../components/TranscodingBadge';
+import TranscodingQueue from '../components/TranscodingQueue';
 import { usePanelI18n } from '../i18n';
 import Select from '../components/Select';
 
@@ -73,6 +74,18 @@ export default function MediaPage() {
   // Ishlab turgan video bo'lsa ro'yxat o'zi yangilanadi.
   useTranscodingPolling(data, reload);
 
+  /*
+   * Navbat va server holati.
+   *
+   * ⚠️ Ro'yxat xatosidan MUSTAQIL yuklanadi. Bitta `useApi` ga
+   * qo'shilsa, navbat so'rovi yiqilganda butun kutubxona xato
+   * ekranini ko'rsatardi — fayllar esa mutlaqo joyida bo'lardi.
+   *
+   * Xatosi ATAYLAB ko'rsatilmaydi: banner qo'shimcha ma'lumot,
+   * uning yo'qligi ish qilishga xalaqit bermaydi.
+   */
+  const { data: queue } = useApi(() => adminApi.transcodingQueue(), []);
+
   const onFilter = (setter) => (value) => { setter(value); setPage(0); };
 
   return (
@@ -110,6 +123,8 @@ export default function MediaPage() {
       />
 
       <p className="uz-muted mb-4 text-sm">{t('media.archivedHint')}</p>
+
+      <TranscodingQueue queue={queue} />
 
       {loading ? (
         <div className="uz-card"><LoadingState /></div>

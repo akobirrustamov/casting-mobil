@@ -226,9 +226,40 @@ app.video.signed-url-window=${VIDEO_SIGNED_URL_WINDOW:1h}
 app.video.ffmpeg-path=${FFMPEG_PATH:ffmpeg}
 app.video.ffprobe-path=${FFPROBE_PATH:ffprobe}
 
-# ⚠️ Bir vaqtda nechta video. Sukut — BITTA: FFmpeg butun protsessorni
-# egallaydi va u API server bilan ayni mashinada turibdi.
-app.video.max-concurrent-jobs=${VIDEO_MAX_JOBS:1}
+# Bir vaqtda nechta video.
+#
+# ⚠️ Kod sukuti — BITTA, va u ATAYLAB shunday: FFmpeg butun
+# protsessorni egallaydi va u API server bilan ayni mashinada turibdi
+# (Docker yo'q, ajratish yo'q). Ishlab chiquvchining noutbukida ikkita
+# parallel transcoding ilovani ishlatib bo'lmas holga keltirardi.
+#
+# ⚠️ ISHLAB CHIQARISHDA — 3.
+#
+# Tanlangan server 12 yadroli (§4.13). O'lchov: 4K60 manba real
+# vaqtdan 2.3× tez o'giriladi, kuniga 30 ta video 12 yadroda 8.3
+# soatni egallaydi — bandlik 35%.
+#
+# Nega aynan 3, ko'proq emas: har bir FFmpeg 4K manbada ~1.5 GB RAM
+# oladi. Server 16 GB, undan Spring Boot 1–2 GB va PostgreSQL 2–4 GB
+# oladi. To'rtinchi ish PostgreSQL keshini siqib chiqarardi va butun
+# saytdagi so'rovlar sekinlashardi — transcoding esa sezilarli
+# tezlashmasdi.
+app.video.max-concurrent-jobs=${VIDEO_MAX_JOBS:3}
+
+# ⚠️ Ish boshlash uchun kerakli eng kam bo'sh joy.
+#
+# Disk to'lganda `Files.copy` yarim yo'lda uziladi, ish yiqiladi va
+# qayta urinadi — yana yarim fayl yozib. Uchala urinish ham diskni
+# yanada to'ldiradi.
+#
+# Undan ham yomoni: disk to'lgach PostgreSQL ham yozolmay qoladi va
+# nosozlik video bilan umuman bog'liq bo'lmagan joyda ko'rinadi.
+#
+# Joy kam bo'lsa ish UMUMAN olinmaydi va navbatda kutadi — urinishlar
+# sarflanmaydi, joy bo'shashi bilan o'z-o'zidan davom etadi.
+#
+# 200 GB NVMe uchun 10 GB — ~5%. Kichikroq diskda oshiring.
+app.video.min-free-disk=${VIDEO_MIN_FREE_DISK:10GB}
 
 # Nechta marta qayta urinamiz. Cheksiz bo'lsa buzuq fayl navbatni
 # abadiy band qilardi.

@@ -289,5 +289,40 @@ class MediaTranscodingApiTest {
                     .andExpect(jsonPath("$.running").value(0))
                     .andExpect(jsonPath("$.active").value(false));
         }
+
+        /**
+         * ⚠️ Server holati navbat bilan BIRGA keladi (§4.13).
+         *
+         * Alohida endpoint bo'lsa panel uni so'rashni unutardi va
+         * admin yana «videolar nega yiqilyapti» degan savol bilan
+         * qolardi — sabab esa FFmpeg umuman o'rnatilmagani bo'lishi
+         * mumkin.
+         */
+        @Test
+        @DisplayName("Server holati ham qaytariladi")
+        void systemHealthIsIncluded() throws Exception {
+            mockMvc.perform(get("/api/v1/app/admin/media/transcoding-queue")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.system").exists())
+                    // Panel aynan shu ro'yxatni ko'rsatadi.
+                    .andExpect(jsonPath("$.system.problems").isArray())
+                    .andExpect(jsonPath("$.system.ffmpeg.available").exists())
+                    .andExpect(jsonPath("$.system.ffprobe.available").exists());
+        }
+
+        /**
+         * ⚠️ Yo'l KO'RSATILADI, lekin faqat panel xodimiga.
+         *
+         * Usiz «FFmpeg topilmadi» xabari adminni qayerga qarashni
+         * bilmay qoldirardi.
+         */
+        @Test
+        @DisplayName("Holatda dastur yo'li ko'rsatiladi")
+        void toolPathIsShown() throws Exception {
+            mockMvc.perform(get("/api/v1/app/admin/media/transcoding-queue")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(jsonPath("$.system.ffmpeg.path").isNotEmpty());
+        }
     }
 }

@@ -1265,13 +1265,135 @@ Server oyiga ~$40–80. CDN esa foydalanuvchilarga bog'liq:
 ⚠️ Timeweb CDN narxi tekshirilsin — u server narxidan bir necha barobar
 oshib ketishi mumkin.
 
+#### Server tayyorligi — kod tomoni `[x]` (28.08.2026)
+
+##### ⚠️ Muammo: jimgina, ommaviy yiqilish
+
+FFmpeg o'rnatilmagan serverda shunday bo'lardi: admin video yuklaydi,
+ish navbatga tushadi, uch marta urinib yiqiladi va `FAILED` bo'ladi.
+Keyingi video ham. Va keyingisi ham.
+
+Har bir ishning xato matni to'g'ri («ffprobe ishga tushmadi»), lekin
+hech kim «ular BIRGA yiqilyapti, ya'ni muammo videolarda emas,
+SERVERDA» degan xulosaga kelmasdi. Admin buzuq fayl izlab yurardi.
+
+##### Yechim: `VideoSystemHealth`
+
+- `[x]` FFmpeg va ffprobe **ishga tushadimi** — fayl borligini
+      tekshirish yetarli emas: yo'l papkaga ishora qilishi, ijro
+      huquqi bo'lmasligi yoki boshqa arxitektura uchun yig'ilgan
+      bo'lishi mumkin
+- `[x]` ⚠️ **Kerakli kodlovchilar bormi** (`libx264`, `aac`).
+
+  Ba'zi yig'malar ularsiz keladi. Bunday FFmpeg `-version` ga chiroyli
+  javob beradi, lekin transcoding «Unknown encoder» bilan yiqiladi —
+  va bu faqat birinchi video yuklangach ma'lum bo'lardi
+
+- `[x]` Diskda bo'sh joy
+- `[x]` Ishga tushishda logga aniq ogohlantirish
+- `[x]` ⚠️ **Ilova baribir ko'tariladi.** Transcoding — qo'shimcha
+      imkoniyat; uning yo'qligi uchun ishlaydigan saytni yiqitish
+      nomutanosib bo'lardi. Videolar eski `/raw` yo'li bilan
+      ko'rsatilishda davom etadi
+
+##### Panelda ko'rinadi
+
+- `[x]` Holat navbat bilan **birga** qaytariladi
+      (`GET /media/transcoding-queue`).
+
+  ⚠️ Alohida endpoint bo'lsa panel uni so'rashni unutardi
+
+- `[x]` `TranscodingQueue` banneri — `MediaPage` da.
+
+  ⚠️ Navbat endpointi allaqachon bor edi va `client.js` da chaqiruv
+  ham yozilgan edi, lekin **hech bir sahifa uni ishlatmasdi**
+
+- `[x]` Hammasi joyida bo'lsa **hech narsa chizilmaydi**. Doimiy
+      «0 · 0 · 0» qatori shovqin bo'lardi va odam unga qaramay
+      qo'yardi — aynan shunda u kerak bo'lganda ham ko'rinmasdi
+- `[x]` Xabar **nima qilish kerakligini** aytadi. Admin serverga kira
+      olmaydi, ya'ni «FFmpeg yo'q» undan hech qanday amal talab
+      qilmaydi — u kimga murojaat qilishni bilishi kerak
+
+#### Disk monitoringi `[x]` (28.08.2026)
+
+Disk to'lganda `Files.copy` yarim yo'lda uziladi, ish yiqiladi va qayta
+urinadi — yana yarim fayl yozib. Uchala urinish ham diskni yanada
+to'ldiradi.
+
+Undan ham yomoni: disk to'lgach **PostgreSQL ham yozolmay qoladi** va
+nosozlik video bilan umuman bog'liq bo'lmagan joyda ko'rinadi.
+
+- `[x]` `app.video.min-free-disk` (sukut `10GB`) — joy kam bo'lsa ish
+      navbatdan **umuman olinmaydi**.
+
+  ⚠️ Olinsa urinishlar sarflanardi va uch marta yiqilgach video
+  `FAILED` bo'lib qolardi — sabab esa videoda emas, serverda edi.
+  Tegilmagan ish esa joy bo'shashi bilan o'z-o'zidan bajariladi
+
+- `[x]` Har bir ish uchun alohida tekshiruv: manba hajmi × 2.5.
+
+  ⚠️ Umumiy chegara va «aynan shu fayl sig'adimi» — boshqa savollar.
+  40 GB bo'sh joy odatiy video uchun ko'p, 30 GB lik 4K manba uchun
+  esa yetmaydi
+
+- `[x]` Log ogohlantirishi **10 daqiqada bir marta** — navbat har 15
+      soniyada tekshiriladi va har safar yozilsa log bir kechada bir
+      xil qator bilan to'lardi
+
+#### Sozlamalar `[x]`
+
+- `[x]` `app.video.temp-dir` (`app.upload.temp-dir` naqshi bo'yicha)
+- `[x]` `app.video.max-concurrent-jobs` — **ishlab chiqarishda 3**.
+
+  Kod sukuti 1 bo'lib qoladi va bu ataylab: ishlab chiquvchining
+  noutbukida ikkita parallel transcoding ilovani ishlatib bo'lmas
+  holga keltirardi.
+
+  ⚠️ Nega 3, ko'proq emas: har bir FFmpeg 4K manbada ~1.5 GB RAM
+  oladi. 16 GB dan Spring Boot 1–2 GB va PostgreSQL 2–4 GB oladi.
+  To'rtinchi ish PostgreSQL keshini siqib chiqarardi va **butun
+  saytdagi** so'rovlar sekinlashardi — transcoding esa sezilarli
+  tezlashmasdi
+
+- `[x]` `app.video.min-free-disk`
+
+#### ⚠️ FFmpeg o'rnatish — SERVERDA bajariladi
+
+Docker yo'q, ya'ni qo'lda o'rnatiladi. Ubuntu/Debian uchun:
+
+```bash
+sudo apt update
+sudo apt install -y ffmpeg
+
+# ⚠️ IKKALASI ham kerak — kod ffprobe ni alohida chaqiradi.
+ffmpeg -version
+ffprobe -version
+
+# ⚠️ ENG MUHIM TEKSHIRUV: kodlovchilar bormi.
+# Ularsiz FFmpeg o'rnatilgan bo'lib ko'rinadi, lekin transcoding
+# «Unknown encoder» bilan yiqiladi.
+ffmpeg -hide_banner -encoders | grep -E ' (libx264|aac) '
+```
+
+Ikkala qator ham chiqishi kerak. Chiqmasa — `apt` dagi yig'ma
+kesilgan; boshqa manba kerak.
+
+**Tekshirish:** ilovani qayta ishga tushiring va **media
+kutubxonasini oching**. Banner ko'rinmasa — hammasi joyida. Log'da
+ham bitta qator bo'ladi:
+
+```
+Video transcoding tayyor: ffmpeg version … · ffprobe version … · diskda … GB bo'sh
+```
+
+⚠️ Bu buyruqlar **bu yerda ishga tushirilmadi** — server hali sotib
+olinmagan. Ular tekshirilishi kerak.
+
 #### Qolgan vazifalar
 
-- `[ ]` ⚠️ FFmpeg serverga o'rnatilishi kerak — Docker yo'q, ya'ni
-      **qo'lda o'rnatish** yoki Docker joriy qilish qarori
-- `[x]` `app.video.temp-dir` sozlamasi (`app.upload.temp-dir` naqshi bo'yicha)
-- `[ ]` Disk joyi monitoringi
-- `[ ]` `app.video.max-concurrent-jobs=3` (12 yadro uchun)
+- `[ ]` FFmpeg serverga o'rnatish (yuqoridagi buyruqlar) — **server
+      sotib olingandan keyin**
 - `[ ]` ⚠️ **Manbani 1080p bilan cheklash** — panelda ogohlantirish yoki
       qattiq chegara. Yuk 2.4 barobar kamayadi, foydalanuvchi esa
       zinapoyaning eng yuqorisi 1080p bo'lgani uchun farqni ko'rmaydi

@@ -75,6 +75,9 @@ public class TranscodeWorker {
     private final HlsTranscodingService transcodingService;
     private final HlsUploadService uploadService;
 
+    /** Disk va FFmpeg holati — ish boshlashdan oldin so'raladi. */
+    private final VideoSystemHealth health;
+
     private final Path tempRoot;
     private final ExecutorService executor;
     private final Semaphore slots;
@@ -94,6 +97,7 @@ public class TranscodeWorker {
                            VideoProfileSelector profileSelector,
                            HlsTranscodingService transcodingService,
                            HlsUploadService uploadService,
+                           VideoSystemHealth health,
                            @Value("${app.video.max-concurrent-jobs:1}") int maxConcurrentJobs,
                            @Value("${app.video.temp-dir:backend/files/.transcoding}") String tempDir) {
         this.jobs = jobs;
@@ -104,6 +108,7 @@ public class TranscodeWorker {
         this.profileSelector = profileSelector;
         this.transcodingService = transcodingService;
         this.uploadService = uploadService;
+        this.health = health;
         this.tempRoot = Paths.get(tempDir);
 
         int limit = Math.max(1, maxConcurrentJobs);
@@ -169,6 +174,20 @@ public class TranscodeWorker {
      */
     @Scheduled(fixedDelayString = "${app.video.poll-delay-ms:15000}")
     public void pollQueue() {
+        // ⚠️ Disk to'lgan bo'lsa ish UMUMAN olinmaydi.
+        //
+        // Olinsa u yiqilardi, urinishlar soni o'sardi va uch marta
+        // yiqilgach video `FAILED` bo'lib qolardi — sabab esa videoda
+        // emas, serverda edi. Joy bo'shagach uni admin qo'lda qayta
+        // ishga tushirishi kerak bo'lardi.
+        //
+        // Tegilmagan ish esa navbatda kutadi va joy bo'shashi bilan
+        // o'z-o'zidan bajariladi.
+        if (!health.hasRoomFor(null)) {
+            warnLowDisk();
+            return;
+        }
+
         // Bo'sh joy bo'lmasa navbatga umuman qaralmaydi: ish olinib,
         // keyin bajarilmay qolsa u `PROBING` da muzlab qolardi.
         if (!slots.tryAcquire()) {
@@ -199,6 +218,33 @@ public class TranscodeWorker {
         });
     }
 
+    /**
+     * Disk to'lgani haqida ogohlantiradi — SEYRAK.
+     *
+     * ⚠️ Navbat har 15 soniyada tekshiriladi. Har safar yozilsa log
+     * bir kechada bir xil qator bilan to'lardi va undan boshqa hech
+     * narsani topib bo'lmasdi.
+     */
+    private void warnLowDisk() {
+        long now = System.currentTimeMillis();
+        long previous = lastLowDiskWarning.get();
+
+        if (now - previous < LOW_DISK_WARN_INTERVAL_MS) {
+            return;
+        }
+        // CAS — bir nechta ip bir vaqtda kelsa faqat bittasi yozadi.
+        if (lastLowDiskWarning.compareAndSet(previous, now)) {
+            log.warn("⚠️ Diskda joy yetarli emas — transcoding TO'XTATILDI. "
+                    + "Navbatdagi ishlar joy bo'shashi bilan davom etadi.");
+        }
+    }
+
+    /** Oxirgi ogohlantirish vaqti. Nol — hali yozilmagan. */
+    private final java.util.concurrent.atomic.AtomicLong lastLowDiskWarning =
+            new java.util.concurrent.atomic.AtomicLong(0);
+
+    private static final long LOW_DISK_WARN_INTERVAL_MS = 10 * 60 * 1000L;
+
     // ------------------------------------------------------ bajarish
 
     /**
@@ -218,6 +264,8 @@ public class TranscodeWorker {
             MediaAsset media = mediaAssetRepo.findById(mediaId)
                     .orElseThrow(() -> new VideoProcessingException(
                             "Media topilmadi: " + mediaId));
+
+            requireRoomFor(media);
 
             Files.createDirectories(workDir);
 
@@ -266,6 +314,38 @@ public class TranscodeWorker {
     }
 
     // --------------------------------------------------------- ichki qism
+
+    /**
+     * Shu video uchun diskda joy bormi.
+     *
+     * <h2>⚠️ Nega navbat tekshiruvidan tashqari yana bir marta</h2>
+     * {@code pollQueue} umumiy chegarani ({@code min-free-disk})
+     * ko'radi, ya'ni «umuman ishlash mumkinmi». Bu yerdagi savol
+     * boshqa: AYNAN shu fayl sig'adimi.
+     *
+     * 40 GB bo'sh joy odatiy video uchun ko'p, 30 GB lik 4K manba
+     * uchun esa yetmaydi — unga manba + variantlar uchun ~75 GB
+     * kerak.
+     *
+     * ⚠️ Bu ish HAQIQATDAN yiqiladi va urinish sarflanadi. Bu
+     * to'g'ri: disk kattalashmaguncha bu fayl hech qachon
+     * bajarilmaydi, cheksiz urinish esa navbatni band qilardi.
+     * Xato matni nima qilish kerakligini aniq aytadi.
+     */
+    private void requireRoomFor(MediaAsset media) {
+        Long size = media.getSizeBytes();
+        if (health.hasRoomFor(size)) {
+            return;
+        }
+        if (size == null || size <= 0) {
+            throw new VideoProcessingException(
+                    "Diskda joy yetarli emas — transcoding boshlanmadi");
+        }
+        throw new VideoProcessingException(String.format(
+                "Diskda joy yetarli emas: manba %.1f GB, kamida %.1f GB bo'sh joy kerak",
+                size / 1073741824.0,
+                health.requiredBytesFor(size) / 1073741824.0));
+    }
 
     /**
      * Manbani omborga qaytib-qaytib murojaat qilmaslik uchun
