@@ -100,7 +100,7 @@ export default function SignInScreen() {
     >
       {/* Свечение с референса заказчика: на пустом экране входа оно и
           делает всю картинку, поэтому здесь оно ярче обычного. */}
-      <GlowBackdrop intensity="hero" />
+      <GlowBackdrop intensity="hero" decor />
 
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 16 }}
@@ -123,17 +123,35 @@ export default function SignInScreen() {
           </View>
 
           <View className="gap-6 px-6">
-            <Text className="text-center text-h2 text-text">{t('auth.phoneTitle')}</Text>
+            <View className="gap-2">
+              <Text className="text-center text-h2 text-text">
+                {t('auth.phoneTitle')}
+              </Text>
+              <Text className="text-center text-caption text-text-muted">
+                {t('auth.phoneSubtitle')}
+              </Text>
+            </View>
 
             {/* Рамка загорается синим — началом фирменной шкалы, — когда
-                номер введён полностью */}
+                номер введён полностью.
+
+                ⚠️ Выбора страны нет намеренно: OTP уходит через Eskiz, а он
+                шлёт только на узбекские номера. Стрелка-раскрывашка с
+                референса здесь была бы обещанием, которого бэкенд не держит. */}
             <View
-              className="flex-row items-center gap-3 rounded-card border bg-surface px-4"
+              className="flex-row items-center gap-3 rounded-card-lg border bg-surface p-2.5"
               style={{ borderColor: isPhoneValid ? colors.blue : colors.border }}
             >
-              <Ionicons name="call-outline" size={18} color={colors.textMuted} />
-              <Text className="text-body text-text">+998</Text>
-              <View className="h-5 w-px" style={{ backgroundColor: colors.border }} />
+              <View
+                className="items-center justify-center rounded-card"
+                style={{ width: 44, height: 44, backgroundColor: `${colors.purple}26` }}
+              >
+                <Ionicons name="call" size={20} color={colors.magenta} />
+              </View>
+
+              <Text className="text-h2 text-text">+998</Text>
+              <View className="h-7 w-px" style={{ backgroundColor: colors.border }} />
+
               <TextInput
                 value={phone}
                 onChangeText={onChangePhone}
@@ -142,14 +160,16 @@ export default function SignInScreen() {
                 keyboardType="phone-pad"
                 inputMode="tel"
                 maxLength={12}
-                className="flex-1 py-4 text-body"
+                className="flex-1 text-h2"
                 style={{ color: colors.white }}
               />
             </View>
 
             <View className="flex-row items-center gap-3">
               <View className="h-px flex-1 bg-border" />
-              <Text className="text-caption text-text-muted">— {t('auth.or')} —</Text>
+              <View className="rounded-pill border border-border px-4 py-1.5">
+                <Text className="text-caption text-text-muted">{t('auth.or')}</Text>
+              </View>
               <View className="h-px flex-1 bg-border" />
             </View>
 
@@ -183,6 +203,15 @@ export default function SignInScreen() {
             loading={sending}
             disabled={!isPhoneValid || sending}
             onPress={onContinue}
+            className="py-1"
+            trailing={
+              <Ionicons
+                name="arrow-forward"
+                size={20}
+                color={colors.white}
+                style={{ marginLeft: 6 }}
+              />
+            }
           >
             {t('auth.continue')}
           </Button>

@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
+import { GoogleMark } from '@/components/ui/GoogleMark';
 import { colors } from '@/theme/tokens';
 
 import { isGoogleConfigured } from './config';
@@ -139,14 +139,14 @@ function ButtonShell({
       disabled={disabled}
       onPress={onPress}
       // Форма и фон совпадают с полем телефона — на макете это один ряд
-      className={`flex-row items-center justify-center gap-3 rounded-card border border-border bg-surface py-4 ${
+      className={`flex-row items-center justify-center gap-3 rounded-card-lg border border-border bg-surface py-4 ${
         disabled ? 'opacity-40' : 'active:opacity-70'
       }`}
     >
       {loading ? (
         <ActivityIndicator size="small" color={colors.white} />
       ) : (
-        <Ionicons name="logo-google" size={19} color={colors.white} />
+        <GoogleMark size={20} />
       )}
       <Text className="text-body font-semibold text-text">{label}</Text>
     </Pressable>

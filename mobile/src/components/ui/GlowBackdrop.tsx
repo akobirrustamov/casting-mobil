@@ -1,7 +1,7 @@
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
-import Svg, { Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Defs, Ellipse, Path, RadialGradient, Stop } from 'react-native-svg';
 
-import { glow } from '@/theme/tokens';
+import { colors, glow } from '@/theme/tokens';
 
 /**
  * Свечение под контентом — два размытых пятна на чёрном.
@@ -26,12 +26,38 @@ import { glow } from '@/theme/tokens';
 export function GlowBackdrop({
   /** Насколько ярко. `hero` — для входа и онбординга, где экран пустой. */
   intensity = 'normal',
+  /**
+   * Тонкие дуги в левом верхнем углу — деталь с референса заказчика.
+   *
+   * Только для пустых экранов (вход, онбординг): поверх ленты контента
+   * они превратились бы в шум за карточками.
+   */
+  decor = false,
 }: {
   intensity?: 'normal' | 'hero';
+  decor?: boolean;
 }) {
   const { width, height } = useWindowDimensions();
 
   const peak = intensity === 'hero' ? 0.42 : 0.28;
+
+  /**
+   * Веер дуг из-за левого верхнего угла.
+   *
+   * Считается от размеров экрана, а не рисуется по точкам: на узком
+   * телефоне жёстко заданные координаты уехали бы за край.
+   */
+  const arcs = Array.from({ length: 9 }, (_, i) => {
+    const shift = i * (height * 0.018);
+    return {
+      key: i,
+      d:
+        `M ${-width * 0.1} ${height * 0.05 + shift}` +
+        ` Q ${width * 0.22} ${-height * 0.02 + shift * 0.55}` +
+        ` ${width * 0.66} ${-height * 0.06 + shift * 0.3}`,
+      opacity: 0.3 - i * 0.028,
+    };
+  });
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -63,6 +89,19 @@ export function GlowBackdrop({
           ry={height * 0.26}
           fill="url(#glow-secondary)"
         />
+
+        {decor
+          ? arcs.map((a) => (
+              <Path
+                key={a.key}
+                d={a.d}
+                stroke={colors.violet}
+                strokeWidth={1}
+                strokeOpacity={a.opacity}
+                fill="none"
+              />
+            ))
+          : null}
       </Svg>
     </View>
   );
