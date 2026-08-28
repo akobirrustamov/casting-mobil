@@ -32,6 +32,8 @@ export default function AdminLayout() {
       items: [
         { to: '/app/panel', end: true, icon: '▦', label: t('nav.dashboard'), show: true },
         { to: '/app/panel/reports', icon: '📊', label: t('nav.reports'), show: can('REPORT_VIEW') },
+        // Hammaga ko'rinadi: yo'riqnoma xodimga o'z imkoniyatlarini aytadi.
+        { to: '/app/panel/help', icon: '📖', label: t('nav.help'), show: true },
       ],
     },
     {

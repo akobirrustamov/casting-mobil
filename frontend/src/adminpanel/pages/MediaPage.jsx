@@ -6,6 +6,7 @@ import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
 import Modal from '../components/Modal';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, SearchInput } from '../components/Ui';
+import TranscodingBadge from '../components/TranscodingBadge';
 import { usePanelI18n } from '../i18n';
 import Select from '../components/Select';
 
@@ -31,6 +32,14 @@ const humanDuration = (seconds) => {
  * ko'rsatardi. Ya'ni `MEDIA_DELETE` ruxsati mavjud, lekin uni amalga
  * oshiradigan tugma yo'q edi — bu xodimga noto'g'ri tasavvur berardi.
  */
+/**
+ * Yangilash oralig'i.
+ *
+ * ⚠️ Qisqaroq bo'lsa server bekorga yuklanadi: transcoding daqiqalar
+ * davom etadi, sekundiga bir marta so'rash hech narsa qo'shmaydi.
+ */
+const POLL_MS = 12000;
+
 export default function MediaPage() {
   const { t } = usePanelI18n();
   const { can } = useAuth();
@@ -38,6 +47,9 @@ export default function MediaPage() {
   const [q, setQ] = useState('');
   const [type, setType] = useState('');
   const [status, setStatus] = useState('');
+  // ⚠️ Faqat `FAILED` — boshqa holatlar uchun filtr kerak emas.
+  // Admin savoli aniq: «qaysi videolar yiqildi».
+  const [onlyFailed, setOnlyFailed] = useState(false);
   const [details, setDetails] = useState(null);
 
   // Backend qidiruv va filtrni qo'llab-quvvatlaydi (ТЗ §26) — panel
@@ -51,11 +63,15 @@ export default function MediaPage() {
       // faqat READY qaytaradi (§26). Arxivlangan fayllarni ko'rish
       // uchun ular ataylab so'ralishi kerak.
       status: status || undefined,
+      transcoding: onlyFailed ? 'FAILED' : undefined,
       page,
       size: 40,
     }),
-    [q, type, status, page]
+    [q, type, status, onlyFailed, page]
   );
+
+  // Ishlab turgan video bo'lsa ro'yxat o'zi yangilanadi.
+  useTranscodingPolling(data, reload);
 
   const onFilter = (setter) => (value) => { setter(value); setPage(0); };
 
@@ -76,6 +92,14 @@ export default function MediaPage() {
               <option value="AUDIO">AUDIO</option>
               <option value="DOCUMENT">DOCUMENT</option>
             </Select>
+            <label className="uz-check" style={{ whiteSpace: 'nowrap' }}>
+              <input
+                type="checkbox"
+                checked={onlyFailed}
+                onChange={(e) => { setOnlyFailed(e.target.checked); setPage(0); }}
+              />
+              {t('tc.onlyFailed')}
+            </label>
             <Select className="uz-select" value={status} aria-label={t('media.allStatuses')}
                     onChange={(e) => onFilter(setStatus)(e.target.value)}>
               <option value="">{t('media.status.READY')}</option>
@@ -124,6 +148,12 @@ export default function MediaPage() {
                       <Badge tone="archived">{t('media.status.ARCHIVED')}</Badge>
                     </div>
                   )}
+                  {/* ⚠️ Video qayta ishlash holati — `status` dan BOSHQA
+                      narsa. Rasm va hujjatda umuman chizilmaydi
+                      (`transcoding` u yerda `null`). */}
+                  <div style={{ position: 'absolute', bottom: 6, right: 6 }}>
+                    <TranscodingBadge transcoding={m.transcoding} />
+                  </div>
                 </div>
                 <div className="p-2">
                   <div className="uz-muted" style={{ fontSize: 11, wordBreak: 'break-all' }}>
@@ -147,8 +177,13 @@ export default function MediaPage() {
         <MediaDetails
           media={details}
           canManage={can('MEDIA_DELETE')}
+          canUpload={can('MEDIA_UPLOAD')}
           onClose={() => setDetails(null)}
           onChanged={() => { setDetails(null); reload(); }}
+          /* ⚠️ `onChanged` dan FARQLI: oyna OCHIQ qoladi.
+             Qayta urinishdan keyin oyna yopilsa, admin natijani
+             ko'rmasdan qolardi — u aynan holat o'zgarishini kutyapti. */
+          onRefresh={reload}
         />
       )}
     </>
@@ -168,7 +203,7 @@ export default function MediaPage() {
  * bo'lsa fayl oyna ochiq turganda band qilinishi mumkin. Shuning uchun
  * 409 javobi ham baribir ushlanadi va sabab ro'yxati bilan ko'rsatiladi.
  */
-function MediaDetails({ media, canManage, onClose, onChanged }) {
+function MediaDetails({ media, canManage, canUpload, onClose, onChanged, onRefresh }) {
   const { t } = usePanelI18n();
   const confirmer = useConfirm(onChanged);
 
@@ -295,6 +330,8 @@ function MediaDetails({ media, canManage, onClose, onChanged }) {
           </div>
         </div>
 
+        <TranscodingPanel media={media} canUpload={canUpload} onRefresh={onRefresh} />
+
         <div className="mt-5">
           <div className="uz-label">{t('media.usage')}</div>
 
@@ -337,4 +374,129 @@ function Field({ label, value, mono = false }) {
       </div>
     </div>
   );
+}
+
+
+/**
+ * Video qayta ishlash bo'limi — tafsilot oynasida.
+ *
+ * ⚠️ Video BO'LMAGAN media uchun umuman chizilmaydi. Rasm uchun
+ * «qayta ishlash» bo'limi ma'nosiz va u faqat oynani uzaytirardi.
+ */
+function TranscodingPanel({ media, canUpload, onRefresh }) {
+  const { t } = usePanelI18n();
+  const [job, setJob] = useState(media.transcoding);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Oyna boshqa media uchun qayta ochilsa holat yangilanadi.
+  useEffect(() => { setJob(media.transcoding); }, [media.id, media.transcoding]);
+
+  if (media.type !== 'VIDEO') return null;
+
+  // Eski fayl — transcoding joriy qilinishidan oldin yuklangan.
+  if (!job) {
+    return (
+      <div className="mt-5">
+        <div className="uz-label">{t('tc.title')}</div>
+        <p className="uz-muted" style={{ fontSize: 13 }}>{t('tc.notStarted')}</p>
+      </div>
+    );
+  }
+
+  async function retry() {
+    setBusy(true);
+    setError(null);
+    try {
+      const updated = await adminApi.retryTranscoding(media.id);
+      setJob(updated.transcoding);
+      // Ro'yxat ham yangilansin — nishon o'zgargan. Oyna
+      // YOPILMAYDI: admin natijani ko'rishi kerak.
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-5">
+      <div className="uz-label">{t('tc.title')}</div>
+
+      <div className="flex items-center gap-2 flex-wrap mb-3">
+        <TranscodingBadge transcoding={job} />
+        {job.attempts > 0 && (
+          <span className="uz-muted" style={{ fontSize: 12 }}>
+            {t('tc.attempts')}: {job.attempts}
+          </span>
+        )}
+      </div>
+
+      {/* ⚠️ Xato matni KO'RSATILADI. Faqat «yiqildi» deyish adminni
+          logga qarashga majbur qilardi, logga esa uning kirishi yo'q. */}
+      {job.error && (
+        <div className="uz-field-warn mb-3">
+          <strong>{t('tc.error')}:</strong> {job.error}
+        </div>
+      )}
+
+      {job.status !== 'READY' && job.status !== 'FAILED' && (
+        <p className="uz-muted mb-3" style={{ fontSize: 12 }}>{t('tc.pendingHint')}</p>
+      )}
+
+      {error && <ErrorState error={error} />}
+
+      {/* Tugma faqat TUGAGAN ish uchun — `retryable` ni SERVER hisoblaydi. */}
+      {canUpload && job.retryable && (
+        <button type="button" className="uz-btn uz-btn-ghost"
+                style={{ minHeight: 36, fontSize: 13 }}
+                disabled={busy}
+                onClick={retry}>
+          {busy ? t('tc.retrying') : t('tc.retry')}
+        </button>
+      )}
+    </div>
+  );
+}
+
+
+/**
+ * Transcoding tugagunicha ro'yxatni davriy yangilaydi.
+ *
+ * <h2>⚠️ So'rov faqat KERAK bo'lganda</h2>
+ * Uchta shart bir vaqtda bajarilishi kerak:
+ *
+ * 1. sahifada ishlab turgan yoki navbatdagi video BOR;
+ * 2. brauzer vkladkasi KO'RINIB turibdi;
+ * 3. oldingi so'rov tugagan.
+ *
+ * Usiz ochiq qolgan panel serverga soatlab bekorga so'rov yuborardi —
+ * admin tushlikka ketgan bo'lsa ham.
+ *
+ * Barcha ishlar tugagach yangilash O'ZI to'xtaydi.
+ */
+function useTranscodingPolling(data, reload) {
+  useEffect(() => {
+    const items = data?.items;
+    if (!Array.isArray(items)) return undefined;
+
+    // Tugamagan ish bormi. `READY` va `FAILED` — tugagan.
+    const pending = items.some((m) => {
+      const status = m.transcoding?.status;
+      return status && status !== 'READY' && status !== 'FAILED';
+    });
+    if (!pending) return undefined;
+
+    const timer = setInterval(() => {
+      // ⚠️ Ko'rinmayotgan vkladka uchun so'rov yubormaymiz. Brauzer
+      // fon vkladkasidagi taymerni sekinlashtiradi, lekin
+      // to'xtatmaydi — ya'ni so'rovlar baribir ketaverardi.
+      if (document.visibilityState === 'visible') {
+        reload();
+      }
+    }, POLL_MS);
+
+    return () => clearInterval(timer);
+  }, [data, reload]);
 }

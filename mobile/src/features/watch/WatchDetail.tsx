@@ -180,9 +180,15 @@ function Stage({ info, card }: { info: WatchInfo; card: ContentCard | undefined 
     return (
       <View className="gap-3">
         {/* key: смена части пересоздаёт плеер — надёжнее ручной подмены
-            источника у живого плеера и не тащит позицию из прошлой части. */}
+            источника у живого плеера и не тащит позицию из прошлой части.
+
+            ⚠️ В ключе есть и признак HLS. Без него так: пользователь
+            открыл эпизод, пока он ещё обрабатывался (играет через
+            сервер), потом потянул экран вниз — `/watch` уже отдаёт
+            `hlsUrl`, но плеер остаётся со старым адресом, потому что
+            ключ не изменился. Видео продолжает идти мимо CDN. */}
         <Player
-          key={source.mediaId ?? part}
+          key={`${source.mediaId ?? part}-${source.hlsUrl ? 'hls' : 'raw'}`}
           source={source}
           orientation={info.orientation}
           contentId={info.contentId}

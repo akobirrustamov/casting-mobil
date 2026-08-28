@@ -109,3 +109,84 @@ describe('Media kutubxonasi', () => {
     expect(screen.queryByText(/ochilmaydi/i)).not.toBeInTheDocument();
   });
 });
+
+/**
+ * Qayta ishlash holati — `notPlayable` dan BOSHQA muammo.
+ *
+ * <pre>
+ *   notPlayable  → format noto'g'ri (.mkv), qayta ishlash YORDAM BERMAYDI
+ *   pending      → format to'g'ri, HLS hali tayyor emas — kutish kerak
+ *   failed       → qayta ishlash yiqilgan, video HECH QACHON ochilmaydi
+ * </pre>
+ *
+ * ⚠️ Ularni aralashtirish adminni chalkashtirardi: birinchisida boshqa
+ * fayl kerak, ikkinchisida shunchaki kutish.
+ */
+describe('Qayta ishlash holati media maydonida', () => {
+  test('tugamagan qayta ishlash uchun KUTISH ogohlantirishi', async () => {
+    adminApi.mediaAsset.mockResolvedValue({
+      id: 9, playable: true, type: 'VIDEO',
+      transcoding: { status: 'TRANSCODING', progress: 40 },
+    });
+
+    wrap(<MediaField label="Video" type="VIDEO" value={9} onChange={() => {}} />);
+
+    expect(await screen.findByText(/hali tayyor emas/i)).toBeInTheDocument();
+  });
+
+  test('READY bo\'lsa ogohlantirish YO\'Q', async () => {
+    adminApi.mediaAsset.mockResolvedValue({
+      id: 10, playable: true, type: 'VIDEO',
+      transcoding: { status: 'READY', progress: 100 },
+    });
+
+    wrap(<MediaField label="Video" type="VIDEO" value={10} onChange={() => {}} />);
+
+    await waitFor(() => expect(adminApi.mediaAsset).toHaveBeenCalledWith(10));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  test('yiqilgan qayta ishlash uchun XATO ogohlantirishi va sababi', async () => {
+    adminApi.mediaAsset.mockResolvedValue({
+      id: 11, playable: true, type: 'VIDEO',
+      transcoding: { status: 'FAILED', progress: 0, error: 'ffmpeg topilmadi' },
+    });
+
+    wrap(<MediaField label="Video" type="VIDEO" value={11} onChange={() => {}} />);
+
+    const warning = await screen.findByRole('status');
+    expect(warning).toHaveTextContent(/Yiqildi/);
+    // ⚠️ Sabab KO'RSATILADI — usiz admin logga qarashga majbur
+    // bo'lardi, logga esa uning kirishi yo'q.
+    expect(warning).toHaveTextContent(/ffmpeg topilmadi/);
+  });
+
+  /**
+   * ⚠️ `.mkv` uchun qayta ishlash yordam bermaydi — boshqa fayl kerak.
+   * Ikkita ogohlantirish birdan chiqsa admin qaysi biriga ishonishni
+   * bilmasdi.
+   */
+  test('format noto\'g\'ri bo\'lsa FAQAT format ogohlantirishi chiqadi', async () => {
+    adminApi.mediaAsset.mockResolvedValue({
+      id: 12, playable: false, type: 'VIDEO',
+      transcoding: { status: 'QUEUED', progress: 0 },
+    });
+
+    wrap(<MediaField label="Video" type="VIDEO" value={12} onChange={() => {}} />);
+
+    const warnings = await screen.findAllByRole('status');
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toHaveTextContent(/mkv/i);
+  });
+
+  test('eski, ishi yo\'q video uchun ogohlantirish yo\'q', async () => {
+    adminApi.mediaAsset.mockResolvedValue({
+      id: 13, playable: true, type: 'VIDEO', transcoding: null,
+    });
+
+    wrap(<MediaField label="Video" type="VIDEO" value={13} onChange={() => {}} />);
+
+    await waitFor(() => expect(adminApi.mediaAsset).toHaveBeenCalledWith(13));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+});

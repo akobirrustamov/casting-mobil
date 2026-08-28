@@ -3,6 +3,7 @@ package com.example.backend.Cms.Repository;
 import com.example.backend.Cms.Entity.MediaAsset;
 import com.example.backend.Cms.Enums.MediaStatus;
 import com.example.backend.Cms.Enums.MediaType;
+import com.example.backend.Cms.Enums.VideoProcessingStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,15 +31,28 @@ public interface MediaAssetRepo extends JpaRepository<MediaAsset, Long> {
      * Qidiruv ASL fayl nomi bo'yicha: {@code storageKey} UUID bo'lgani
      * uchun undan qidirishning ma'nosi yo'q, admin esa faylni yuklagan
      * nomi bilan eslaydi.
+     *
+     * <h2>{@code transcoding} filtri</h2>
+     * ⚠️ {@code exists} ishlatiladi, {@code join} EMAS. {@code join}
+     * bilan ishi YO'Q media umuman chiqmay qolardi — ya'ni filtrsiz
+     * ham eski fayllar ro'yxatdan yo'qolardi.
+     *
+     * Bu filtr adminning asosiy savoliga javob beradi: «qaysi videolar
+     * yiqildi». Usiz u yiqilganlarni sahifalab qidirishga majbur
+     * bo'lardi.
      */
     @Query("""
             select m from MediaAsset m
             where (:type is null or m.type = :type)
               and (:status is null or m.status = :status)
               and (:q is null or lower(m.originalFilename) like lower(concat('%', :q, '%')))
+              and (:transcoding is null or exists (
+                    select 1 from TranscodingJob j
+                    where j.media = m and j.status = :transcoding))
             """)
     Page<MediaAsset> library(@Param("type") MediaType type,
                              @Param("status") MediaStatus status,
                              @Param("q") String q,
+                             @Param("transcoding") VideoProcessingStatus transcoding,
                              Pageable pageable);
 }

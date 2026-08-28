@@ -6,6 +6,7 @@ import com.example.backend.Cms.Entity.UploadSession;
 import com.example.backend.Cms.Enums.UploadMode;
 import com.example.backend.Cms.Repository.UploadSessionRepo;
 import com.example.backend.Cms.Service.ChunkedUploadService;
+import com.example.backend.Cms.Service.Video.TranscodingJobService;
 import com.example.backend.Entity.User;
 import com.example.backend.Enums.Permission;
 import com.example.backend.Services.PermissionService.PermissionService;
@@ -58,6 +59,9 @@ public class UploadController {
     private final ChunkedUploadService uploadService;
     private final UploadSessionRepo sessionRepo;
     private final PermissionService permissionService;
+
+    /** Yuklash javobida transcoding holati ham qaytariladi. */
+    private final TranscodingJobService transcodingJobs;
 
     @PostMapping
     public ResponseEntity<UploadSessionDto> begin(@RequestBody BeginRequest request) {
@@ -151,7 +155,15 @@ public class UploadController {
     public ResponseEntity<MediaController.MediaDto> complete(@PathVariable String id) {
         UploadSession session = ownSession(id);
         MediaAsset asset = uploadService.complete(session);
-        return ResponseEntity.ok(MediaController.MediaDto.from(asset));
+
+        // ⚠️ Transcoding ishi ham qaytariladi.
+        //
+        // Usiz panel yuklash tugagach «tayyor» deb ko'rsatardi, aslida
+        // esa qayta ishlash ENDI boshlanadi. Admin videoni darhol
+        // epizodga biriktirib, uni ishlaydi deb o'ylardi — foydalanuvchi
+        // esa ochilmaydigan video ko'rardi.
+        return ResponseEntity.ok(MediaController.MediaDto.from(
+                asset, transcodingJobs.forMedia(asset.getId()).orElse(null)));
     }
 
     @DeleteMapping("/{id}")

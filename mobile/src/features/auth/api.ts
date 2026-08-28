@@ -92,7 +92,7 @@ function toOtpError(error: unknown): never {
 export async function sendOtp(phone: string): Promise<number> {
   try {
     const { data } = await api.post<{ sent: boolean; expiresInSeconds: number }>(
-      '/api/v1/auth/otp/send',
+      '/api/v1/app/auth/otp/send',
       { phone },
     );
     return data.expiresInSeconds;
@@ -103,7 +103,7 @@ export async function sendOtp(phone: string): Promise<number> {
 
 export async function verifyOtp(phone: string, code: string): Promise<OtpVerifyResult> {
   try {
-    const { data } = await api.post<OtpVerifyResponse>('/api/v1/auth/otp/verify', {
+    const { data } = await api.post<OtpVerifyResponse>('/api/v1/app/auth/otp/verify', {
       phone,
       code,
     });

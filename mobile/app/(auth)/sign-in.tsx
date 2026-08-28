@@ -29,7 +29,7 @@ import { colors } from '@/theme/tokens';
  *
  * Принцип с подписи к макету: один экран — одно действие.
  *
- * Код отправляется через Eskiz SMS (`POST /api/v1/auth/otp/send`,
+ * Код отправляется через Eskiz SMS (`POST /api/v1/app/auth/otp/send`,
  * см. docs/API.md §5). Экран otp.tsx проверяет его и делает
  * вход/регистрацию одним запросом.
  */

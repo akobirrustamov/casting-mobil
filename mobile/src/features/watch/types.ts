@@ -48,7 +48,29 @@ export type RequiredAction =
 export type VideoSource = {
   partNumber: number | null;
   mediaId: number | null;
+
+  /**
+   * ОТНОСИТЕЛЬНЫЙ путь — `/api/v1/app/media/{id}/raw`.
+   *
+   * ⚠️ Перед ним подставляется `BASE_URL`. Абсолютный адрес здесь дал
+   * бы `https://uzcasting.sitehttps://cdn…` — тихая поломка без
+   * единого сообщения об ошибке.
+   *
+   * Это ЗАПАСНОЙ путь: он работает всегда, но видео идёт через сервер
+   * приложения, а не через CDN.
+   */
   url: string | null;
+
+  /**
+   * HLS master playlist — АБСОЛЮТНЫЙ адрес CDN.
+   *
+   * Приходит, только когда транскодирование завершено и CDN настроен.
+   * `null` означает «HLS ещё нет» — тогда играем по `url`.
+   *
+   * ⚠️ Здесь адрес уже полный, `BASE_URL` подставлять НЕЛЬЗЯ.
+   */
+  hlsUrl: string | null;
+
   durationSeconds: number | null;
 };
 

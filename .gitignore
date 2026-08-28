@@ -142,6 +142,11 @@ storage/
 # import qilardi. Bu faqat boshqa mashinada klon qilinganda bilinardi.
 !backend/src/main/java/com/example/backend/Cms/Service/Storage/
 
+# ⚠️ TEST paketi ham — ikkinchi marta o'sha tuzoq. Manba paketi uchun
+# istisno yozilgan, test paketi esa unutilgan va `S3IntegrationTest`
+# jimgina commit'ga tushmay qoldi.
+!backend/src/test/java/com/example/backend/Cms/Service/Storage/
+
 # ======================
 
 # Misc

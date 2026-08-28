@@ -1,8 +1,6 @@
 package com.example.backend.Controller;
 
 import com.example.backend.DTO.GoogleLoginDTO;
-import com.example.backend.DTO.OtpSendDTO;
-import com.example.backend.DTO.OtpVerifyDTO;
 import com.example.backend.DTO.UserDTO;
 import com.example.backend.Entity.User;
 import com.example.backend.Repository.UserRepo;
@@ -36,17 +34,11 @@ public class AuthController {
         return service.googleLogin(dto.getIdToken());
     }
 
-    /** Mobil ilova: telefonga SMS-kod so'raydi (Eskiz orqali). Ro'yxatdan o'tish ham shu bilan boshlanadi. */
-    @PostMapping(value = "/otp/send", consumes = "application/json")
-    public HttpEntity<?> sendOtp(@RequestBody OtpSendDTO dto) {
-        return service.sendOtp(dto.getPhone());
-    }
-
-    /** Kodni tasdiqlaydi: hisob yo'q bo'lsa yaratadi, bor bo'lsa kirgizadi. Javob login/google bilan bir xil shaklda. */
-    @PostMapping(value = "/otp/verify", consumes = "application/json")
-    public HttpEntity<?> verifyOtp(@RequestBody OtpVerifyDTO dto) {
-        return service.verifyOtp(dto.getPhone(), dto.getCode());
-    }
+    // ⚠️ OTP endpointlari BU YERDAN ko'chirildi.
+    //
+    // Ular `/api/v1/app/auth/otp/**` da — `Cms/Controller/AppAuthController`.
+    // Sabab: bu kontroller MUZLATILGAN makonga tegishli (Telegram bot,
+    // eski admin sayti), yangi funksiya esa yangi makonga tushadi.
 
     @PostMapping("/refresh")
     public HttpEntity<?> refreshUser(@RequestParam String refreshToken) {

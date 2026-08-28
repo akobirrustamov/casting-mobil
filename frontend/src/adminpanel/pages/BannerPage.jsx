@@ -40,6 +40,10 @@ const emptyPremiere = () => ({
 export default function BannerPage({ kind }) {
   const { t, locale } = usePanelI18n();
   const { can } = useAuth();
+
+  // Backend bilan BIR XIL qoida: reklama — ADVERTISEMENT_EDIT,
+  // premyera — PREMIERE_EDIT.
+  const canPublish = can(kind === 'ad' ? 'ADVERTISEMENT_EDIT' : 'PREMIERE_EDIT');
   const isAd = kind === 'ad';
   const bl = locale.toUpperCase();
 
@@ -406,8 +410,16 @@ export default function BannerPage({ kind }) {
             <label className="uz-label" htmlFor="b-st">{t('editor.status')}</label>
             <Select id="b-st" className="uz-select" value={form.status}
                     onChange={(e) => setForm({ ...form, status: e.target.value })}>
+              {/* ⚠️ Ilgari `CONTENT_PUBLISH` tekshirilardi va panel
+                  backenddan QATTIQROQ edi: backend reklama uchun
+                  `ADVERTISEMENT_EDIT`, premyera uchun `PREMIERE_EDIT`
+                  talab qiladi.
+
+                  Natijada reklama muharriri o'z bannerini chop eta
+                  olmasdi — variant o'chirilgan turardi, server esa
+                  ruxsat bergan bo'lardi. */}
               {STATUSES.map((x) => (
-                <option key={x} value={x} disabled={x === 'PUBLISHED' && !can('CONTENT_PUBLISH')}>
+                <option key={x} value={x} disabled={x === 'PUBLISHED' && !canPublish}>
                   {x}
                 </option>
               ))}

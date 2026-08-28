@@ -723,6 +723,29 @@
     white-space: nowrap;
 }
 
+/* Kutubxona kartochkasidagi qayta ishlash nishoni — yuqori chap. */
+.uz-media-tc {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+}
+
+/* Yo'riqnomadagi qadamlar ro'yxati. */
+.uz-steps {
+    margin: 0;
+    padding-left: 20px;
+    list-style: decimal;
+}
+
+.uz-steps li {
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--p-text);
+}
+
+.uz-steps li:last-child { margin-bottom: 0; }
+
 .uz-field-warn {
     padding: 8px 10px;
     border-radius: var(--p-radius);

@@ -49,8 +49,8 @@
 | Метод | Путь | Назначение |
 |---|---|---|
 | `POST` | `/api/v1/auth/google` | **новый.** Google ID-token → наш JWT |
-| `POST` | `/api/v1/auth/otp/send` | **новый.** SMS-код на телефон (Eskiz) |
-| `POST` | `/api/v1/auth/otp/verify` | **новый.** код → наш JWT (вход или регистрация) |
+| `POST` | `/api/v1/app/auth/otp/send` | **новый.** SMS-код на телефон (Eskiz) |
+| `POST` | `/api/v1/app/auth/otp/verify` | **новый.** код → наш JWT (вход или регистрация) |
 | `POST` | `/api/v1/casting-user` | создать анкету |
 | `POST` | `/api/v1/file/upload` | загрузить фото (multipart) |
 | `GET` | `/api/v1/casting-user/my/` | мои заявки |
@@ -64,15 +64,24 @@
 
 ### Телефон + OTP (Eskiz SMS)
 
+⚠️ **OTP переехал в `/api/v1/app/**` (28.08.2026).**
+
+Сначала эти два эндпоинта появились в `/api/v1/auth/**` — то есть в
+ЗАМОРОЖЕННОМ пространстве старого кастингового модуля, которым
+пользуются Telegram-бот и старая админка. Любое изменение там задевает
+их, поэтому новая функциональность туда не добавляется.
+
+Тест `OldCastingFrozenTest` это и поймал.
+
 Вход и регистрация — один поток: `otp/verify` находит хозяина номера или создаёт
 нового пользователя с ролью `ROLE_USER`, как это делает `auth/google` для Google.
 Экраны: `app/(auth)/sign-in.tsx` → `app/(auth)/otp.tsx`.
 
 ```jsonc
-POST /api/v1/auth/otp/send    { "phone": "+998901234567" }
+POST /api/v1/app/auth/otp/send    { "phone": "+998901234567" }
 → { "sent": true, "expiresInSeconds": 180 }
 
-POST /api/v1/auth/otp/verify  { "phone": "+998901234567", "code": "1234" }
+POST /api/v1/app/auth/otp/verify  { "phone": "+998901234567", "code": "1234" }
 → { "access_token": "...", "refresh_token": "...",
     "roles": [{ "name": "ROLE_USER" }],
     "user": { "id": "...", "name": "", "phone": "998901234567" } }

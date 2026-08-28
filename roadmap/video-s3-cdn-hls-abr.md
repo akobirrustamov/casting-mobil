@@ -738,7 +738,7 @@ bajarishga urinardi.
 
 ### 4.8. S3 ga HLS yuklash `[x]` — 4.7 bilan birga
 
-- `[ ]` Rekursiv yuklash, har bir fayl uchun to'g'ri `Content-Type`:
+- `[x]` Rekursiv yuklash, har bir fayl uchun to'g'ri `Content-Type`:
 
 | Kengaytma | Content-Type |
 |---|---|
@@ -746,17 +746,61 @@ bajarishga urinardi.
 | `.m4s` | `video/iso.segment` |
 | `.mp4` (init) | `video/mp4` |
 
-- `[ ]` `status = READY` **faqat hammasi yuklangach** (§20)
-- `[ ]` Qisman yuklash → `FAILED` + tozalash
+- `[x]` `status = READY` **faqat hammasi yuklangach** (§20)
+- `[x]` Qisman yuklash → `FAILED` + tozalash
 
-### 4.9. CDN va yetkazish `[ ]`
+### 4.9. CDN va yetkazish `[x]`
 
-- `[ ]` `app.video.cdn.base-url` konfiguratsiyasi
-- `[ ]` Bazada **obyekt kaliti** saqlanadi, to'liq URL emas (§22) — domen
-      almashtirish uchun
-- `[ ]` `WatchController.sources()` → `hlsUrl` (yangi maydon, §3.5)
-- `[ ]` `hlsMasterKey == null` bo'lsa `hlsUrl = null`, eski `url` ishlaydi
-- `[ ]` Testlar: URL yasash, eski media uchun `null`
+- `[x]` `CdnUrlService` — kalitni mutlaq manzilga aylantiradi
+- `[x]` `app.video.cdn.base-url` sozlamasi (bo'sh bo'lsa HLS berilmaydi)
+- `[x]` Bazada **obyekt kaliti** saqlanadi, to'liq URL emas (§22)
+- `[x]` `WatchController` → **yangi** `hlsUrl` maydoni, `url` TEGILMADI
+- `[x]` `application.properties.example` — 16 ta `app.video.*` sozlamasi
+- `[x]` `CdnUrlTest` (9) · `HlsDeliveryTest` (4), 4 mutatsiya bilan tasdiqlangan
+
+#### ⚠️ Mobil shartnomasi — eng nozik joy
+
+Mobil `url` ni **nisbiy** deb hisoblaydi va oldiga o'z `BASE_URL` ini
+qo'yadi (`WatchDetail.tsx`):
+
+```ts
+useVideoPlayer({ uri: `${BASE_URL}${source.url}` })
+```
+
+CDN manzili o'sha maydonga yozilsa `https://uzcasting.sitehttps://cdn…`
+chiqardi — **jimgina buzilish**, hech qanday xato ko'rsatmasdan.
+
+Yechim: `url` **o'zgarmadi**, CDN manzili **yangi** `hlsUrl` maydoniga
+yoziladi.
+
+| Holat | `url` | `hlsUrl` |
+|---|---|---|
+| Transcoding tugagan | nisbiy, ishlaydi | mutlaq CDN manzili |
+| Transcoding tugamagan | nisbiy, ishlaydi | `null` |
+| CDN sozlanmagan | nisbiy, ishlaydi | `null` |
+| Ruxsat yo'q | manbalar **umuman yo'q** | — |
+
+Eski mobil ilova `hlsUrl` ni bilmaydi va `url` orqali ishlashda davom
+etadi. Yangisi `hlsUrl` bo'lsa uni oladi, bo'lmasa `url` ga qaytadi.
+Ikkalasi bitta relizda yonma-yon ishlaydi (§33).
+
+⚠️ Bu shartnoma **test bilan qulflangan**: `CdnUrlTest.MobileContract`
+`WatchController` manbasini o'qib, `url` ga CDN berilmaganini tekshiradi.
+Mutatsiya sinovida bu buzilish **3 ta testni** yiqitdi.
+
+#### Nega `null`, o'ylab topilgan manzil emas
+
+CDN sozlanmagan yoki transcoding tugamagan bo'lsa `null` qaytariladi.
+
+O'ylab topilgan manzil pleyerni **mavjud bo'lmagan** faylga yuborardi va
+nosozlik «video buzuq» bo'lib ko'rinardi — sabab esa oddiy sozlama
+yetishmasligi edi.
+
+#### Nega baza kalitni saqlaydi
+
+To'liq URL saqlansa, CDN domeni o'zgarganda **ming qatorli `UPDATE`**
+kerak bo'lardi va u paytgacha barcha eski videolar ochilmay qolardi.
+Domen sozlamada bo'lsa — bitta qatorni tahrirlash.
 
 ### 4.10. ⚠️ Xavfsizlik — QAROR KUTILMOQDA `[ ]`
 
@@ -778,27 +822,484 @@ Bu tashqi bog'liqlik, taxmin qilinmaydi.
 Vaqtincha: `4.1`–`4.9` bosqichlari **bepul kontentda** to'liq ishlaydi.
 Pullik kontent hozirgi `raw` yo'lida qoladi — ya'ni regressiya yo'q.
 
-### 4.11. Admin panel `[ ]`
+### 4.11. Admin panel `[x]`
 
-- `[ ]` `MediaPicker` da holat: `UPLOADING n% · PROCESSING n% · READY · FAILED`
-- `[ ]` `FAILED` uchun sabab va **qayta urinish** tugmasi (§18)
-- `[ ]` `POST /api/v1/app/admin/media/{id}/retry-transcoding`
-- `[ ]` Mavjud `uz-*` komponentlari ishlatiladi, yangi dizayn tizimi yaratilmaydi (§25)
-- `[ ]` Uchala tilga i18n kalitlari
+#### Hozirgi holat — koddan aniqlangan
 
-### 4.12. Mobil `[ ]`
+Media kutubxonasi (`MediaPage`) ishlaydi va ko'rsatadi: tur, holat
+(`READY`/`ARCHIVED`), o'lchamlar, davomiylik, hajm, `playable`
+bayrog'i, ishlatilish joylari.
 
-- `[ ]` `VideoSource` turiga `hlsUrl` qo'shiladi
-- `[ ]` Pleyer: `hlsUrl ?? BASE_URL + url`
-- `[ ]` `expo-video` ABR'ni o'zi boshqaradi — **qo'lda tezlik hisoblash yozilmaydi** (§26)
-- `[ ]` Testlar: `hlsUrl` bor/yo'q holatlari
+⚠️ **Transcoding haqida hech narsa bilmaydi.** `MediaDto` da
+`transcodingStatus` ham, `progress` ham, `error` ham yo'q. Admin
+video yuklaydi va keyin **hech narsa ko'rmaydi**: u tayyormi,
+navbatdami, yiqildimi — bilib bo'lmaydi.
 
-### 4.13. Infratuzilma `[ ]`
+Bu jimgina nosozlikning eng yomon turi: video kutubxonada
+`READY` bo'lib turadi (bu `MediaStatus`, ya'ni «arxivlanmagan»),
+lekin HLS'i yo'q va pleyerda ochilmaydi.
+
+#### Bosqich A — backend tomoni (avval shu)
+
+- `[x]` `MediaDto` ga `transcoding` obyekti:
+
+```jsonc
+"transcoding": {
+  "status": "TRANSCODING",   // QUEUED · PROBING · TRANSCODING · UPLOADING · READY · FAILED
+  "progress": 62,
+  "error": null,
+  "attempts": 1,
+  "startedAt": "…", "finishedAt": null
+}
+```
+
+  ⚠️ Video BO'LMAGAN media uchun `null` — «ish yo'q» va «ish
+  yiqilgan» boshqa narsa. `playable` da qilinganidek.
+
+- `[x]` `MediaController.list()` — ishlarni **bitta so'rovda** olish
+      (`TranscodingJobService.forMediaIds`). Har media uchun alohida
+      so'rov 40 elementli sahifada **N+1** bo'lardi
+- `[x]` `POST /api/v1/app/admin/media/{id}/retry-transcoding`
+      → `MEDIA_UPLOAD` ruxsati
+- `[x]` ⚠️ Yangi ruxsat **qo'shilmaydi**. `MEDIA_UPLOAD` ni kim
+      olgan bo'lsa, u video yuklaydi — qayta urinish ham o'sha ishning
+      davomi. Yangi ruxsat mavjud rollarni qayta sozlashni talab
+      qilardi
+- `[x]` `GET /api/v1/app/admin/media/queue` — navbat holati
+      (nechta `QUEUED`, nechta ishlamoqda, nechta `FAILED`)
+- `[x]` Testlar: DTO shakli, N+1 yo'qligi, ruxsat, qayta urinish
+
+#### Bosqich B — kutubxona ro'yxati
+
+- `[x]` `MediaPage` kartochkasida transcoding nishoni:
+
+```
+🎞 kino.mp4          [VIDEO]  [⏳ Navbatda]
+🎞 film.mp4          [VIDEO]  [▶ 62%]
+🎞 klip.mp4          [VIDEO]  [✓ HLS tayyor]
+🎞 buzuq.mp4         [VIDEO]  [⚠ Yiqildi]
+```
+
+- `[x]` Faqat VIDEO uchun. Rasm va hujjatda nishon **umuman
+      chizilmaydi** — `playable` dagi `=== false` qoidasi bilan bir xil
+- `[x]` Filtrga `transcoding=FAILED` qo'shish — admin yiqilganlarni
+      topa olishi kerak
+- `[x]` ⚠️ Mavjud `Badge` va `uz-*` komponentlari. Yangi dizayn
+      tizimi yaratilmaydi (§25)
+
+#### Bosqich C — tafsilot oynasi
+
+- `[x]` `MediaPage` tafsilot oynasida transcoding bo'limi:
+      holat · progress · urinishlar soni · boshlangan/tugagan vaqt
+- `[x]` `FAILED` uchun **xato matni** ko'rsatiladi
+
+  ⚠️ Faqat «yiqildi» deyish adminni logga qarashga majbur qilardi,
+  logga esa uning kirishi yo'q. Sabab bazada saqlanadi (`error`
+  ustuni) — uni ko'rsatmaslik ma'noni yo'qotardi
+
+- `[x]` **Qayta urinish** tugmasi — faqat `FAILED` holatida va faqat
+      `MEDIA_UPLOAD` ruxsati bo'lsa
+- `[x]` Tugma bosilgach ro'yxat yangilanadi
+
+#### Bosqich D — progressni kuzatish
+
+- `[x]` `PROCESSING` holatidagi media bo'lsa ro'yxat **davriy
+      yangilanadi** (10–15 soniyada)
+- `[x]` ⚠️ So'rov faqat KERAK bo'lganda: barcha ishlar tugagan bo'lsa
+      yangilash **to'xtaydi**. Doimiy so'rov ochiq turgan panel
+      serverga bekorga yuk berardi
+- `[x]` Sahifa fokusda bo'lmaganda ham to'xtaydi
+      (`document.visibilityState`)
+
+#### ✅ A · B · C · D bajarildi (27.08.2026)
+
+| Nima | Qayerda |
+|---|---|
+| `transcoding` obyekti DTO'da | `MediaController.TranscodingDto` |
+| Qayta urinish endpointi | `POST /media/{id}/retry-transcoding` → `MEDIA_UPLOAD` |
+| Navbat holati | `GET /media/transcoding-queue` |
+| `FAILED` filtri | `?transcoding=FAILED` |
+| Nishon | `components/TranscodingBadge.jsx` |
+| Tafsilot bo'limi | `MediaPage.TranscodingPanel` |
+| Davriy yangilash | `MediaPage.useTranscodingPolling` |
+
+Testlar: `MediaTranscodingApiTest` (10) · `transcodingBadge.test.jsx` (12).
+Mutatsiya sinovi: 4 backend + 4 frontend.
+
+#### ⚠️ N+1 testi ikki marta yozildi
+
+Birinchi variant «`cms_transcoding_job` ga **bitta** so'rov» deb
+tekshirardi. U alohida o'tardi, lekin to'liq to'plamda **yiqildi**.
+
+Sabab: `FAILED` filtri uchun `library` so'roviga `exists` kichik
+so'rovi qo'shilgan va u ham `cms_transcoding_job` ni eslatadi. Ya'ni
+so'rovlar ikkita — biri ro'yxat, biri ishlar to'plami.
+
+Qat'iy son tekshiruvi masalaning O'ZI haqida hech narsa aytmasdi.
+Ikkinchi variant aynan niyatni o'lchaydi: **media soni 4 → 12 ga
+o'ssa, so'rovlar soni o'zgarmasligi kerak**.
+
+Mutatsiya bilan tasdiqlandi: N+1 kiritilganda so'rovlar `14 → 22`
+bo'lib o'sdi va test yiqildi.
+
+#### ⚠️ Mutatsiya sinovi topgan o'lik shox
+
+`TranscodingDto.from` da `asset.getType() != VIDEO` tekshiruvi bor edi.
+Mutatsiya uni olib tashlaganda **hech bir test yiqilmadi**.
+
+Sabab: ish faqat VIDEO uchun yaratiladi (`enqueue` buni kafolatlaydi),
+ya'ni ish bor bo'lsa media albatta video. Takroriy tekshiruv **hech
+qachon ishlamaydigan shox** edi — uni sinab bo'lmaydi va shuning uchun
+to'g'ri ekaniga ishonch ham yo'q. Olib tashlandi.
+
+#### Qabul qilingan qarorlar
+
+**`exists`, `join` emas** — `FAILED` filtrida. `join` bilan ishi
+**yo'q** media umuman chiqmay qolardi, ya'ni filtrsiz ham eski fayllar
+ro'yxatdan yo'qolardi.
+
+**Qayta urinish oynani YOPMAYDI.** Mavjud `onChanged` oynani yopadi —
+u o'chirish va arxivlash uchun to'g'ri. Qayta urinishda esa admin
+aynan holat o'zgarishini kutyapti; oyna yopilsa u natijani ko'rmasdan
+qolardi. Alohida `onRefresh` qo'shildi.
+
+**`retryable` ni SERVER hisoblaydi.** Klient «tugagan ish» qoidasini
+o'zi hisoblasa, u ikki joyda yashardi va ajralib ketardi — panel
+tugmani ko'rsatardi, server esa 422 qaytarardi.
+
+**Davriy yangilash uch shart bilan:** tugamagan ish bor · vkladka
+ko'rinib turibdi · 12 soniya o'tdi. Usiz ochiq qolgan panel serverga
+soatlab bekorga so'rov yuborardi.
+
+#### Bosqich E — yuklash oqimi
+
+- `[x]` `MediaPicker` da yuklash tugagach **darhol** «Navbatda»
+      ko'rsatiladi
+
+  ⚠️ Hozir yuklash tugagach oyna yopiladi va admin videoni tanlaydi.
+  U HLS tayyor deb o'ylaydi, aslida esa transcoding endi boshlanadi.
+  Bu «yuklandi = tayyor» degan noto'g'ri taassurot
+
+- `[x]` Epizod muharririda biriktirilgan video hali tayyor bo'lmasa
+      ogohlantirish — `notPlayable` naqshi bo'yicha
+- `[x]` Uchala tilga i18n kalitlari (`uz` · `ru` · `en`)
+
+#### ✅ Bosqich E bajarildi (27.08.2026)
+
+**Yuklash javobiga `transcoding` qo'shildi** (`UploadController.complete`).
+Usiz panel yuklash tugagach «tayyor» deb ko'rsatardi, aslida esa qayta
+ishlash **endi boshlanadi**. Admin videoni darhol epizodga biriktirib,
+uni ishlaydi deb o'ylardi — foydalanuvchi esa ochilmaydigan video
+ko'rardi.
+
+**`MediaPicker` kartochkasida nishon** — yangi yuklangan video darhol
+«Navbatda» bo'lib ko'rinadi.
+
+**`MediaField` da ikkita AYRIM ogohlantirish:**
+
+| Holat | Ma'nosi | Admin nima qiladi |
+|---|---|---|
+| `notPlayable` | format noto'g'ri (`.mkv`) | **boshqa fayl** kerak |
+| `pending` | format to'g'ri, HLS tayyor emas | **kutadi** |
+| `failed` | qayta ishlash yiqilgan | kutubxonada **qayta urinadi** |
+
+⚠️ Ularni bitta ogohlantirishga qo'shish adminni chalkashtirardi:
+birinchisida boshqa fayl kerak, ikkinchisida shunchaki kutish.
+
+Format noto'g'ri bo'lsa **faqat format ogohlantirishi** chiqadi —
+qayta ishlash u yerda yordam bermaydi va ikkita ogohlantirish birdan
+chiqsa admin qaysi biriga ishonishni bilmasdi.
+
+Yiqilish sababi **ko'rsatiladi** — usiz admin logga qarashga majbur
+bo'lardi, logga esa uning kirishi yo'q.
+
+Testlar: `mediaPlayable.test.jsx` (11, +5). Mutatsiya sinovi: 4 ta.
+
+#### ⚠️ Ochiq savol: ikkita «holat» chalkashligi
+
+Panelda endi **ikkita** turli holat bo'ladi:
+
+| Maydon | Ma'nosi | Qiymatlari |
+|---|---|---|
+| `status` | kutubxonada ko'rinadimi | `READY` · `ARCHIVED` |
+| `transcoding.status` | HLS tayyormi | `QUEUED` … `FAILED` |
+
+Ikkalasi ham «READY» so'zini ishlatadi va bu **adminni chalkashtiradi**.
+
+✅ **Hal qilindi 27.08.2026** — buyurtmachi tasdiqladi.
+
+Panelda transcoding «Video qayta ishlash» deb ataladi va holatlari
+`Navbatda · Tekshirilmoqda · Qayta ishlanmoqda · Yuklanmoqda · Video
+tayyor · Yiqildi`. Ya'ni «READY» so'zi faqat bitta joyda qoladi.
+
+**Backend nomlari o'zgarmadi** — ular API shartnomasi. Faqat tarjima
+(`tc.*` kalitlari, uchala tilda 17 tadan).
+
+### 4.12. Mobil `[x]`
+
+- `[x]` `VideoSource` turiga `hlsUrl` qo'shildi
+- `[x]` `mapSource` uni o'qiydi — eski backend bermasa `null`
+- `[x]` `playbackSource()` — sof funksiya, qaror shu yerda
+- `[x]` Pleyer: `hlsUrl` bo'lsa CDN, bo'lmasa `BASE_URL + url`
+- `[x]` ⚠️ Token faqat ESKI yo'lga yuboriladi
+- `[x]` Pleyer `key` iga yo'l turi qo'shildi
+- `[x]` `expo-video` ABR'ni o'zi boshqaradi — qo'lda tezlik hisoblash
+      yozilmadi (§26)
+- `[x]` Qo'riqchi testlar: `CdnUrlTest.MobileContract` (+2), 3 mutatsiya
+
+#### ⚠️ Token CDN'ga YUBORILMAYDI
+
+Eski yo'lda `Authorization` **majburiy** — server ruxsatni tekshiradi.
+CDN'da esa u keraksiz va zararli:
+
+- bitta epizodda **yuzlab segment** bor va har biriga ortiqcha sarlavha
+  keshlashga xalaqit beradi;
+- ba'zi CDN'lar kutilmagan avtorizatsiyali so'rovni umuman rad etadi.
+
+Qaror `playbackSource()` sof funksiyasida — u ATAYLAB ajratilgan.
+Komponent ichida bu qarorni na o'qib, na tekshirib bo'lardi.
+
+#### ⚠️ Pleyer `key` idagi nozik xato
+
+`key={source.mediaId ?? part}` edi. Media `raw` dan HLS'ga o'tsa (ya'ni
+transcoding tugasa), kalit **o'zgarmasdi** va pleyer eski manzilda
+qolardi.
+
+Ssenariy: foydalanuvchi epizodni qayta ishlash paytida ochadi (server
+orqali ijro), keyin ekranni pastga tortadi — `/watch` endi `hlsUrl`
+qaytaradi, lekin video baribir **CDN'dan chetlab** oqishda davom
+etardi.
+
+Kalitga yo'l turi qo'shildi: `${mediaId}-${hls|raw}`.
+
+#### Nega mobil testlari yozilmadi
+
+Mobil loyihada test freymvorki umuman **yo'q** (`jest` ham, test
+skripti ham). Uni qo'shish funksiyaning o'zidan kattaroq iz bo'lardi
+va buyurtmachi mobil ilovaga minimal tegishni so'ragan.
+
+O'rniga ikkita narsa qilindi:
+
+1. **`tsc --noEmit`** — bog'liqliklar o'rnatildi, turlar toza;
+2. **Backend qo'riqchi testi** mobil manbasini o'qiydi va shartnomani
+   tekshiradi: ikkala yo'l ham bor, token faqat eskisiga ketadi.
+
+Mutatsiya sinovi buni tasdiqladi — mobil kodini buzganda **backend
+testi yiqiladi**.
+
+### 4.13. Infratuzilma `[~]`
+
+#### Server — TANLANGAN (27.08.2026)
+
+```
+12 yadro · 16 GB RAM · 200 GB NVMe  +  Timeweb Object Storage
+```
+
+Buyurtmachi qarori. Quyidagi o'lchovlar asosida tasdiqlangan.
+
+#### ⚠️ O'lchov — taxmin EMAS
+
+Ikkita haqiqiy transcoding o'lchandi (Apple M4, 10 yadro, buyurtmachining
+haqiqiy 2160×3840 vertikal videosi):
+
+| Manba | 30 soniya → | Tezlik |
+|---|---|---|
+| 4K 60fps | 13.3s | real vaqtdan 2.3× tez |
+| 1080p 30fps | 5.5s | real vaqtdan 5.4× tez |
+
+⚠️ **1080p30 manba 4K60 dan 2.4 barobar arzon.** Bu server tanlashda
+protsessordan ham muhimroq omil.
+
+Server yadrosi M4 dan sekinroq (x264 da ~1.7×) — quyidagi hisoblarda
+shu zaxira olingan.
+
+#### Kunlik yuk — 30 ta video
+
+Eng og'ir holat: 4K60 manba, 30 daqiqalik video.
+
+| Yadro | Kuniga | Bandlik | Bitta video |
+|---|---|---|---|
+| 8 | 12.4 soat | 52% | ~25 daq |
+| **12** ⭐ | **8.3 soat** | **35%** | ~17 daq |
+| 16 | 6.2 soat | 26% | ~12 daq |
+
+1080p30 manbada 12 yadroda bandlik **14%** ga tushadi.
+
+**Nega 12:** 8 yadroda 52% bandlik ishlaydi, lekin 45 daqiqalik videoda
+18.7 soatga chiqadi va sutka deyarli to'ladi. 16 esa hozircha ortiqcha.
+
+#### ⚠️ RAM — eng zaif bo'g'in
+
+12 yadro `max-concurrent-jobs=3` degani:
+
+| Nima | RAM |
+|---|---|
+| Spring Boot | 1–2 GB |
+| PostgreSQL | 2–4 GB |
+| 3 ta parallel FFmpeg (4K) | 3–4.5 GB |
+| OS + disk keshi | 2–4 GB |
+| **Jami** | **8–14 GB** |
+
+16 GB da sig'adi, lekin PostgreSQL keshiga joy kam qoladi — bu baza
+so'rovlarini sekinlashtiradi, transcoding'ni emas.
+
+24 GB muvozanatliroq bo'lardi. Buyurtmachi 16 GB ni tanladi — bu
+ishlaydigan qaror, faqat zaxira kam.
+
+#### ⚠️ 200 GB — S3 MAJBURIY qiladi
+
+| Holat | 200 GB |
+|---|---|
+| S3 ishlatilsa | juda yetarli — ~2.4 GB vaqtinchalik + ~40 GB tizim |
+| S3 ishlatilmasa | kuniga 24 GB → **8 kunda to'ladi** |
+
+Ya'ni server bilan birga **Timeweb Object Storage ham sotib olinishi
+shart**. Kod tayyor (4.1), lekin `app.storage.provider=local` bo'lib
+turibdi.
+
+#### CDN — asosiy xarajat
+
+Server oyiga ~$40–80. CDN esa foydalanuvchilarga bog'liq:
+
+| 3000 foydalanuvchi | Oyiga |
+|---|---|
+| kuniga 20 daqiqa, 720p | ~39 TB |
+| kuniga 1 soat, 720p | ~117 TB |
+
+⚠️ Timeweb CDN narxi tekshirilsin — u server narxidan bir necha barobar
+oshib ketishi mumkin.
+
+#### Qolgan vazifalar
 
 - `[ ]` ⚠️ FFmpeg serverga o'rnatilishi kerak — Docker yo'q, ya'ni
-      **qo'lda o'rnatish** yoki Docker joriy qilish qarori kerak
-- `[ ]` `app.video.temp-dir` konfiguratsiyasi (`app.upload.temp-dir` naqshi bo'yicha)
+      **qo'lda o'rnatish** yoki Docker joriy qilish qarori
+- `[x]` `app.video.temp-dir` sozlamasi (`app.upload.temp-dir` naqshi bo'yicha)
 - `[ ]` Disk joyi monitoringi
+- `[ ]` `app.video.max-concurrent-jobs=3` (12 yadro uchun)
+- `[ ]` ⚠️ **Manbani 1080p bilan cheklash** — panelda ogohlantirish yoki
+      qattiq chegara. Yuk 2.4 barobar kamayadi, foydalanuvchi esa
+      zinapoyaning eng yuqorisi 1080p bo'lgani uchun farqni ko'rmaydi
+- `[ ]` Timeweb'da 12 yadro toifasi bor-yo'qligini tasdiqlash
+      (odatiy toifalar 2/4/8/16)
+
+---
+
+### 4.14. HAQIQIY S3 bilan tekshiruv `[x]` (28.08.2026)
+
+#### ⚠️ Bu butun ish ichidagi eng katta xavf edi
+
+`S3StorageService`, `S3MultipartUploadService` va `HlsUploadService`
+**hech qachon haqiqiy S3 bilan gaplashmagan**. Barcha testlar
+`S3Client` ni mock qilardi: ular bizning hisob-kitobimizni
+tekshirardi, S3 ning javobini emas.
+
+Presigned imzolar, multipart yig'ish, `ListParts` — hammasi faqat
+kutilgan xatti-harakat asosida yozilgan edi.
+
+#### Yechim: MinIO
+
+S3 bilan mos server, lokalda ishlaydi. Hech narsa sotib olish kerak
+emas va Timeweb kalitlari ishlatilmaydi (§30).
+
+```bash
+brew install minio/stable/minio
+MINIO_ROOT_USER=testkey MINIO_ROOT_PASSWORD=testsecret123 \
+  minio server /tmp/minio-data --address :9100
+```
+
+`S3IntegrationTest` — **9 test, hammasi o'tdi**:
+
+| Nima | Natija |
+|---|---|
+| Oqim saqlash va qayta o'qish | ✅ |
+| `Content-Type` S3 da saqlanadi | ✅ `application/vnd.apple.mpegurl` |
+| Boshlang'ich `/` obyekt nomiga tushmaydi | ✅ |
+| Mavjudlik va o'chirish | ✅ |
+| **Presigned multipart to'liq aylanma** | ✅ 5 MB + 1 KB → yig'ildi |
+| Bekor qilish bo'laklarni tozalaydi | ✅ |
+| Bo'lak yetishmasa rad etiladi | ✅ |
+| HLS papkasini rekursiv yuklash | ✅ 4 fayl, to'g'ri turlar |
+| `master.m3u8` bo'lmasa aniq xato | ✅ |
+
+⚠️ MinIO ishlamayotgan bo'lsa test **o'tkazib yuboriladi**
+(`assumeTrue`) — CI da u bo'lmasligi mumkin.
+
+**Eng muhimi:** «brauzer imzolangan havola bilan to'g'ridan-to'g'ri
+omborga yozadi» degan butun ishning ma'nosi endi **isbotlangan**, taxmin
+emas.
+
+---
+
+### 4.15. Sozlama nosozligi tuzatildi `[x]` (28.08.2026)
+
+`application.properties` da:
+
+```properties
+spring.datasource.password=${akow8434}
+```
+
+Bu **parol emas** — mavjud bo'lmagan xususiyatga havola. Prod
+profilida ilova `Could not resolve placeholder 'akow8434'` bilan
+**ko'tarilmasdi**.
+
+Lokalda bilinmasdi: `dev` profili o'z `datasource` ini beradi va bu
+qatorga umuman yetib bormaydi. Nosozlik faqat serverda, **birinchi
+ishga tushirishda** chiqardi.
+
+- `[x]` `${DB_PASSWORD:akow8434}` shakliga o'tkazildi
+- `[x]` `application.properties.example` ga `datasource` bo'limi qo'shildi
+- `[x]` `ConfigurationPlaceholderTest` — 2 test, 2 mutatsiya
+
+Qo'riqchi test ikki narsani tekshiradi: har bir `${...}` da zaxira
+qiymat bor, va namuna faylida ochiq maxfiy qiymat yo'q.
+
+⚠️ Test avval **soxta signal** berdi — `<openssl rand -hex 32>` kabi
+hujjat o'rinbosarlarini parol deb hisobladi. Aniqlashtirildi: soxta
+signal beradigan testni odamlar e'tiborsiz qoldirishni o'rganadi.
+
+---
+
+### 4.16. OTP endpointlari ko'chirildi `[x]` (28.08.2026)
+
+Ikki kundan beri qizil turgan `OldCastingFrozenTest` yopildi.
+
+**Sabab:** `POST /api/v1/auth/otp/send` va `/verify` ESKI casting
+modulining kontrollerida yozilgan edi. U makon **muzlatilgan** —
+Telegram bot, eski admin sayti va boshqa mijozlar unga tayanadi.
+
+Buyurtmachi qarori: **ko'chirish**.
+
+```
+/api/v1/auth/otp/**      →  /api/v1/app/auth/otp/**
+```
+
+- `[x]` `Cms/Controller/AppAuthController` — yangi makonda
+- `[x]` Eski `AuthController` dan olib tashlandi
+- `[x]` `SecurityConfig` va `RateLimitFilter` yangilandi
+- `[x]` Mobil: `api.ts`, ikkita ekran izohi, `docs/API.md`
+- `[x]` ⚠️ Mobil `WRITE_ALLOWLIST` ga yangi prefiks
+
+#### ⚠️ Oq ro'yxat — jimgina buziladigan joy
+
+Mobil `READ_ONLY` rejimida ishlaydi va yozish so'rovlarini
+**klientda** bloklaydi. Oq ro'yxat `/api/v1/auth/` edi; yangi yo'l
+unga tushmasdi.
+
+Qo'shilmaganda SMS orqali kirish **jimgina** buzilardi: interceptor
+so'rovni **yuborishdan oldin** yiqitadi va foydalanuvchi serverning
+javobini emas, klientning ichki xatosini ko'rardi.
+
+#### Jonli tekshiruv
+
+| So'rov | Javob |
+|---|---|
+| `POST /api/v1/app/auth/otp/send` | `503 SMS_NOT_CONFIGURED` — Eskiz dev'da sozlanmagan |
+| `POST /api/v1/app/auth/otp/verify` | `422 OTP_EXPIRED` |
+| `POST /api/v1/auth/otp/send` (eski) | `401` — endpoint yo'q |
+| Rate limit (5/daqiqa) | `503 503 503 → 429 429 429` ✅ |
+
+⚠️ `SMS_NOT_CONFIGURED` — bu **to'g'ri xatti-harakat**: provayder
+sozlanmaganda soxta muvaffaqiyat qaytarilmaydi.
 
 ---
 
@@ -822,15 +1323,15 @@ Pullik kontent hozirgi `raw` yo'lida qoladi — ya'ni regressiya yo'q.
 - `[x]` Fon worker
 - `[x]` Yiqilishni boshqarish va qayta urinish
 - `[x]` Vaqtinchalik fayllarni tozalash
-- `[ ]` CDN URL integratsiyasi
+- `[x]` CDN URL integratsiyasi
 - `[ ]` ⚠️ Xavfsiz video kirish (Timeweb qarorini kutmoqda)
-- `[ ]` Admin upload progress
-- `[ ]` Admin processing holati
-- `[ ]` Mobil HLS ijro
-- `[ ]` ABR tekshiruvi
-- `[ ]` Testlar
+- `[x]` Admin upload progress (4.11-E)
+- `[x]` Admin processing holati (4.11-B, C, D)
+- `[x]` Mobil HLS ijro
+- `[x]` ABR tekshiruvi (4.6 da haqiqiy FFmpeg bilan)
+- `[x]` Testlar
 - `[ ]` FFmpeg o'rnatish / Docker qarori
-- `[ ]` Hujjat
+- `[x]` Hujjat
 
 ---
 
@@ -838,9 +1339,9 @@ Pullik kontent hozirgi `raw` yo'lida qoladi — ya'ni regressiya yo'q.
 
 1. **Timeweb CDN tokenli havolani qo'llab-quvvatlaydimi?** §4.10 shunga
    bog'liq. Qo'llab-quvvatlamasa, pullik kontent uchun boshqa yechim kerak
-2. **FFmpeg qayerda ishlaydi?** API bilan bitta VPS'da (arzon, lekin
-   transcoding paytida API sekinlashadi) yoki alohida mashinada (qimmat,
-   lekin ajratilgan)
+2. ~~**FFmpeg qayerda ishlaydi?**~~ ✅ **Javob berildi 27.08.2026.**
+   API bilan **bitta serverda**: 12 yadro · 16 GB · 200 GB NVMe.
+   O'lchovlar va sabab — §4.13.
 3. **Docker joriy qilinadimi?** Hozir repoda yo'q. FFmpeg va worker'ni
    ajratish uchun u eng tabiiy yo'l
 4. **Mavjud videolar migratsiya qilinadimi?** Lokal diskdagi fayllar S3 ga
@@ -851,3 +1352,13 @@ Pullik kontent hozirgi `raw` yo'lida qoladi — ya'ni regressiya yo'q.
 ## 7. Tarix
 
 **26.08.2026** — audit o'tkazildi, roadmap yozildi. Kod hali yozilmagan.
+
+**27.08.2026** — 4.1–4.9 bajarildi va **haqiqiy FFmpeg bilan
+tasdiqlandi** (922 test). Buyurtmachining haqiqiy 4K vertikal videosi
+to'liq zanjirdan o'tkazildi: 2:44 → 3 variant, 76 soniya, ABR
+chegaralari 28 segmentda ham moslashdi.
+
+Server tanlandi: **12 yadro · 16 GB · 200 GB NVMe** — o'lchovlar §4.13 da.
+
+Qolgan: 4.10 (xavfsizlik, Timeweb qarorini kutmoqda) · 4.11 (admin
+panel) · 4.12 (mobil) · 4.13 (FFmpeg o'rnatish).
