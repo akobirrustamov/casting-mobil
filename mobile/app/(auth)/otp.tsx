@@ -53,8 +53,8 @@ export default function OtpScreen() {
     setError(null);
     setVerifying(true);
     try {
-      const { token, user } = await verifyOtp(phone, code);
-      await signIn(token, user);
+      const { token, refreshToken, user } = await verifyOtp(phone, code);
+      await signIn(token, user, refreshToken);
       router.replace('/(tabs)');
     } catch (e) {
       setError(t(otpErrorKey(e)));

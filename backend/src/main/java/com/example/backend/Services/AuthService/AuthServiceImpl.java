@@ -11,7 +11,9 @@ import com.example.backend.Security.JwtService;
 import com.example.backend.Sms.OtpService;
 import com.example.backend.exceptions.InvalidCredentialsException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +40,47 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final GoogleTokenVerifier googleTokenVerifier;
     private final OtpService otpService;
+
+    /**
+     * Refresh tokenlarni ro'yxatga oladi (§61).
+     *
+     * <h2>⚠️ Nega bu qo'shildi — jimgina buzilgan himoya</h2>
+     * {@link RefreshTokenService} bekor qilish, rotatsiya va o'g'rilikni
+     * aniqlash bilan birga allaqachon YOZILGAN edi. Lekin bu yerdagi
+     * kirish oqimlari uni CHETLAB o'tib, {@code jti} siz eski token
+     * berardi.
+     *
+     * Natijada:
+     * <ul>
+     *   <li>token bazada YO'Q — o'g'irlansa bekor qilib bo'lmasdi;</li>
+     *   <li>rotatsiya uni «eski formatda» deb rad etardi — ya'ni
+     *       yangilash oqimi mobil ilova uchun umuman ishlamasdi.</li>
+     * </ul>
+     *
+     * Infratuzilma bor edi, undan foydalanuvchi yo'q edi.
+     */
+    private final RefreshTokenService refreshTokenService;
+
+    /**
+     * Qurilma izi uchun — {@code User-Agent} va IP.
+     *
+     * ⚠️ {@code ObjectProvider}: bu servis so'rovdan TASHQARIDA ham
+     * chaqirilishi mumkin (masalan kelajakdagi rejalashtirilgan
+     * vazifada). To'g'ridan-to'g'ri {@code HttpServletRequest}
+     * kiritilsa, u yerda {@code IllegalStateException} bilan
+     * yiqilardi.
+     */
+    private final ObjectProvider<HttpServletRequest> requestProvider;
+
+    /**
+     * Ro'yxatga olingan refresh token.
+     *
+     * Ilgari bu {@code jwtService.generateJwtRefreshToken(user)} edi —
+     * imzolangan, lekin hech qayerda qayd etilmagan token.
+     */
+    private String issueRefreshToken(User user) {
+        return refreshTokenService.issue(user, requestProvider.getIfAvailable());
+    }
     @Override
     public HttpEntity<Map<String, Object>> login(UserDTO userDTO) {
         Optional<User> userOpt = userRepo.findByPhone(userDTO.getPhone());
@@ -55,7 +98,7 @@ public class AuthServiceImpl implements AuthService {
         response.put("access_token", jwtService.generateJwtToken(user));
 
         if (userDTO.isRememberMe()) {
-            response.put("refresh_token", jwtService.generateJwtRefreshToken(user));
+            response.put("refresh_token", issueRefreshToken(user));
         }
 
         response.put("roles", user.getRoles());
@@ -98,7 +141,7 @@ public class AuthServiceImpl implements AuthService {
 
         Map<String, Object> response = new HashMap<>();
         response.put("access_token", jwtService.generateJwtToken(user));
-        response.put("refresh_token", jwtService.generateJwtRefreshToken(user));
+        response.put("refresh_token", issueRefreshToken(user));
         response.put("roles", user.getRoles());
         response.put("phone_required", user.getPhone() == null);
         response.put("user", Map.of(
@@ -170,7 +213,7 @@ public class AuthServiceImpl implements AuthService {
 
         Map<String, Object> response = new HashMap<>();
         response.put("access_token", jwtService.generateJwtToken(user));
-        response.put("refresh_token", jwtService.generateJwtRefreshToken(user));
+        response.put("refresh_token", issueRefreshToken(user));
         response.put("roles", user.getRoles());
         response.put("user", Map.of(
                 "id", user.getId().toString(),

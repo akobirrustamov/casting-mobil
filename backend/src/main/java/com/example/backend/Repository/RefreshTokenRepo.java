@@ -20,8 +20,20 @@ public interface RefreshTokenRepo extends JpaRepository<RefreshToken, UUID> {
      * Ikki holatda ishlatiladi: o'g'irlik aniqlanganda va xodim
      * bloklanganda — aks holda bloklangan admin qo'lidagi token
      * muddati tugaguncha ishlayverardi.
+     *
+     * <h2>⚠️ {@code clearAutomatically} nima uchun</h2>
+     * Bu ommaviy {@code update} — u to'g'ridan-to'g'ri bazaga boradi
+     * va Hibernate'ning birinchi darajali keshini CHETLAB o'tadi.
+     * Kesh tozalanmasa, AYNI tranzaksiyada oldin o'qilgan token
+     * obyekti hali ham «bekor qilinmagan» bo'lib ko'rinadi.
+     *
+     * Hozirgi chaqiruvchilar bekor qilishdan keyin darhol xato
+     * tashlaydi, ya'ni bu jimgina o'tib ketardi. Lekin kafolat
+     * chaqiruvchining tranzaksiya chegarasiga BOG'LIQ bo'lmasligi
+     * kerak: bu xavfsizlik tekshiruvi, va uni tasodifga qoldirish
+     * mumkin emas.
      */
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("update RefreshToken t set t.revokedAt = :now "
             + "where t.userId = :userId and t.revokedAt is null")
     int revokeAllForUser(@Param("userId") UUID userId, @Param("now") LocalDateTime now);

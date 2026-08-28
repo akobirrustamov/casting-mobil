@@ -27,6 +27,8 @@ function toRole(roles: { name: string }[] | undefined): Role {
 
 export type GoogleLoginResult = {
   token: string;
+  /** ⚠️ Обязателен: без него человека выкинет через 15 минут. */
+  refreshToken: string;
   user: AuthUser;
   phoneRequired: boolean;
 };
@@ -39,6 +41,7 @@ export async function exchangeGoogleToken(idToken: string): Promise<GoogleLoginR
 
   return {
     token: data.access_token,
+    refreshToken: data.refresh_token,
     phoneRequired: data.phone_required,
     user: {
       id: data.user.id,
@@ -65,7 +68,12 @@ type OtpVerifyResponse = {
   user: { id: string; name: string; phone: string };
 };
 
-export type OtpVerifyResult = { token: string; user: AuthUser };
+export type OtpVerifyResult = {
+  token: string;
+  /** ⚠️ Обязателен: без него человека выкинет через 15 минут. */
+  refreshToken: string;
+  user: AuthUser;
+};
 
 /**
  * Код ошибки из тела ответа бэкенда (`ApiError.code`, см. GlobalExceptionHandler).
@@ -110,6 +118,7 @@ export async function verifyOtp(phone: string, code: string): Promise<OtpVerifyR
 
     return {
       token: data.access_token,
+      refreshToken: data.refresh_token,
       user: {
         id: data.user.id,
         name: data.user.name || null,
@@ -122,4 +131,33 @@ export async function verifyOtp(phone: string, code: string): Promise<OtpVerifyR
   } catch (error) {
     return toOtpError(error);
   }
+}
+
+/**
+ * Обмен refresh-токена на новую пару.
+ *
+ * <h2>⚠️ Почему не старый `/api/v1/auth/refresh`</h2>
+ * Тот эндпоинт принимает токен в СТРОКЕ ЗАПРОСА — он попадает в логи
+ * сервера, прокси и CDN. Он не делает ротацию и заморожен: им
+ * пользуются Telegram-бот и старая админка.
+ *
+ * <h2>⚠️ Новый refresh-токен ОБЯЗАТЕЛЬНО сохранить</h2>
+ * На бэкенде ротация: старый токен гасится в момент обмена. Если
+ * клиент оставит у себя прежний, следующее обновление будет отказано
+ * как «повторное использование» — и закроет все сессии. То есть
+ * человека выкинет ровно так же, как до этой починки.
+ */
+type RefreshResponse = {
+  access_token: string;
+  refresh_token: string;
+};
+
+export type RefreshResult = { token: string; refreshToken: string };
+
+export async function refreshSession(refreshToken: string): Promise<RefreshResult> {
+  const { data } = await api.post<RefreshResponse>('/api/v1/app/auth/refresh', {
+    refresh_token: refreshToken,
+  });
+
+  return { token: data.access_token, refreshToken: data.refresh_token };
 }

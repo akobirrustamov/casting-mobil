@@ -79,8 +79,8 @@ export default function SignInScreen() {
   const onGoogleSuccess = async (idToken: string) => {
     setGoogleError(null);
     try {
-      const { token, user } = await exchangeGoogleToken(idToken);
-      await signIn(token, user);
+      const { token, refreshToken, user } = await exchangeGoogleToken(idToken);
+      await signIn(token, user, refreshToken);
 
       // Телефон после Google не спрашиваем: по ТЗ аккаунт можно создать
       // «telefon/email orqali», а соцвход указан как optional. Номер нужен
