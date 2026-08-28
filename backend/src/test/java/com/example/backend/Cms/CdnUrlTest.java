@@ -116,6 +116,9 @@ class CdnUrlTest {
         private static final Path WATCH_CONTROLLER = Path.of(
                 "src/main/java/com/example/backend/Cms/Controller/WatchController.java");
 
+        private static final Path PLAYBACK_URL_SERVICE = Path.of(
+                "src/main/java/com/example/backend/Cms/Service/Video/PlaybackUrlService.java");
+
         /**
          * ⚠️ Pleyer AJRATILGAN faylga ko'chgan.
          *
@@ -149,12 +152,30 @@ class CdnUrlTest {
                     .doesNotContain(".url(cdnUrlService");
         }
 
+        /**
+         * ⚠️ Manzil TANLASH mantig'i {@code PlaybackUrlService} ga
+         * ko'chdi (§4.10): endi u yerda ikkita yo'l bor — himoyalangan
+         * proksi va to'g'ridan CDN.
+         *
+         * Qoida esa o'zgarmadi: qaysi yo'l tanlansa ham natija AYNAN
+         * {@code hlsUrl} maydoniga tushadi, {@code url} ga hech qachon.
+         */
         @Test
-        @DisplayName("CDN manzili AYRIM `hlsUrl` maydoniga yoziladi")
+        @DisplayName("Manzil AYRIM `hlsUrl` maydoniga yoziladi")
         void cdnGoesToItsOwnField() throws Exception {
             String source = Files.readString(WATCH_CONTROLLER);
 
-            assertThat(source).contains(".hlsUrl(cdnUrlService.masterUrl(");
+            assertThat(source).contains(".hlsUrl(playbackUrlService.hlsUrlFor(");
+
+            // Kontroller CDN'ni endi o'zi bilmaydi — bilsa, qaror ikki
+            // joyga bo'linib, ular vaqt o'tib ajralib ketardi.
+            assertThat(source)
+                    .as("kontroller CDN manzilini yana o'zi yasamoqda")
+                    .doesNotContain("cdnUrlService");
+
+            assertThat(Files.readString(PLAYBACK_URL_SERVICE))
+                    .as("CDN yo'li yo'qolgan — S3'siz muhitda HLS umuman berilmasdi")
+                    .contains("cdnUrlService.masterUrl(");
         }
 
         /**
@@ -182,21 +203,32 @@ class CdnUrlTest {
                     .contains("${BASE_URL}${source.url}");
 
             assertThat(player)
-                    .as("mobil `hlsUrl` ni o'qimaydi — CDN ishlatilmaydi")
+                    .as("mobil `hlsUrl` ni o'qimaydi — HLS ishlatilmaydi")
                     .contains("source.hlsUrl");
+
+            // ⚠️ `hlsUrl` nisbiy ham bo'lishi mumkin (himoyalangan
+            // proksi, §4.10). Farq birinchi belgidan aniqlanadi.
+            assertThat(player)
+                    .as("nisbiy `hlsUrl` ga BASE_URL qo'shilmayapti — proksi ochilmasdi")
+                    .contains("source.hlsUrl.startsWith('/')");
         }
 
         /**
-         * ⚠️ CDN'ga {@code Authorization} sarlavhasi YUBORILMAYDI.
+         * ⚠️ HLS yo'liga {@code Authorization} sarlavhasi YUBORILMAYDI.
          *
-         * Bitta epizodda yuzlab segment bor va har biriga ortiqcha
-         * sarlavha keshlashga xalaqit beradi. Ba'zi CDN'lar esa
-         * kutilmagan avtorizatsiyali so'rovni umuman rad etadi.
+         * Bu keshlash haqida emas. AVPlayer va ExoPlayer sarlavhalarni
+         * BUTUN oqim uchun beradi — ular segment so'roviga ham
+         * qo'shilardi. Segment esa imzolangan havola bilan
+         * to'g'ridan-to'g'ri ombordan keladi, S3 esa ikkita
+         * avtorizatsiyani birga qabul qilmaydi va 400 qaytaradi.
          *
-         * Eski yo'lda esa u MAJBURIY — server ruxsatni tekshiradi.
+         * Ya'ni sarlavha qo'shilsa video UMUMAN ochilmasdi.
+         *
+         * Eski {@code url} yo'lida esa u MAJBURIY — server ruxsatni
+         * o'sha sarlavha orqali tekshiradi.
          */
         @Test
-        @DisplayName("Token faqat ESKI yo'lga yuboriladi, CDN'ga emas")
+        @DisplayName("Token faqat ESKI yo'lga yuboriladi, HLS'ga emas")
         void tokenGoesOnlyToLegacyPath() throws Exception {
             if (!Files.isRegularFile(MOBILE_PLAYER)) {
                 return;
@@ -210,15 +242,17 @@ class CdnUrlTest {
 
             String body = player.substring(start, player.indexOf("\n}", start));
 
-            int hlsBranch = body.indexOf("uri: source.hlsUrl");
             int legacyBranch = body.indexOf("${BASE_URL}${source.url}");
-            int headers = body.indexOf("authHeaders()");
+            assertThat(legacyBranch).as("eski shox yo'q").isGreaterThan(0);
 
-            assertThat(hlsBranch).as("HLS shoxi yo'q").isGreaterThan(0);
-            assertThat(legacyBranch).as("eski shox HLS dan oldin").isGreaterThan(hlsBranch);
-            assertThat(headers)
-                    .as("`authHeaders()` HLS shoxida — u CDN'ga ketardi")
-                    .isGreaterThan(legacyBranch);
+            // HLS shoxi eski shoxdan OLDIN tugaydi, ya'ni undan
+            // oldingi qismda sarlavha bo'lmasligi kerak.
+            assertThat(body.substring(0, legacyBranch))
+                    .as("`authHeaders()` HLS shoxida — segment so'rovini buzardi")
+                    .doesNotContain("authHeaders()");
+
+            assertThat(body).as("eski yo'lda sarlavha yo'q — pullik video 404 berardi")
+                    .contains("authHeaders()");
         }
     }
 }

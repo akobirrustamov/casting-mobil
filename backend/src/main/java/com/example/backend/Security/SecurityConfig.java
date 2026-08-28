@@ -106,6 +106,15 @@ public class SecurityConfig {
                         // chunki Spring Security fayl TURINI bilmaydi - u faqat URL
                         // ko'radi, media turi esa bazadan aniqlanadi.
                         .requestMatchers(HttpMethod.GET, "/api/v1/app/media/*/raw").permitAll()
+                        // HLS playlistlari. Sarlavha bilan himoyalab BO'LMAYDI:
+                        // pleyer sarlavhalarni segment so'roviga ham qo'shadi,
+                        // S3 esa imzolangan havola bilan kelgan `Authorization`
+                        // ni rad etadi (400) — video ochilmasdi.
+                        //
+                        // ⚠️ Endpoint ochiq EMAS: uning ichida chipta
+                        // tekshiriladi va huquq AccessService dan qayta
+                        // so'raladi (HlsController).
+                        .requestMatchers(HttpMethod.GET, "/api/v1/app/media/*/hls/**").permitAll()
                         // Tomosha qarori. Anonim foydalanuvchi ham so'ray oladi -
                         // javob "kiring" bo'ladi, video havolasi esa berilmaydi.
                         //

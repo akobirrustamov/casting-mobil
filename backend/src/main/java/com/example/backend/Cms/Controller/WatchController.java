@@ -14,7 +14,7 @@ import com.example.backend.Cms.Repository.ContentRepo;
 import com.example.backend.Cms.Repository.EpisodeRepo;
 import com.example.backend.Cms.Service.AccessDecision;
 import com.example.backend.Cms.Service.AccessService;
-import com.example.backend.Cms.Service.Video.CdnUrlService;
+import com.example.backend.Cms.Service.Video.PlaybackUrlService;
 import com.example.backend.Entity.User;
 import com.example.backend.exceptions.BusinessException;
 import lombok.Builder;
@@ -60,8 +60,13 @@ public class WatchController {
     private final ContentRepo contentRepo;
     private final AccessService accessService;
 
-    /** Ombor kalitini CDN manziliga aylantiradi. */
-    private final CdnUrlService cdnUrlService;
+    /**
+     * Ombor kalitini pleyer ochadigan manzilga aylantiradi.
+     *
+     * ⚠️ Bu yerda huquq tekshirilmaydi — manbalar allaqachon faqat
+     * {@code decision.isAllowed()} bo'lganda yig'iladi.
+     */
+    private final PlaybackUrlService playbackUrlService;
 
     @GetMapping("/{episodeId}")
     @Transactional(readOnly = true)
@@ -90,7 +95,7 @@ public class WatchController {
                 .showAds(decision.isAllowed() && accessService.shouldShowAds(user))
                 // Rad etilganda ham ro'yxat bo'sh emas, BO'SH RO'YXAT - null emas,
                 // klientda "null.length" xatosi chiqmasligi uchun.
-                .sources(decision.isAllowed() ? sources(episode, locale) : List.of());
+                .sources(decision.isAllowed() ? sources(user, episode, locale) : List.of());
 
         return ResponseEntity.ok(body.build());
     }
@@ -142,7 +147,7 @@ public class WatchController {
                 .episodePrice(decision.getEpisodePrice())
                 .premierePrice(decision.getPremierePrice())
                 .showAds(decision.isAllowed() && accessService.shouldShowAds(user))
-                .sources(decision.isAllowed() ? contentSources(content, locale) : List.of())
+                .sources(decision.isAllowed() ? contentSources(user, content, locale) : List.of())
                 .build());
     }
 
@@ -176,7 +181,7 @@ public class WatchController {
      * o'zi emas. Ularni bu yerga qo'shsak, pullik filmni sotib olmagan odam
      * treylerni «film» deb olib ketardi.
      */
-    private List<VideoSource> contentSources(Content content, Locale locale) {
+    private List<VideoSource> contentSources(User user, Content content, Locale locale) {
         List<ContentMedia> videos = content.getMedia() == null ? List.of()
                 : content.getMedia().stream()
                         .filter(m -> m.getRole() == MediaRole.VIDEO)
@@ -202,7 +207,7 @@ public class WatchController {
                         .partNumber((m.getSortOrder() == null ? 0 : m.getSortOrder()) + 1)
                         .mediaId(m.getMedia().getId())
                         .url("/api/v1/app/media/" + m.getMedia().getId() + "/raw")
-                        .hlsUrl(cdnUrlService.masterUrl(m.getMedia().getHlsMasterKey()))
+                        .hlsUrl(playbackUrlService.hlsUrlFor(user, m.getMedia()))
                         .durationSeconds(m.getMedia().getDurationSeconds())
                         .build())
                 .toList();
@@ -235,7 +240,7 @@ public class WatchController {
      * bo'lishi mumkin - shuning uchun ro'yxat, {@code partNumber} bo'yicha
      * tartiblangan.
      */
-    private List<VideoSource> sources(Episode episode, Locale locale) {
+    private List<VideoSource> sources(User user, Episode episode, Locale locale) {
         List<EpisodeVideo> videos = episode.getVideos();
         if (videos == null || videos.isEmpty()) {
             return List.of();
@@ -259,7 +264,7 @@ public class WatchController {
                         .partNumber(v.getPartNumber())
                         .mediaId(v.getMedia().getId())
                         .url("/api/v1/app/media/" + v.getMedia().getId() + "/raw")
-                        .hlsUrl(cdnUrlService.masterUrl(v.getMedia().getHlsMasterKey()))
+                        .hlsUrl(playbackUrlService.hlsUrlFor(user, v.getMedia()))
                         .durationSeconds(v.getMedia().getDurationSeconds())
                         .build())
                 .toList();
@@ -332,7 +337,7 @@ public class WatchController {
         private String url;
 
         /**
-         * HLS master playlist — MUTLAQ CDN manzili yoki {@code null}.
+         * HLS master playlist yoki {@code null}.
          *
          * ⚠️ YANGI maydon, {@code url} ning o'rnini bosmaydi.
          *
@@ -340,6 +345,24 @@ public class WatchController {
          * ishlashda davom etadi. Yangisi {@code hlsUrl} bo'lsa uni
          * oladi, bo'lmasa {@code url} ga qaytadi. Ikkalasi bitta
          * relizda yonma-yon ishlaydi (§33).
+         *
+         * <h2>⚠️ Ikki shakl bo'lishi mumkin</h2>
+         * <ul>
+         *   <li><b>{@code /} bilan boshlansa</b> — NISBIY yo'l,
+         *       himoyalangan proksi ({@code HlsController}).
+         *       Klient oldiga o'z {@code BASE_URL} ini qo'yadi,
+         *       xuddi {@code url} dagidek;</li>
+         *   <li><b>{@code https://} bilan boshlansa</b> — to'g'ridan
+         *       CDN manzili (S3 sozlanmagan muhit).</li>
+         * </ul>
+         *
+         * Farqni klient shu birinchi belgidan aniqlaydi — server
+         * o'zining tashqi domenini ishonchli bilmaydi.
+         *
+         * ⚠️ Sarlavha (masalan {@code Authorization}) HLS so'roviga
+         * QO'SHILMAYDI: pleyer uni segmentlarga ham yuborardi va S3
+         * imzolangan havola bilan birga kelgan sarlavhani rad etardi.
+         * Ruxsat manzil ichidagi chipta orqali beriladi.
          *
          * {@code null} bo'lishi mumkin: transcoding hali tugamagan,
          * yoki CDN sozlanmagan, yoki bu eski video.

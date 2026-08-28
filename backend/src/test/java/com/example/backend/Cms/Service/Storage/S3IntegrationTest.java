@@ -1,11 +1,14 @@
 package com.example.backend.Cms.Service.Storage;
 
 import com.example.backend.Cms.Service.Video.HlsUploadService;
+import com.example.backend.Cms.Service.Video.HlsPlaylistService;
+import com.example.backend.Cms.Service.Video.PresignedUrlProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.Resource;
+import org.springframework.test.util.ReflectionTestUtils;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -379,6 +382,168 @@ class S3IntegrationTest {
         assertThat(code)
                 .as("imzolangan havola rad etildi — imzo yoki sarlavhalar noto'g'ri")
                 .isBetween(200, 299);
+    }
+
+    @Nested
+    @DisplayName("Segment uchun imzolangan havola (§4.10)")
+    class SignedUrls {
+
+        /**
+         * @param window kesh oynasi — shu ichida bir xil kalit uchun
+         *               AYNAN bir xil satr qaytishi kerak
+         */
+        private PresignedUrlProvider provider(Duration window) {
+            PresignedUrlProvider p = new PresignedUrlProvider(presigner, properties);
+            ReflectionTestUtils.setField(p, "ttl", Duration.ofHours(4));
+            ReflectionTestUtils.setField(p, "window", window);
+            return p;
+        }
+
+        /**
+         * ⚠️ ENG MUHIM TEKSHIRUV: havola HAQIQATDAN ochiladimi.
+         *
+         * Qolgan hamma narsa to'g'ri bo'lib, faqat imzo noto'g'ri
+         * bo'lsa — pleyer har segmentda 403 olardi va video umuman
+         * ochilmasdi. Buni faqat haqiqiy server ayta oladi.
+         */
+        @Test
+        @DisplayName("Imzolangan havola faylni QAYTARADI")
+        void signedUrlActuallyFetches() throws Exception {
+            assumeTrue(available, "MinIO ishlamayapti");
+
+            byte[] body = "segment-mazmuni".getBytes(StandardCharsets.UTF_8);
+            String key = "/videos/410/hls/720p/segment_00001.m4s";
+            new S3StorageService(s3, properties)
+                    .storeAt(new ByteArrayInputStream(body), key, MediaContentTypes.of(key));
+
+            assertThat(fetch(provider(Duration.ofHours(1)).sign(key))).isEqualTo(body);
+        }
+
+        /**
+         * ⚠️ CDN uchun HAL QILUVCHI xususiyat.
+         *
+         * S3 imzosi {@code X-Amz-Date} ni o'z ichiga oladi, ya'ni har
+         * chaqiruv boshqa satr berardi. CDN uchun bu boshqa manzil
+         * degani: 3000 tomoshabin bitta filmni ko'rsa, kesh umuman
+         * ishlamay, butun trafik omborga tushardi.
+         */
+        @Test
+        @DisplayName("Bir oyna ichida havola O'ZGARMAYDI")
+        void stableWithinWindow() {
+            assumeTrue(available, "MinIO ishlamayapti");
+
+            PresignedUrlProvider p = provider(Duration.ofHours(1));
+            String key = "/videos/410/hls/720p/segment_00002.m4s";
+
+            assertThat(p.sign(key)).isEqualTo(p.sign(key));
+        }
+
+        /**
+         * Turli kalitlar chalkashib ketmasligi kerak — aks holda
+         * pleyer har segmentda bir xil faylni olardi.
+         */
+        @Test
+        @DisplayName("Har kalit o'z havolasini oladi")
+        void keysDoNotCollide() {
+            assumeTrue(available, "MinIO ishlamayapti");
+
+            PresignedUrlProvider p = provider(Duration.ofHours(1));
+
+            assertThat(p.sign("/videos/410/a.m4s"))
+                    .isNotEqualTo(p.sign("/videos/410/b.m4s"));
+        }
+
+        /**
+         * ⚠️ Kesh CHEKLANMAGAN bo'lsa xotirani yeb qo'yardi: ikki
+         * soatlik filmda 1200 ta segment, har foydalanuvchi uchun.
+         *
+         * Oyna almashgach eski yozuvlar tashlanadi — buni havola
+         * o'zgargani bilan tekshirish mumkin.
+         */
+        @Test
+        @DisplayName("Oyna almashsa havola yangilanadi")
+        void refreshesAfterWindow() throws Exception {
+            assumeTrue(available, "MinIO ishlamayapti");
+
+            // Bir soniyalik oyna — chegara albatta kesib o'tiladi.
+            PresignedUrlProvider p = provider(Duration.ofSeconds(1));
+            String key = "/videos/410/hls/720p/segment_00003.m4s";
+
+            String first = p.sign(key);
+            Thread.sleep(1100);
+            String second = p.sign(key);
+
+            assertThat(second).isNotEqualTo(first);
+        }
+    }
+
+    @Nested
+    @DisplayName("⚠️ Uchma-uch: playlist → imzolangan segment (§4.10)")
+    class EndToEnd {
+
+        /**
+         * ⚠️ Bu yerda ZANJIR sinaladi, bo'laklar emas.
+         *
+         * Playlist qayta yozilishi mock ombor bilan, imzolash esa
+         * alohida sinalgan. Ikkalasi birga ishlaydimi — hech qayerda
+         * tekshirilmagan edi, va aynan shu joyda jimgina buzilish
+         * bo'lardi: playlist chiroyli qaytadi, HTTP 200 keladi,
+         * segment esa 403 bilan yopiladi va «video ochilmadi» degan
+         * sababsiz nosozlik chiqadi.
+         */
+        @Test
+        @DisplayName("Playlistdagi segment havolasi HAQIQATDAN ochiladi")
+        void rewrittenSegmentIsFetchable() throws Exception {
+            assumeTrue(available, "MinIO ishlamayapti");
+
+            String dir = "/videos/e2e-410/hls/720p";
+            byte[] segment = "haqiqiy-segment".getBytes(StandardCharsets.UTF_8);
+
+            S3StorageService storage = new S3StorageService(s3, properties);
+            storage.storeAt(new ByteArrayInputStream("""
+                    #EXTM3U
+                    #EXT-X-MAP:URI="init.mp4"
+                    #EXTINF:6.000,
+                    segment_00001.m4s
+                    #EXT-X-ENDLIST
+                    """.getBytes(StandardCharsets.UTF_8)),
+                    dir + "/index.m3u8", MediaContentTypes.of("index.m3u8"));
+            storage.storeAt(new ByteArrayInputStream(segment),
+                    dir + "/segment_00001.m4s", MediaContentTypes.of("segment_00001.m4s"));
+
+            PresignedUrlProvider signer = new PresignedUrlProvider(presigner, properties);
+            ReflectionTestUtils.setField(signer, "ttl", Duration.ofHours(4));
+            ReflectionTestUtils.setField(signer, "window", Duration.ofHours(1));
+
+            String playlist = new HlsPlaylistService(storage)
+                    .rewrite(dir + "/index.m3u8", signer::sign);
+
+            // Playlistdan segment havolasini AYNAN pleyer kabi ajratamiz.
+            String segmentUrl = playlist.lines()
+                    .filter(line -> line.contains("segment_00001.m4s"))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("segment qatori yo'q"));
+
+            assertThat(segmentUrl).startsWith("http");
+            assertThat(fetch(segmentUrl)).isEqualTo(segment);
+        }
+    }
+
+    /** Imzolangan havola bo'yicha faylni o'qiydi. */
+    private static byte[] fetch(String presignedUrl) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(presignedUrl).openConnection();
+        connection.setRequestMethod("GET");
+
+        int code = connection.getResponseCode();
+        assertThat(code)
+                .as("imzolangan havola rad etildi — pleyer segmentni ololmasdi")
+                .isBetween(200, 299);
+
+        try (InputStream in = connection.getInputStream()) {
+            return in.readAllBytes();
+        } finally {
+            connection.disconnect();
+        }
     }
 
     private static void deleteTree(Path dir) {

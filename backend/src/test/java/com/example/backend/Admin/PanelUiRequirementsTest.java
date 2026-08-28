@@ -37,11 +37,31 @@ class PanelUiRequirementsTest {
      * Formalar ({@code *Form}, {@code *Editor}) va {@code LoginPage} bu
      * ro'yxatga kirmaydi: ular ro'yxat emas va o'z holatlarini ota
      * sahifadan oladi.
+     *
+     * <h2>⚠️ Nega manba matni ham o'qiladi</h2>
+     * Ilgari shart faqat fayl NOMI edi. Statik sahifa qo'shilishi
+     * bilan (yo'riqnoma) test yiqildi va u haq emas edi: server
+     * so'rovi yo'q joyda «yuklanmoqda» ham, «xato» ham bo'lmaydi.
+     *
+     * Bunday holatlarni majburan qo'shish soxta bo'lardi — ular hech
+     * qachon ko'rinmaydigan, hech qachon sinalmaydigan o'lik shox
+     * bo'lib qolardi.
+     *
+     * Shuning uchun shart aniqlashtirildi: sahifa API'ga MUROJAAT
+     * QILSA, unga holatlar ham shart.
      */
     private static boolean isListPage(Path file) {
         String name = file.getFileName().toString();
-        return name.endsWith("Page.jsx")
-                && !name.equals("LoginPage.jsx");
+        if (!name.endsWith("Page.jsx") || name.equals("LoginPage.jsx")) {
+            return false;
+        }
+        try {
+            String src = Files.readString(file);
+            return src.contains("adminApi") || src.contains("useApi");
+        } catch (IOException e) {
+            // O'qib bo'lmasa — tekshiruvdan chetlashtirmaymiz.
+            return true;
+        }
     }
 
     /** Buzuvchi amallar — tasdiqlashsiz chaqirilmasligi kerak. */

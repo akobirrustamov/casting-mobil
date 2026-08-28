@@ -802,25 +802,121 @@ To'liq URL saqlansa, CDN domeni o'zgarganda **ming qatorli `UPDATE`**
 kerak bo'lardi va u paytgacha barcha eski videolar ochilmay qolardi.
 Domen sozlamada bo'lsa — bitta qatorni tahrirlash.
 
-### 4.10. ⚠️ Xavfsizlik — QAROR KUTILMOQDA `[ ]`
+### 4.10. Pullik kontent himoyasi `[x]`
 
 Hozir `/api/v1/app/media/{id}/raw` har so'rovda `AccessService.canReadMedia()`
 ni chaqiradi. CDN'ga o'tilganda **bu tekshiruv yo'qoladi**: segmentlar Spring
 Boot'dan o'tmaydi.
 
-Uchta variant:
+Uchta variant ko'rib chiqilgan edi:
 
 | Variant | Qanday | Xavf |
 |---|---|---|
 | A. Ochiq CDN | Segmentlar hammaga ochiq | ❌ Pullik kontent bepul tarqaladi. **Qabul qilib bo'lmaydi** |
 | B. CDN Secure Token | Timeweb tokenli havola qo'llab-quvvatlasa | ⚠️ Timeweb hujjatidan tasdiqlash kerak |
-| C. Qisqa muddatli presigned | `master.m3u8` presigned, segmentlar ham | ⚠️ Har segment uchun URL kerak → playlist dinamik yasaladi |
+| C. Playlist proksi + presigned | Playlist bizdan, segmentlar imzolangan havoladan | ✅ **Tanlandi** — hech qanday tashqi tasdiq kutmaydi |
 
-**Tanlanmaydi** — Timeweb CDN ning tokenli havola imkoniyati tasdiqlanmaguncha.
-Bu tashqi bog'liqlik, taxmin qilinmaydi.
+**Nima uchun C.** B varianti Timeweb javobiga bog'liq edi va u kelmadi.
+C esa har qanday S3-mos ombor bilan ishlaydi. Imzolash `SignedUrlProvider`
+interfeysi ortida — Timeweb tokeni tasdiqlansa, uni almashtirish playlist
+mantig'iga umuman tegmaydi.
 
-Vaqtincha: `4.1`–`4.9` bosqichlari **bepul kontentda** to'liq ishlaydi.
-Pullik kontent hozirgi `raw` yo'lida qoladi — ya'ni regressiya yo'q.
+#### Qanday ishlaydi
+
+```
+pleyer → BIZ:    master.m3u8        huquq tekshiriladi
+pleyer → BIZ:    720p/index.m3u8    huquq QAYTA tekshiriladi
+pleyer → OMBOR:  segment_00001.m4s  imzolangan havola
+```
+
+⚠️ **Video baribir serverimizdan O'TMAYDI.** Playlist — bir necha kilobayt
+matn; gigabaytlar to'g'ridan-to'g'ri ombordan keladi. Asosiy talab
+buzilmadi.
+
+#### ⚠️ Chipta HUQUQ bermaydi
+
+Havola ichidagi chipta faqat «bu so'rov kimniki» degan savolga javob beradi.
+Ko'rish huquqi **har so'rovda** `AccessService` dan qayta so'raladi.
+
+Bu ataylab: obuna tugasa yoki xarid qaytarilsa, kirish **o'sha zahoti**
+yopiladi. Chipta ichiga «ruxsat berilgan» deb yozilganda esa u muddati
+tugagunicha ishlayverardi — pulini qaytarib olgan odam filmni ko'rishda
+davom etardi.
+
+#### ⚠️ Nega chipta sarlavhada emas, MANZIL ichida
+
+Bu eng nozik joy va noto'g'ri qaror video umuman ochilmasligiga olib
+kelardi.
+
+AVPlayer (iOS) va ExoPlayer (Android) sarlavhalarni **butun oqim uchun**
+bir marta oladi — ular segment so'roviga ham qo'shiladi. Segment esa
+imzolangan havola bilan to'g'ridan-to'g'ri S3 ga boradi, S3 esa ikkita
+avtorizatsiyani birga qabul qilmaydi: so'rovda ham `Authorization`, ham
+`X-Amz-Signature` bo'lsa u **400** qaytaradi.
+
+Ya'ni `Authorization` yuborilsa **hech bir segment ochilmasdi**.
+
+#### ⚠️ Imzo keshi — CDN uchun hal qiluvchi
+
+MinIO bilan o'lchandi: S3 imzosi `X-Amz-Date` ni o'z ichiga oladi va u
+imzolash **vaqti**. Uch soniya farq bilan yasalgan ikkita havola boshqa
+satr beradi.
+
+Ya'ni har foydalanuvchi o'z havolasini olardi. CDN uchun bu boshqa manzil
+degani: **3000 tomoshabin → 3000 kesh yozuvi**, kesh umuman ishlamaydi va
+butun trafik omborga tushadi.
+
+Yechim — vaqt oynasi bo'yicha kesh: havola bir marta yasaladi va oyna
+tugagunicha hammaga bir xil qaytariladi.
+
+#### Bajarilgani
+
+- `[x]` `SignedUrlProvider` — imzolash interfeysi (Timeweb tokeni uchun
+      almashtiriladigan joy)
+- `[x]` `PresignedUrlProvider` — S3 imzolash + vaqt oynasi keshi
+- `[x]` `PlaybackTicketService` — chipta (kimligi, huquq emas)
+- `[x]` `HlsPlaylistService` — playlist yo'llarini qayta yozish,
+      `#EXT-X-MAP` bilan birga
+- `[x]` `HlsController` — `GET /api/v1/app/media/{id}/hls/{*path}`
+- `[x]` `PlaybackUrlService` — S3 bo'lsa proksi, bo'lmasa eski CDN yo'li
+- `[x]` `WatchController` — `hlsUrl` shu servisdan
+- `[x]` Mobil: nisbiy `hlsUrl` ga `BASE_URL` qo'shiladi, sarlavha
+      HLS yo'liga **yuborilmaydi**
+- `[x]` Sozlamalar hujjatlandi (`ticket-ttl`, `signed-url-ttl`,
+      `signed-url-window`)
+
+#### Qat'iy chegaralar
+
+- `[x]` Endpoint **faqat `.m3u8`** beradi. Segmentni ham bersa,
+      gigabaytlar Spring Boot orqali oqib, butun ishning ma'nosi
+      qolmasdi
+- `[x]` Chipta **aynan bitta media** uchun. Aks holda bepul klipning
+      chiptasi bilan pullik filmni ochish mumkin bo'lardi
+- `[x]` Kirish tokeni chipta o'rniga **ishlamaydi**. Ikkalasi bir xil
+      kalit bilan imzolangan, farqni faqat tur belgisi qiladi
+- `[x]` `..` rad etiladi. Hozir uni Spring'ning `StrictHttpFirewall`
+      bizga yetib kelishidan oldin to'xtatadi — kontrollerdagi tekshiruv
+      ikkinchi qavat bo'lib qoladi
+
+#### Testlar
+
+- `[x]` `HlsPlaylistRewriteTest` (7) — qayta yozish mantig'i
+- `[x]` `HlsProtectionTest` (21) — chipta, huquq, yo'l chegaralari
+- `[x]` `S3IntegrationTest$SignedUrls` (4) — **haqiqiy MinIO**: havola
+      ochiladimi, oyna ichida o'zgarmaydimi
+- `[x]` `S3IntegrationTest$EndToEnd` (1) — **uchma-uch**: playlistdagi
+      segment havolasi haqiqatdan fayl qaytaradi
+- `[x]` `CdnUrlTest$MobileContract` — mobil shartnomasi yangilandi
+
+Har bir himoya **mutatsiya bilan tekshirildi**: shart olib tashlanganda
+test yiqilishi tasdiqlandi. Ikkita test shu jarayonda kuchaytirildi —
+ular bekorga yashil edi:
+
+- `ticketIsBoundToMedia` pullik media ishlatardi, ya'ni so'rovni
+  `AccessService` to'xtatardi va bog'lanish tekshiruvi umuman
+  sinalmasdi;
+- `segmentsNotProxied` mavjud bo'lmagan faylni so'rardi va 404 «fayl
+  yo'q» degani uchun kelardi, «segment berilmaydi» degani uchun emas.
 
 ### 4.11. Admin panel `[x]`
 
@@ -1324,7 +1420,7 @@ sozlanmaganda soxta muvaffaqiyat qaytarilmaydi.
 - `[x]` Yiqilishni boshqarish va qayta urinish
 - `[x]` Vaqtinchalik fayllarni tozalash
 - `[x]` CDN URL integratsiyasi
-- `[ ]` ⚠️ Xavfsiz video kirish (Timeweb qarorini kutmoqda)
+- `[x]` ⚠️ Xavfsiz video kirish (playlist proksi + presigned, §4.10)
 - `[x]` Admin upload progress (4.11-E)
 - `[x]` Admin processing holati (4.11-B, C, D)
 - `[x]` Mobil HLS ijro
@@ -1337,8 +1433,14 @@ sozlanmaganda soxta muvaffaqiyat qaytarilmaydi.
 
 ## 6. Buyurtmachiga savollar
 
-1. **Timeweb CDN tokenli havolani qo'llab-quvvatlaydimi?** §4.10 shunga
-   bog'liq. Qo'llab-quvvatlamasa, pullik kontent uchun boshqa yechim kerak
+1. ~~**Timeweb CDN tokenli havolani qo'llab-quvvatlaydimi?**~~
+   ✅ **Endi bloklamaydi.** §4.10 javob kutmasdan hal qilindi: playlist
+   proksi + presigned havola har qanday S3-mos ombor bilan ishlaydi.
+
+   Savol foydali bo'lib qoladi, lekin **ixtiyoriy**: Timeweb tokenni
+   qo'llab-quvvatlasa, `SignedUrlProvider` ni almashtirish keshlashni
+   yaxshilaydi (segment CDN'dan kelardi). Almashtirish playlist
+   mantig'iga tegmaydi.
 2. ~~**FFmpeg qayerda ishlaydi?**~~ ✅ **Javob berildi 27.08.2026.**
    API bilan **bitta serverda**: 12 yadro · 16 GB · 200 GB NVMe.
    O'lchovlar va sabab — §4.13.
@@ -1362,3 +1464,22 @@ Server tanlandi: **12 yadro · 16 GB · 200 GB NVMe** — o'lchovlar §4.13 da.
 
 Qolgan: 4.10 (xavfsizlik, Timeweb qarorini kutmoqda) · 4.11 (admin
 panel) · 4.12 (mobil) · 4.13 (FFmpeg o'rnatish).
+
+**28.08.2026** — **4.10 bajarildi** (988 test, hammasi yashil).
+
+Timeweb javobi kutilmadi: tanlangan yechim (playlist proksi + presigned
+havola) hech qanday tashqi tasdiqqa bog'liq emas va har qanday S3-mos
+ombor bilan ishlaydi. Imzolash `SignedUrlProvider` ortida — Timeweb
+tokeni tasdiqlansa uni almashtirish playlist mantig'iga tegmaydi.
+
+Ikki nozik joy o'lchov bilan hal qilindi:
+
+- **imzo keshi** — MinIO'da tasdiqlandiki S3 imzosi vaqtga bog'liq, ya'ni
+  keshsiz har tomoshabin o'z havolasini olardi va CDN keshi ishlamasdi;
+- **chipta manzil ichida** — pleyer sarlavhalarni segment so'roviga ham
+  qo'shadi, S3 esa `Authorization` + `X-Amz-Signature` ni birga rad etadi.
+
+Butun zanjir haqiqiy MinIO bilan uchma-uch sinaldi: playlist ombordan
+o'qildi, qayta yozildi, undagi segment havolasi haqiqatdan fayl qaytardi.
+
+Qolgan: 4.13 (serverga FFmpeg o'rnatish, disk monitoringi).

@@ -187,6 +187,41 @@ app.storage.s3.upload-url-ttl=${S3_UPLOAD_URL_TTL:6h}
 # bo'lib ko'rinardi — sabab esa oddiy sozlama yetishmasligi edi.
 app.video.cdn.base-url=${CDN_BASE_URL:}
 
+# ==========================================================================
+#  Pullik video himoyasi (§4.10)
+# ==========================================================================
+#  Playlist bizning server orqali beriladi (huquq tekshiriladi),
+#  segmentlar esa IMZOLANGAN havola bilan to'g'ridan-to'g'ri ombordan
+#  keladi. Video hech qachon Spring Boot orqali oqmaydi.
+#
+#  ⚠️ Imzolash faqat `app.storage.provider=s3` bo'lganda ishlaydi.
+#  Lokal omborda eski xatti-harakat saqlanadi: to'g'ridan CDN manzili.
+# ==========================================================================
+
+# Chipta amal qilish muddati — u KIMLIGINI aytadi, huquq bermaydi.
+# Huquq har so'rovda `AccessService` dan qayta so'raladi, shuning uchun
+# obuna tugasa kirish o'sha zahoti yopiladi.
+#
+# ⚠️ Tomosha seansidan uzun bo'lishi kerak, aks holda odam filmning
+# o'rtasida «playlist ochilmadi» xatosiga tushardi.
+app.video.ticket-ttl=${VIDEO_TICKET_TTL:6h}
+
+# Segment havolasi qancha yashaydi.
+#
+# ⚠️ Qisqa bo'lsa uzun film o'rtasida uzilardi; uzun bo'lsa sizib
+# chiqqan havola shuncha vaqt ishlardi.
+app.video.signed-url-ttl=${VIDEO_SIGNED_URL_TTL:4h}
+
+# Imzo keshi oynasi.
+#
+# ⚠️ Busiz har foydalanuvchi O'Z havolasini olardi (imzoda imzolash
+# vaqti bor) va CDN ularni boshqa-boshqa manzil deb hisoblardi:
+# 3000 tomoshabin → 3000 kesh yozuvi, ya'ni kesh umuman ishlamasdi.
+#
+# TTL dan sezilarli KICHIK bo'lishi shart: oyna oxirida berilgan
+# havola aks holda deyarli darhol eskirardi.
+app.video.signed-url-window=${VIDEO_SIGNED_URL_WINDOW:1h}
+
 # FFmpeg. PATH da bo'lsa nom yetarli, aks holda to'liq yo'l.
 app.video.ffmpeg-path=${FFMPEG_PATH:ffmpeg}
 app.video.ffprobe-path=${FFPROBE_PATH:ffprobe}
