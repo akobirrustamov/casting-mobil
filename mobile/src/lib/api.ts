@@ -24,7 +24,15 @@ const SAFE_METHODS = ['get', 'head', 'options'];
  * выдача токена). Всё остальное — каталоги, заявки, покупки — под запретом,
  * пока не появится тестовый контур.
  */
-const WRITE_ALLOWLIST = ['/api/v1/auth/'];
+const WRITE_ALLOWLIST = [
+  '/api/v1/auth/',
+  // ⚠️ OTP переехал в новое пространство (`AppAuthController`).
+  //
+  // Без этой строки вход по SMS ломался бы ТИХО: интерцептор
+  // `READ_ONLY` роняет запрос ДО отправки, и пользователь видел бы
+  // не ответ сервера, а внутреннюю ошибку клиента.
+  '/api/v1/app/auth/',
+];
 
 export const api = axios.create({
   baseURL: BASE_URL,

@@ -116,8 +116,18 @@ class CdnUrlTest {
         private static final Path WATCH_CONTROLLER = Path.of(
                 "src/main/java/com/example/backend/Cms/Controller/WatchController.java");
 
+        /**
+         * ⚠️ Pleyer AJRATILGAN faylga ko'chgan.
+         *
+         * Ilgari bu yo'l {@code WatchDetail.tsx} ga qarardi. Hamkasb
+         * pleyerni {@code Player.tsx} ga ajratgach, merge mening HLS
+         * mantig'imni yo'qotdi — va aynan SHU TEST buni ushladi.
+         *
+         * Ya'ni manba matnini o'qiydigan test mo'rt ko'rinadi, lekin
+         * u yo'qolgan o'zgarishni topdi. Uni saqlaymiz.
+         */
         private static final Path MOBILE_PLAYER = Path.of(
-                "../mobile/src/features/watch/WatchDetail.tsx");
+                "../mobile/src/features/watch/Player.tsx");
 
         /**
          * ⚠️ `url` maydoni NISBIY qolishi SHART.

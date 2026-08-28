@@ -7,7 +7,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
@@ -29,19 +28,33 @@ public interface TranscodingJobRepo extends JpaRepository<TranscodingJob, Long> 
     /**
      * Navbatdagi keyingi ishlar.
      *
-     * <h2>⚠️ Nega {@code SKIP LOCKED}</h2>
+     * <h2>⚠️ Nega qulf kerak</h2>
      * Ikki instans (yoki bitta instansning ikki oqimi) bir vaqtda
      * navbatga qarasa, ikkalasi ham AYNI ishni olardi va bitta video
      * ikki marta transcoding qilinardi — protsessor ikki barobar
      * band, natija esa bir-birining ustiga yozilardi.
      *
-     * {@code SKIP LOCKED} qulflangan qatorlarni o'tkazib yuboradi:
-     * ikkinchi so'rovchi keyingi ishni oladi, kutib turmaydi.
+     * <h2>⚠️ Nega {@code SKIP LOCKED} EMAS</h2>
+     * Dastlab {@code SKIP LOCKED} ishlatilgan edi. U H2 tomonidan
+     * QO'LLAB-QUVVATLANMAYDI — hatto PostgreSQL rejimida ham — va
+     * butun test to'plami sintaksis xatosi bilan yiqilardi.
      *
-     * ⚠️ H2 (test profili) buni PostgreSQL rejimida qo'llab-quvvatlaydi.
+     * Nosozlik uzoq vaqt YASHIRIN qoldi: sozlamadagi buzuq
+     * {@code ${...}} havolasi tufayli {@code PostgreSQLDialect}
+     * qo'llanmayotgan edi va Hibernate H2 dialektiga tushib, bu
+     * bayroqni umuman chiqarmasdi. Sozlama tuzatilgach xato darhol
+     * ko'rindi.
+     *
+     * <h2>Oddiy {@code FOR UPDATE} yetarli</h2>
+     * {@code READ COMMITTED} da PostgreSQL qulfni olgandan KEYIN
+     * {@code where} shartini qayta tekshiradi. Ya'ni ikkinchi
+     * so'rovchi kutadi, keyin qatorni {@code QUEUED} emas deb ko'radi
+     * va uni olmaydi — natija {@code SKIP LOCKED} bilan bir xil.
+     *
+     * Farqi faqat qisqa kutishda, va {@code max-concurrent-jobs}
+     * odatda 1–3 bo'lgani uchun u sezilmaydi.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @QueryHints(@jakarta.persistence.QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
     @Query("select j from TranscodingJob j where j.status = :status order by j.createdAt asc")
     List<TranscodingJob> lockNextPending(@Param("status") VideoProcessingStatus status,
                                          Pageable pageable);

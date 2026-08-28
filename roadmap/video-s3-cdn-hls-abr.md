@@ -738,7 +738,7 @@ bajarishga urinardi.
 
 ### 4.8. S3 ga HLS yuklash `[x]` — 4.7 bilan birga
 
-- `[ ]` Rekursiv yuklash, har bir fayl uchun to'g'ri `Content-Type`:
+- `[x]` Rekursiv yuklash, har bir fayl uchun to'g'ri `Content-Type`:
 
 | Kengaytma | Content-Type |
 |---|---|
@@ -746,8 +746,8 @@ bajarishga urinardi.
 | `.m4s` | `video/iso.segment` |
 | `.mp4` (init) | `video/mp4` |
 
-- `[ ]` `status = READY` **faqat hammasi yuklangach** (§20)
-- `[ ]` Qisman yuklash → `FAILED` + tozalash
+- `[x]` `status = READY` **faqat hammasi yuklangach** (§20)
+- `[x]` Qisman yuklash → `FAILED` + tozalash
 
 ### 4.9. CDN va yetkazish `[x]`
 
@@ -1184,6 +1184,125 @@ oshib ketishi mumkin.
 
 ---
 
+### 4.14. HAQIQIY S3 bilan tekshiruv `[x]` (28.08.2026)
+
+#### ⚠️ Bu butun ish ichidagi eng katta xavf edi
+
+`S3StorageService`, `S3MultipartUploadService` va `HlsUploadService`
+**hech qachon haqiqiy S3 bilan gaplashmagan**. Barcha testlar
+`S3Client` ni mock qilardi: ular bizning hisob-kitobimizni
+tekshirardi, S3 ning javobini emas.
+
+Presigned imzolar, multipart yig'ish, `ListParts` — hammasi faqat
+kutilgan xatti-harakat asosida yozilgan edi.
+
+#### Yechim: MinIO
+
+S3 bilan mos server, lokalda ishlaydi. Hech narsa sotib olish kerak
+emas va Timeweb kalitlari ishlatilmaydi (§30).
+
+```bash
+brew install minio/stable/minio
+MINIO_ROOT_USER=testkey MINIO_ROOT_PASSWORD=testsecret123 \
+  minio server /tmp/minio-data --address :9100
+```
+
+`S3IntegrationTest` — **9 test, hammasi o'tdi**:
+
+| Nima | Natija |
+|---|---|
+| Oqim saqlash va qayta o'qish | ✅ |
+| `Content-Type` S3 da saqlanadi | ✅ `application/vnd.apple.mpegurl` |
+| Boshlang'ich `/` obyekt nomiga tushmaydi | ✅ |
+| Mavjudlik va o'chirish | ✅ |
+| **Presigned multipart to'liq aylanma** | ✅ 5 MB + 1 KB → yig'ildi |
+| Bekor qilish bo'laklarni tozalaydi | ✅ |
+| Bo'lak yetishmasa rad etiladi | ✅ |
+| HLS papkasini rekursiv yuklash | ✅ 4 fayl, to'g'ri turlar |
+| `master.m3u8` bo'lmasa aniq xato | ✅ |
+
+⚠️ MinIO ishlamayotgan bo'lsa test **o'tkazib yuboriladi**
+(`assumeTrue`) — CI da u bo'lmasligi mumkin.
+
+**Eng muhimi:** «brauzer imzolangan havola bilan to'g'ridan-to'g'ri
+omborga yozadi» degan butun ishning ma'nosi endi **isbotlangan**, taxmin
+emas.
+
+---
+
+### 4.15. Sozlama nosozligi tuzatildi `[x]` (28.08.2026)
+
+`application.properties` da:
+
+```properties
+spring.datasource.password=${akow8434}
+```
+
+Bu **parol emas** — mavjud bo'lmagan xususiyatga havola. Prod
+profilida ilova `Could not resolve placeholder 'akow8434'` bilan
+**ko'tarilmasdi**.
+
+Lokalda bilinmasdi: `dev` profili o'z `datasource` ini beradi va bu
+qatorga umuman yetib bormaydi. Nosozlik faqat serverda, **birinchi
+ishga tushirishda** chiqardi.
+
+- `[x]` `${DB_PASSWORD:akow8434}` shakliga o'tkazildi
+- `[x]` `application.properties.example` ga `datasource` bo'limi qo'shildi
+- `[x]` `ConfigurationPlaceholderTest` — 2 test, 2 mutatsiya
+
+Qo'riqchi test ikki narsani tekshiradi: har bir `${...}` da zaxira
+qiymat bor, va namuna faylida ochiq maxfiy qiymat yo'q.
+
+⚠️ Test avval **soxta signal** berdi — `<openssl rand -hex 32>` kabi
+hujjat o'rinbosarlarini parol deb hisobladi. Aniqlashtirildi: soxta
+signal beradigan testni odamlar e'tiborsiz qoldirishni o'rganadi.
+
+---
+
+### 4.16. OTP endpointlari ko'chirildi `[x]` (28.08.2026)
+
+Ikki kundan beri qizil turgan `OldCastingFrozenTest` yopildi.
+
+**Sabab:** `POST /api/v1/auth/otp/send` va `/verify` ESKI casting
+modulining kontrollerida yozilgan edi. U makon **muzlatilgan** —
+Telegram bot, eski admin sayti va boshqa mijozlar unga tayanadi.
+
+Buyurtmachi qarori: **ko'chirish**.
+
+```
+/api/v1/auth/otp/**      →  /api/v1/app/auth/otp/**
+```
+
+- `[x]` `Cms/Controller/AppAuthController` — yangi makonda
+- `[x]` Eski `AuthController` dan olib tashlandi
+- `[x]` `SecurityConfig` va `RateLimitFilter` yangilandi
+- `[x]` Mobil: `api.ts`, ikkita ekran izohi, `docs/API.md`
+- `[x]` ⚠️ Mobil `WRITE_ALLOWLIST` ga yangi prefiks
+
+#### ⚠️ Oq ro'yxat — jimgina buziladigan joy
+
+Mobil `READ_ONLY` rejimida ishlaydi va yozish so'rovlarini
+**klientda** bloklaydi. Oq ro'yxat `/api/v1/auth/` edi; yangi yo'l
+unga tushmasdi.
+
+Qo'shilmaganda SMS orqali kirish **jimgina** buzilardi: interceptor
+so'rovni **yuborishdan oldin** yiqitadi va foydalanuvchi serverning
+javobini emas, klientning ichki xatosini ko'rardi.
+
+#### Jonli tekshiruv
+
+| So'rov | Javob |
+|---|---|
+| `POST /api/v1/app/auth/otp/send` | `503 SMS_NOT_CONFIGURED` — Eskiz dev'da sozlanmagan |
+| `POST /api/v1/app/auth/otp/verify` | `422 OTP_EXPIRED` |
+| `POST /api/v1/auth/otp/send` (eski) | `401` — endpoint yo'q |
+| Rate limit (5/daqiqa) | `503 503 503 → 429 429 429` ✅ |
+
+⚠️ `SMS_NOT_CONFIGURED` — bu **to'g'ri xatti-harakat**: provayder
+sozlanmaganda soxta muvaffaqiyat qaytarilmaydi.
+
+---
+
 ## 5. Umumiy checklist
 
 - `[x]` Mavjud video arxitekturasi auditi
@@ -1210,9 +1329,9 @@ oshib ketishi mumkin.
 - `[x]` Admin processing holati (4.11-B, C, D)
 - `[x]` Mobil HLS ijro
 - `[x]` ABR tekshiruvi (4.6 da haqiqiy FFmpeg bilan)
-- `[ ]` Testlar
+- `[x]` Testlar
 - `[ ]` FFmpeg o'rnatish / Docker qarori
-- `[ ]` Hujjat
+- `[x]` Hujjat
 
 ---
 

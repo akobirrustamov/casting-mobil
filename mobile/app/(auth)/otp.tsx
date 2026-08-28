@@ -13,7 +13,7 @@ import { useAuthStore } from '@/features/auth/store';
 import { colors } from '@/theme/tokens';
 
 /**
- * Ввод кода из SMS (Eskiz), `POST /api/v1/auth/otp/verify` — см. docs/API.md §5.
+ * Ввод кода из SMS (Eskiz), `POST /api/v1/app/auth/otp/verify` — см. docs/API.md §5.
  *
  * Проверка и вход — один запрос: бэкенд сам находит хозяина номера или
  * создаёт нового пользователя, поэтому отдельного «регистрации» тут нет.

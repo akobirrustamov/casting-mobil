@@ -113,6 +113,20 @@ APP_OTP_MAX_ATTEMPTS=5
 # PAYMENT_MERCHANT_ID=
 # PAYMENT_SECRET_KEY=
 
+# ── Ma'lumotlar bazasi ───────────────────────────────────────────────
+#
+# ⚠️ Har bir qiymat `${NOM:zaxira}` shaklida. Zaxirasiz `${NOM}` yozish
+# — eng oson va eng jimgina xato: lokalda `dev` profili bu qatorlarga
+# yetib bormaydi, prod'da esa ilova ko'tarilmaydi.
+#
+# Buni `ConfigurationPlaceholderTest` qo'riqlaydi.
+spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/casting}
+spring.datasource.username=${DB_USERNAME:postgres}
+
+# ⚠️ MAXFIY. Bu yerga YOZMANG — environment orqali bering:
+#   export DB_PASSWORD='...'
+spring.datasource.password=${DB_PASSWORD:}
+
 # ── Sxema siyosati (ТЗ §91) ──────────────────────────────────────────
 #
 # Sxemani FAQAT Flyway boshqaradi. Hibernate unga tegmaydi: aks holda
