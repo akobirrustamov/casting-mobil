@@ -4,7 +4,9 @@
     "casting": "Кастинг",
     "premiere": "Премьера",
     "messages": "Сообщения",
-    "profile": "Профиль"
+    "profile": "Профиль",
+    "media": "Медиа",
+    "saved": "Сохранённые"
   },
   "states": {
     "emptyTitle": "Пока пусто",
@@ -32,7 +34,8 @@
     "premiere": "Премьера",
     "years": "{{count}} лет",
     "premium": "Premium",
-    "free": "Бесплатно"
+    "free": "Бесплатно",
+    "ad": "Реклама"
   },
   "splash": {
     "subtitle": "Платформа для креаторов"
@@ -82,7 +85,8 @@
     "otpExpired": "Код истёк, запросите новый",
     "otpLocked": "Слишком много попыток, запросите новый код",
     "otpCooldown": "Код уже отправлен, подождите",
-    "smsUnavailable": "Вход по SMS пока не настроен"
+    "smsUnavailable": "Вход по SMS пока не настроен",
+    "devLogin": "Dev-вход: {{phone}}. Google пока не работает."
   },
   "home": {
     "todayPremieres": "Сегодняшние премьеры",
@@ -122,7 +126,7 @@
     "paymentHistory": "История платежей",
     "applications": "Мои заявки",
     "portfolio": "Портфолио",
-    "favorites": "Избранное",
+    "favorites": "Сохранённые",
     "creatorStudio": "Creator Studio",
     "premium": "Premium",
     "devices": "Активные устройства",
@@ -130,7 +134,31 @@
     "contact": "Связаться с нами",
     "logout": "Выйти",
     "guest": "Гость",
-    "signIn": "Войти"
+    "signIn": "Войти",
+    "vip": "VIP",
+    "premiumMember": "Premium-подписчик",
+    "stars": "Звёзды",
+    "coins": "Uzcasting",
+    "premiumBannerTitle": "Premium-возможности",
+    "premiumBannerBody": "Эксклюзивный контент, просмотр без рекламы и больше возможностей",
+    "premiumBannerCta": "Перейти на Premium",
+    "mySubscription": "Моя подписка",
+    "mySubscriptionHint": "Статус подписки и срок действия",
+    "topUpHint": "Click · Payme · Uzum · Stripe",
+    "promocodes": "Промокоды",
+    "promocodesHint": "Активация промокода и скидки",
+    "paymentHistoryHint": "Платежи и покупки",
+    "favoritesHint": "Сохранённые фильмы и сериалы",
+    "devicesHint": "До 2 устройств на один аккаунт",
+    "tariffs": "Тарифы",
+    "tariffsHint": "Цены на подписку и что в неё входит",
+    "editProfile": "Редактировать профиль",
+    "security": "Безопасность",
+    "notifications": "Уведомления",
+    "language": "Til / Language",
+    "about": "О приложении",
+    "soon": "Скоро",
+    "guestBody": "Войдите — здесь появятся баланс, покупки и избранное"
   },
   "catalog": {
     "title": "Каталог",

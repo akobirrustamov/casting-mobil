@@ -2185,6 +2185,12 @@ server.error.include-exception=false
 /api/v1/app/donations · packages    donat va valyuta paketlari
 ```
 
+⚠️ `/watch/**` va `/content/{id}/episodes` `orientation` ni ham qaytaradi
+(`LANDSCAPE` / `VERTICAL`). Ilgari bu maydon FAQAT bosh sahifa feedida bor edi:
+pleyer kadrni doim 16:9 qilib chizardi va tik rolik ingichka chiziq bo'lib
+qolardi. Faylning o'zidan aniqlab bo'lmaydi — qulflangan kontentda video
+umuman berilmaydi, afisha esa o'sha paytda chiziladi.
+
 ⚠️ `/api/v1/app/content/{id}/episodes` VIDEO HAVOLASINI BERMAYDI — u faqat
 `/watch/{episodeId}` dan, huquq tasdiqlangandan keyin chiqadi. Ro'yxatdagi
 qulf va ochish sahifasidagi qulf bitta qoidadan
@@ -2201,7 +2207,13 @@ qulf va ochish sahifasidagi qulf bitta qoidadan
   biladi (ТЗ §13, §14: tur va tuzilma — har xil o'q)
 - `[ ]` `/api/v1/app/search`
 - `[ ]` `/api/v1/app/comments` — yozish va o'qish
-- `[ ]` `/api/v1/app/ads` — ko'rsatiladigan reklama
+- `[ ]` `/api/v1/app/ads` — ko'rsatiladigan reklama (hozircha bosh sahifa
+  feedidagi `ADVERTISEMENT_CAROUSEL` yetarli; ilova endi ko'rsatish va bosishni
+  `/analytics/events` ga yuboradi, ya'ni paneldagi reklama hisoboti to'lana
+  boshladi)
+- `[ ]` Reklama aylanish oralig'i — sozlamada yo'q. Ilova 6 soniyani O'ZI
+  tanlagan (`AD_ROTATION_MS`). Buyurtmachi boshqa raqamni istasa, uni
+  `PlatformSetting` ga chiqarish kerak
 - `[ ]` `/api/v1/app/me` — profil, obuna, balans, qurilmalar
 - `[ ]` `/api/v1/app/purchases` — xarid qilish oqimi
 - `[ ]` `/api/v1/app/auth/**` — OTP bilan kirish (eski auth o'rniga)

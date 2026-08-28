@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
+import { GlowBackdrop } from '@/components/ui/GlowBackdrop';
 import { markOnboardingSeen } from '@/features/onboarding/store';
 import { colors } from '@/theme/tokens';
 
@@ -32,11 +33,13 @@ type Slide = {
   gradient: [string, string];
 };
 
+// Первый слайд — фирменная пара синий → фиолетовый с референса заказчика,
+// дальше шкала расходится в маджента, золото и циан.
 const SLIDES: Slide[] = [
-  { key: 'casting', icon: 'sparkles-outline', gradient: [colors.purple, colors.magenta] },
-  { key: 'premiere', icon: 'play-circle-outline', gradient: [colors.cyan, colors.purple] },
+  { key: 'casting', icon: 'sparkles-outline', gradient: [colors.blue, colors.purple] },
+  { key: 'premiere', icon: 'play-circle-outline', gradient: [colors.purple, colors.magenta] },
   { key: 'earn', icon: 'trending-up-outline', gradient: [colors.magenta, colors.gold] },
-  { key: 'stars', icon: 'star-outline', gradient: [colors.purple, colors.cyan] },
+  { key: 'stars', icon: 'star-outline', gradient: [colors.blue, colors.cyan] },
 ];
 
 export default function OnboardingScreen() {
@@ -81,6 +84,8 @@ export default function OnboardingScreen() {
 
   return (
     <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
+      <GlowBackdrop intensity="hero" />
+
       <View className="h-11 justify-center px-6">
         <Pressable onPress={finish} hitSlop={12} className="self-end">
           <Text className="text-body text-text-muted">{t('onboarding.skip')}</Text>

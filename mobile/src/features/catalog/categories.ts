@@ -1,3 +1,4 @@
+import type { CategoryGlyph } from '@/components/ui/CategoryTile';
 import { colors } from '@/theme/tokens';
 
 /**
@@ -12,20 +13,22 @@ export type Category = {
   titleUz: string;
   titleRu: string;
   accent: string;
+  /** Знак на плитке. Подобран по смыслу направления, не по позиции. */
+  icon: CategoryGlyph;
   apiType: string | null;
 };
 
 export const CATEGORIES: Category[] = [
-  { id: 'actors', titleUz: 'Aktyorlar', titleRu: 'Актёры', accent: colors.purple, apiType: 'actor' },
-  { id: 'models', titleUz: 'Modellar', titleRu: 'Модели', accent: colors.magenta, apiType: 'model' },
-  { id: 'bloggers', titleUz: 'Blogerlar', titleRu: 'Блогеры', accent: colors.cyan, apiType: 'bloger' },
-  { id: 'influencers', titleUz: 'Influencerlar', titleRu: 'Инфлюенсеры', accent: colors.gold, apiType: 'influencer' },
-  { id: 'musicians', titleUz: 'Musiqachilar', titleRu: 'Музыканты', accent: colors.purple, apiType: null },
-  { id: 'dancers', titleUz: 'Raqqoslar', titleRu: 'Танцоры', accent: colors.magenta, apiType: null },
-  { id: 'photovideo', titleUz: 'Foto/Video ijodkorlar', titleRu: 'Фото/Видео', accent: colors.cyan, apiType: null },
-  { id: 'styling', titleUz: 'Styling va loyihalar', titleRu: 'Стайлинг', accent: colors.gold, apiType: null },
-  { id: 'courses', titleUz: 'Kurslar va treninglar', titleRu: 'Курсы', accent: colors.purple, apiType: null },
-  { id: 'casting', titleUz: "Casting e'lonlari", titleRu: 'Кастинги', accent: colors.magenta, apiType: null },
+  { id: 'actors', titleUz: 'Aktyorlar', titleRu: 'Актёры', accent: colors.purple, icon: 'account-star-outline', apiType: 'actor' },
+  { id: 'models', titleUz: 'Modellar', titleRu: 'Модели', accent: colors.magenta, icon: 'hanger', apiType: 'model' },
+  { id: 'bloggers', titleUz: 'Blogerlar', titleRu: 'Блогеры', accent: colors.cyan, icon: 'video-outline', apiType: 'bloger' },
+  { id: 'influencers', titleUz: 'Influencerlar', titleRu: 'Инфлюенсеры', accent: colors.gold, icon: 'bullhorn-variant-outline', apiType: 'influencer' },
+  { id: 'musicians', titleUz: 'Musiqachilar', titleRu: 'Музыканты', accent: colors.purple, icon: 'music-clef-treble', apiType: null },
+  { id: 'dancers', titleUz: 'Raqqoslar', titleRu: 'Танцоры', accent: colors.magenta, icon: 'dance-ballroom', apiType: null },
+  { id: 'photovideo', titleUz: 'Foto/Video ijodkorlar', titleRu: 'Фото/Видео', accent: colors.cyan, icon: 'camera-outline', apiType: null },
+  { id: 'styling', titleUz: 'Styling va loyihalar', titleRu: 'Стайлинг', accent: colors.gold, icon: 'palette-outline', apiType: null },
+  { id: 'courses', titleUz: 'Kurslar va treninglar', titleRu: 'Курсы', accent: colors.purple, icon: 'school-outline', apiType: null },
+  { id: 'casting', titleUz: "Casting e'lonlari", titleRu: 'Кастинги', accent: colors.magenta, icon: 'clipboard-text-outline', apiType: null },
 ];
 
 /** Подписи типов из API, которых нет среди 10 направлений ТЗ. */

@@ -114,6 +114,8 @@ public class ContentController {
         return ResponseEntity.ok(EpisodeListResponse.builder()
                 .contentId(content.getId())
                 .structureType(content.getStructureType().name())
+                .orientation(content.getOrientation() == null
+                        ? null : content.getOrientation().name())
                 .seasons(seasons(content, locale))
                 .episodes(cards)
                 .build());
@@ -174,6 +176,13 @@ public class ContentController {
         private Long contentId;
         /** SINGLE, EPISODIC, SEASONAL. */
         private String structureType;
+        /**
+         * LANDSCAPE yoki VERTICAL — ro'yxatdagi kadrchalar shakli shundan.
+         *
+         * Yo'nalish KONTENTniki: bitta serialning qismlari har xil
+         * formatda bo'lmaydi, shuning uchun har bir qismda takrorlanmaydi.
+         */
+        private String orientation;
         /** Faqat SEASONAL da to'ladi. */
         private List<SeasonCard> seasons;
         private List<EpisodeCard> episodes;

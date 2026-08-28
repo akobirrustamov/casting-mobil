@@ -119,8 +119,38 @@ class DonationBalanceTest {
             mockMvc.perform(get("/api/v1/app/donations/balance")
                             .header("Authorization", "Bearer " + token))
                     .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.moneyBalance").value(0))
                     .andExpect(jsonPath("$.starsBalance").value(0))
                     .andExpect(jsonPath("$.coinBalance").value(0));
+        }
+
+        /**
+         * Maketda («Screen 4») profildagi birinchi son aynan so'mdagi
+         * balans. Maydon {@code UserBalance} da BOR edi, lekin DTO uni
+         * bermasdi — ilova o'sha joyga chiziqcha qo'yardi. Endi uchala
+         * son ham serverdan keladi.
+         */
+        @Test
+        @DisplayName("So'mdagi balans ham qaytadi, faqat yulduz va tanga emas")
+        void moneyBalanceIsReturned() throws Exception {
+            String phone = "+998900003" + (100 + SEQ.incrementAndGet());
+            String token = staff.tokenForRole(phone, PlatformRole.USER,
+                    EnumSet.noneOf(Permission.class));
+            User u = userRepo.findByPhone(phone).orElseThrow();
+
+            balanceRepo.save(UserBalance.builder()
+                    .user(u)
+                    .moneyBalance(new BigDecimal("56000.00"))
+                    .starsBalance(456L)
+                    .coinBalance(56L)
+                    .build());
+
+            mockMvc.perform(get("/api/v1/app/donations/balance")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.moneyBalance").value(56000.00))
+                    .andExpect(jsonPath("$.starsBalance").value(456))
+                    .andExpect(jsonPath("$.coinBalance").value(56));
         }
 
         @Test

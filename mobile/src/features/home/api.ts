@@ -75,6 +75,7 @@ function mapBanner(raw: unknown): BannerCard | null {
   if (id === null) return null;
   return {
     id,
+    audience: str(r.audience),
     title: str(r.title),
     subtitle: str(r.subtitle),
     description: str(r.description),

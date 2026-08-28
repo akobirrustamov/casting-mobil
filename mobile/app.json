@@ -10,7 +10,7 @@
       "uz.uzcasting.app"
     ],
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#07070D",
+    "backgroundColor": "#05050A",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
@@ -19,7 +19,7 @@
     "android": {
       "package": "uz.uzcasting.app",
       "adaptiveIcon": {
-        "backgroundColor": "#07070D",
+        "backgroundColor": "#05050A",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -36,7 +36,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",
-          "backgroundColor": "#07070D",
+          "backgroundColor": "#05050A",
           "imageWidth": 180
         }
       ],

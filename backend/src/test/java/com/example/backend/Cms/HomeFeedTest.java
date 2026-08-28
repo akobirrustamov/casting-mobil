@@ -194,6 +194,43 @@ class HomeFeedTest {
 
             assertThat(inFeed(feed(), HomepageSectionType.ADVERTISEMENT_CAROUSEL)).isNull();
         }
+
+        /**
+         * Ilova pullik joylashtirishni platformaning o'z e'lonidan ajrata
+         * olishi kerak: birinchisiga «Reklama» yozuvi qo'yiladi, ikkinchisiga
+         * yo'q. Bu maydonsiz ikkalasi bitta ro'yxatda bir xil ko'rinardi.
+         */
+        @Test
+        @DisplayName("Banner o'z auditoriyasini aytadi")
+        void bannerCarriesAudience() {
+            newAd(AdAudience.ADVERTISEMENT);
+            newAd(AdAudience.ADMIN_ANNOUNCEMENT);
+
+            HomeFeedDto.Section s = inFeed(feed(), HomepageSectionType.ADVERTISEMENT_CAROUSEL);
+
+            assertThat(s).isNotNull();
+            assertThat(s.getBanners())
+                    .extracting(HomeFeedDto.BannerCard::getAudience)
+                    .contains("ADVERTISEMENT", "ADMIN_ANNOUNCEMENT");
+        }
+
+        /**
+         * Premyera reklama EMAS — u {@code Premiere} jadvalidan keladi va
+         * auditoriyasi yo'q. Klient bu yerda «Reklama» yozuvini qo'ymasligi
+         * kerak, shuning uchun maydon bo'sh bo'lishi muhim.
+         */
+        @Test
+        @DisplayName("Premyera bannerida auditoriya bo'sh")
+        void premiereHasNoAudience() {
+            newPremiere();
+
+            HomeFeedDto.Section s = inFeed(feed(), HomepageSectionType.NEW_PREMIERES);
+
+            assertThat(s).isNotNull();
+            assertThat(s.getBanners())
+                    .extracting(HomeFeedDto.BannerCard::getAudience)
+                    .containsOnlyNulls();
+        }
     }
 
     // ------------------------------------------------------------- kontent

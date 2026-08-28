@@ -77,6 +77,7 @@ public class DevDataSeeder implements CommandLineRunner {
     private final AnalyticsService analyticsService;
     private final DevMediaFactory media;
     private final UserAccountRepo userAccountRepo;
+    private final UserBalanceRepo userBalanceRepo;
     private final SubscriptionRepo subscriptionRepo;
     private final PurchaseRepo purchaseRepo;
     private final TariffRepo tariffRepo;
@@ -155,6 +156,7 @@ public class DevDataSeeder implements CommandLineRunner {
         // 1. Faol Premium - hamma pullik kontentni ko'radi.
         User premium = appUser("+998901112001", "Premium Foydalanuvchi");
         grantPremium(premium, LocalDateTime.now().plusMonths(1));
+        balance(premium, new BigDecimal("56000"), 456L, 56L);
 
         // 2. Muddati o'tgan Premium - endi ko'ra olmaydi.
         //    Aynan shu holat "obuna tugagach yopiladimi" degan savolni tekshiradi.
@@ -164,6 +166,7 @@ public class DevDataSeeder implements CommandLineRunner {
         // 3. Bitta qismni sotib olgan - FAQAT o'sha qismni ko'radi.
         User buyer = appUser("+998901112003", "Qism Sotib Olgan");
         account(buyer);
+        balance(buyer, new BigDecimal("12000"), 30L, 8L);
         episodeRepo.findAll().stream()
                 .filter(e -> e.getPrice() != null)
                 .findFirst()
@@ -180,6 +183,30 @@ public class DevDataSeeder implements CommandLineRunner {
 
         // 5. Oddiy - faqat bepul kontent. Reklama shunga ko'rsatiladi.
         account(appUser("+998901112005", "Bepul Foydalanuvchi"));
+    }
+
+    /**
+     * Balans: pul, Stars va Coin.
+     *
+     * <h2>Nima uchun kerak</h2>
+     * Ilgari sidda birorta ham {@code UserBalance} qatori yo'q edi, ya'ni
+     * profildagi uchala son ham nol chiqardi. Nol o'zi HAQIQIY javob
+     * (endpoint hisob yo'qligida nol qaytaradi), lekin bu holda profil
+     * ekranini umuman sinab bo'lmasdi: to'ldirilgan va bo'sh holat bir xil
+     * ko'rinardi.
+     *
+     * Raqamlar buyurtmachining «Screen 4» maketidan olingan.
+     */
+    private void balance(User user, BigDecimal money, long stars, long coins) {
+        if (userBalanceRepo.findByUserId(user.getId()).isPresent()) {
+            return;
+        }
+        userBalanceRepo.save(UserBalance.builder()
+                .user(user)
+                .moneyBalance(money)
+                .starsBalance(stars)
+                .coinBalance(coins)
+                .build());
     }
 
     private User appUser(String phone, String name) {

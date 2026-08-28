@@ -81,6 +81,7 @@ public class WatchController {
                 .episodeNumber(episode.getEpisodeNumber())
                 .durationSeconds(episode.getDurationSeconds())
                 .title(title(episode, locale))
+                .orientation(orientation(episode.getContent()))
                 .allowed(decision.isAllowed())
                 .reason(decision.getReason().name())
                 .requiredAction(decision.getRequiredAction().name())
@@ -134,6 +135,7 @@ public class WatchController {
                 .durationSeconds(content.getDurationMinutes() == null
                         ? null : content.getDurationMinutes() * 60)
                 .title(contentTitle(content, locale))
+                .orientation(orientation(content))
                 .allowed(decision.isAllowed())
                 .reason(decision.getReason().name())
                 .requiredAction(decision.getRequiredAction().name())
@@ -145,6 +147,14 @@ public class WatchController {
     }
 
     // ------------------------------------------------------------- ichki qism
+
+    /** Qism o'z kontentining yo'nalishini oladi — qismda o'z maydoni yo'q. */
+    private String orientation(Content content) {
+        if (content == null || content.getOrientation() == null) {
+            return null;
+        }
+        return content.getOrientation().name();
+    }
 
     /** So'ralgan til, bo'lmasa standart til, bo'lmasa bori. */
     private String contentTitle(Content content, Locale locale) {
@@ -272,6 +282,22 @@ public class WatchController {
         private Integer episodeNumber;
         private Integer durationSeconds;
         private String title;
+
+        /**
+         * Kadr yo'nalishi: {@code LANDSCAPE} yoki {@code VERTICAL}.
+         *
+         * <h2>Nima uchun ko'rish javobida</h2>
+         * Pleyer kadr nisbatini (16:9 yoki 9:16) VIDEO YUKLANMASDAN OLDIN
+         * bilishi kerak — aks holda tik rolik avval keng qora quti bo'lib
+         * chizilib, keyin sakrab o'z o'lchamiga o'tardi. Qulflangan
+         * kontentda esa video umuman yuklanmaydi, ya'ni yo'nalishni
+         * fayldan aniqlash imkoni YO'Q.
+         *
+         * Bosh sahifa feedida bu maydon allaqachon bor, lekin unga
+         * tayanib bo'lmaydi: to'g'ridan-to'g'ri havola bilan kirilganda
+         * feed keshi bo'sh bo'ladi.
+         */
+        private String orientation;
 
         private boolean allowed;
         /** FREE, PREMIUM, PAYMENT_REQUIRED ... */

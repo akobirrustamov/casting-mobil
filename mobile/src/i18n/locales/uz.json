@@ -4,7 +4,9 @@
     "casting": "Casting",
     "premiere": "Premyera",
     "messages": "Xabarlar",
-    "profile": "Profil"
+    "profile": "Profil",
+    "media": "Media",
+    "saved": "Saqlanganlar"
   },
   "states": {
     "emptyTitle": "Hozircha bo'sh",
@@ -32,7 +34,8 @@
     "premiere": "Premyera",
     "years": "{{count}} yosh",
     "premium": "Premium",
-    "free": "Bepul"
+    "free": "Bepul",
+    "ad": "Reklama"
   },
   "splash": {
     "subtitle": "Ijodkorlar uchun platforma"
@@ -82,7 +85,8 @@
     "otpExpired": "Kod muddati tugagan, qaytadan so'rang",
     "otpLocked": "Urinishlar soni tugadi, qaytadan so'rang",
     "otpCooldown": "Kod allaqachon yuborilgan, biroz kuting",
-    "smsUnavailable": "SMS xizmati hozircha sozlanmagan"
+    "smsUnavailable": "SMS xizmati hozircha sozlanmagan",
+    "devLogin": "Dev-kirish: {{phone}}. Google hozircha ishlamaydi."
   },
   "home": {
     "todayPremieres": "Bugungi premyeralar",
@@ -122,7 +126,7 @@
     "paymentHistory": "To'lovlar tarixi",
     "applications": "Arizalarim",
     "portfolio": "Portfolio",
-    "favorites": "Sevimli",
+    "favorites": "Saqlanganlar",
     "creatorStudio": "Creator Studio",
     "premium": "Premium",
     "devices": "Faol qurilmalar",
@@ -130,7 +134,31 @@
     "contact": "Biz bilan bog'lanish",
     "logout": "Chiqish",
     "guest": "Mehmon",
-    "signIn": "Kirish"
+    "signIn": "Kirish",
+    "vip": "VIP",
+    "premiumMember": "Premium a'zo",
+    "stars": "Yulduzlar",
+    "coins": "Uzcasting",
+    "premiumBannerTitle": "Premium imkoniyatlar",
+    "premiumBannerBody": "Eksklyuziv kontent, reklamasiz tomosha va ko'proq imkoniyatlar",
+    "premiumBannerCta": "Premium'ga o'tish",
+    "mySubscription": "Mening obunam",
+    "mySubscriptionHint": "Obuna holati va amal qilish muddati",
+    "topUpHint": "Click · Payme · Uzum · Stripe",
+    "promocodes": "Promokodlar",
+    "promocodesHint": "Promokod aktivlash va chegirmalar",
+    "paymentHistoryHint": "To'lovlar va xaridlar",
+    "favoritesHint": "Saqlangan filmlar va seriallar",
+    "devicesHint": "Bitta hisobda 2 tagacha qurilma",
+    "tariffs": "Tariflar",
+    "tariffsHint": "Obuna narxlari va imkoniyatlari",
+    "editProfile": "Profil ma'lumotlarini tahrirlash",
+    "security": "Xavfsizlik",
+    "notifications": "Bildirishnomalar",
+    "language": "Til / Language",
+    "about": "Ilova haqida",
+    "soon": "Tez orada",
+    "guestBody": "Kirsangiz balans, xaridlar va sevimlilar shu yerda ko'rinadi"
   },
   "catalog": {
     "title": "Katalog",

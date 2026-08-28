@@ -329,6 +329,7 @@ public class HomeFeedService {
                 AdvertisementTranslation::getLocale);
         return HomeFeedDto.BannerCard.builder()
                 .id(a.getId())
+                .audience(a.getAudience() == null ? null : a.getAudience().name())
                 .title(t == null ? null : t.getTitle())
                 .description(t == null ? null : t.getDescription())
                 .buttonText(t == null ? null : t.getButtonText())

@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking } from 'react-native';
 
@@ -7,6 +8,9 @@ import { HeroCarousel, type HeroItem } from '@/components/ui/HeroCarousel';
 import { PosterCard, type PosterBadge } from '@/components/ui/PosterCard';
 import { Rail } from '@/components/ui/Rail';
 import { StoryCircle } from '@/components/ui/StoryCircle';
+import { trackAdClick, trackAdImpression } from '@/features/analytics/api';
+import { categoryIcon } from '@/features/content/categoryIcons';
+import { cardRatio, rowRatio } from '@/features/content/orientation';
 import { mediaUrl } from '@/lib/api';
 import { colors } from '@/theme/tokens';
 
@@ -25,6 +29,15 @@ import type { AccessPolicy, BannerCard, ContentCard, HomeSection } from './types
 
 /** Плитки категорий приходят без цвета — акцент подбираем по позиции. */
 const TILE_ACCENTS = [colors.purple, colors.magenta, colors.cyan, colors.gold];
+
+/**
+ * Через сколько карусель показывает следующий баннер.
+ *
+ * Наше решение: ни ТЗ, ни настройки бэкенда интервала не задают. 6 секунд —
+ * достаточно, чтобы прочитать заголовок и нажать, и достаточно мало, чтобы
+ * третий баннер в очереди вообще кто-то увидел.
+ */
+const AD_ROTATION_MS = 6_000;
 
 /**
  * Бейдж на постере — из политики доступа.
@@ -49,12 +62,22 @@ function accessBadge(
   }
 }
 
+/**
+ * Карточка контента.
+ *
+ * Форму задаёт `orientation`, а не секция, в которой карточка оказалась:
+ * вертикальный клип может попасть и в «Популярное», и в ручной ряд — там он
+ * тоже должен выглядеть рилсом (ТЗ §13: формат и тип — разные оси).
+ */
 export function ContentPoster({
   card,
   width,
+  ratio,
 }: {
   card: ContentCard;
   width?: number;
+  /** Пропорция ряда. Без неё карточка берёт форму по своему формату. */
+  ratio?: number;
 }) {
   const { t } = useTranslation();
   const badge = accessBadge(card.accessPolicy);
@@ -62,6 +85,7 @@ export function ContentPoster({
   return (
     <PosterCard
       width={width}
+      ratio={ratio ?? cardRatio(card.orientation)}
       title={card.title ?? ''}
       subtitle={card.shortDescription ?? undefined}
       imageUrl={mediaUrl(card.posterMediaId)}
@@ -106,6 +130,30 @@ export function bannerTarget(banner: BannerCard): BannerTarget | null {
   }
 }
 
+/**
+ * Что написано на бейдже баннера — или `null`, если бейджа нет.
+ *
+ * <h2>Три разных случая в одном блоке</h2>
+ *   - премьера (`NEW_PREMIERES`) — «PREMYERA»;
+ *   - платное размещение (`ADVERTISEMENT`) — «Reklama». Выдавать оплаченный
+ *     баннер за собственный анонс нельзя;
+ *   - собственный анонс платформы (`ADMIN_ANNOUNCEMENT`) — без бейджа.
+ *     Заказчик: «bu premyeralar reklamasi, foydalanuvchi bilmasligi kerak».
+ *     Платформа не рекламирует себя третьей стороне, и называть свой же
+ *     анонс рекламой значит сбивать человека с толку.
+ *
+ * Отдельная функция, а не тернарник внутри разметки: это правило заказчика,
+ * и оно должно проверяться тестом, а не читаться из JSX.
+ */
+export function bannerBadgeKey(
+  banner: BannerCard,
+  sectionType: string
+): string | null {
+  if (sectionType === 'NEW_PREMIERES') return 'common.premiere';
+  if (banner.audience === 'ADVERTISEMENT') return 'common.ad';
+  return null;
+}
+
 /** Подпись кнопки — только если по ней есть куда пойти. */
 function bannerCta(banner: BannerCard, fallback: string): string | undefined {
   if (!banner.buttonEnabled) return undefined;
@@ -124,40 +172,19 @@ function openBanner(banner: BannerCard) {
   }
 }
 
-export function HomeSectionView({ section }: { section: HomeSection }) {
-  const { t } = useTranslation();
+export function HomeSectionView({
+  section,
+  active = true,
+}: {
+  section: HomeSection;
+  /** Экран на переднем плане — от этого зависят автолистание и счёт показов. */
+  active?: boolean;
+}) {
   const title = section.title ?? '';
 
   // ---- баннеры: реклама и премьеры приходят одной формой
   if (section.banners.length > 0) {
-    const isPremiere = section.type === 'NEW_PREMIERES';
-
-    const items: HeroItem[] = section.banners
-      // Баннер без заголовка и без картинки нечем показать.
-      .filter((b) => b.title || b.imageMediaId)
-      .map((b) => ({
-        id: String(b.id),
-        title: b.title ?? title,
-        subtitle: b.subtitle ?? b.description ?? undefined,
-        badgeLabel: isPremiere ? t('common.premiere') : undefined,
-        ctaLabel: bannerCta(b, t('common.watch')),
-        imageUrl: mediaUrl(b.imageMediaId),
-      }));
-
-    if (items.length === 0) return null;
-
-    const byId = new Map(section.banners.map((b) => [String(b.id), b]));
-
-    return (
-      <HeroCarousel
-        items={items}
-        badgeTone={isPremiere ? 'premiere' : 'info'}
-        onPressItem={(item) => {
-          const banner = byId.get(item.id);
-          if (banner) openBanner(banner);
-        }}
-      />
-    );
+    return <BannerSection section={section} title={title} active={active} />;
   }
 
   // ---- категории каталога
@@ -169,7 +196,10 @@ export function HomeSectionView({ section }: { section: HomeSection }) {
             key={c.id}
             title={c.name ?? ''}
             accent={TILE_ACCENTS[i % TILE_ACCENTS.length]}
-            imageUrl={mediaUrl(c.iconMediaId)}
+            icon={categoryIcon(c.slug)}
+            // ⚠️ `iconMediaId` намеренно не передаётся: в этом поле лежит
+            // изображение размером с постер, а не глиф (см. CategoryTile).
+            //
             // ⚠️ Это разделы каталога контента («O'zbek kinosi», «Bolalar uchun»),
             // а не 10 направлений кастинга из `features/catalog/categories`.
             // Переход на `/catalog/{id}` открыл бы совсем другую сущность,
@@ -198,14 +228,115 @@ export function HomeSectionView({ section }: { section: HomeSection }) {
 
   // ---- ряды контента: тип, «Танланган», «Машҳур», ручной ряд
   if (section.content.length > 0) {
+    // Одна форма на ряд: иначе вертикальная карточка рядом с обычной
+    // делает строку разновысокой и подписи разъезжаются по вертикали.
+    const ratio = rowRatio(section.content.map((c) => c.orientation));
+
     return (
       <Rail title={title}>
         {section.content.map((card) => (
-          <ContentPoster key={card.id} card={card} />
+          <ContentPoster key={card.id} card={card} ratio={ratio} />
         ))}
       </Rail>
     );
   }
 
   return null;
+}
+
+/**
+ * Карусель баннеров: рекламный блок и «Новые премьеры».
+ *
+ * <h2>Что помечается словом «Реклама», а что нет</h2>
+ * В блоке лежат два разных вида баннеров (`AdAudience` на бэкенде):
+ *
+ *   - `ADVERTISEMENT` — платное размещение. Оно помечено: выдавать оплаченный
+ *     баннер за собственный анонс нельзя, это ровно то, от чего защищает
+ *     подпись.
+ *   - `ADMIN_ANNOUNCEMENT` — анонс самой платформы, чаще всего премьера.
+ *     Метки нет: заказчик про эти баннеры написал «bu premyeralar reklamasi,
+ *     foydalanuvchi bilmasligi kerak», и он прав — платформа не рекламирует
+ *     себя третьей стороне, а называть свой же анонс рекламой сбивает с толку.
+ *
+ * Раньше метки не было ни у тех, ни у других, то есть оплаченное размещение
+ * выглядело точно так же, как анонс.
+ *
+ * <h2>Порядок и показы</h2>
+ * Последовательность баннеров задаёт админ, бэкенд отдаёт её готовой
+ * (`sortOrder`, окно показа, аудитория). Карусель листает её сама, а каждый
+ * реально показанный кадр отправляет `AD_IMPRESSION` — иначе отчёты по
+ * рекламе в панели остаются пустыми не потому, что рекламу не смотрят, а
+ * потому, что о показах никто не сообщает.
+ */
+function BannerSection({
+  section,
+  title,
+  active,
+}: {
+  section: HomeSection;
+  title: string;
+  active: boolean;
+}) {
+  const { t } = useTranslation();
+
+  const isPremiere = section.type === 'NEW_PREMIERES';
+  const isAd = section.type === 'ADVERTISEMENT_CAROUSEL';
+
+  const badgeKeyOf = (b: BannerCard) => {
+    const key = bannerBadgeKey(b, section.type);
+    return key === null ? null : t(key);
+  };
+
+  const byId = useMemo(
+    () => new Map(section.banners.map((b) => [String(b.id), b])),
+    [section.banners]
+  );
+
+  const items: HeroItem[] = section.banners
+    // Баннер без заголовка и без картинки нечем показать.
+    .filter((b) => b.title || b.imageMediaId)
+    .map((b) => ({
+      id: String(b.id),
+      title: b.title ?? title,
+      subtitle: b.subtitle ?? b.description ?? undefined,
+      badgeLabel: badgeKeyOf(b) ?? undefined,
+      ctaLabel: bannerCta(b, t('common.watch')),
+      imageUrl: mediaUrl(b.imageMediaId),
+      pressable: bannerTarget(b) !== null,
+    }));
+
+  const onPress = useCallback(
+    (id: string) => {
+      const banner = byId.get(id);
+      if (!banner) return;
+      if (isAd) trackAdClick(banner.id);
+      openBanner(banner);
+    },
+    [byId, isAd]
+  );
+
+  const onVisible = useCallback(
+    (id: string) => {
+      if (!isAd) return;
+      const banner = byId.get(id);
+      if (banner) trackAdImpression(banner.id);
+    },
+    [byId, isAd]
+  );
+
+  if (items.length === 0) return null;
+
+  return (
+    <HeroCarousel
+      items={items}
+      badgeTone={isPremiere ? 'premiere' : 'info'}
+      active={active}
+      // Листается только рекламная очередь: у премьер порядок — это витрина,
+      // а не оплаченная последовательность, и уезжающий из-под пальца анонс
+      // раздражает больше, чем помогает.
+      autoAdvanceMs={isAd ? AD_ROTATION_MS : undefined}
+      onItemVisible={onVisible}
+      onPressItem={onPress}
+    />
+  );
 }

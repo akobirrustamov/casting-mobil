@@ -91,7 +91,12 @@ src/main/resources/application.yml
 # butun test to'plami ishlab chiquvchining shaxsiy bazasiga ulanadi va
 # 758 testdan 625 tasi «Found non-empty schema but no schema history
 # table» bilan yiqiladi — kod butunlay to'g'ri bo'lsa ham.
-!src/test/resources/application-test.properties
+# ⚠️ Yo'l repozitoriy ILDIZIDAN yoziladi. Ilgari bu yerda
+# `!src/test/resources/...` turardi — ichida `/` bor naqsh esa aynan
+# `.gitignore` turgan papkaga bog'lanadi, ya'ni u `backend/src/...` ga
+# HECH QACHON tushmasdi. Natijada istisno yozilgan, lekin ishlamagan:
+# fayl repozitoriyda yo'q va toza klonda testlar ishga tushmaydi.
+!backend/src/test/resources/application-test.properties
 
 # ======================
 

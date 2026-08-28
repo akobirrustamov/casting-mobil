@@ -2,33 +2,51 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
+import { GlowCard } from '@/components/ui/GlowCard';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { Screen } from '@/components/ui/Screen';
 import { useAuthStore } from '@/features/auth/store';
-import { colors } from '@/theme/tokens';
+import { useBalance } from '@/features/profile/api';
+import { LANGUAGE_LABELS, isSupportedLanguage, type Language } from '@/i18n';
+import { colors, gradients, radius } from '@/theme/tokens';
 
 /**
- * Профиль. Пункты по ТЗ (V3, стр. 22 «21. Foydalanuvchi profili»):
- * balance · purchases · projects · favorites · payments · settings,
- * плюс Creator Studio для роли creator.
+ * Аккаунт — экран 21, раскладка с макета заказчика «Screen 4».
  *
- * Верстка — по Yangi.TV: карточка профиля сверху (аватар, имя, телефон,
- * баланс, ID) и список пунктов с шевронами. См. docs/STRUCTURE.md §3.6.
+ * <h2>Откуда три числа</h2>
+ * Все три — из `GET /api/v1/app/donations/balance`: сумы, Yulduzlar и
+ * Uzcasting. Ни одно не выдумано; пока запрос не ответил, стоит прочерк.
  *
- * ⚠️ Авторизации ещё нет — показываем состояние гостя.
+ * ⚠️ Сумовый баланс сначала показывался прочерком: поле в `UserBalance`
+ * было, но DTO его не отдавал, и я ошибочно решил, что его нет в модели.
+ *
+ * <h2>Пункты без экранов не притворяются рабочими</h2>
+ * Из списка на макете сегодня существуют «Sevimlilarim», язык и выход.
+ * У остальных вместо шеврона стоит метка «Tez orada», и они не нажимаются:
+ * ряд, который выглядит кликабельным и молчит, читается как поломка.
+ *
+ * <h2>Шестерёнки в шапке нет</h2>
+ * На макете она рядом с колокольчиком, но ведёт туда же, куда вторая
+ * группа списка на этом же экране (профиль, безопасность, уведомления,
+ * язык). Появится вместе с отдельным экраном настроек.
  */
-type MenuItem = {
+type Row = {
   key: string;
   label: string;
+  hint?: string;
   icon: keyof typeof Ionicons.glyphMap;
+  /** Что происходит по нажатию. Без него ряд помечается «Tez orada». */
+  onPress?: () => void;
+  /** Значение справа вместо шеврона — язык, версия. */
+  value?: string;
   danger?: boolean;
-  creatorOnly?: boolean;
 };
 
 /** Ряд соцсетей внизу профиля — как у Yangi.TV. Ссылки уточняются у заказчика. */
@@ -40,123 +58,81 @@ const SOCIALS: { key: string; icon: keyof typeof Ionicons.glyphMap; url: string 
 ];
 
 export default function ProfileScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
-  const user = useAuthStore((s) => s.user);
   const isAuthorized = useAuthStore((s) => s.isAuthorized);
   const signOut = useAuthStore((s) => s.signOut);
 
-  const isCreator = user?.role === 'creator';
+  const [languageOpen, setLanguageOpen] = useState(false);
 
-  // Имени может не быть: Google отдаёт его не всегда. Тогда показываем email,
-  // иначе карточка выглядит пустой у реально вошедшего человека.
-  const displayName = user?.name || user?.email || user?.phone || '—';
-  const subtitle = user?.email ?? user?.phone ?? null;
+  const language: Language = isSupportedLanguage(i18n.language) ? i18n.language : 'uz';
+  const version = Constants.expoConfig?.version ?? '1.0.0';
 
-  // Иконки — как у Yangi.TV: список из одних строк читается тяжелее,
-  // а по значку пункт находится взглядом, без чтения подписи.
-  const items: MenuItem[] = [
-    { key: 'topUp', label: t('profile.topUp'), icon: 'wallet-outline' },
-    { key: 'purchases', label: t('profile.purchases'), icon: 'bag-check-outline' },
-    { key: 'paymentHistory', label: t('profile.paymentHistory'), icon: 'receipt-outline' },
-    { key: 'applications', label: t('profile.applications'), icon: 'document-text-outline' },
-    { key: 'portfolio', label: t('profile.portfolio'), icon: 'images-outline' },
-    { key: 'favorites', label: t('profile.favorites'), icon: 'heart-outline' },
+  const account: Row[] = [
+    { key: 'mySubscription', label: t('profile.mySubscription'), hint: t('profile.mySubscriptionHint'), icon: 'ribbon-outline' },
+    { key: 'topUp', label: t('profile.topUp'), hint: t('profile.topUpHint'), icon: 'card-outline' },
+    { key: 'promocodes', label: t('profile.promocodes'), hint: t('profile.promocodesHint'), icon: 'pricetag-outline' },
+    { key: 'paymentHistory', label: t('profile.paymentHistory'), hint: t('profile.paymentHistoryHint'), icon: 'time-outline' },
     {
-      key: 'creatorStudio',
-      label: t('profile.creatorStudio'),
-      icon: 'sparkles-outline',
-      creatorOnly: true,
+      key: 'favorites',
+      label: t('profile.favorites'),
+      hint: t('profile.favoritesHint'),
+      icon: 'heart-outline',
+      onPress: () => router.push('/favorites'),
     },
-    { key: 'premium', label: t('profile.premium'), icon: 'diamond-outline' },
-    { key: 'devices', label: t('profile.devices'), icon: 'phone-portrait-outline' },
-    { key: 'settings', label: t('profile.settings'), icon: 'settings-outline' },
-    { key: 'contact', label: t('profile.contact'), icon: 'chatbubble-ellipses-outline' },
-    { key: 'logout', label: t('profile.logout'), icon: 'log-out-outline', danger: true },
+    { key: 'devices', label: t('profile.devices'), hint: t('profile.devicesHint'), icon: 'phone-portrait-outline' },
+    { key: 'tariffs', label: t('profile.tariffs'), hint: t('profile.tariffsHint'), icon: 'play-circle-outline' },
   ];
 
-  const visible = items.filter(
-    (i) => (!i.creatorOnly || isCreator) && (i.key !== 'logout' || isAuthorized)
-  );
+  const settings: Row[] = [
+    { key: 'editProfile', label: t('profile.editProfile'), icon: 'person-outline' },
+    { key: 'security', label: t('profile.security'), icon: 'shield-checkmark-outline' },
+    { key: 'notifications', label: t('profile.notifications'), icon: 'notifications-outline' },
+    {
+      key: 'language',
+      label: t('profile.language'),
+      icon: 'globe-outline',
+      value: LANGUAGE_LABELS[language],
+      onPress: () => setLanguageOpen((open) => !open),
+    },
+    { key: 'about', label: t('profile.about'), icon: 'information-circle-outline', value: `v ${version}` },
+    ...(isAuthorized
+      ? [
+          {
+            key: 'logout',
+            label: t('profile.logout'),
+            icon: 'log-out-outline' as const,
+            onPress: signOut,
+            danger: true,
+          },
+        ]
+      : []),
+  ];
 
   return (
-    <Screen title={t('profile.title')}>
-      <View className="gap-3 rounded-card-lg bg-surface p-4">
-        <View className="flex-row items-center gap-3">
-          {user?.avatarUrl ? (
-            <Image
-              source={{ uri: user.avatarUrl }}
-              style={{ width: 56, height: 56, borderRadius: 999 }}
-              contentFit="cover"
-              transition={150}
-            />
-          ) : (
-            <View className="h-14 w-14 items-center justify-center rounded-pill bg-surface-2">
-              <Ionicons name="person-outline" size={26} color={colors.textMuted} />
-            </View>
-          )}
+    <Screen
+      title={t('profile.title')}
+      headerRight={
+        <Pressable
+          onPress={() => router.push('/messages')}
+          accessibilityRole="button"
+          accessibilityLabel={t('profile.notifications')}
+          hitSlop={10}
+          className="h-11 w-11 items-center justify-center rounded-pill bg-surface active:opacity-70"
+        >
+          <Ionicons name="notifications-outline" size={20} color={colors.white} />
+        </Pressable>
+      }
+    >
+      <ProfileCard />
 
-          <View className="flex-1">
-            <Text className="text-h2 text-text" numberOfLines={1}>
-              {isAuthorized ? displayName : t('profile.guest')}
-            </Text>
-            {isAuthorized && subtitle ? (
-              <Text className="text-caption text-text-muted" numberOfLines={1}>
-                {subtitle}
-              </Text>
-            ) : null}
-            <Text className="text-caption text-text-muted">
-              {t('profile.balance')}: 0 UZS
-            </Text>
-            {isAuthorized && user?.id ? <UserIdRow id={user.id} /> : null}
-          </View>
-        </View>
+      <PremiumBanner />
 
-        {!isAuthorized ? (
-          <Button variant="primary" onPress={() => router.push('/(auth)/sign-in')}>
-            {t('profile.signIn')}
-          </Button>
-        ) : null}
-      </View>
+      <RowGroup rows={account} />
 
-      <LanguageSwitcher />
+      <RowGroup rows={settings} />
+      {languageOpen ? <LanguageSwitcher /> : null}
 
-      <View className="overflow-hidden rounded-card bg-surface">
-        {visible.map((item, i) => (
-          <Pressable
-            key={item.key}
-            accessibilityRole="button"
-            // Остальные пункты пока без экранов — появятся по мере готовности
-            onPress={
-              item.key === 'logout'
-                ? signOut
-                : item.key === 'favorites'
-                  ? () => router.push('/favorites')
-                  : undefined
-            }
-            className={`flex-row items-center justify-between px-4 py-4 active:opacity-70 ${
-              i > 0 ? 'border-t border-border' : ''
-            }`}
-          >
-            <View className="flex-row items-center gap-3">
-              <Ionicons
-                name={item.icon}
-                size={20}
-                color={item.danger ? colors.danger : colors.textMuted}
-              />
-              <Text
-                className={`text-body ${item.danger ? 'text-danger' : 'text-text'}`}
-              >
-                {item.label}
-              </Text>
-            </View>
-
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </Pressable>
-        ))}
-      </View>
-
-      {/* Как у Yangi.TV — соцсети и версия приложения внизу профиля */}
       <View className="flex-row justify-center gap-3">
         {SOCIALS.map((s) => (
           <Pressable
@@ -172,9 +148,242 @@ export default function ProfileScreen() {
       </View>
 
       <Text className="text-center text-micro text-text-disabled">
-        UzCasting {Constants.expoConfig?.version ?? '1.0.0'}
+        UzCasting {version}
       </Text>
     </Screen>
+  );
+}
+
+/** Разряды пробелами: 56000 → «56 000». Считает сервер, мы только читаем. */
+function groupDigits(amount: number): string {
+  return String(Math.round(amount)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
+/** Шапка аккаунта: аватар, имя, метки, три числа. */
+function ProfileCard() {
+  const { t } = useTranslation();
+
+  const user = useAuthStore((s) => s.user);
+  const isAuthorized = useAuthStore((s) => s.isAuthorized);
+  const balance = useBalance();
+
+  // Имени может не быть: Google отдаёт его не всегда. Тогда показываем email,
+  // иначе карточка выглядит пустой у реально вошедшего человека.
+  const displayName = user?.name || user?.email || user?.phone || '—';
+  const subtitle = user?.email ?? user?.phone ?? null;
+
+  return (
+    <GlowCard>
+      <View className="gap-4 p-4">
+        <View className="flex-row items-center gap-3">
+          <Avatar url={user?.avatarUrl ?? null} />
+
+          <View className="flex-1 gap-1">
+            <Text className="text-h2 text-text" numberOfLines={1}>
+              {isAuthorized ? displayName : t('profile.guest')}
+            </Text>
+            {isAuthorized && subtitle ? (
+              <Text className="text-caption text-text-muted" numberOfLines={1}>
+                {subtitle}
+              </Text>
+            ) : (
+              <Text className="text-caption text-text-muted">
+                {t('profile.guestBody')}
+              </Text>
+            )}
+            {isAuthorized && user?.id ? <UserIdRow id={user.id} /> : null}
+          </View>
+        </View>
+
+        {isAuthorized ? (
+          <View className="flex-row items-stretch rounded-card bg-surface-2 py-3">
+            <Stat
+              icon="cash-outline"
+              tint={colors.lime}
+              label={t('profile.balance')}
+              value={balance.data ? groupDigits(balance.data.money) : null}
+            />
+            <Divider />
+            <Stat
+              icon="star"
+              tint={colors.gold}
+              label={t('profile.stars')}
+              value={balance.data ? String(balance.data.stars) : null}
+            />
+            <Divider />
+            <Stat
+              icon="film-outline"
+              tint={colors.cyan}
+              label={t('profile.coins')}
+              value={balance.data ? String(balance.data.coins) : null}
+            />
+          </View>
+        ) : (
+          <Button variant="primary" shape="card" onPress={() => router.push('/(auth)/sign-in')}>
+            {t('profile.signIn')}
+          </Button>
+        )}
+      </View>
+    </GlowCard>
+  );
+}
+
+/**
+ * Аватар в фирменном кольце.
+ *
+ * Кольцо — градиент, а не рамка одного цвета: на макете аватар обведён
+ * тем же переходом, что и вся палитра, и это единственная деталь, которая
+ * связывает карточку с фоном.
+ */
+function Avatar({ url }: { url: string | null }) {
+  return (
+    <LinearGradient
+      colors={gradients.brandWide}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={{ padding: 2, borderRadius: radius.pill }}
+    >
+      <View
+        className="items-center justify-center bg-surface"
+        style={{ width: 60, height: 60, borderRadius: radius.pill, overflow: 'hidden' }}
+      >
+        {url ? (
+          <Image
+            source={{ uri: url }}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="cover"
+            transition={150}
+          />
+        ) : (
+          <Ionicons name="person-outline" size={26} color={colors.textMuted} />
+        )}
+      </View>
+    </LinearGradient>
+  );
+}
+
+function Divider() {
+  return <View className="w-px self-stretch bg-border" />;
+}
+
+/** Одно число из трёх. `null` — данных нет, и это видно. */
+function Stat({
+  icon,
+  tint,
+  label,
+  value,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  tint: string;
+  label: string;
+  value: string | null;
+}) {
+  return (
+    <View className="flex-1 items-center gap-1">
+      <View className="flex-row items-center gap-1.5">
+        <Ionicons name={icon} size={13} color={tint} />
+        <Text className="text-micro text-text-muted">{label}</Text>
+      </View>
+      <Text className={`text-h2 ${value === null ? 'text-text-disabled' : 'text-text'}`}>
+        {value ?? '—'}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * Баннер Premium.
+ *
+ * Кнопка ведёт в никуда — экрана оплаты (19) нет, решение по платежам
+ * через сторы не принято. Поэтому она неактивна и подписана «Tez orada»:
+ * рабочая на вид кнопка, которая ничего не делает, хуже честно выключенной.
+ */
+function PremiumBanner() {
+  const { t } = useTranslation();
+
+  return (
+    <View style={{ borderRadius: radius.cardLg, overflow: 'hidden' }}>
+      <LinearGradient
+        colors={gradients.premium}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ padding: 16, gap: 12 }}
+      >
+        <View className="flex-row items-start gap-3">
+          <View className="flex-1 gap-1.5">
+            <Text className="text-h2 text-white">{t('profile.premiumBannerTitle')}</Text>
+            <Text className="text-caption text-white/80">
+              {t('profile.premiumBannerBody')}
+            </Text>
+          </View>
+          <Ionicons name="diamond" size={34} color={colors.gold} />
+        </View>
+
+        <View className="flex-row items-center gap-3">
+          <Button variant="gold" disabled className="self-start">
+            {t('profile.premiumBannerCta')}
+          </Button>
+          <Text className="text-micro text-white/70">{t('profile.soon')}</Text>
+        </View>
+      </LinearGradient>
+    </View>
+  );
+}
+
+/** Группа пунктов одним блоком, как на макете. */
+function RowGroup({ rows }: { rows: Row[] }) {
+  const { t } = useTranslation();
+
+  return (
+    <View className="overflow-hidden rounded-card-lg bg-surface">
+      {rows.map((row, i) => {
+        const interactive = Boolean(row.onPress);
+
+        return (
+          <Pressable
+            key={row.key}
+            accessibilityRole={interactive ? 'button' : undefined}
+            accessibilityState={{ disabled: !interactive }}
+            disabled={!interactive}
+            onPress={row.onPress}
+            className={`flex-row items-center gap-3 px-4 py-3.5 ${
+              interactive ? 'active:opacity-70' : ''
+            } ${i > 0 ? 'border-t border-border' : ''}`}
+          >
+            <View className="h-9 w-9 items-center justify-center rounded-card bg-surface-2">
+              <Ionicons
+                name={row.icon}
+                size={18}
+                color={row.danger ? colors.danger : colors.textMuted}
+              />
+            </View>
+
+            <View className="flex-1">
+              <Text className={`text-body ${row.danger ? 'text-danger' : 'text-text'}`}>
+                {row.label}
+              </Text>
+              {row.hint ? (
+                <Text numberOfLines={1} className="text-micro text-text-muted">
+                  {row.hint}
+                </Text>
+              ) : null}
+            </View>
+
+            {row.value ? (
+              <Text className="text-caption text-text-muted">{row.value}</Text>
+            ) : null}
+
+            {interactive ? (
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            ) : row.value ? null : (
+              // Ряда без действия быть не должно молча: метка объясняет,
+              // почему он не нажимается.
+              <Text className="text-micro text-text-disabled">{t('profile.soon')}</Text>
+            )}
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 

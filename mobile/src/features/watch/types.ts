@@ -10,6 +10,8 @@
  * разъехались бы при первом же изменении тарифов.
  */
 
+import type { Orientation } from '@/features/content/orientation';
+
 /** Почему доступ дан или не дан. Список бэкенда может вырасти. */
 export type WatchReason =
   | 'FREE'
@@ -78,6 +80,14 @@ export type WatchInfo = {
   episodeNumber: number | null;
   durationSeconds: number | null;
   title: string | null;
+
+  /**
+   * Формат кадра — `LANDSCAPE` или `VERTICAL` (см. `features/content/orientation`).
+   *
+   * Приходит и при отказе: у закрытого контента видео не выдаётся, а
+   * афишу под замком рисовать надо — и рилс под ней вертикальный.
+   */
+  orientation: Orientation | null;
 
   allowed: boolean;
   reason: WatchReason;

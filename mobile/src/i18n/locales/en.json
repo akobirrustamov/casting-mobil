@@ -4,7 +4,9 @@
     "casting": "Casting",
     "premiere": "Premiere",
     "messages": "Messages",
-    "profile": "Profile"
+    "profile": "Profile",
+    "media": "Media",
+    "saved": "Saved"
   },
   "states": {
     "emptyTitle": "Nothing here yet",
@@ -32,7 +34,8 @@
     "premiere": "Premiere",
     "years": "{{count}} y.o.",
     "premium": "Premium",
-    "free": "Free"
+    "free": "Free",
+    "ad": "Ad"
   },
   "splash": {
     "subtitle": "A platform for creators"
@@ -82,7 +85,8 @@
     "otpExpired": "Code expired, request a new one",
     "otpLocked": "Too many attempts, request a new code",
     "otpCooldown": "Code already sent, please wait",
-    "smsUnavailable": "SMS sign-in is not configured yet"
+    "smsUnavailable": "SMS sign-in is not configured yet",
+    "devLogin": "Dev sign-in: {{phone}}. Google is not wired yet."
   },
   "home": {
     "todayPremieres": "Today's premieres",
@@ -122,7 +126,7 @@
     "paymentHistory": "Payment history",
     "applications": "My applications",
     "portfolio": "Portfolio",
-    "favorites": "Favorites",
+    "favorites": "Saved",
     "creatorStudio": "Creator Studio",
     "premium": "Premium",
     "devices": "Active devices",
@@ -130,7 +134,31 @@
     "contact": "Contact us",
     "logout": "Log out",
     "guest": "Guest",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "vip": "VIP",
+    "premiumMember": "Premium member",
+    "stars": "Stars",
+    "coins": "Uzcasting",
+    "premiumBannerTitle": "Premium features",
+    "premiumBannerBody": "Exclusive content, ad-free viewing and more",
+    "premiumBannerCta": "Get Premium",
+    "mySubscription": "My subscription",
+    "mySubscriptionHint": "Subscription status and expiry date",
+    "topUpHint": "Click · Payme · Uzum · Stripe",
+    "promocodes": "Promo codes",
+    "promocodesHint": "Activate a code and see discounts",
+    "paymentHistoryHint": "Payments and purchases",
+    "favoritesHint": "Saved films and series",
+    "devicesHint": "Up to 2 devices per account",
+    "tariffs": "Plans",
+    "tariffsHint": "Subscription prices and what is included",
+    "editProfile": "Edit profile",
+    "security": "Security",
+    "notifications": "Notifications",
+    "language": "Til / Language",
+    "about": "About the app",
+    "soon": "Coming soon",
+    "guestBody": "Sign in to see your balance, purchases and favorites here"
   },
   "catalog": {
     "title": "Catalog",

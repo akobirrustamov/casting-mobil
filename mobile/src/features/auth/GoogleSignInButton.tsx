@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { colors } from '@/theme/tokens';
 
 import { isGoogleConfigured } from './config';
+import { devLogin, devLoginPhone, isDevLoginEnabled, type DevLoginResult } from './devLogin';
 import { useGoogleSignIn } from './useGoogleSignIn';
 
 /**
@@ -14,14 +16,69 @@ import { useGoogleSignIn } from './useGoogleSignIn';
  * а условно вызывать хуки нельзя — поэтому вся работа с ним живёт
  * в отдельном компоненте, и он монтируется только когда ключи есть.
  * Иначе показываем неактивную заглушку.
+ *
+ * <h2>Dev-режим</h2>
+ * На локальном контуре настоящий Google недоступен: в Expo Go его redirect
+ * в Google Cloud не зарегистрирован. Когда в `.env` задан dev-пользователь,
+ * та же кнопка входит настоящим запросом `/auth/login` — и подписывается
+ * так, чтобы это нельзя было принять за рабочий Google (см. `devLogin.ts`).
  */
 export function GoogleSignInButton({
   onSuccess,
+  onDevSession,
 }: {
   onSuccess?: (idToken: string) => void;
+  /** Вызывается вместо `onSuccess`, когда сработал dev-вход. */
+  onDevSession?: (session: DevLoginResult) => void;
 }) {
+  if (isDevLoginEnabled) return <DevLoginButton onDevSession={onDevSession} />;
   if (!isGoogleConfigured) return <GoogleButtonPlaceholder />;
   return <GoogleButtonLive onSuccess={onSuccess} />;
+}
+
+/**
+ * Обходная кнопка для локальной разработки.
+ *
+ * Подпись обязательна: без неё скриншот этого экрана читался бы как
+ * «вход через Google работает», хотя он не работает.
+ */
+function DevLoginButton({
+  onDevSession,
+}: {
+  onDevSession?: (session: DevLoginResult) => void;
+}) {
+  const { t } = useTranslation();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const onPress = async () => {
+    setError(null);
+    setBusy(true);
+    try {
+      onDevSession?.(await devLogin());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Dev-вход не удался');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <View className="gap-2">
+      <ButtonShell
+        label={t('auth.google')}
+        disabled={busy}
+        loading={busy}
+        onPress={onPress}
+      />
+      <Text className="text-center text-caption text-gold">
+        {t('auth.devLogin', { phone: devLoginPhone ?? '' })}
+      </Text>
+      {error ? (
+        <Text className="text-center text-caption text-danger">{error}</Text>
+      ) : null}
+    </View>
+  );
 }
 
 function GoogleButtonPlaceholder() {

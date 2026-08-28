@@ -84,6 +84,7 @@ function mapWatch(raw: unknown): WatchInfo {
     episodeNumber: num(r.episodeNumber),
     durationSeconds: num(r.durationSeconds),
     title: str(r.title),
+    orientation: str(r.orientation),
     allowed: r.allowed,
     reason: str(r.reason) ?? 'UNKNOWN',
     // Осторожная сторона: неизвестное значение = никакого действия предложить

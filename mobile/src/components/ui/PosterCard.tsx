@@ -4,8 +4,14 @@ import { Pressable, Text, View } from 'react-native';
 import { Badge } from './Badge';
 
 /**
- * Вертикальный постер 2:3 с бейджем в углу — основная карточка контента.
- * Паттерн из Yangi.TV, бейджи по ТЗ (locked / purchased вместо PREMIUM / Bepul).
+ * Карточка контента: кадр с бейджем в углу и подпись под ним.
+ *
+ * По умолчанию постер 2:3 — паттерн из Yangi.TV, бейджи по ТЗ
+ * (locked / purchased вместо PREMIUM / Bepul).
+ *
+ * Пропорция вынесена наружу ради вертикального формата: у рилса карточка
+ * повторяет форму самого видео (9:16). Обрезать его до 2:3 значило бы
+ * показать не тот кадр, который снимали.
  */
 export type PosterBadge = 'premiere' | 'locked' | 'purchased' | null;
 
@@ -16,6 +22,8 @@ export function PosterCard({
   badge = null,
   badgeLabel,
   width = 132,
+  /** Ширина к высоте кадра. См. `features/content/orientation.cardRatio`. */
+  ratio = 2 / 3,
   onPress,
 }: {
   title: string;
@@ -24,12 +32,13 @@ export function PosterCard({
   badge?: PosterBadge;
   badgeLabel?: string;
   width?: number;
+  ratio?: number;
   onPress?: () => void;
 }) {
   return (
     <Pressable style={{ width }} onPress={onPress} className="gap-2 active:opacity-70">
       <View
-        style={{ width, height: width * 1.5 }}
+        style={{ width, height: Math.round(width / ratio) }}
         className="overflow-hidden rounded-card bg-surface-2"
       >
         {imageUrl ? (
