@@ -100,62 +100,92 @@ export default function SignInScreen() {
     >
       {/* Свечение с референса заказчика: на пустом экране входа оно и
           делает всю картинку, поэтому здесь оно ярче обычного. */}
-      <GlowBackdrop intensity="hero" />
+      <GlowBackdrop intensity="hero" decor />
 
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 16 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View className="items-center pb-10 pt-10">
-          <Wordmark size="lg" />
-        </View>
+        {/*
+          Знак и форма — одна группа, отцентрованная по вертикали.
 
-        <View className="gap-6 px-6">
-          <Text className="text-center text-h2 text-text">{t('auth.phoneTitle')}</Text>
+          Раньше свободное место собиралось в ОДНУ дыру внизу: всё лежало
+          сверху, а `flex-1` перед согласием отжимал кнопку к краю. Теперь
+          остаток делится поровну над группой и под ней, и пустоты в глаза
+          не бросается ни сверху, ни снизу.
+        */}
+        <View className="flex-1 justify-center gap-7">
+          {/* Композиция с референса заказчика: знак крупно, под ним
+              название и слоган. На экране входа это единственный «герой». */}
+          <View className="items-center">
+            <Wordmark variant="stacked" />
+          </View>
 
-          {/* Рамка загорается синим — началом фирменной шкалы, — когда
-              номер введён полностью */}
-          <View
-            className="flex-row items-center gap-3 rounded-card border bg-surface px-4"
-            style={{ borderColor: isPhoneValid ? colors.blue : colors.border }}
-          >
-            <Ionicons name="call-outline" size={18} color={colors.textMuted} />
-            <Text className="text-body text-text">+998</Text>
-            <View className="h-5 w-px" style={{ backgroundColor: colors.border }} />
-            <TextInput
-              value={phone}
-              onChangeText={onChangePhone}
-              placeholder={t('auth.phonePlaceholder')}
-              placeholderTextColor={colors.textDisabled}
-              keyboardType="phone-pad"
-              inputMode="tel"
-              maxLength={12}
-              className="flex-1 py-4 text-body"
-              style={{ color: colors.white }}
+          <View className="gap-6 px-6">
+            <View className="gap-2">
+              <Text className="text-center text-h2 text-text">
+                {t('auth.phoneTitle')}
+              </Text>
+              <Text className="text-center text-caption text-text-muted">
+                {t('auth.phoneSubtitle')}
+              </Text>
+            </View>
+
+            {/* Рамка загорается синим — началом фирменной шкалы, — когда
+                номер введён полностью.
+
+                ⚠️ Выбора страны нет намеренно: OTP уходит через Eskiz, а он
+                шлёт только на узбекские номера. Стрелка-раскрывашка с
+                референса здесь была бы обещанием, которого бэкенд не держит. */}
+            <View
+              className="flex-row items-center gap-3 rounded-card-lg border bg-surface p-2.5"
+              style={{ borderColor: isPhoneValid ? colors.blue : colors.border }}
+            >
+              <View
+                className="items-center justify-center rounded-card"
+                style={{ width: 44, height: 44, backgroundColor: `${colors.purple}26` }}
+              >
+                <Ionicons name="call" size={20} color={colors.magenta} />
+              </View>
+
+              <Text className="text-h2 text-text">+998</Text>
+              <View className="h-7 w-px" style={{ backgroundColor: colors.border }} />
+
+              <TextInput
+                value={phone}
+                onChangeText={onChangePhone}
+                placeholder={t('auth.phonePlaceholder')}
+                placeholderTextColor={colors.textDisabled}
+                keyboardType="phone-pad"
+                inputMode="tel"
+                maxLength={12}
+                className="flex-1 text-h2"
+                style={{ color: colors.white }}
+              />
+            </View>
+
+            <View className="flex-row items-center gap-3">
+              <View className="h-px flex-1 bg-border" />
+              <View className="rounded-pill border border-border px-4 py-1.5">
+                <Text className="text-caption text-text-muted">{t('auth.or')}</Text>
+              </View>
+              <View className="h-px flex-1 bg-border" />
+            </View>
+
+            <GoogleSignInButton
+              onSuccess={onGoogleSuccess}
+              onDevSession={onDevSession}
             />
+
+            {googleError ? (
+              <Text className="text-center text-caption text-danger">{googleError}</Text>
+            ) : null}
           </View>
-
-          <View className="flex-row items-center gap-3">
-            <View className="h-px flex-1 bg-border" />
-            <Text className="text-caption text-text-muted">— {t('auth.or')} —</Text>
-            <View className="h-px flex-1 bg-border" />
-          </View>
-
-          <GoogleSignInButton
-            onSuccess={onGoogleSuccess}
-            onDevSession={onDevSession}
-          />
-
-          {googleError ? (
-            <Text className="text-center text-caption text-danger">{googleError}</Text>
-          ) : null}
         </View>
 
-        {/* Прижимает согласие и кнопку к низу, как на макете */}
-        <View className="flex-1" />
-
-        <View className="gap-4 px-6 pt-8">
+        {/* Согласие и главная кнопка — у нижнего края, как на макете. */}
+        <View className="gap-4 px-6 pt-6">
           <Text className="text-center text-caption text-text-muted">
             <Text className="text-cyan underline">{t('auth.termsLink')}</Text>
             {' ' + t('auth.consentMiddle') + ' '}
@@ -173,6 +203,15 @@ export default function SignInScreen() {
             loading={sending}
             disabled={!isPhoneValid || sending}
             onPress={onContinue}
+            className="py-1"
+            trailing={
+              <Ionicons
+                name="arrow-forward"
+                size={20}
+                color={colors.white}
+                style={{ marginLeft: 6 }}
+              />
+            }
           >
             {t('auth.continue')}
           </Button>

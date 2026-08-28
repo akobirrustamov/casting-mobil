@@ -1,4 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -46,6 +47,13 @@ type Props = Omit<PressableProps, 'children'> & {
   shape?: Shape;
   loading?: boolean;
   className?: string;
+  /**
+   * Знак справа от подписи — стрелка «дальше» на главном CTA.
+   *
+   * Именно `ReactNode`, а не имя иконки: кнопка не должна знать, из какого
+   * набора знак пришёл. Сегодня это Ionicons, завтра может быть SVG.
+   */
+  trailing?: ReactNode;
 };
 
 /** Градиентные варианты. Остальные — плоская заливка классом. */
@@ -75,6 +83,7 @@ export function Button({
   loading = false,
   disabled = false,
   className = '',
+  trailing,
   ...rest
 }: Props) {
   const isInactive = disabled || loading;
@@ -108,6 +117,7 @@ export function Button({
         />
       ) : null}
       <Text className={`text-body font-semibold ${FG[variant]}`}>{children}</Text>
+      {trailing}
     </Pressable>
   );
 }
