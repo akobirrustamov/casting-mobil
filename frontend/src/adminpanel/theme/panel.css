@@ -723,6 +723,13 @@
     white-space: nowrap;
 }
 
+/* Kutubxona kartochkasidagi qayta ishlash nishoni — yuqori chap. */
+.uz-media-tc {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+}
+
 .uz-field-warn {
     padding: 8px 10px;
     border-radius: var(--p-radius);

@@ -534,6 +534,10 @@ export const adminApi = {
   media: (params) => api.get('/api/v1/app/admin/media', params),
   /** Bitta fayl — media maydonida faqat `mediaId` bo'lgani uchun kerak. */
   mediaAsset: (id) => api.get(`/api/v1/app/admin/media/${id}`),
+  /** Yiqilgan transcoding'ni navbatga qaytaradi (MEDIA_UPLOAD). */
+  retryTranscoding: (id) => api.post(`/api/v1/app/admin/media/${id}/retry-transcoding`),
+  /** Navbat holati — panel yangilashni qachon to'xtatishni biladi. */
+  transcodingQueue: () => api.get('/api/v1/app/admin/media/transcoding-queue'),
   uploadMedia: uploadFile,
 
   /**

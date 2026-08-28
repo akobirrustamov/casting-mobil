@@ -3,6 +3,9 @@ package com.example.backend.Admin.Controller;
 import com.example.backend.Admin.CurrentUser;
 import com.example.backend.Admin.Dto.PageResponse;
 import com.example.backend.Cms.Entity.MediaAsset;
+import com.example.backend.Cms.Entity.TranscodingJob;
+import com.example.backend.Cms.Service.Video.TranscodingJobService;
+import com.example.backend.Cms.Enums.VideoProcessingStatus;
 import com.example.backend.Cms.Enums.MediaStatus;
 import com.example.backend.Cms.Enums.MediaType;
 import com.example.backend.Cms.Repository.MediaAssetRepo;
@@ -52,6 +55,9 @@ public class MediaController {
     private final MediaAssetRepo mediaAssetRepo;
     private final StorageService storageService;
     private final PermissionService permissionService;
+
+    /** Transcoding holati — panel uni ko'rsatadi. */
+    private final TranscodingJobService transcodingJobs;
     private final AccessService accessService;
     private final MediaUsageService mediaUsageService;
 
@@ -186,6 +192,7 @@ public class MediaController {
             @RequestParam(required = false) MediaType type,
             @RequestParam(required = false) MediaStatus status,
             @RequestParam(required = false) String q,
+            @RequestParam(required = false) VideoProcessingStatus transcoding,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String dir) {
 
@@ -197,9 +204,16 @@ public class MediaController {
         MediaStatus effectiveStatus = status == null ? MediaStatus.READY : status;
         String needle = (q == null || q.isBlank()) ? null : q.trim();
 
+        var result = mediaAssetRepo.library(type, effectiveStatus, needle, transcoding, pageable);
+
+        // ⚠️ Ishlar BITTA so'rovda olinadi. Har media uchun alohida
+        // so'rov 40 elementli sahifada 40 ta ortiqcha murojaat —
+        // klassik N+1.
+        var jobs = transcodingJobs.forMediaIds(
+                result.getContent().stream().map(MediaAsset::getId).toList());
+
         return ResponseEntity.ok(PageResponse.of(
-                mediaAssetRepo.library(type, effectiveStatus, needle, pageable),
-                MediaDto::from));
+                result, asset -> MediaDto.from(asset, jobs.get(asset.getId()))));
     }
 
     /**
@@ -219,8 +233,55 @@ public class MediaController {
     @GetMapping("/api/v1/app/admin/media/{id}")
     public ResponseEntity<MediaDto> one(@PathVariable Long id) {
         require(Permission.MEDIA_VIEW);
-        return ResponseEntity.ok(MediaDto.from(mediaAssetRepo.findById(id)
-                .orElseThrow(() -> BusinessException.notFound("Media", id))));
+        MediaAsset asset = mediaAssetRepo.findById(id)
+                .orElseThrow(() -> BusinessException.notFound("Media", id));
+
+        return ResponseEntity.ok(
+                MediaDto.from(asset, transcodingJobs.forMedia(id).orElse(null)));
+    }
+
+    /**
+     * Yiqilgan transcoding'ni qayta urinish (§18).
+     *
+     * <h2>Nega {@code MEDIA_UPLOAD}, yangi ruxsat emas</h2>
+     * Kim video yuklay olsa, qayta urinish ham o'sha ishning davomi.
+     * Yangi ruxsat mavjud rollarni qayta sozlashni talab qilardi va
+     * hech qanday yangi chegara qo'shmasdi.
+     *
+     * ⚠️ Faqat TUGAGAN ish qayta urinishga qabul qilinadi
+     * ({@code READY} yoki {@code FAILED}). Ishlab turgan ishni
+     * navbatga qaytarish ikkita FFmpeg ni bitta media ustida
+     * ishlatardi.
+     */
+    @PostMapping("/api/v1/app/admin/media/{id}/retry-transcoding")
+    public ResponseEntity<MediaDto> retryTranscoding(@PathVariable Long id) {
+        require(Permission.MEDIA_UPLOAD);
+
+        MediaAsset asset = mediaAssetRepo.findById(id)
+                .orElseThrow(() -> BusinessException.notFound("Media", id));
+
+        TranscodingJob job = transcodingJobs.retry(id);
+        return ResponseEntity.ok(MediaDto.from(asset, job));
+    }
+
+    /**
+     * Navbat holati — panel boshqa ish bor-yo'qligini bilishi uchun.
+     *
+     * ⚠️ Panel shu asosda davriy yangilashni TO'XTATADI: hamma ish
+     * tugagan bo'lsa so'rov yubormaydi. Doimiy so'rov ochiq turgan
+     * panel serverga bekorga yuk berardi.
+     */
+    @GetMapping("/api/v1/app/admin/media/transcoding-queue")
+    public ResponseEntity<QueueDto> transcodingQueue() {
+        require(Permission.MEDIA_VIEW);
+        return ResponseEntity.ok(QueueDto.builder()
+                .queued(transcodingJobs.count(VideoProcessingStatus.QUEUED))
+                .running(transcodingJobs.count(
+                        VideoProcessingStatus.PROBING,
+                        VideoProcessingStatus.TRANSCODING,
+                        VideoProcessingStatus.UPLOADING))
+                .failed(transcodingJobs.count(VideoProcessingStatus.FAILED))
+                .build());
     }
 
     /**
@@ -337,6 +398,103 @@ public class MediaController {
         }
     }
 
+    /**
+     * Video qayta ishlash holati — admin panel uchun.
+     *
+     * ⚠️ Panelda endi IKKITA holat bor va ikkalasi ham «READY» so'zini
+     * ishlatadi:
+     *
+     * <pre>
+     *   MediaDto.status              READY · ARCHIVED   — kutubxonada ko'rinadimi
+     *   MediaDto.transcoding.status  QUEUED … FAILED    — HLS tayyormi
+     * </pre>
+     *
+     * Chalkashlik TARJIMA bilan hal qilinadi: panelda birinchisi
+     * «Kutubxonada / Arxivda», ikkinchisi «Video qayta ishlash» deb
+     * ataladi. Backend nomlari O'ZGARMAYDI — ular API shartnomasi.
+     */
+    /**
+     * Navbat qisqacha holati.
+     *
+     * ⚠️ {@code READY} sanalmaydi: u vaqt o'tishi bilan cheksiz o'sadi
+     * va panelga hech narsa aytmaydi. Panelga kerak bo'lgani —
+     * «hali ish bormi».
+     */
+    @Data
+    @Builder
+    public static class QueueDto {
+        private long queued;
+        private long running;
+        private long failed;
+
+        /** Panel davriy yangilashni davom ettirishi kerakmi. */
+        public boolean isActive() {
+            return queued > 0 || running > 0;
+        }
+    }
+
+    @Data
+    @Builder
+    public static class TranscodingDto {
+
+        private VideoProcessingStatus status;
+
+        /**
+         * 0..99. {@code READY} da 100.
+         *
+         * ⚠️ Bu faqat KO'RSATISH uchun. Tayyorlikni {@code status}
+         * aytadi — «progress 100» hech qachon tayyorlik belgisi
+         * bo'lmagan.
+         */
+        private Integer progress;
+
+        /**
+         * Yiqilish sababi. {@code FAILED} dan boshqa holatda {@code null}.
+         *
+         * ⚠️ Ko'rsatilishi SHART. Faqat «yiqildi» deyish adminni logga
+         * qarashga majbur qilardi, logga esa uning kirishi yo'q.
+         */
+        private String error;
+
+        private Integer attempts;
+        private LocalDateTime startedAt;
+        private LocalDateTime finishedAt;
+
+        /**
+         * Qayta urinish mumkinmi.
+         *
+         * ⚠️ Klient buni O'ZI hisoblamaydi. Aks holda «tugagan ish»
+         * qoidasi ikki joyda yashardi va ular ajralib ketardi —
+         * masalan panel tugmani ko'rsatardi, server esa 422 qaytarardi.
+         */
+        private boolean retryable;
+
+        static TranscodingDto from(TranscodingJob job) {
+            // ⚠️ Media TURI bu yerda tekshirilmaydi va bu ataylab.
+            //
+            // Ish faqat VIDEO uchun yaratiladi — buni
+            // `TranscodingJobService.enqueue` kafolatlaydi va u yerda
+            // test bilan qo'riqlangan. Ya'ni ish bor bo'lsa, media
+            // albatta video.
+            //
+            // Bu yerda takroriy tekshiruv qo'shilsa, u HECH QACHON
+            // ishlamaydigan shox bo'lardi: uni sinab bo'lmaydi va
+            // shuning uchun u to'g'ri ekaniga ishonch ham yo'q.
+            if (job == null) {
+                return null;
+            }
+            return TranscodingDto.builder()
+                    .status(job.getStatus())
+                    .progress(job.getProgress())
+                    .error(job.getError())
+                    .attempts(job.getAttempts())
+                    .startedAt(job.getStartedAt())
+                    .finishedAt(job.getFinishedAt())
+                    .retryable(job.getStatus() != null && job.getStatus().isFinished())
+                    .build();
+        }
+    }
+
     @Data
     @Builder
     public static class MediaDto {
@@ -366,10 +524,35 @@ public class MediaController {
          */
         private Boolean playable;
 
+        /**
+         * Video qayta ishlash holati. VIDEO bo'lmagan media uchun
+         * {@code null}.
+         *
+         * ⚠️ {@code null} — «ish yo'q», «ish yiqilgan» EMAS. Rasm va
+         * hujjatga transcoding umuman tegishli emas, shuning uchun
+         * ular uchun bo'sh obyekt ham qaytarilmaydi.
+         *
+         * Video uchun ham {@code null} bo'lishi mumkin: eski,
+         * transcoding joriy qilinishidan oldin yuklangan fayllar.
+         */
+        private TranscodingDto transcoding;
+
         private LocalDateTime createdAt;
 
+        /**
+         * Transcoding ma'lumotisiz — yuklash va arxivlash javoblari uchun.
+         *
+         * ⚠️ Bu yerda ish HALI bo'lmasligi mumkin (yuklash endi
+         * tugadi) yoki u kerak emas (arxivlash). Ortiqcha so'rov
+         * qilinmaydi.
+         */
         static MediaDto from(MediaAsset a) {
+            return from(a, null);
+        }
+
+        static MediaDto from(MediaAsset a, TranscodingJob job) {
             return MediaDto.builder()
+                    .transcoding(TranscodingDto.from(job))
                     .id(a.getId())
                     .url("/api/v1/app/media/" + a.getId() + "/raw")
                     .originalFilename(a.getOriginalFilename())

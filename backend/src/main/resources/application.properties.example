@@ -162,3 +162,44 @@ app.storage.s3.secret-key=${S3_SECRET_KEY:}
 # Presigned havolaning amal qilish muddati. 20 GB lik faylni sekin
 # kanalda yuklashga yetishi kerak, lekin bir ish kunidan qisqa bo'lsin.
 app.storage.s3.upload-url-ttl=${S3_UPLOAD_URL_TTL:6h}
+
+# ── Video: transcoding va CDN ────────────────────────────────────────
+#
+# ⚠️ CDN ildizi. Bo'sh bo'lsa HLS manzillari BERILMAYDI va klient eski
+# yo'lga (`/api/v1/app/media/{id}/raw`) qaytadi.
+#
+# Bu ataylab: sozlanmagan CDN uchun o'ylab topilgan manzil qaytarish
+# pleyerni ishlamaydigan havolaga yuborardi va nosozlik «video buzuq»
+# bo'lib ko'rinardi — sabab esa oddiy sozlama yetishmasligi edi.
+app.video.cdn.base-url=${CDN_BASE_URL:}
+
+# FFmpeg. PATH da bo'lsa nom yetarli, aks holda to'liq yo'l.
+app.video.ffmpeg-path=${FFMPEG_PATH:ffmpeg}
+app.video.ffprobe-path=${FFPROBE_PATH:ffprobe}
+
+# ⚠️ Bir vaqtda nechta video. Sukut — BITTA: FFmpeg butun protsessorni
+# egallaydi va u API server bilan ayni mashinada turibdi.
+app.video.max-concurrent-jobs=${VIDEO_MAX_JOBS:1}
+
+# Nechta marta qayta urinamiz. Cheksiz bo'lsa buzuq fayl navbatni
+# abadiy band qilardi.
+app.video.max-attempts=${VIDEO_MAX_ATTEMPTS:3}
+
+# Transcoding uchun vaqtinchalik papka. Bu yerda manba + barcha
+# variantlar turadi, ya'ni bo'sh joy KATTA bo'lishi kerak.
+app.video.temp-dir=${VIDEO_TEMP_DIR:backend/files/.transcoding}
+
+# Navbatni qanchada bir tekshirish.
+app.video.poll-delay-ms=${VIDEO_POLL_DELAY_MS:15000}
+
+# Sifat zinapoyasi. Bitratelar kodda QOTIRILMAYDI — ular server
+# quvvatiga va kanal kengligiga qarab o'zgaradi.
+app.video.transcoding.profiles[0].height=1080
+app.video.transcoding.profiles[0].video-bitrate=5000k
+app.video.transcoding.profiles[0].audio-bitrate=128k
+app.video.transcoding.profiles[1].height=720
+app.video.transcoding.profiles[1].video-bitrate=2800k
+app.video.transcoding.profiles[1].audio-bitrate=128k
+app.video.transcoding.profiles[2].height=480
+app.video.transcoding.profiles[2].video-bitrate=1200k
+app.video.transcoding.profiles[2].audio-bitrate=96k

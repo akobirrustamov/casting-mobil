@@ -14,6 +14,7 @@ import com.example.backend.Cms.Repository.ContentRepo;
 import com.example.backend.Cms.Repository.EpisodeRepo;
 import com.example.backend.Cms.Service.AccessDecision;
 import com.example.backend.Cms.Service.AccessService;
+import com.example.backend.Cms.Service.Video.CdnUrlService;
 import com.example.backend.Entity.User;
 import com.example.backend.exceptions.BusinessException;
 import lombok.Builder;
@@ -58,6 +59,9 @@ public class WatchController {
     private final EpisodeRepo episodeRepo;
     private final ContentRepo contentRepo;
     private final AccessService accessService;
+
+    /** Ombor kalitini CDN manziliga aylantiradi. */
+    private final CdnUrlService cdnUrlService;
 
     @GetMapping("/{episodeId}")
     @Transactional(readOnly = true)
@@ -188,6 +192,7 @@ public class WatchController {
                         .partNumber((m.getSortOrder() == null ? 0 : m.getSortOrder()) + 1)
                         .mediaId(m.getMedia().getId())
                         .url("/api/v1/app/media/" + m.getMedia().getId() + "/raw")
+                        .hlsUrl(cdnUrlService.masterUrl(m.getMedia().getHlsMasterKey()))
                         .durationSeconds(m.getMedia().getDurationSeconds())
                         .build())
                 .toList();
@@ -244,6 +249,7 @@ public class WatchController {
                         .partNumber(v.getPartNumber())
                         .mediaId(v.getMedia().getId())
                         .url("/api/v1/app/media/" + v.getMedia().getId() + "/raw")
+                        .hlsUrl(cdnUrlService.masterUrl(v.getMedia().getHlsMasterKey()))
                         .durationSeconds(v.getMedia().getDurationSeconds())
                         .build())
                 .toList();
@@ -287,7 +293,33 @@ public class WatchController {
     public static class VideoSource {
         private Integer partNumber;
         private Long mediaId;
+
+        /**
+         * NISBIY yo'l — {@code /api/v1/app/media/{id}/raw}.
+         *
+         * ⚠️ Bu maydonga TEGILMAYDI va u hech qachon mutlaq
+         * bo'lmaydi. Mobil ilova uning oldiga o'z {@code BASE_URL}
+         * ini qo'yadi ({@code WatchDetail.tsx}); mutlaq manzil
+         * yozilsa {@code https://uzcasting.sitehttps://cdn…} chiqardi
+         * — jimgina buzilish, hech qanday xato ko'rsatmasdan.
+         */
         private String url;
+
+        /**
+         * HLS master playlist — MUTLAQ CDN manzili yoki {@code null}.
+         *
+         * ⚠️ YANGI maydon, {@code url} ning o'rnini bosmaydi.
+         *
+         * Eski mobil qurilma buni bilmaydi va {@code url} orqali
+         * ishlashda davom etadi. Yangisi {@code hlsUrl} bo'lsa uni
+         * oladi, bo'lmasa {@code url} ga qaytadi. Ikkalasi bitta
+         * relizda yonma-yon ishlaydi (§33).
+         *
+         * {@code null} bo'lishi mumkin: transcoding hali tugamagan,
+         * yoki CDN sozlanmagan, yoki bu eski video.
+         */
+        private String hlsUrl;
+
         private Integer durationSeconds;
     }
 }

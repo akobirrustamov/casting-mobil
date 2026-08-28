@@ -20,18 +20,47 @@ export default function MediaField({ label, value, onChange, hint, type = 'IMAGE
    */
   const [notPlayable, setNotPlayable] = useState(false);
 
+  /**
+   * Video qayta ishlash holati.
+   *
+   * ⚠️ Bu `notPlayable` dan BOSHQA muammo:
+   *
+   *   notPlayable  → format noto'g'ri (.mkv), qayta ishlash YORDAM BERMAYDI
+   *   transcoding  → format to'g'ri, lekin HLS hali TAYYOR EMAS
+   *
+   * Ikkalasini bitta ogohlantirishga qo'shish adminni chalkashtirardi:
+   * birinchisida boshqa fayl kerak, ikkinchisida shunchaki kutish.
+   */
+  const [transcoding, setTranscoding] = useState(null);
+
   useEffect(() => {
     if (!value || type !== 'VIDEO') {
       setNotPlayable(false);
+      setTranscoding(null);
       return undefined;
     }
     let alive = true;
     adminApi.mediaAsset(value)
-      .then((m) => { if (alive) setNotPlayable(m.playable === false); })
+      .then((m) => {
+        if (!alive) return;
+        setNotPlayable(m.playable === false);
+        setTranscoding(m.transcoding ?? null);
+      })
       // Ogohlantirishni chizolmaslik maydonni ishdan chiqarmasin.
-      .catch(() => { if (alive) setNotPlayable(false); });
+      .catch(() => {
+        if (!alive) return;
+        setNotPlayable(false);
+        setTranscoding(null);
+      });
     return () => { alive = false; };
   }, [value, type]);
+
+  // Qayta ishlash tugamagan — video hali ochilmaydi.
+  const pending = transcoding
+    && transcoding.status !== 'READY'
+    && transcoding.status !== 'FAILED';
+
+  const failed = transcoding && transcoding.status === 'FAILED';
 
   return (
     <div>
@@ -74,6 +103,24 @@ export default function MediaField({ label, value, onChange, hint, type = 'IMAGE
       {notPlayable && (
         <p className="uz-field-warn mt-2" role="status">
           ⚠ {t('media.notPlayableHint')}
+        </p>
+      )}
+
+      {/* ⚠️ Format to'g'ri, lekin HLS hali tayyor emas — shunchaki
+          kutish kerak. `notPlayable` dan farqli: u yerda boshqa fayl
+          kerak. */}
+      {pending && !notPlayable && (
+        <p className="uz-field-warn mt-2" role="status">
+          ⏳ {t('tc.pendingHint')}
+        </p>
+      )}
+
+      {/* Qayta ishlash yiqilgan — video HECH QACHON ochilmaydi.
+          Admin buni bilishi va kutubxonada qayta urinishi kerak. */}
+      {failed && (
+        <p className="uz-field-warn mt-2" role="status">
+          ⚠ {t('tc.FAILED')}
+          {transcoding.error ? ` — ${transcoding.error}` : ''}
         </p>
       )}
       {hint && <p className="uz-muted mt-1" style={{ fontSize: 11 }}>{hint}</p>}

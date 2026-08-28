@@ -192,6 +192,20 @@ public class TranscodingJobService {
 
     // ------------------------------------------------------------- o'qish
 
+    /**
+     * Berilgan holatdagi ishlar soni.
+     *
+     * ⚠️ Panel shu asosda davriy yangilashni to'xtatadi. Doimiy so'rov
+     * ochiq turgan panel serverga bekorga yuk berardi.
+     */
+    @Transactional(readOnly = true)
+    public long count(VideoProcessingStatus... statuses) {
+        if (statuses == null || statuses.length == 0) {
+            return 0;
+        }
+        return jobRepo.countByStatusIn(List.of(statuses));
+    }
+
     public Optional<TranscodingJob> forMedia(Long mediaId) {
         return jobRepo.findByMediaId(mediaId);
     }

@@ -168,8 +168,17 @@ function Stage({ info, card }: { info: WatchInfo; card: ContentCard | undefined 
     return (
       <View className="gap-3">
         {/* key: смена части пересоздаёт плеер — надёжнее ручной подмены
-            источника у живого плеера и не тащит позицию из прошлой части. */}
-        <Player key={source.mediaId ?? part} source={source} />
+            источника у живого плеера и не тащит позицию из прошлой части.
+
+            ⚠️ В ключе есть и признак HLS. Без него так: пользователь
+            открыл эпизод, пока он ещё обрабатывался (играет через
+            сервер), потом потянул экран вниз — `/watch` уже отдаёт
+            `hlsUrl`, но плеер остаётся со старым адресом, потому что
+            ключ не изменился. Видео продолжает идти мимо CDN. */}
+        <Player
+          key={`${source.mediaId ?? part}-${source.hlsUrl ? 'hls' : 'raw'}`}
+          source={source}
+        />
 
         {info.sources.length > 1 ? (
           <View className="flex-row flex-wrap gap-2">
@@ -215,19 +224,51 @@ function Stage({ info, card }: { info: WatchInfo; card: ContentCard | undefined 
 }
 
 /**
+ * Что именно открывает плеер.
+ *
+ * Вынесено отдельно, потому что это РЕШЕНИЕ, а не разметка: какой из
+ * двух путей воспроизведения выбран и уходит ли токен. Внутри
+ * компонента его нельзя ни прочитать, ни проверить.
+ *
+ * ⚠️ `hlsUrl` уже АБСОЛЮТНЫЙ — `BASE_URL` к нему не добавляется.
+ * `url` наоборот относительный, и без `BASE_URL` он не откроется.
+ */
+export function playbackSource(source: VideoSource) {
+  if (source.hlsUrl !== null) {
+    // CDN: токен не нужен и вреден — см. комментарий у Player.
+    return { uri: source.hlsUrl };
+  }
+  return { uri: `${BASE_URL}${source.url}`, headers: authHeaders() };
+}
+
+/**
  * Плеер.
  *
- * Заголовок `Authorization` обязателен: изображения бэкенд отдаёт всем, а
- * видео проверяет право доступа — без токена плеер получил бы отказ вместо
- * файла, при том что `/watch` доступ только что подтвердил.
+ * <h2>Два пути воспроизведения</h2>
+ * <pre>
+ *   hlsUrl есть  → CDN, HLS, ABR — качество переключается само
+ *   hlsUrl null  → сервер приложения, один файл, фиксированное качество
+ * </pre>
+ *
+ * ⚠️ Заголовок `Authorization` уходит ТОЛЬКО на второй путь.
+ *
+ * Там он обязателен: изображения бэкенд отдаёт всем, а видео проверяет
+ * право доступа и без токена вернёт отказ.
+ *
+ * На CDN его слать не нужно и вредно: сегментов у одного эпизода
+ * сотни, и лишний заголовок на каждом запросе мешает кэшированию, а
+ * некоторые CDN отклоняют запросы с неожиданной авторизацией.
+ *
+ * <h2>ABR не программируется вручную</h2>
+ * `expo-video` использует AVPlayer на iOS и ExoPlayer на Android —
+ * оба переключают качество сами, по фактической скорости сети. Своя
+ * логика замера здесь только мешала бы: она видит меньше, чем плеер,
+ * и решала бы хуже (§26).
  */
 function Player({ source }: { source: VideoSource }) {
-  const player = useVideoPlayer(
-    { uri: `${BASE_URL}${source.url}`, headers: authHeaders() },
-    (p) => {
-      p.loop = false;
-    }
-  );
+  const player = useVideoPlayer(playbackSource(source), (p) => {
+    p.loop = false;
+  });
 
   return (
     <VideoView

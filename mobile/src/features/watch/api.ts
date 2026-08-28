@@ -62,6 +62,9 @@ function mapSource(raw: unknown): VideoSource | null {
     partNumber: num(r.partNumber),
     mediaId: num(r.mediaId),
     url,
+    // ⚠️ Старая сборка бэкенда этого поля не отдаёт — тогда `null`
+    // и плеер идёт по `url`. Приложение работает с обеими версиями.
+    hlsUrl: str(r.hlsUrl),
     durationSeconds: num(r.durationSeconds),
   };
 }

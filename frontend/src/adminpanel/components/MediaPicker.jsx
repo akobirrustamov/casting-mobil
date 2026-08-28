@@ -3,6 +3,7 @@ import { adminApi, mediaUrl } from '../api/client';
 import { usePanelI18n } from '../i18n';
 import { LoadingState, ErrorState, EmptyState } from './States';
 import Modal from './Modal';
+import TranscodingBadge from './TranscodingBadge';
 
 /**
  * Media kutubxonadan fayl tanlash yoki yangisini yuklash.
@@ -133,6 +134,14 @@ export default function MediaPicker({ open, onClose, onSelect, type = 'IMAGE' })
               {m.playable === false && (
                 <span className="uz-media-warn" title={t('media.notPlayableHint')}>
                   ⚠ {t('media.notPlayable')}
+                </span>
+              )}
+              {/* ⚠️ Yangi yuklangan video darhol «Navbatda» bo'lib
+                  ko'rinadi. Usiz admin yuklash tugagach uni TAYYOR deb
+                  o'ylardi, aslida qayta ishlash endi boshlanadi. */}
+              {m.transcoding && m.transcoding.status !== 'READY' && (
+                <span className="uz-media-tc">
+                  <TranscodingBadge transcoding={m.transcoding} compact />
                 </span>
               )}
             </button>
