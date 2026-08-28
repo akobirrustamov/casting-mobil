@@ -142,6 +142,16 @@ const dict = {
     'media.clear': 'Olib tashlash',
     'media.notPlayable': 'Pleyerda ochilmaydi',
 
+    'nav.help': "Yo'riqnoma",
+    'help.title': "Yo'riqnoma",
+    'help.subtitle': 'Siz nima qila olasiz va bu qanday bajariladi',
+    'help.yourRole': 'Sizning rolingiz',
+    'help.canDo': "Sizga {n} ta ish ochiq",
+    'help.needs': 'Kerakli ruxsat',
+    'help.noneHere': "Bu bo'limda sizga ochiq ish yo'q",
+    'help.lockedTitle': "Ruxsat yetmaydigan ishlar",
+    'help.lockedHint': "Bu ishlar mavjud, lekin sizda ruxsat yo'q. Kerak bo'lsa administratordan quyidagi ruxsatni so'rang.",
+
     // ⚠️ Video qayta ishlash holati. `media.status` (Kutubxonada /
     // Arxivda) bilan ARALASHTIRMANG — ular boshqa narsa.
     'tc.QUEUED': 'Navbatda',
@@ -853,6 +863,16 @@ const dict = {
     'media.clear': 'Убрать',
     'media.notPlayable': 'Не воспроизводится',
 
+    'nav.help': 'Инструкция',
+    'help.title': 'Инструкция',
+    'help.subtitle': 'Что вы можете сделать и как это делается',
+    'help.yourRole': 'Ваша роль',
+    'help.canDo': 'Вам доступно действий: {n}',
+    'help.needs': 'Нужное право',
+    'help.noneHere': 'В этом разделе вам ничего не доступно',
+    'help.lockedTitle': 'Действия без доступа',
+    'help.lockedHint': 'Эти действия существуют, но у вас нет прав. Если нужно — попросите у администратора указанное право.',
+
     'tc.QUEUED': 'В очереди',
     'tc.PROBING': 'Проверка',
     'tc.TRANSCODING': 'Обработка',
@@ -1561,6 +1581,16 @@ const dict = {
     'media.change': 'Replace',
     'media.clear': 'Clear',
     'media.notPlayable': 'Not playable',
+
+    'nav.help': 'Guide',
+    'help.title': 'Guide',
+    'help.subtitle': 'What you can do, and how to do it',
+    'help.yourRole': 'Your role',
+    'help.canDo': '{n} actions available to you',
+    'help.needs': 'Requires',
+    'help.noneHere': 'Nothing here is available to you',
+    'help.lockedTitle': 'Actions you cannot access',
+    'help.lockedHint': 'These actions exist but you lack the permission. Ask an administrator for the permission shown.',
 
     'tc.QUEUED': 'Queued',
     'tc.PROBING': 'Analysing',

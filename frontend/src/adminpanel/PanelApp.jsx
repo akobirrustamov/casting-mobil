@@ -15,6 +15,7 @@ import AdminLayout from './layout/AdminLayout';
 
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import HelpPage from './pages/HelpPage';
 import ContentPage from './pages/ContentPage';
 import CreatorsPage from './pages/CreatorsPage';
 import TaxonomyPage from './pages/TaxonomyPage';
@@ -49,6 +50,11 @@ export default function PanelApp() {
             }
           >
             <Route index element={<DashboardPage />} />
+            {/* ⚠️ Ruxsat TALAB QILINMAYDI. Yo'riqnoma xodimga o'zi
+                nima qila olishini aytadi — uni ko'rish uchun alohida
+                ruxsat so'rash mantiqsiz bo'lardi. Sahifaning o'zi
+                mazmunni ruxsatga qarab filtrlaydi. */}
+            <Route path="help" element={<HelpPage />} />
             <Route
               path="content"
               element={
