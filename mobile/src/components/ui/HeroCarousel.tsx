@@ -146,10 +146,19 @@ export function HeroCarousel({
             {/* Затемнение, чтобы текст читался поверх кадра */}
             <View className="absolute inset-0 bg-ink/55" />
 
+            {/* Бейдж — в левом верхнем углу кадра, а не над заголовком.
+                Заказчик: вывести в угол и сделать полупрозрачным, чтобы
+                сквозь него был виден кадр. Плотная плашка вырезала из
+                фотографии прямоугольник. */}
+            {item.badgeLabel ? (
+              <View className="absolute left-4 top-4">
+                <Badge tone={badgeTone} translucent>
+                  {item.badgeLabel}
+                </Badge>
+              </View>
+            ) : null}
+
             <View className="gap-2">
-              {item.badgeLabel ? (
-                <Badge tone={badgeTone}>{item.badgeLabel}</Badge>
-              ) : null}
               <Text numberOfLines={2} className="text-h1 text-text">
                 {item.title}
               </Text>

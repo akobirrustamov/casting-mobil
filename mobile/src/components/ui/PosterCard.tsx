@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
 
@@ -21,6 +22,8 @@ export function PosterCard({
   imageUrl,
   badge = null,
   badgeLabel,
+  /** Знак в бейдже — пламя на «премьере». */
+  badgeIcon,
   width = 132,
   /** Ширина к высоте кадра. См. `features/content/orientation.cardRatio`. */
   ratio = 2 / 3,
@@ -31,6 +34,7 @@ export function PosterCard({
   imageUrl?: string;
   badge?: PosterBadge;
   badgeLabel?: string;
+  badgeIcon?: keyof typeof Ionicons.glyphMap;
   width?: number;
   ratio?: number;
   onPress?: () => void;
@@ -51,8 +55,12 @@ export function PosterCard({
         ) : null}
 
         {badge && badgeLabel ? (
-          <View className="absolute right-2 top-2">
-            <Badge tone={badge}>{badgeLabel}</Badge>
+          // Левый верхний угол — как на макете заказчика. Справа он налезал
+          // на лица: у постеров герой обычно смещён вправо.
+          <View className="absolute left-2 top-2">
+            <Badge tone={badge} icon={badgeIcon} translucent>
+              {badgeLabel}
+            </Badge>
           </View>
         ) : null}
       </View>

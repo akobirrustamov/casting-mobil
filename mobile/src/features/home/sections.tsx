@@ -184,8 +184,12 @@ export function HomeSectionView({
 }) {
   const title = section.title ?? '';
 
-  // ---- баннеры: реклама и премьеры приходят одной формой
+  // ---- баннеры: реклама и премьеры приходят одной формой,
+  //      но показываются по-разному (`type` влияет только на подачу)
   if (section.banners.length > 0) {
+    if (section.type === 'NEW_PREMIERES') {
+      return <PremiereRail section={section} title={title} />;
+    }
     return <BannerSection section={section} title={title} active={active} />;
   }
 
@@ -251,6 +255,47 @@ export function HomeSectionView({
   }
 
   return null;
+}
+
+/**
+ * Премьеры — ряд постеров, а не большая карусель.
+ *
+ * Заказчик прислал макет, где «Yangi premyeralar» стоит рядом с остальными
+ * рядами: обложка, пламенный бейдж в левом верхнем углу, название и номер
+ * серии. Раньше премьеры занимали второй экранный баннер подряд — после
+ * рекламного блока это читалось как ещё одна реклама.
+ *
+ * ⚠️ Цены на карточке нет намеренно. На макете она есть, но заказчик
+ * отдельно сказал «faqat button kk emas»: фид цену и не отдаёт — она
+ * приходит вместе с правом доступа из `/watch`, уже на экране просмотра.
+ */
+function PremiereRail({ section, title }: { section: HomeSection; title: string }) {
+  const { t } = useTranslation();
+
+  const items = section.banners.filter((b) => b.title || b.imageMediaId);
+  if (items.length === 0) return null;
+
+  return (
+    <Rail
+      title={title}
+      icon="flame"
+      onSeeAll={() => router.push(seeAllRoute('series'))}
+    >
+      {items.map((b) => (
+        <PosterCard
+          key={b.id}
+          ratio={cardRatio('LANDSCAPE')}
+          title={b.title ?? ''}
+          subtitle={b.subtitle ?? b.description ?? undefined}
+          imageUrl={mediaUrl(b.imageMediaId)}
+          badge="premiere"
+          badgeIcon="flame"
+          badgeLabel={t('common.premiere')}
+          onPress={bannerTarget(b) ? () => openBanner(b) : undefined}
+        />
+      ))}
+    </Rail>
+  );
 }
 
 /**
