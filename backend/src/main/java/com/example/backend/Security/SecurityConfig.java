@@ -89,6 +89,17 @@ public class SecurityConfig {
                         // httpOnly cookie bilan ishlaydi. Access token muddati
                         // o'tgach yangilash aynan shu holatda kerak bo'ladi (§61).
                         .requestMatchers(HttpMethod.POST, "/api/v1/app/admin/auth/refresh").permitAll()
+                        // Mobil ilova access tokenini yangilaydi.
+                        //
+                        // ⚠️ Bearer token TALAB QILINMAYDI va aynan shu
+                        // uning ma'nosi: access token muddati o'tganda
+                        // chaqiriladi. Token talab qilinsa, endpoint faqat
+                        // kerak BO'LMAGAN paytda ishlardi.
+                        //
+                        // Himoya refresh tokenning o'zida: u imzolangan,
+                        // bazada qayd etilgan va bir marta ishlaydi
+                        // (RefreshTokenService.rotate).
+                        .requestMatchers(HttpMethod.POST, "/api/v1/app/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/app/admin/auth/logout").permitAll()
 
                         // --- Yangiliklar: o'qish ochiq, yozish yopiq ---

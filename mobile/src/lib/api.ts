@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { InternalAxiosRequestConfig } from 'axios';
 
 /**
  * Тот же бэкенд, что у сайта (frontend/src/config/index.js).
@@ -52,6 +53,93 @@ let authToken: string | null = null;
 export function setAuthToken(token: string | null): void {
   authToken = token;
 }
+
+/**
+ * Обновление истёкшего токена.
+ *
+ * Возвращает новый access-токен либо `null`, если сессию продлить
+ * нельзя. Саму политику (какой эндпоинт, что сохранить, когда
+ * разлогинить) знает `features/auth` — сюда она передаёт готовую
+ * функцию, чтобы `lib` по-прежнему не зависел от `features`.
+ */
+type TokenRefresher = () => Promise<string | null>;
+
+let refresher: TokenRefresher | null = null;
+
+export function setTokenRefresher(fn: TokenRefresher | null): void {
+  refresher = fn;
+}
+
+/**
+ * Запросы авторизации, которые НЕ надо повторять после обновления.
+ *
+ * ⚠️ Без этого списка 401 на `/otp/verify` (человек ошибся кодом)
+ * запускал бы обновление токена, а сам эндпоинт обновления при
+ * отказе дёргал бы себя же — бесконечный цикл на экране входа.
+ */
+const NO_REFRESH_PATHS = ['/api/v1/app/auth/', '/api/v1/auth/'];
+
+/**
+ * Обновление в ОДНОМ экземпляре.
+ *
+ * ⚠️ Это не оптимизация, а обязательное условие. На бэкенде включена
+ * ротация: каждый refresh-токен срабатывает ровно один раз, а
+ * повторное использование уже погашенного токена считается кражей и
+ * закрывает ВСЕ сессии пользователя.
+ *
+ * Экран открывает несколько запросов сразу. Если у каждого будет
+ * своё обновление, первый пройдёт, остальные придут со старым
+ * токеном — и бэкенд, совершенно правильно, разлогинит человека
+ * везде. То есть починка выхода из аккаунта сама бы его и вызывала.
+ */
+let inFlight: Promise<string | null> | null = null;
+
+function refreshOnce(): Promise<string | null> {
+  if (!inFlight) {
+    const run = refresher ? refresher() : Promise.resolve(null);
+    inFlight = run.finally(() => {
+      inFlight = null;
+    });
+  }
+  return inFlight;
+}
+
+/** Помечаем повтор, чтобы он не ушёл на второй круг. */
+type RetriableConfig = InternalAxiosRequestConfig & { _retried?: boolean };
+
+api.interceptors.response.use(undefined, async (error: unknown) => {
+  if (!axios.isAxiosError(error) || error.response?.status !== 401) {
+    throw error;
+  }
+
+  const config = error.config as RetriableConfig | undefined;
+  const url = config?.url ?? '';
+
+  // ⚠️ Повторяем ровно один раз. Если и обновлённый токен получил
+  // 401 — дело не в сроке жизни, и второй заход дал бы бесконечный
+  // цикл запросов вместо честной ошибки на экране.
+  if (!config || config._retried || NO_REFRESH_PATHS.some((p) => url.startsWith(p))) {
+    throw error;
+  }
+
+  config._retried = true;
+
+  const token = await refreshOnce();
+  if (!token) {
+    throw error;
+  }
+
+  // ⚠️ Новый токен кладём ЗДЕСЬ, а не полагаемся на то, что его
+  // проставит кто-то снаружи.
+  //
+  // Повтор проходит через тот же request-интерцептор, и заголовок
+  // ему ставится из `authToken`. Если оставить это на совести
+  // обновляющей функции, любой её вариант, не трогающий стор,
+  // отправлял бы повтор со СТАРЫМ токеном — тот же 401, но уже
+  // без второй попытки. Молча и без единой ошибки в коде.
+  setAuthToken(token);
+  return api.request(config);
+});
 
 api.interceptors.request.use((config) => {
   const method = (config.method ?? 'get').toLowerCase();
