@@ -3,12 +3,15 @@ package com.example.backend.Cms;
 import com.example.backend.Admin.Dto.AdvertisementDto;
 import com.example.backend.Admin.Dto.AdvertisementSaveRequest;
 import com.example.backend.Admin.Dto.ContentSaveRequest;
+import com.example.backend.Admin.Dto.EpisodeSaveRequest;
 import com.example.backend.Admin.Dto.HomepageSectionSaveRequest;
 import com.example.backend.Admin.Dto.PremiereDto;
 import com.example.backend.Admin.Dto.PremiereSaveRequest;
 import com.example.backend.Cms.Dto.HomeFeedDto;
 import com.example.backend.Cms.Entity.Category;
 import com.example.backend.Cms.Entity.Content;
+import com.example.backend.Cms.Entity.Episode;
+import com.example.backend.Cms.Entity.Genre;
 import com.example.backend.Cms.Entity.HomepageSection;
 import com.example.backend.Cms.Enums.*;
 import com.example.backend.Cms.Repository.HomepageSectionRepo;
@@ -56,6 +59,7 @@ class HomeFeedTest {
     @Autowired private HomepageService homepageService;
     @Autowired private HomepageSectionRepo sectionRepo;
     @Autowired private ContentService contentService;
+    @Autowired private com.example.backend.Cms.Service.EpisodeService episodeService;
     @Autowired private com.example.backend.Cms.Service.TaxonomyService taxonomyService;
     @Autowired private com.example.backend.Cms.Repository.CategoryRepo categoryRepo;
     @Autowired private com.example.backend.Cms.Repository.ContentRepo contentRepo;
@@ -502,6 +506,127 @@ class HomeFeedTest {
 
     // ------------------------------------------------------------ N+1 guard
 
+    // ------------------------------------------------------- kartochka maydonlari
+
+    /**
+     * Media ekranidagi kartochkaga kerak bo'lgan maydonlar (buyurtmachi
+     * maketi, 28.08.2026): davomiylik, janr, qismlar soni.
+     *
+     * Ular bazada BOR edi, lekin feedga chiqmasdi — ilova kartochkada
+     * faqat nom va qisqa tavsifni ko'rsata olardi.
+     */
+    @Nested
+    @DisplayName("Kartochka maydonlari")
+    class CardFields {
+
+        @Test
+        @DisplayName("Yaxlit kontent davomiylikni beradi, qismlar sonini emas")
+        void singleContentHasDuration() {
+            Content movie = contentWith(ContentType.MOVIE, 90, null);
+
+            HomeFeedDto.ContentCard card = cardOf(movie.getId());
+            assertThat(card).isNotNull();
+            // 90 daqiqa → 5400 soniya
+            assertThat(card.getDurationSeconds()).isEqualTo(5400);
+            assertThat(card.getEpisodeCount()).isNull();
+        }
+
+        /**
+         * Serialning «davomiyligi» degan narsa yo'q — har qismning o'ziniki
+         * bor. O'rtachasini hisoblab yozish son o'ylab topish bo'lardi.
+         */
+        @Test
+        @DisplayName("Ko'p qismli kontent qismlar sonini beradi, davomiylikni emas")
+        void episodicContentHasEpisodeCount() {
+            Content series = contentWith(ContentType.MINI_SERIES, null, null);
+            episode(series, 1, PublicationStatus.PUBLISHED);
+            episode(series, 2, PublicationStatus.PUBLISHED);
+            episode(series, 3, PublicationStatus.PUBLISHED);
+
+            HomeFeedDto.ContentCard card = cardOf(series.getId());
+            assertThat(card).isNotNull();
+            assertThat(card.getEpisodeCount()).isEqualTo(3);
+            assertThat(card.getDurationSeconds()).isNull();
+        }
+
+        /**
+         * «12 qism» yozuvi odam OCHIB ko'ra oladigan son bo'lishi kerak:
+         * aks holda u ichkarida ikkitasini topardi.
+         */
+        @Test
+        @DisplayName("Qoralama qism sanalmaydi")
+        void draftEpisodeIsNotCounted() {
+            Content series = contentWith(ContentType.MINI_SERIES, null, null);
+            episode(series, 1, PublicationStatus.PUBLISHED);
+            episode(series, 2, PublicationStatus.DRAFT);
+
+            assertThat(cardOf(series.getId()).getEpisodeCount()).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("Janr so'ralgan tilda keladi")
+        void genreIsLocalised() {
+            Genre genre = genre("Drama", "Драма", "Drama");
+            Content movie = contentWith(ContentType.MOVIE, 75, genre.getId());
+
+            assertThat(cardOf(movie.getId()).getGenre()).startsWith("Drama");
+            assertThat(cardOf(movie.getId(), Locale.RU).getGenre()).startsWith("Драма");
+        }
+
+        @Test
+        @DisplayName("Janrsiz kontent bo'sh qoladi, tirnoq chiqmaydi")
+        void contentWithoutGenre() {
+            Content movie = contentWith(ContentType.MOVIE, 75, null);
+            assertThat(cardOf(movie.getId()).getGenre()).isNull();
+        }
+
+        /**
+         * Qismlar soni har kartochka uchun alohida so'ralsa, bosh sahifa
+         * o'nlab qo'shimcha so'rovga aylanardi.
+         */
+        @Test
+        @DisplayName("Qismlar soni BITTA so'rovda olinadi")
+        void episodeCountIsOneQuery() {
+            for (int i = 0; i < 6; i++) {
+                Content series = contentWith(ContentType.MINI_SERIES, null, null);
+                episode(series, 1, PublicationStatus.PUBLISHED);
+                episode(series, 2, PublicationStatus.PUBLISHED);
+            }
+
+            // Kontekst tozalanmasa, obyektlar xotirada qoladi va SQL
+            // umuman yuborilmaydi — o'lchov hech nimani tekshirmasdi.
+            em.flush();
+            em.clear();
+
+            CapturingStatementInspector.clear();
+            HomeFeedDto built = homeFeedService.build(null, Locale.UZ);
+
+            long grouped = CapturingStatementInspector.selectsFrom("cms_episode").stream()
+                    .filter(q -> q.contains("group by"))
+                    .count();
+
+            assertThat(inFeed(built, HomepageSectionType.MINI_SERIES).getContent())
+                    .as("kartochkalar yig'ilgan bo'lishi kerak")
+                    .isNotEmpty();
+            assertThat(grouped)
+                    .as("qismlarni sanash uchun yuborilgan guruhlangan so'rovlar")
+                    .isEqualTo(1);
+        }
+
+        // ---------------------------------------------------------- yordamchi
+
+        private HomeFeedDto.ContentCard cardOf(Long contentId) {
+            return cardOf(contentId, Locale.UZ);
+        }
+
+        private HomeFeedDto.ContentCard cardOf(Long contentId, Locale lang) {
+            return homeFeedService.build(null, lang).getSections().stream()
+                    .flatMap(s -> s.getContent().stream())
+                    .filter(c -> contentId.equals(c.getId()))
+                    .findFirst().orElse(null);
+        }
+    }
+
     @Nested
     @DisplayName("So'rovlar soni")
     class QueryCount {
@@ -577,6 +702,57 @@ class HomeFeedTest {
     }
 
     /** Faol kategoriya — berilgan tartib raqami bilan. */
+    /** Kontent berilgan davomiylik va janr bilan. */
+    private Content contentWith(ContentType type, Integer minutes, Long genreId) {
+        ContentSaveRequest req = new ContentSaveRequest();
+        req.setContentType(type);
+        req.setStructureType(type == ContentType.MOVIE
+                ? StructureType.SINGLE : StructureType.EPISODIC);
+        req.setAccessPolicy(AccessPolicy.FREE);
+        req.setStatus(PublicationStatus.PUBLISHED);
+        req.setVisibility(ContentVisibility.PUBLIC);
+        req.setDurationMinutes(minutes);
+        // Film o'z turi bo'yicha qatorga tushmaydi (bosh sahifada MOVIE
+        // qatori yo'q). «Tanlangan» bayrog'i bo'lmasa, kartochkani feedda
+        // umuman topib bo'lmasdi.
+        req.setFeatured(true);
+        if (genreId != null) {
+            req.setGenreIds(new java.util.LinkedHashSet<>(List.of(genreId)));
+        }
+        req.setTranslations(Translations.all("Kartochka " + SEQ.incrementAndGet()));
+        return contentService.create(null, req);
+    }
+
+    private Episode episode(Content content, int number, PublicationStatus status) {
+        EpisodeSaveRequest e = new EpisodeSaveRequest();
+        e.setEpisodeNumber(number);
+        e.setStatus(status);
+        e.setSortOrder(number);
+        e.setTranslations(Translations.all(number + "-qism"));
+        return episodeService.saveEpisode(null, content.getId(), null, e);
+    }
+
+    private Genre genre(String uz, String ru, String en) {
+        com.example.backend.Admin.Dto.TaxonomySaveRequest req =
+                new com.example.backend.Admin.Dto.TaxonomySaveRequest();
+        req.setActive(true);
+        java.util.Map<Locale, com.example.backend.Admin.Dto.TranslationDto> tr =
+                new LinkedHashMap<>();
+        int n = SEQ.incrementAndGet();
+        tr.put(Locale.UZ, translation(uz + " " + n));
+        tr.put(Locale.RU, translation(ru + " " + n));
+        tr.put(Locale.EN, translation(en + " " + n));
+        req.setTranslations(tr);
+        return taxonomyService.saveGenre(null, null, req);
+    }
+
+    private com.example.backend.Admin.Dto.TranslationDto translation(String title) {
+        com.example.backend.Admin.Dto.TranslationDto dto =
+                new com.example.backend.Admin.Dto.TranslationDto();
+        dto.setTitle(title);
+        return dto;
+    }
+
     private Category category(String name, int sortOrder) {
         com.example.backend.Admin.Dto.TaxonomySaveRequest req =
                 new com.example.backend.Admin.Dto.TaxonomySaveRequest();

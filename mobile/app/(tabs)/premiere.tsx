@@ -121,6 +121,21 @@ export default function PremiereScreen() {
         ))}
       </ScrollView>
 
+      {/* Название раздела и счётчик — как на макете заказчика.
+          ⚠️ Выпадашки сортировки рядом нет: сервер отдаёт один порядок
+          (по дате публикации), и выбор из одного пункта был бы
+          притворством. Появится вместе с параметром сортировки в API. */}
+      {visible.length > 0 ? (
+        <View className="flex-row items-baseline justify-between">
+          <Text className="text-body font-semibold text-text">
+            {t(`premiere.${TABS[active].label}`)}
+          </Text>
+          <Text className="text-caption text-text-muted">
+            {t('premiere.count', { count: visible.length })}
+          </Text>
+        </View>
+      ) : null}
+
       <PremiereGrid
         feed={feed}
         cards={visible}

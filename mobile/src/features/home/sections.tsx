@@ -10,6 +10,7 @@ import { Rail } from '@/components/ui/Rail';
 import { StoryCircle } from '@/components/ui/StoryCircle';
 import { trackAdClick, trackAdImpression } from '@/features/analytics/api';
 import { categoryIcon } from '@/features/content/categoryIcons';
+import { formatDuration } from '@/features/content/duration';
 import { cardRatio, rowRatio } from '@/features/content/orientation';
 
 import { seeAllRoute, seeAllTab } from './seeAll';
@@ -84,12 +85,21 @@ export function ContentPoster({
   const { t } = useTranslation();
   const badge = accessBadge(card.accessPolicy);
 
+  // У многосерийного контента своей длительности нет — там число серий.
+  // Показываем то, что сервер действительно знает, а не среднее по палате.
+  const subtitle =
+    card.episodeCount !== null
+      ? t('content.episodeCount', { count: card.episodeCount })
+      : (card.shortDescription ?? undefined);
+
   return (
     <PosterCard
       width={width}
       ratio={ratio ?? cardRatio(card.orientation)}
       title={card.title ?? ''}
-      subtitle={card.shortDescription ?? undefined}
+      subtitle={subtitle}
+      meta={card.genre ?? undefined}
+      duration={formatDuration(card.durationSeconds) ?? undefined}
       imageUrl={mediaUrl(card.posterMediaId)}
       badge={badge?.tone ?? null}
       badgeLabel={badge ? t(badge.key) : undefined}

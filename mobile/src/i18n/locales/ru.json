@@ -119,7 +119,8 @@
     "tabsPodcasts": "Подкасты",
     "tabsReels": "Reels-сериалы",
     "tabsClips": "Клипы",
-    "tabsStreams": "Стримы"
+    "tabsStreams": "Стримы",
+    "count": "{{count}} шт."
   },
   "profile": {
     "title": "Профиль",
@@ -212,7 +213,8 @@
     "userBlocked": "Ваш аккаунт заблокирован. Напишите в поддержку.",
     "episodes": "Серии",
     "season": "Сезон {{number}}",
-    "episodesEmpty": "В этом сезоне пока нет серий"
+    "episodesEmpty": "В этом сезоне пока нет серий",
+    "episodeCount": "{{count}} серии"
   },
   "contentType": {
     "SHORT_FILM": "Короткий метр",

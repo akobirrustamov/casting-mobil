@@ -24,6 +24,10 @@ export function PosterCard({
   badgeLabel,
   /** Знак в бейдже — пламя на «премьере». */
   badgeIcon,
+  /** Таймкод в углу обложки. Уже отформатирован — карточка не считает. */
+  duration,
+  /** Третья строка: жанр. */
+  meta,
   width = 132,
   /** Ширина к высоте кадра. См. `features/content/orientation.cardRatio`. */
   ratio = 2 / 3,
@@ -35,6 +39,8 @@ export function PosterCard({
   badge?: PosterBadge;
   badgeLabel?: string;
   badgeIcon?: keyof typeof Ionicons.glyphMap;
+  duration?: string;
+  meta?: string;
   width?: number;
   ratio?: number;
   onPress?: () => void;
@@ -52,6 +58,14 @@ export function PosterCard({
             contentFit="cover"
             transition={200}
           />
+        ) : null}
+
+        {/* Таймкод в правом верхнем углу — как на макете заказчика.
+            Подложка сквозная: под ней виден кадр. */}
+        {duration ? (
+          <View className="absolute right-2 top-2 rounded-pill bg-ink/70 px-2 py-0.5">
+            <Text className="text-micro font-semibold text-text">{duration}</Text>
+          </View>
         ) : null}
 
         {badge && badgeLabel ? (
@@ -72,6 +86,13 @@ export function PosterCard({
         {subtitle ? (
           <Text numberOfLines={1} className="text-micro text-text-muted">
             {subtitle}
+          </Text>
+        ) : null}
+        {/* Жанр отдельной строкой и бледнее подписи — на макете это
+            третий уровень, а не продолжение второго. */}
+        {meta ? (
+          <Text numberOfLines={1} className="text-micro text-text-disabled">
+            {meta}
           </Text>
         ) : null}
       </View>

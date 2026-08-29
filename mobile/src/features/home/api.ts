@@ -66,6 +66,9 @@ function mapContent(raw: unknown): ContentCard | null {
     accessPolicy: str(r.accessPolicy),
     ageRating: str(r.ageRating),
     posterMediaId: num(r.posterMediaId),
+    durationSeconds: num(r.durationSeconds),
+    episodeCount: num(r.episodeCount),
+    genre: str(r.genre),
   };
 }
 

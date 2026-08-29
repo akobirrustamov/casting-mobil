@@ -119,7 +119,8 @@
     "tabsPodcasts": "Podkastlar",
     "tabsReels": "Reels seriallar",
     "tabsClips": "Kliplar",
-    "tabsStreams": "Stream"
+    "tabsStreams": "Stream",
+    "count": "{{count}} ta"
   },
   "profile": {
     "title": "Profil",
@@ -212,7 +213,8 @@
     "userBlocked": "Hisobingiz bloklangan. Qo'llab-quvvatlash xizmatiga murojaat qiling.",
     "episodes": "Qismlar",
     "season": "{{number}}-mavsum",
-    "episodesEmpty": "Bu mavsumda hali qism yo'q"
+    "episodesEmpty": "Bu mavsumda hali qism yo'q",
+    "episodeCount": "{{count}} qism"
   },
   "contentType": {
     "SHORT_FILM": "Qisqa metraj",
