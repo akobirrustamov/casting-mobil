@@ -357,6 +357,18 @@ function LockedPanel({ info }: { info: WatchInfo }) {
   const { t } = useTranslation();
   const action: RequiredAction = info.requiredAction;
 
+  /**
+   * Показывать ли «оплата скоро».
+   *
+   * Раньше кнопка стояла выключенной, а подпись висела всегда. Выключенная
+   * кнопка на 40% прозрачности выглядит блёклой — на макете заказчика она
+   * в полном цвете, и на скриншоте разница бросается в глаза.
+   *
+   * Теперь кнопка обычная, а на нажатие честно отвечает, что оплаты пока
+   * нет. Это не «кнопка в никуда»: на касание она реагирует и объясняет.
+   */
+  const [paymentNote, setPaymentNote] = useState(false);
+
   const needsSignIn = action === 'SIGN_IN';
   const needsPurchase =
     action === 'BUY_EPISODE' || action === 'BUY_PREMIERE' || action === 'BUY_OR_SUBSCRIBE';
@@ -378,8 +390,8 @@ function LockedPanel({ info }: { info: WatchInfo }) {
         // Ромб и цена — форма кнопки покупки с макета заказчика.
         // Слово «купить» на ней лишнее: цена и знак говорят то же самое.
         <Button
-          variant="premium"
-          disabled
+          variant="purchase"
+          onPress={() => setPaymentNote(true)}
           leading={<Ionicons name="diamond" size={16} color={colors.white} />}
         >
           {price === null
@@ -389,12 +401,12 @@ function LockedPanel({ info }: { info: WatchInfo }) {
       ) : null}
 
       {needsSubscription ? (
-        <Button variant="gold" disabled>
+        <Button variant="gold" onPress={() => setPaymentNote(true)}>
           {t('content.subscribe')}
         </Button>
       ) : null}
 
-      {needsPurchase || needsSubscription ? (
+      {paymentNote ? (
         <Text className="text-micro text-text-muted">{t('content.paymentSoon')}</Text>
       ) : null}
     </View>
