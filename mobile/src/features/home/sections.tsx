@@ -11,6 +11,8 @@ import { StoryCircle } from '@/components/ui/StoryCircle';
 import { trackAdClick, trackAdImpression } from '@/features/analytics/api';
 import { categoryIcon } from '@/features/content/categoryIcons';
 import { cardRatio, rowRatio } from '@/features/content/orientation';
+
+import { seeAllRoute, seeAllTab } from './seeAll';
 import { mediaUrl } from '@/lib/api';
 import { colors } from '@/theme/tokens';
 
@@ -232,8 +234,15 @@ export function HomeSectionView({
     // делает строку разновысокой и подписи разъезжаются по вертикали.
     const ratio = rowRatio(section.content.map((c) => c.orientation));
 
+    // «Barchasi ›» — только там, где есть куда вести: у подборок
+    // («Танланган», «Машҳур») своей вкладки на экране «Media» нет.
+    const tab = seeAllTab(section.type);
+
     return (
-      <Rail title={title}>
+      <Rail
+        title={title}
+        onSeeAll={tab ? () => router.push(seeAllRoute(tab)) : undefined}
+      >
         {section.content.map((card) => (
           <ContentPoster key={card.id} card={card} ratio={ratio} />
         ))}

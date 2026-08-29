@@ -112,11 +112,14 @@
   "premiere": {
     "title": "Premiere",
     "subtitle": "Exclusive content hub",
-    "tabsAll": "All",
     "tabsSeries": "Series",
     "tabsShows": "Shows",
     "tabsMovies": "Films",
-    "emptyByTab": "No content in this tab yet."
+    "emptyByTab": "No content in this tab yet.",
+    "tabsPodcasts": "Podcasts",
+    "tabsReels": "Reels series",
+    "tabsClips": "Clips",
+    "tabsStreams": "Streams"
   },
   "profile": {
     "title": "Profile",

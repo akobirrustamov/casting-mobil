@@ -112,11 +112,14 @@
   "premiere": {
     "title": "Премьера",
     "subtitle": "Центр эксклюзивного контента",
-    "tabsAll": "Все",
     "tabsSeries": "Сериалы",
     "tabsShows": "Шоу",
     "tabsMovies": "Фильмы",
-    "emptyByTab": "В этом разделе пока нет контента."
+    "emptyByTab": "В этом разделе пока нет контента.",
+    "tabsPodcasts": "Подкасты",
+    "tabsReels": "Reels-сериалы",
+    "tabsClips": "Клипы",
+    "tabsStreams": "Стримы"
   },
   "profile": {
     "title": "Профиль",

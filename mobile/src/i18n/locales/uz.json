@@ -112,11 +112,14 @@
   "premiere": {
     "title": "Premyera",
     "subtitle": "Eksklyuziv kontent markazi",
-    "tabsAll": "Barchasi",
     "tabsSeries": "Seriallar",
     "tabsShows": "Ko'rsatuvlar",
     "tabsMovies": "Filmlar",
-    "emptyByTab": "Bu bo'limda hozircha kontent yo'q."
+    "emptyByTab": "Bu bo'limda hozircha kontent yo'q.",
+    "tabsPodcasts": "Podkastlar",
+    "tabsReels": "Reels seriallar",
+    "tabsClips": "Kliplar",
+    "tabsStreams": "Stream"
   },
   "profile": {
     "title": "Profil",

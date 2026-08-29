@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -13,6 +14,7 @@ import { frameRatio, isVertical } from '@/features/content/orientation';
 import { contentCards, useHomeFeed } from '@/features/home/api';
 import type { ContentCard } from '@/features/home/types';
 import { mediaUrl } from '@/lib/api';
+import { colors } from '@/theme/tokens';
 import { useIsOffline } from '@/lib/network';
 
 import {
@@ -373,10 +375,16 @@ function LockedPanel({ info }: { info: WatchInfo }) {
       ) : null}
 
       {needsPurchase ? (
-        <Button variant="premium" disabled>
+        // Ромб и цена — форма кнопки покупки с макета заказчика.
+        // Слово «купить» на ней лишнее: цена и знак говорят то же самое.
+        <Button
+          variant="premium"
+          disabled
+          leading={<Ionicons name="diamond" size={16} color={colors.white} />}
+        >
           {price === null
             ? t('common.buy')
-            : `${t('common.buy')} · ${t('common.price', { amount: groupDigits(price) })}`}
+            : t('common.price', { amount: groupDigits(price) })}
         </Button>
       ) : null}
 
