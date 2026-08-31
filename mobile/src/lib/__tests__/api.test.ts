@@ -1,7 +1,7 @@
 import { AxiosError } from 'axios';
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 
-import { api, setAuthToken, setTokenRefresher } from '../api';
+import { READ_ONLY, api, setAuthToken, setTokenRefresher } from '../api';
 
 /**
  * Обновление истёкшего токена.
@@ -259,5 +259,77 @@ describe('Другие ответы не трогаем', () => {
       status: 200,
     });
     expect(sent).toHaveLength(1);
+  });
+});
+
+/**
+ * Защита боевой базы от записи из отладочной сборки.
+ *
+ * <h2>⚠️ Что здесь легко сломать незаметно</h2>
+ * Интерцептор роняет запрос ДО отправки. Значит ошибка выглядит не
+ * как отказ сервера, а как внутренний сбой клиента — и разбираться
+ * в ней будут не там, где она возникла. Ровно это уже случалось с
+ * OTP, когда он переехал в новое пространство адресов.
+ *
+ * Проверки идут при `READ_ONLY = true` — это состояние по умолчанию
+ * и именно оно работает у всех, кто не трогал `.env`.
+ */
+describe('Read-only режим', () => {
+  beforeEach(() => {
+    handler = () => ({ status: 200 });
+  });
+
+  it('по умолчанию включён', () => {
+    expect(READ_ONLY).toBe(true);
+  });
+
+  it('чтение проходит всегда', async () => {
+    await expect(api.get('/api/v1/app/home')).resolves.toMatchObject({ status: 200 });
+  });
+
+  /**
+   * ⚠️ Это и есть смысл режима: деньги и чужой контент в живой базе.
+   */
+  it.each([
+    '/api/v1/app/donations',
+    '/api/v1/app/analytics/events',
+    '/api/v1/app/purchases',
+  ])('запись на %s заблокирована', async (url) => {
+    await expect(api.post(url, {})).rejects.toThrow(/READ_ONLY/);
+    expect(sent).toHaveLength(0);
+  });
+
+  it('вход разрешён — иначе в приложение не попасть', async () => {
+    await expect(api.post('/api/v1/app/auth/otp/send', {})).resolves.toBeDefined();
+    await expect(api.post('/api/v1/auth/google', {})).resolves.toBeDefined();
+  });
+
+  /**
+   * ⚠️ Точечное исключение: собственные предпочтения вошедшего
+   * человека, без денег и чужих данных.
+   *
+   * Без него синхронизация избранного мертва целиком — список
+   * остаётся на телефоне ровно как до починки.
+   */
+  it.each(['post', 'delete'] as const)(
+    'избранное разрешено (%s)',
+    async (method) => {
+      const response = method === 'post'
+        ? await api.post('/api/v1/app/favorites', {})
+        : await api.delete('/api/v1/app/favorites');
+
+      expect(response.status).toBe(200);
+      expect(sent).toHaveLength(1);
+    },
+  );
+
+  /**
+   * ⚠️ Разрешение НЕ должно расползаться на соседние адреса.
+   *
+   * Список сравнивается по началу строки, поэтому слишком короткий
+   * префикс открыл бы и то, что открывать не собирались.
+   */
+  it('разрешение не распространяется на соседние адреса', async () => {
+    await expect(api.post('/api/v1/app/favorites-import', {})).rejects.toThrow(/READ_ONLY/);
   });
 });

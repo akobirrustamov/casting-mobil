@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 
 import { useAuthStore } from '@/features/auth/store';
-import { READ_ONLY } from '@/lib/api';
 import { getItem, removeItem, setItem } from '@/lib/storage';
 
 import { addFavorites, fetchFavorites, removeFavorite } from './api';
@@ -25,15 +24,18 @@ import { addFavorites, fetchFavorites, removeFavorite } from './api';
  * там уже есть. Замена в любую сторону молча теряла бы часть: либо
  * то, что отмечено на этом телефоне, либо то, что на другом.
  *
- * <h2>⚠️ Пока `READ_ONLY` включён, синхронизации нет</h2>
- * Приложение смотрит в боевую базу сайта, и запись туда запрещена
- * (`lib/api.ts`). Список продолжает работать локально — ровно как
- * раньше. Синхронизация включится вместе с `EXPO_PUBLIC_READ_ONLY=false`.
+ * <h2>Про `READ_ONLY`</h2>
+ * Приложение смотрит в боевую базу сайта, и запись туда по умолчанию
+ * запрещена. Избранное — точечное исключение в `WRITE_ALLOWLIST`
+ * (`lib/api.ts`): это собственные предпочтения вошедшего человека,
+ * без денег и чужих данных.
+ *
+ * ⚠️ Решение о разрешении принимается ТАМ, а не здесь. Второй
+ * выключатель в этом файле означал бы, что функцию можно случайно
+ * выключить наполовину: запрос уходит, а состояние не меняется —
+ * или наоборот.
  */
 const KEY = 'uzcasting.favorites';
-
-/** Сервер участвует, только когда запись вообще разрешена. */
-const SYNC_ENABLED = !READ_ONLY;
 
 type FavoritesState = {
   ids: Set<number>;
@@ -65,8 +67,6 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
    * отмеченное до входа исчезнет ещё до того, как уйдёт наверх.
    */
   sync: async () => {
-    if (!SYNC_ENABLED) return;
-
     // ⚠️ Локальный список мог ещё не подняться с диска: восстановление
     // профиля и восстановление избранного стартуют параллельно. Без
     // этой строки слияние ушло бы с пустым списком и всё отмеченное
@@ -113,7 +113,7 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
     set({ ids: next });
     await persist([...next]);
 
-    if (!SYNC_ENABLED || !get().isSynced) return;
+    if (!get().isSynced) return;
 
     try {
       const server = adding ? await addFavorites([id]) : await removeFavorite(id);
