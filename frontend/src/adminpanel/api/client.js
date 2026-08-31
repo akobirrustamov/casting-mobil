@@ -10,7 +10,27 @@
  */
 import axios from 'axios';
 
-export const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+/**
+ * Backend manzili.
+ *
+ * <h2>⚠️ `??`, `||` EMAS</h2>
+ * BO'SH qiymat — bu «xuddi shu domen» degani va u to'liq haqiqiy
+ * sozlama. Panel jar ichidan beriladi, ya'ni API bilan bitta
+ * domenda turadi: nisbiy manzil har qanday domenda ishlaydi va CORS
+ * umuman kerak bo'lmaydi.
+ *
+ * `||` bilan bo'sh qiymat `localhost` ga tushib ketardi.
+ *
+ * ⚠️ O'zgaruvchi UMUMAN berilmasa — `localhost:8080`. Bu ishlab
+ * chiqish uchun qulay, lekin ishlab chiqarish buildida FALOKAT:
+ * qiymat bundle ichiga qotib qoladi va foydalanuvchi brauzeri o'z
+ * kompyuteriga murojaat qiladi. Sayt «ishlamaydi», konsolda esa
+ * localhost'ga so'rov ko'rinadi.
+ *
+ * Shuning uchun prod build'dan oldin `.env` da BO'SH qiymat
+ * qo'yiladi: `REACT_APP_API_URL=`
+ */
+export const BASE_URL = process.env.REACT_APP_API_URL ?? 'http://localhost:8080';
 
 const USER_KEY = 'uzpanel.user';
 
