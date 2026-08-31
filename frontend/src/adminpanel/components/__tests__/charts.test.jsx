@@ -66,6 +66,17 @@ describe('Palitra', () => {
     const status = ['var(--p-success)', 'var(--p-warning)', 'var(--p-danger)'];
     status.forEach((c) => expect(SERIES).not.toContain(c));
   });
+
+  /**
+   * ⚠️ Rang qiymati komponentda EMAS, `theme/panel.css` da.
+   *
+   * Loyiha qoidasi (§50): gamma bitta faylda. `DesignTokensTest` buni
+   * qo'riqlaydi va grafiklar birinchi yozilganda uni darhol ushladi —
+   * palitra hex ko'rinishida yozilgan edi.
+   */
+  it('ranglar CSS o\'zgaruvchilari orqali keladi', () => {
+    SERIES.forEach((c) => expect(c).toMatch(/^var\(--p-chart-\d\)$/));
+  });
 });
 
 describe('Dinamika grafigi', () => {

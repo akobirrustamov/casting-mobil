@@ -51,6 +51,7 @@ public class MonetizationController {
     private final com.example.backend.Cms.Service.CurrencyPricingService currencyPricingService;
     private final PermissionService permissionService;
     private final com.example.backend.Cms.Repository.SubscriptionRepo subscriptionRepo;
+    private final com.example.backend.Cms.Repository.TariffRepo tariffRepo;
     private final com.example.backend.Cms.Service.DonationTargetNames targetNames;
 
     private void require(Permission permission) {
@@ -123,6 +124,113 @@ public class MonetizationController {
     }
 
     // ---------------------------------------------------------------- tarif
+
+    /**
+     * Obunalar jamlanmasi — panel grafiklari uchun (§45, §48).
+     *
+     * <h2>⚠️ SON va DAROMAD alohida qaytariladi</h2>
+     * Sovg'a obunalarda ({@code ADMIN_GIFT}) to'lov yo'q. Ular
+     * obunachi sifatida sanaladi, lekin daromadga kirmaydi.
+     *
+     * Ikkalasini bitta songa qo'shish «10 ta obuna sotildi» degan
+     * yolg'on xulosa berardi, holbuki ularning yarmi bepul berilgan.
+     * Shuning uchun panel ham ularni ikkita ALOHIDA grafikda
+     * ko'rsatadi.
+     *
+     * <h2>Bekor qilinganlar</h2>
+     * Hech qayerga kirmaydi: ular na obunachi, na daromad.
+     */
+    @GetMapping("/subscriptions/summary")
+    @RequirePermission(Permission.SUBSCRIPTION_VIEW)
+    public ResponseEntity<SubscriptionSummaryDto> subscriptionSummary(
+            @RequestParam(defaultValue = "30") int days) {
+
+        require(Permission.SUBSCRIPTION_VIEW);
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        int safeDays = Math.min(Math.max(1, days), 365);
+
+        Map<Long, String> tariffNames = tariffRepo.findAll().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        com.example.backend.Cms.Entity.Tariff::getId,
+                        com.example.backend.Cms.Entity.Tariff::getCode,
+                        (a, b) -> a));
+
+        return ResponseEntity.ok(SubscriptionSummaryDto.builder()
+                .active(subscriptionRepo.countActive(now))
+                .expired(subscriptionRepo.countExpired(now))
+                .byTariff(subscriptionRepo.totalsByTariff().stream()
+                        .map(r -> TariffRow.builder()
+                                .tariffId(r.getTariffId())
+                                // ⚠️ Tarif o'chirilgan bo'lsa nom yo'q.
+                                // «—» yoziladi, chunki bo'sh yorliq
+                                // grafikda nomsiz ustun bo'lib qolardi.
+                                .code(tariffNames.getOrDefault(r.getTariffId(), "—"))
+                                .subscribers(r.getSubscribers())
+                                .revenue(r.getRevenue())
+                                .build())
+                        .toList())
+                .bySource(subscriptionRepo.totalsBySource().stream()
+                        .map(r -> SourceRow.builder()
+                                .source(r.getSource())
+                                .total(r.getTotal())
+                                .build())
+                        .toList())
+                .newByDay(subscriptionRepo.newByDay(
+                                now.toLocalDate().minusDays(safeDays).atStartOfDay()).stream()
+                        .map(r -> DayCountRow.builder()
+                                .day(r.getDay())
+                                .value(r.getValue())
+                                .build())
+                        .toList())
+                .build());
+    }
+
+    @lombok.Data
+    @lombok.Builder
+    public static class SubscriptionSummaryDto {
+        /** Hozir amal qilayotgan — muddati o'tmagan va bekor qilinmagan. */
+        private long active;
+        private long expired;
+
+        /** Tarif kesimi: obunachilar soni VA daromad — ikkalasi alohida. */
+        private List<TariffRow> byTariff;
+
+        /** Manba kesimi: sotib olingan va sovg'a. Faqat SON. */
+        private List<SourceRow> bySource;
+
+        /** Kunlik yangi obunalar SONI — daromad emas. */
+        private List<DayCountRow> newByDay;
+    }
+
+    @lombok.Data
+    @lombok.Builder
+    public static class TariffRow {
+        private Long tariffId;
+        private String code;
+        private Long subscribers;
+
+        /**
+         * ⚠️ Sovg'alar kirmaydi, ya'ni {@code subscribers} dan
+         * mustaqil. Ikkovini bir-biriga bo'lib «o'rtacha narx»
+         * hisoblash NOTO'G'RI bo'lardi.
+         */
+        private java.math.BigDecimal revenue;
+    }
+
+    @lombok.Data
+    @lombok.Builder
+    public static class SourceRow {
+        private com.example.backend.Cms.Enums.SubscriptionSource source;
+        private Long total;
+    }
+
+    @lombok.Data
+    @lombok.Builder
+    public static class DayCountRow {
+        private java.time.LocalDate day;
+        private Long value;
+    }
 
     @GetMapping("/tariffs")
     public ResponseEntity<List<TariffDto>> tariffs() {

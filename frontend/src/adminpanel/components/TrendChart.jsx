@@ -83,6 +83,14 @@ export default function TrendChart({ points, series, height = 180, formatValue }
           axisLine={false}
           width={56}
           tickFormatter={format}
+          /*
+            ⚠️ Kasr belgilar YO'Q.
+            Bu o'qda son turadi: obunachi, ko'rsatish, video. «0.5
+            obunachi» degan belgi ma'nosiz va u brauzerda aynan
+            shunday chiqdi. Kasr kerak bo'lgan o'lchov (masalan CTR)
+            bu grafiklarga umuman tushmaydi — u alohida turadi.
+          */
+          allowDecimals={false}
         />
 
         <Tooltip

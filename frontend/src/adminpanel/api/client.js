@@ -593,6 +593,14 @@ export const adminApi = {
   revokeDevice: (id, rowId) => api.del(`/api/v1/app/admin/users/${id}/devices/${rowId}`),
 
   subscriptions: (params) => api.get('/api/v1/app/admin/subscriptions', params),
+  /**
+   * Obunalar jamlanmasi — grafiklar uchun.
+   *
+   * ⚠️ Son va daromad ALOHIDA keladi: sovg'a obunalar sanaladi, lekin
+   * pul keltirmaydi. Ularni bitta grafikda birlashtirib bo'lmaydi.
+   */
+  subscriptionSummary: (params) =>
+    api.get('/api/v1/app/admin/subscriptions/summary', params),
   tariffs: () => api.get('/api/v1/app/admin/tariffs'),
   createTariff: (body) => api.post('/api/v1/app/admin/tariffs', body),
   updateTariff: (id, body) => api.put(`/api/v1/app/admin/tariffs/${id}`, body),

@@ -4,8 +4,11 @@ import { adminApi } from '../api/client';
 import { useApi } from '../api/useApi';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, SearchInput, SortableTh, TableWrap, useSort } from '../components/Ui';
+import TrendChart from '../components/TrendChart';
+import BarChart from '../components/charts/BarChart';
+import DonutChart from '../components/charts/DonutChart';
 import { usePanelI18n } from '../i18n';
-import { money } from '../utils/format';
+import { count, money } from '../utils/format';
 import Select from '../components/Select';
 
 /**
@@ -57,6 +60,17 @@ export default function SubscriptionsPage() {
     [page, q, active, source, sort, dir]
   );
 
+  /*
+   * ⚠️ Jamlanma FILTRLARDAN mustaqil.
+   *
+   * Ro'yxat filtrlanadi, grafiklar esa butun manzarani ko'rsatadi.
+   * Ular filtrga bog'lansa, «faol» filtri tanlanganda «muddati
+   * o'tgan» ustuni nolga tushib, admin ma'lumot yo'qolgan deb
+   * o'ylardi.
+   */
+  const summary = useApi(() => adminApi.subscriptionSummary({ days: 30 }), []);
+  const s = summary.data;
+
   return (
     <>
       <PageHeader
@@ -65,6 +79,75 @@ export default function SubscriptionsPage() {
         right={<SearchInput value={q} onChange={reset(setQ)}
                             placeholder={t('sub.searchHint')} />}
       />
+
+      {/*
+        ⚠️ Grafiklar SON va DAROMADNI aralashtirmaydi.
+
+        Sovg'a obunalarda to'lov yo'q. Ular obunachi sifatida
+        sanaladi, lekin daromadga kirmaydi — shuning uchun «tarif
+        bo'yicha obunachilar» va «tarif bo'yicha daromad» ikkita
+        ALOHIDA grafik. Bittasiga qo'shilsa panel «10 ta obuna
+        sotildi» deb ko'rsatardi, holbuki yarmi bepul berilgan.
+      */}
+      {summary.loading ? <LoadingState rows={2} /> :
+       summary.error ? <ErrorState error={summary.error} onRetry={summary.reload} /> : s && (
+        <div className="grid gap-4 mb-6"
+             style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
+
+          <div className="uz-card p-5">
+            <div className="uz-h2 mb-3" style={{ fontSize: 15 }}>{t('sub.active')}</div>
+            <DonutChart
+              height={160}
+              total={s.active + s.expired}
+              totalLabel={t('sub.subscribers')}
+              formatValue={count}
+              data={[
+                { label: t('sub.active'), value: s.active },
+                { label: t('sub.expired'), value: s.expired },
+              ]}
+            />
+          </div>
+
+          <div className="uz-card p-5">
+            <div className="uz-h2 mb-1" style={{ fontSize: 15 }}>{t('sub.byTariff')}</div>
+            <p className="uz-muted mb-3" style={{ fontSize: 12 }}>{t('sub.countNote')}</p>
+            <BarChart
+              height={Math.max(140, (s.byTariff?.length || 1) * 42)}
+              formatValue={count}
+              data={(s.byTariff || []).map((r) => ({
+                label: r.code,
+                subscribers: r.subscribers,
+              }))}
+              bars={[{ key: 'subscribers', label: t('sub.subscribers') }]}
+            />
+          </div>
+
+          <div className="uz-card p-5">
+            <div className="uz-h2 mb-1" style={{ fontSize: 15 }}>{t('sub.revenueByTariff')}</div>
+            <p className="uz-muted mb-3" style={{ fontSize: 12 }}>{t('sub.revenueNote')}</p>
+            <BarChart
+              height={Math.max(140, (s.byTariff?.length || 1) * 42)}
+              formatValue={money}
+              data={(s.byTariff || []).map((r) => ({
+                label: r.code,
+                revenue: Number(r.revenue) || 0,
+              }))}
+              bars={[{ key: 'revenue', label: t('sub.revenueByTariff') }]}
+            />
+          </div>
+
+          <div className="uz-card p-5">
+            <div className="uz-h2 mb-1" style={{ fontSize: 15 }}>{t('sub.newByDay')}</div>
+            <p className="uz-muted mb-3" style={{ fontSize: 12 }}>{t('sub.countNote')}</p>
+            <TrendChart
+              height={150}
+              formatValue={count}
+              points={(s.newByDay || []).map((r) => ({ day: r.day, value: r.value }))}
+              series={[{ key: 'value', label: t('sub.subscribers') }]}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="uz-card mb-4" style={{ padding: 14, display: 'flex',
            gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>

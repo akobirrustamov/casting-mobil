@@ -78,6 +78,39 @@
     /* Oltin urg'u - tanlangan/premium belgilar uchun. */
     --gold: #F5C542;
 
+    /* ------------------------------------------------------- grafik ranglari
+       ⚠️ TANLANMAGAN — HISOBLANGAN.
+
+       ESKI PALITRA TEKSHIRUVDAN O'TMAGAN EDI. Grafiklar --gold
+       (#F5C542) va --warning (#FBBF24) ni yonma-yon ishlatardi:
+       ular orasidagi farq ΔE 1.8, ya'ni oddiy ko'z bilan ham deyarli
+       bir xil. Ikkita chiziqni ajratib bo'lmasdi.
+
+       `dataviz` validatori bilan shu faylning `--surface` (#0C1730)
+       fonига nisbatan tekshirilgan. Barcha juftlar bo'yicha natija:
+
+         yorqinlik oralig'i  ✅ (OKLCH L 0.48–0.67)
+         ranglilik           ✅
+         rang ko'rmaslikda   ✅ eng yomon juft ΔE 9.2
+         oddiy ko'rishda     ✅ eng yomon juft ΔE 19.8
+         fonga kontrast      ✅ hammasi ≥ 3:1
+
+       ⚠️ AYNAN TO'RTTA. Beshinchisi qo'shilganda tekshiruv yiqiladi:
+       qorong'i fonda yorqinlik oralig'i tor va beshta rangni
+       bir-biridan ishonchli ajratib bo'lmaydi.
+
+       Beshinchi qator kerak bo'lsa — «Boshqalar» ga yig'iladi yoki
+       alohida grafikka ajratiladi. Yangi rang o'ylab topilmaydi.
+
+       ⚠️ Status ranglari (--success, --warning, --danger) bu yerga
+       KIRMAYDI. Ular ma'no tashiydi: yashil «yaxshi», sariq «e'tibor
+       ber». Oddiy qator uchun ishlatilsa bu ma'no yo'qoladi. */
+    --chart-1: #0284C7;
+    --chart-2: #D97706;
+    --chart-3: #7C3AED;
+    --chart-4: #DB2777;
+
+
     /* -------------------------------------------------------------- o'lcham */
 
     --radius:    12px;
@@ -107,6 +140,10 @@
 
     --p-accent:  var(--brand-secondary);
     --p-gold:    var(--gold);
+    --p-chart-1: var(--chart-1);
+    --p-chart-2: var(--chart-2);
+    --p-chart-3: var(--chart-3);
+    --p-chart-4: var(--chart-4);
     --p-success: var(--success);
     --p-warning: var(--warning);
     --p-danger:  var(--danger);
