@@ -264,7 +264,81 @@ curl -I https://cdn.uzcasting.site/<test-fayl>
 
 ---
 
-## 6. Sozlama fayli
+## 6. Sirlar — `deploy/` to'plami
+
+⚠️ **Parollar jar ICHIGA qo'yilmaydi.** Jar'ni olgan har kim uni
+ochib o'qiy oladi:
+
+```bash
+unzip -p backend.jar BOOT-INF/classes/application.properties
+```
+
+Jar esa `scp` bilan yuboriladi, `/tmp` da yotadi, zaxira nusxaga
+tushadi. Sir faqat serverda, 600 huquqli faylda turishi kerak.
+
+Repozitoriyda tayyor to'plam bor:
+
+```
+deploy/uzcasting.env.example   sirlar shabloni
+deploy/uzcasting.service       systemd birligi
+deploy/check-env.sh            to'liqlik tekshiruvi
+```
+
+### 6.1. Sirlarni to'ldirish
+
+```bash
+cp deploy/uzcasting.env.example deploy/uzcasting.env
+chmod 600 deploy/uzcasting.env
+nano deploy/uzcasting.env
+```
+
+To'ldiriladigan qiymatlar:
+
+| Kalit | Qayerdan |
+|---|---|
+| `APP_JWT_SECRET` | `openssl rand -hex 32` — bir marta yasang va **saqlang** |
+| `DB_PASSWORD` | 2-bosqichda PostgreSQL'da yaratganingiz |
+| `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` | Timeweb Object Storage paneli |
+| `CDN_BASE_URL` | CDN domeningiz |
+| `ESKIZ_EMAIL`, `ESKIZ_PASSWORD` | SMS hisobingiz |
+
+⚠️ `APP_JWT_SECRET` almashtirilsa **barcha foydalanuvchilar tizimdan
+chiqib ketadi**.
+
+### 6.2. TEKSHIRUV — serverga qo'yishdan oldin
+
+```bash
+sh deploy/check-env.sh deploy/uzcasting.env
+```
+
+⚠️ Bu qadamni o'tkazib yubormang. To'ldirilmagan qiymat ilovani
+TURLICHA yiqitadi: `APP_JWT_SECRET` bo'lmasa u darhol va tushunarli
+xato bilan to'xtaydi, `S3_BUCKET` bo'lmasa esa ilova **ko'tariladi**
+va nosozlik faqat birinchi fayl yuklashda, butunlay boshqa joyda
+chiqadi.
+
+### 6.3. Serverga qo'yish
+
+```bash
+scp deploy/uzcasting.env <user>@uzcasting.site:/tmp/
+scp deploy/uzcasting.service <user>@uzcasting.site:/tmp/
+```
+
+```bash
+# Serverda
+sudo install -m 600 -o uzcasting -g uzcasting \
+     /tmp/uzcasting.env /opt/uzcasting/uzcasting.env
+sudo install -m 644 /tmp/uzcasting.service \
+     /etc/systemd/system/uzcasting.service
+sudo rm /tmp/uzcasting.env
+```
+
+⚠️ `/tmp` dan o'chirishni unutmang — u yerda fayl hamma uchun
+o'qiladigan bo'lib qolishi mumkin.
+
+---
+
+## 6a. Sozlama fayli
 
 ```bash
 sudo -u uzcasting nano /opt/uzcasting/application.properties
@@ -325,8 +399,13 @@ yaratiladi. U faqat lokal stend uchun.
 
 ## 7. systemd xizmati
 
+⚠️ **Unit fayl 6.3 da allaqachon qo'yilgan** (`deploy/uzcasting.service`).
+Uni qo'lda yozish shart emas — quyidagisi faqat nima yozilganini
+tushuntirish uchun.
+
 ```bash
-sudo nano /etc/systemd/system/uzcasting.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now uzcasting
 ```
 
 ```ini

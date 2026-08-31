@@ -1,0 +1,43 @@
+[Unit]
+Description=UZCASTING backend
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=uzcasting
+Group=uzcasting
+WorkingDirectory=/opt/uzcasting
+
+# ⚠️ Sirlar SHU FAYLDAN, unit ichidan emas.
+#
+# `systemctl cat uzcasting` unit faylini har kimga ko'rsatadi va
+# `Environment=` qatorlari o'sha yerda ochiq turardi. Alohida fayl
+# esa 600 huquqi bilan yopiladi.
+EnvironmentFile=/opt/uzcasting/uzcasting.env
+
+# ⚠️ -Xmx4g — 16 GB serverda.
+#
+# Qolgani PostgreSQL (2–4 GB) va uchta parallel FFmpeg (~4.5 GB)
+# uchun kerak. Ko'proq berilsa transcoding paytida OS almashtirishga
+# tushadi va butun sayt sekinlashadi.
+ExecStart=/usr/bin/java -Xmx4g -jar /opt/uzcasting/backend.jar \
+  --spring.config.additional-location=file:/opt/uzcasting/application.properties
+
+Restart=on-failure
+RestartSec=10
+
+# ⚠️ To'xtatishga vaqt beriladi: ishlab turgan FFmpeg tugasin.
+# Darhol uzilsa yarim yozilgan HLS papkada qolardi va keyingi
+# urinish uni to'liq deb qabul qilishi mumkin edi.
+TimeoutStopSec=60
+
+# Oddiy qattiqlashtirish — ilova faqat o'z papkasiga yozadi.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/uzcasting
+
+[Install]
+WantedBy=multi-user.target
