@@ -15,7 +15,6 @@ import { cardRatio, rowRatio } from '@/features/content/orientation';
 import { mediaUrl } from '@/lib/api';
 import { colors } from '@/theme/tokens';
 
-import { seeAllRoute, seeAllTab } from './seeAll';
 import type { AccessPolicy, BannerCard, ContentCard, HomeSection } from './types';
 
 /**
@@ -247,14 +246,14 @@ export function HomeSectionView({
     // делает строку разновысокой и подписи разъезжаются по вертикали.
     const ratio = rowRatio(section.content.map((c) => c.orientation));
 
-    // «Barchasi ›» — только там, где есть куда вести: у подборок
-    // («Танланган», «Машҳур») своей вкладки на экране «Media» нет.
-    const tab = seeAllTab(section.type);
-
     return (
       <Rail
         title={title}
-        onSeeAll={tab ? () => router.push(seeAllRoute(tab)) : undefined}
+        // «Barchasi ›» открывает РОВНО этот ряд, а не похожую вкладку.
+        // Раньше вело на «Media» с подходящим типом, и набор получался
+        // другой: ряд «Mini seriallar» — это `MINI_SERIES`, а вкладка
+        // «Seriallar» показывает ещё и `SERIES`.
+        onSeeAll={() => router.push(`/section/${section.id}`)}
       >
         {section.content.map((card) => (
           <ContentPoster key={card.id} card={card} ratio={ratio} />
@@ -288,7 +287,7 @@ function PremiereRail({ section, title }: { section: HomeSection; title: string 
     <Rail
       title={title}
       icon="flame"
-      onSeeAll={() => router.push(seeAllRoute('series'))}
+      onSeeAll={() => router.push(`/section/${section.id}`)}
     >
       {items.map((b) => (
         <PosterCard

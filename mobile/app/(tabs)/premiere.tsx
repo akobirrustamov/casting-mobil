@@ -1,17 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { ScreenState } from '@/components/states/ScreenState';
 import { Screen } from '@/components/ui/Screen';
-import { SkeletonGrid } from '@/components/ui/Skeleton';
-import { contentCards, HomeFeedUnavailableError, useHomeFeed } from '@/features/home/api';
-import { isVertical, rowRatio } from '@/features/content/orientation';
-import { ContentPoster, HomeSectionView } from '@/features/home/sections';
-import type { ContentCard } from '@/features/home/types';
-import { useIsOffline } from '@/lib/network';
+import { isVertical } from '@/features/content/orientation';
+import { contentCards, useHomeFeed } from '@/features/home/api';
+import { ContentGrid } from '@/features/home/ContentGrid';
+import { HomeSectionView } from '@/features/home/sections';
 import { colors } from '@/theme/tokens';
 
 /**
@@ -57,28 +53,12 @@ const TABS = [
   { key: 'movies', label: 'tabsMovies', icon: 'videocam-outline', types: ['MOVIE', 'SHORT_FILM'] },
 ] as const;
 
-/**
- * Три карточки в ряду — заказчик: «barchasini bossa → 3 ta content».
- *
- * Ширина считается от экрана, а не задана числом: на 158px две карточки
- * влезали на узком телефоне и три на широком, то есть сетка разъезжалась
- * от устройства к устройству.
- */
-const COLUMNS = 3;
-const GRID_GAP = 8;
-const SCREEN_PADDING = 16;
-
 export default function PremiereScreen() {
   const { t } = useTranslation();
   const feed = useHomeFeed();
-  const isOffline = useIsOffline();
-  const { width } = useWindowDimensions();
 
-  // Вкладка может прийти из ряда на главной. Незнакомый ключ — первая:
-  // экран не должен падать из-за адреса, набранного руками.
-  const { tab } = useLocalSearchParams<{ tab?: string }>();
-  const fromRoute = TABS.findIndex((x) => x.key === tab);
-  const [active, setActive] = useState(fromRoute >= 0 ? fromRoute : 0);
+
+  const [active, setActive] = useState(0);
 
   const all = useMemo(() => contentCards(feed.data), [feed.data]);
 
@@ -153,80 +133,12 @@ export default function PremiereScreen() {
         </View>
       ) : null}
 
-      <PremiereGrid
-        width={width}
+      <ContentGrid
         feed={feed}
         cards={visible}
         hasAny={all.length > 0}
-        isOffline={isOffline}
+        emptyBody={t('premiere.emptyByTab')}
       />
     </Screen>
-  );
-}
-
-function PremiereGrid({
-  width,
-  feed,
-  cards,
-  hasAny,
-  isOffline,
-}: {
-  width: number;
-  feed: ReturnType<typeof useHomeFeed>;
-  cards: ContentCard[];
-  /** Есть ли контент вообще — чтобы отличить «пусто в табе» от «пусто везде». */
-  hasAny: boolean;
-  isOffline: boolean;
-}) {
-  const cardWidth =
-    (width - SCREEN_PADDING * 2 - GRID_GAP * (COLUMNS - 1)) / COLUMNS;
-
-  const { t } = useTranslation();
-
-  if (feed.isPending) {
-    return (
-      <View className="-mx-4">
-        <SkeletonGrid count={6} cardWidth={cardWidth} />
-      </View>
-    );
-  }
-
-  if (feed.isError) {
-    const unavailable = feed.error instanceof HomeFeedUnavailableError;
-    return (
-      <View className="h-64">
-        <ScreenState
-          kind={isOffline ? 'offline' : 'error'}
-          title={unavailable ? t('home.feedUnavailableTitle') : undefined}
-          body={unavailable ? t('home.feedUnavailableBody') : undefined}
-          onRetry={() => feed.refetch()}
-        />
-      </View>
-    );
-  }
-
-  if (cards.length === 0) {
-    return (
-      <View className="h-64">
-        {/* Пустой таб и пустой каталог — разные вещи: в первом случае человек
-            сам сузил выборку и подсказка должна вести обратно к табам. */}
-        <ScreenState kind="empty" body={hasAny ? t('premiere.emptyByTab') : undefined} />
-      </View>
-    );
-  }
-
-  // Сетка переносит карточки по строкам, поэтому форма должна быть одна:
-  // вертикальная карточка рядом с обычной делает строку разновысокой.
-  const ratio = rowRatio(cards.map((c) => c.orientation));
-
-  return (
-    <View
-      className="flex-row flex-wrap"
-      style={{ gap: GRID_GAP }}
-    >
-      {cards.map((card) => (
-        <ContentPoster key={card.id} card={card} width={cardWidth} ratio={ratio} />
-      ))}
-    </View>
   );
 }
