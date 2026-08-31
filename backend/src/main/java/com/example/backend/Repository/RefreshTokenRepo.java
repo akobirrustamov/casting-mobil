@@ -38,8 +38,15 @@ public interface RefreshTokenRepo extends JpaRepository<RefreshToken, UUID> {
             + "where t.userId = :userId and t.revokedAt is null")
     int revokeAllForUser(@Param("userId") UUID userId, @Param("now") LocalDateTime now);
 
-    /** Muddati o'tganlarni tozalash — jadval cheksiz o'smasin. */
-    @Modifying
+    /**
+     * Muddati o'tganlarni tozalash — jadval cheksiz o'smasin.
+     *
+     * ⚠️ {@code clearAutomatically} — {@code revokeAllForUser} dagi
+     * bilan bir xil sabab: ommaviy {@code delete} keshni chetlab
+     * o'tadi va o'chirilgan qator ayni tranzaksiyada hali ham
+     * mavjud bo'lib ko'rinadi.
+     */
+    @Modifying(clearAutomatically = true)
     @Query("delete from RefreshToken t where t.expiresAt < :before")
     int deleteExpired(@Param("before") LocalDateTime before);
 }

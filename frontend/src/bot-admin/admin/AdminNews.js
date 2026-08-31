@@ -3,7 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { AdminPage, AdminPageHeader, AdminError, AdminLoading } from "./AdminLayout";
 import { FaPlus, FaTrash, FaTimes, FaSpinner, FaEdit } from 'react-icons/fa';
 
-const baseUrl = "http://localhost:8080"; // поменяй на свой бэкенд адрес
+// ⚠️ Ilgari bu yerda `http://localhost:8080` QOTIB yozilgan edi.
+//
+// Bu sahifa `/admin/news` marshrutida jonli ishlaydi, ya'ni ishlab
+// chiqarishda u foydalanuvchi brauzerini o'z kompyuteriga yuborardi:
+// yangilik ochilmasdi, rasm ko'rinmasdi, sabab esa konsolda
+// `localhost` ga so'rov bo'lib turardi.
+//
+// Endi manzil boshqa hamma joydagi kabi bitta sozlamadan keladi.
+import { baseUrl } from "../../config";
 
 const AdminNews = () => {
     const [newsList, setNewsList] = useState([]);

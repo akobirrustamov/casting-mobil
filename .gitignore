@@ -168,3 +168,10 @@ temp/
 backend/data/
 *.mv.db
 *.trace.db
+
+# ==========================================================================
+#  Deploy sirlari
+# ==========================================================================
+#  ⚠️ Haqiqiy qiymatli fayl HECH QACHON repozitoriyga tushmasin.
+#  Namunasi (`.example`) esa tushadi — u yerda faqat bo'sh joylar bor.
+deploy/uzcasting.env

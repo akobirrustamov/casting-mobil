@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { setAuthToken, setTokenRefresher } from '@/lib/api';
 import { getItem, removeItem, setItem } from '@/lib/storage';
 
-import { refreshSession } from './api';
+import { fetchMe, refreshSession } from './api';
 
 /**
  * Состояние авторизации.
@@ -66,6 +66,13 @@ type AuthState = {
   /** @returns новый access-токен либо `null`, если сессия закончилась. */
   renew: () => Promise<string | null>;
   /**
+   * Подтянуть свежий профиль с сервера.
+   *
+   * Ничего не ждёт и не бросает: экран уже нарисован по кэшу, а это
+   * фоновое уточнение.
+   */
+  syncProfile: () => Promise<void>;
+  /**
    * @param refreshToken необязателен: dev-вход выдаёт только access-токен.
    *        Без него сессия живёт 15 минут — как и раньше.
    */
@@ -98,7 +105,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       getItem(USER_KEY),
     ]);
 
-    // TODO: по токену дёрнуть свежий профиль, когда появится эндпоинт
+    // ⚠️ Сначала показываем КЭШ, потом уточняем с сервера.
+    //
+    // Ждать сеть на старте нельзя: при плохой связи человек смотрел
+    // бы на сплэш несколько секунд, хотя все данные для первого
+    // кадра уже лежат на диске.
     set({
       token,
       refreshToken,
@@ -106,6 +117,38 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       isAuthorized: Boolean(token),
       isRestoring: false,
     });
+
+    if (token) {
+      // Намеренно без await — фоновое уточнение.
+      void get().syncProfile();
+    }
+  },
+
+  /**
+   * Свежий профиль с сервера.
+   *
+   * <h2>⚠️ Что это чинит</h2>
+   * Профиль сохранялся при входе и больше никогда не обновлялся:
+   * имя, аватар, статус Premium и блокировка оставались такими же,
+   * какими были в день входа.
+   *
+   * <h2>Побочная польза: проверка сессии на старте</h2>
+   * Если токен уже недействителен, этот запрос получит 401 —
+   * интерцептор либо продлит сессию, либо выведет из аккаунта. То
+   * есть человек не увидит «вошедший» интерфейс с мёртвым токеном.
+   */
+  syncProfile: async () => {
+    if (!get().token) return;
+
+    try {
+      const { user } = await fetchMe();
+      await setItem(USER_KEY, JSON.stringify(user));
+      set({ user });
+    } catch {
+      // Сеть, старая сборка бэкенда или конец сессии — на всех трёх
+      // случаях остаёмся на кэше. Выход из аккаунта, если он нужен,
+      // сделает интерцептор в `lib/api`.
+    }
   },
 
   signIn: async (token, user, refreshToken = null) => {
