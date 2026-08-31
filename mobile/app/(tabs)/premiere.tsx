@@ -1,16 +1,14 @@
-import { useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { ScreenState } from '@/components/states/ScreenState';
 import { Screen } from '@/components/ui/Screen';
-import { SkeletonGrid } from '@/components/ui/Skeleton';
-import { contentCards, HomeFeedUnavailableError, useHomeFeed } from '@/features/home/api';
-import { isVertical, rowRatio } from '@/features/content/orientation';
-import { ContentPoster, HomeSectionView } from '@/features/home/sections';
-import type { ContentCard } from '@/features/home/types';
-import { useIsOffline } from '@/lib/network';
+import { isVertical } from '@/features/content/orientation';
+import { contentCards, useHomeFeed } from '@/features/home/api';
+import { ContentGrid } from '@/features/home/ContentGrid';
+import { HomeSectionView } from '@/features/home/sections';
+import { colors } from '@/theme/tokens';
 
 /**
  * Каталог премьер. По ТЗ (V3, стр. 17 «16. Premyera katalogi»):
@@ -46,27 +44,21 @@ import { useIsOffline } from '@/lib/network';
  * (`features/home/seeAll`), и перестановка вкладок не должна ломать ссылки.
  */
 const TABS = [
-  { key: 'series', label: 'tabsSeries', types: ['SERIES', 'MINI_SERIES'] },
-  { key: 'podcasts', label: 'tabsPodcasts', types: ['PODCAST'] },
-  { key: 'reels', label: 'tabsReels', types: null, vertical: true },
-  { key: 'clips', label: 'tabsClips', types: ['CLIP'] },
-  { key: 'streams', label: 'tabsStreams', types: ['STREAM'] },
-  { key: 'shows', label: 'tabsShows', types: ['SHOW'] },
-  { key: 'movies', label: 'tabsMovies', types: ['MOVIE', 'SHORT_FILM'] },
+  { key: 'series', label: 'tabsSeries', icon: 'film-outline', types: ['SERIES', 'MINI_SERIES'] },
+  { key: 'podcasts', label: 'tabsPodcasts', icon: 'mic-outline', types: ['PODCAST'] },
+  { key: 'reels', label: 'tabsReels', icon: 'play-circle-outline', types: null, vertical: true },
+  { key: 'clips', label: 'tabsClips', icon: 'musical-notes-outline', types: ['CLIP'] },
+  { key: 'streams', label: 'tabsStreams', icon: 'radio-outline', types: ['STREAM'] },
+  { key: 'shows', label: 'tabsShows', icon: 'sparkles-outline', types: ['SHOW'] },
+  { key: 'movies', label: 'tabsMovies', icon: 'videocam-outline', types: ['MOVIE', 'SHORT_FILM'] },
 ] as const;
-
-const CARD_WIDTH = 158;
 
 export default function PremiereScreen() {
   const { t } = useTranslation();
   const feed = useHomeFeed();
-  const isOffline = useIsOffline();
 
-  // Вкладка может прийти из ряда на главной. Незнакомый ключ — первая:
-  // экран не должен падать из-за адреса, набранного руками.
-  const { tab } = useLocalSearchParams<{ tab?: string }>();
-  const fromRoute = TABS.findIndex((x) => x.key === tab);
-  const [active, setActive] = useState(fromRoute >= 0 ? fromRoute : 0);
+
+  const [active, setActive] = useState(0);
 
   const all = useMemo(() => contentCards(feed.data), [feed.data]);
 
@@ -106,10 +98,15 @@ export default function PremiereScreen() {
             onPress={() => setActive(i)}
             accessibilityRole="button"
             accessibilityState={{ selected: i === active }}
-            className={`rounded-pill px-4 py-2 ${
+            className={`flex-row items-center gap-1.5 rounded-pill px-4 py-2 ${
               i === active ? 'bg-purple' : 'bg-surface'
             }`}
           >
+            <Ionicons
+              name={item.icon}
+              size={14}
+              color={i === active ? colors.white : colors.textMuted}
+            />
             <Text
               className={`text-caption ${
                 i === active ? 'font-semibold text-white' : 'text-text-muted'
@@ -136,71 +133,12 @@ export default function PremiereScreen() {
         </View>
       ) : null}
 
-      <PremiereGrid
+      <ContentGrid
         feed={feed}
         cards={visible}
         hasAny={all.length > 0}
-        isOffline={isOffline}
+        emptyBody={t('premiere.emptyByTab')}
       />
     </Screen>
-  );
-}
-
-function PremiereGrid({
-  feed,
-  cards,
-  hasAny,
-  isOffline,
-}: {
-  feed: ReturnType<typeof useHomeFeed>;
-  cards: ContentCard[];
-  /** Есть ли контент вообще — чтобы отличить «пусто в табе» от «пусто везде». */
-  hasAny: boolean;
-  isOffline: boolean;
-}) {
-  const { t } = useTranslation();
-
-  if (feed.isPending) {
-    return (
-      <View className="-mx-4">
-        <SkeletonGrid count={6} cardWidth={CARD_WIDTH} />
-      </View>
-    );
-  }
-
-  if (feed.isError) {
-    const unavailable = feed.error instanceof HomeFeedUnavailableError;
-    return (
-      <View className="h-64">
-        <ScreenState
-          kind={isOffline ? 'offline' : 'error'}
-          title={unavailable ? t('home.feedUnavailableTitle') : undefined}
-          body={unavailable ? t('home.feedUnavailableBody') : undefined}
-          onRetry={() => feed.refetch()}
-        />
-      </View>
-    );
-  }
-
-  if (cards.length === 0) {
-    return (
-      <View className="h-64">
-        {/* Пустой таб и пустой каталог — разные вещи: в первом случае человек
-            сам сузил выборку и подсказка должна вести обратно к табам. */}
-        <ScreenState kind="empty" body={hasAny ? t('premiere.emptyByTab') : undefined} />
-      </View>
-    );
-  }
-
-  // Сетка переносит карточки по строкам, поэтому форма должна быть одна:
-  // вертикальная карточка рядом с обычной делает строку разновысокой.
-  const ratio = rowRatio(cards.map((c) => c.orientation));
-
-  return (
-    <View className="flex-row flex-wrap justify-between gap-y-4">
-      {cards.map((card) => (
-        <ContentPoster key={card.id} card={card} width={CARD_WIDTH} ratio={ratio} />
-      ))}
-    </View>
   );
 }
