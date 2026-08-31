@@ -12,11 +12,10 @@ import { trackAdClick, trackAdImpression } from '@/features/analytics/api';
 import { categoryIcon } from '@/features/content/categoryIcons';
 import { formatDuration } from '@/features/content/duration';
 import { cardRatio, rowRatio } from '@/features/content/orientation';
-
-import { seeAllRoute, seeAllTab } from './seeAll';
 import { mediaUrl } from '@/lib/api';
 import { colors } from '@/theme/tokens';
 
+import { seeAllRoute, seeAllTab } from './seeAll';
 import type { AccessPolicy, BannerCard, ContentCard, HomeSection } from './types';
 
 /**
