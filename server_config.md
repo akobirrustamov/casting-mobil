@@ -264,89 +264,70 @@ curl -I https://cdn.uzcasting.site/<test-fayl>
 
 ---
 
-## 6. Sirlar — `deploy/` to'plami
+## 6. Sozlama — BITTA fayl
 
-⚠️ **Parollar jar ICHIGA qo'yilmaydi.** Jar'ni olgan har kim uni
-ochib o'qiy oladi:
+⚠️ **Sirlar jar ichiga qo'yilmaydi.** Jar'ni olgan har kim uni ochib
+o'qiy oladi, jar esa `scp` bilan yuboriladi, `/tmp` da yotadi,
+zaxira nusxaga tushadi.
+
+O'rniga bitta fayl jar YONIDA turadi. Spring Boot uni **o'zi
+topadi** — na bayroq, na muhit o'zgaruvchisi kerak:
+
+```
+/opt/uzcasting/
+    backend.jar
+    application.properties     ← barcha sozlamalar shu yerda
+```
 
 ```bash
-unzip -p backend.jar BOOT-INF/classes/application.properties
+cd /opt/uzcasting && java -jar backend.jar
 ```
 
-Jar esa `scp` bilan yuboriladi, `/tmp` da yotadi, zaxira nusxaga
-tushadi. Sir faqat serverda, 600 huquqli faylda turishi kerak.
+### 6.1. To'ldirish
 
-Repozitoriyda tayyor to'plam bor:
+`deploy/application.properties` da to'rtta joy `BU_YERGA…` deb
+belgilangan:
 
-```
-deploy/uzcasting.env.example   sirlar shabloni
-deploy/uzcasting.service       systemd birligi
-deploy/check-env.sh            to'liqlik tekshiruvi
-```
-
-### 6.1. Sirlarni to'ldirish
-
-```bash
-cp deploy/uzcasting.env.example deploy/uzcasting.env
-chmod 600 deploy/uzcasting.env
-nano deploy/uzcasting.env
-```
-
-To'ldiriladigan qiymatlar:
-
-| Kalit | Qayerdan |
+| Nima | Qayerdan |
 |---|---|
-| `APP_JWT_SECRET` | `openssl rand -hex 32` — bir marta yasang va **saqlang** |
-| `DB_PASSWORD` | 2-bosqichda PostgreSQL'da yaratganingiz |
-| `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` | Timeweb Object Storage paneli |
-| `CDN_BASE_URL` | CDN domeningiz |
-| `ESKIZ_EMAIL`, `ESKIZ_PASSWORD` | SMS hisobingiz |
+| `spring.datasource.password` | PostgreSQL'da yaratganingiz (2-bosqich) |
+| `app.storage.s3.bucket` | Timeweb Object Storage |
+| `app.storage.s3.access-key` | O'sha paneldan |
+| `app.storage.s3.secret-key` | O'sha paneldan |
 
-⚠️ `APP_JWT_SECRET` almashtirilsa **barcha foydalanuvchilar tizimdan
-chiqib ketadi**.
+Domen va CDN manzillarini ham o'zingiznikiga moslang.
 
-### 6.2. Lokalda sinab ko'rish
+⚠️ **`app.jwt.secret` allaqachon yasalgan.** Uni o'zgartirmang —
+almashtirsangiz barcha foydalanuvchilar tizimdan chiqib ketadi.
+
+### 6.2. TEKSHIRUV — serverga qo'yishdan oldin
 
 ```bash
-sh deploy/run.sh
+sh deploy/check-config.sh deploy/application.properties
 ```
 
-⚠️ **`java -jar backend.jar` deb to'g'ridan-to'g'ri ishga
-tushirmang.** `uzcasting.env` ni faqat systemd o'qiydi
-(`EnvironmentFile`); Java esa faqat MUHIT o'zgaruvchilarini ko'radi.
-Fayl to'ldirilgan bo'lsa ham birinchi xato `Could not resolve
-placeholder 'app.jwt.secret'` bo'ladi — sababi «to'ldirilmagan» emas,
-«o'qilmagan», va bu farq stack trace'dan ko'rinmaydi.
+⚠️ O'tkazib yubormang. To'ldirilmagan qiymat ilovani **turlicha**
+yiqitadi: `app.jwt.secret` yo'q bo'lsa u darhol va tushunarli xato
+bilan to'xtaydi, `s3.bucket` to'ldirilmagan bo'lsa esa ilova
+**ko'tariladi** va nosozlik faqat birinchi fayl yuklashda, butunlay
+boshqa joyda chiqadi.
 
-`run.sh` faylni o'qiydi, to'liqligini tekshiradi va keyin ishga
-tushiradi.
-
-### 6.3. TEKSHIRUV — serverga qo'yishdan oldin
+### 6.3. Serverga qo'yish
 
 ```bash
-sh deploy/check-env.sh deploy/uzcasting.env
-```
-
-⚠️ Bu qadamni o'tkazib yubormang. To'ldirilmagan qiymat ilovani
-TURLICHA yiqitadi: `APP_JWT_SECRET` bo'lmasa u darhol va tushunarli
-xato bilan to'xtaydi, `S3_BUCKET` bo'lmasa esa ilova **ko'tariladi**
-va nosozlik faqat birinchi fayl yuklashda, butunlay boshqa joyda
-chiqadi.
-
-### 6.4. Serverga qo'yish
-
-```bash
-scp deploy/uzcasting.env <user>@uzcasting.site:/tmp/
+scp backend/target/backend-0.0.1-SNAPSHOT.jar <user>@uzcasting.site:/tmp/backend.jar
+scp deploy/application.properties <user>@uzcasting.site:/tmp/
 scp deploy/uzcasting.service <user>@uzcasting.site:/tmp/
 ```
 
 ```bash
 # Serverda
+sudo mv /tmp/backend.jar /opt/uzcasting/backend.jar
 sudo install -m 600 -o uzcasting -g uzcasting \
-     /tmp/uzcasting.env /opt/uzcasting/uzcasting.env
-sudo install -m 644 /tmp/uzcasting.service \
-     /etc/systemd/system/uzcasting.service
-sudo rm /tmp/uzcasting.env
+     /tmp/application.properties /opt/uzcasting/application.properties
+sudo install -m 644 /tmp/uzcasting.service /etc/systemd/system/uzcasting.service
+sudo chown uzcasting:uzcasting /opt/uzcasting/backend.jar
+sudo rm -f /tmp/application.properties
 ```
 
 ⚠️ `/tmp` dan o'chirishni unutmang — u yerda fayl hamma uchun
@@ -354,130 +335,33 @@ o'qiladigan bo'lib qolishi mumkin.
 
 ---
 
-## 6a. Sozlama fayli
-
-```bash
-sudo -u uzcasting nano /opt/uzcasting/application.properties
-```
-
-Repozitoriydagi `backend/src/main/resources/application.properties.example`
-dan nusxa oling va quyidagilarni to'ldiring:
-
-```properties
-# --- Baza ---
-spring.datasource.url=jdbc:postgresql://localhost:5432/casting
-spring.datasource.username=uzcasting
-spring.datasource.password=${DB_PASSWORD}
-
-# --- Kalit ---
-# openssl rand -hex 32
-app.jwt.secret=${APP_JWT_SECRET}
-
-# --- Domen ---
-app.cors.allowed-origins=https://uzcasting.site
-
-# --- Ombor ---
-app.storage.provider=s3
-app.storage.s3.endpoint=https://s3.twcstorage.ru
-app.storage.s3.region=ru-1
-app.storage.s3.bucket=uzcasting-media
-app.storage.s3.access-key=${S3_ACCESS_KEY}
-app.storage.s3.secret-key=${S3_SECRET_KEY}
-
-# --- CDN ---
-app.video.cdn.base-url=https://cdn.uzcasting.site
-
-# --- Transcoding ---
-app.video.max-concurrent-jobs=3
-app.video.min-free-disk=10GB
-app.video.temp-dir=/opt/uzcasting/files/.transcoding
-
-# --- Fayl hajmi ---
-spring.servlet.multipart.max-file-size=50MB
-spring.servlet.multipart.max-request-size=50MB
-```
-
-⚠️ **Sirlarni bu faylga yozmang.** `${...}` shaklida qoldiring va
-qiymatlarni systemd orqali bering (7-bosqich). Fayl o'qilsa parollar
-ham o'qiladi.
-
-```bash
-sudo chmod 640 /opt/uzcasting/application.properties
-sudo chown uzcasting:uzcasting /opt/uzcasting/application.properties
-```
-
-### ⚠️ `app.bootstrap.allow-weak-password` — TEGMANG
-
-Sukut qiymati `false`. `true` qilinsa `12345678` parolli hisoblar
-yaratiladi. U faqat lokal stend uchun.
-
----
-
 ## 7. systemd xizmati
 
-⚠️ **Unit fayl 6.3 da allaqachon qo'yilgan** (`deploy/uzcasting.service`).
-Uni qo'lda yozish shart emas — quyidagisi faqat nima yozilganini
-tushuntirish uchun.
+Unit fayl 6.3 da allaqachon qo'yilgan (`deploy/uzcasting.service`).
 
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now uzcasting
-```
-
-```ini
-[Unit]
-Description=UZCASTING backend
-After=network.target postgresql.service
-
-[Service]
-Type=simple
-User=uzcasting
-WorkingDirectory=/opt/uzcasting
-
-# ⚠️ Sirlar SHU YERDA, sozlama faylida emas.
-Environment="DB_PASSWORD=<baza_paroli>"
-Environment="APP_JWT_SECRET=<openssl rand -hex 32>"
-Environment="S3_ACCESS_KEY=<kalit>"
-Environment="S3_SECRET_KEY=<maxfiy_kalit>"
-Environment="ESKIZ_EMAIL=<sms_login>"
-Environment="ESKIZ_PASSWORD=<sms_parol>"
-
-ExecStart=/usr/bin/java -Xmx4g -jar /opt/uzcasting/backend.jar \
-  --spring.config.additional-location=file:/opt/uzcasting/application.properties
-
-Restart=on-failure
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-sudo chmod 600 /etc/systemd/system/uzcasting.service
-sudo systemctl daemon-reload
-sudo systemctl enable uzcasting
-sudo systemctl start uzcasting
-```
-
-⚠️ `-Xmx4g` — 16 GB serverda. Qolgani PostgreSQL va uchta FFmpeg
-jarayoniga kerak (§4.13 hisobi).
-
-**TEKSHIRUV**
-
-```bash
 sudo journalctl -u uzcasting -f
 ```
 
-Uchta qatorni izlang:
+⚠️ Unit faylda sozlama yo'li **ko'rsatilmagan** va bu ataylab:
+`WorkingDirectory=/opt/uzcasting` berilgan, Spring Boot esa o'sha
+papkadagi `application.properties` ni o'zi topadi.
+
+**TEKSHIRUV** — loglarda uchta qator:
 
 ```
+Successfully applied 29 migrations … now at version v29
 Started BackendApplication in … seconds
 Video transcoding tayyor: ffmpeg version … · diskda … GB bo'sh
-Tomcat started on port(s): 8080
 ```
 
 ⚠️ «Video transcoding ISHLAMAYDI» chiqsa — 1.2 ga qayting. Sayt
 baribir ishlaydi, faqat video HLS'ga o'girilmaydi.
+
+⚠️ «JWT KALITI BERILMAGAN» chiqsa — `application.properties`
+jar yonida emas yoki `WorkingDirectory` boshqa joyni ko'rsatyapti.
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/v1/app/home
@@ -581,22 +465,26 @@ Yarim qo'llangan sxema ustiga ishlamang.
 
 ## 10. Admin hisobini yaratish
 
-Birinchi startda hisoblar `APP_*_PHONE` / `APP_*_PASSWORD`
-o'zgaruvchilaridan yaratiladi. Ular bo'sh bo'lsa hisob yaratilmaydi.
+`application.properties` ning oxirida (3-QISM) ikkita qator izohda
+turibdi. Ularni oching va parol qo'ying:
 
-systemd fayliga qo'shing va qayta ishga tushiring:
-
-```
-Environment="APP_GIPERSUPERADMIN_PHONE=+998901110001"
-Environment="APP_GIPERSUPERADMIN_PASSWORD=<kuchli_parol>"
+```properties
+app.gipersuperadmin.phone=+998901110001
+app.gipersuperadmin.password=<kuchli_parol>
 ```
 
 ```bash
 sudo systemctl restart uzcasting
 ```
 
-⚠️ Hisob yaratilgach bu ikki qatorni **olib tashlang** va qayta ishga
-tushiring. Parol systemd faylida turishi shart emas.
+Parol talabi: kamida 8 belgi, harf va raqam.
+
+⚠️ Hisob yaratilgach bu ikki qatorni **qayta izohga oling** va
+xizmatni qayta ishga tushiring. Parol serverda faylda turishi shart
+emas.
+
+⚠️ Ular bo'sh bo'lsa hisob umuman yaratilmaydi — ya'ni tasodifan
+zaif parolli admin paydo bo'lmaydi.
 
 ---
 
