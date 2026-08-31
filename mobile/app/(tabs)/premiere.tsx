@@ -1,7 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 
 import { ScreenState } from '@/components/states/ScreenState';
 import { Screen } from '@/components/ui/Screen';
@@ -11,6 +12,7 @@ import { isVertical, rowRatio } from '@/features/content/orientation';
 import { ContentPoster, HomeSectionView } from '@/features/home/sections';
 import type { ContentCard } from '@/features/home/types';
 import { useIsOffline } from '@/lib/network';
+import { colors } from '@/theme/tokens';
 
 /**
  * Каталог премьер. По ТЗ (V3, стр. 17 «16. Premyera katalogi»):
@@ -46,21 +48,31 @@ import { useIsOffline } from '@/lib/network';
  * (`features/home/seeAll`), и перестановка вкладок не должна ломать ссылки.
  */
 const TABS = [
-  { key: 'series', label: 'tabsSeries', types: ['SERIES', 'MINI_SERIES'] },
-  { key: 'podcasts', label: 'tabsPodcasts', types: ['PODCAST'] },
-  { key: 'reels', label: 'tabsReels', types: null, vertical: true },
-  { key: 'clips', label: 'tabsClips', types: ['CLIP'] },
-  { key: 'streams', label: 'tabsStreams', types: ['STREAM'] },
-  { key: 'shows', label: 'tabsShows', types: ['SHOW'] },
-  { key: 'movies', label: 'tabsMovies', types: ['MOVIE', 'SHORT_FILM'] },
+  { key: 'series', label: 'tabsSeries', icon: 'film-outline', types: ['SERIES', 'MINI_SERIES'] },
+  { key: 'podcasts', label: 'tabsPodcasts', icon: 'mic-outline', types: ['PODCAST'] },
+  { key: 'reels', label: 'tabsReels', icon: 'play-circle-outline', types: null, vertical: true },
+  { key: 'clips', label: 'tabsClips', icon: 'musical-notes-outline', types: ['CLIP'] },
+  { key: 'streams', label: 'tabsStreams', icon: 'radio-outline', types: ['STREAM'] },
+  { key: 'shows', label: 'tabsShows', icon: 'sparkles-outline', types: ['SHOW'] },
+  { key: 'movies', label: 'tabsMovies', icon: 'videocam-outline', types: ['MOVIE', 'SHORT_FILM'] },
 ] as const;
 
-const CARD_WIDTH = 158;
+/**
+ * Три карточки в ряду — заказчик: «barchasini bossa → 3 ta content».
+ *
+ * Ширина считается от экрана, а не задана числом: на 158px две карточки
+ * влезали на узком телефоне и три на широком, то есть сетка разъезжалась
+ * от устройства к устройству.
+ */
+const COLUMNS = 3;
+const GRID_GAP = 8;
+const SCREEN_PADDING = 16;
 
 export default function PremiereScreen() {
   const { t } = useTranslation();
   const feed = useHomeFeed();
   const isOffline = useIsOffline();
+  const { width } = useWindowDimensions();
 
   // Вкладка может прийти из ряда на главной. Незнакомый ключ — первая:
   // экран не должен падать из-за адреса, набранного руками.
@@ -106,10 +118,15 @@ export default function PremiereScreen() {
             onPress={() => setActive(i)}
             accessibilityRole="button"
             accessibilityState={{ selected: i === active }}
-            className={`rounded-pill px-4 py-2 ${
+            className={`flex-row items-center gap-1.5 rounded-pill px-4 py-2 ${
               i === active ? 'bg-purple' : 'bg-surface'
             }`}
           >
+            <Ionicons
+              name={item.icon}
+              size={14}
+              color={i === active ? colors.white : colors.textMuted}
+            />
             <Text
               className={`text-caption ${
                 i === active ? 'font-semibold text-white' : 'text-text-muted'
@@ -137,6 +154,7 @@ export default function PremiereScreen() {
       ) : null}
 
       <PremiereGrid
+        width={width}
         feed={feed}
         cards={visible}
         hasAny={all.length > 0}
@@ -147,23 +165,28 @@ export default function PremiereScreen() {
 }
 
 function PremiereGrid({
+  width,
   feed,
   cards,
   hasAny,
   isOffline,
 }: {
+  width: number;
   feed: ReturnType<typeof useHomeFeed>;
   cards: ContentCard[];
   /** Есть ли контент вообще — чтобы отличить «пусто в табе» от «пусто везде». */
   hasAny: boolean;
   isOffline: boolean;
 }) {
+  const cardWidth =
+    (width - SCREEN_PADDING * 2 - GRID_GAP * (COLUMNS - 1)) / COLUMNS;
+
   const { t } = useTranslation();
 
   if (feed.isPending) {
     return (
       <View className="-mx-4">
-        <SkeletonGrid count={6} cardWidth={CARD_WIDTH} />
+        <SkeletonGrid count={6} cardWidth={cardWidth} />
       </View>
     );
   }
@@ -197,9 +220,12 @@ function PremiereGrid({
   const ratio = rowRatio(cards.map((c) => c.orientation));
 
   return (
-    <View className="flex-row flex-wrap justify-between gap-y-4">
+    <View
+      className="flex-row flex-wrap"
+      style={{ gap: GRID_GAP }}
+    >
       {cards.map((card) => (
-        <ContentPoster key={card.id} card={card} width={CARD_WIDTH} ratio={ratio} />
+        <ContentPoster key={card.id} card={card} width={cardWidth} ratio={ratio} />
       ))}
     </View>
   );
