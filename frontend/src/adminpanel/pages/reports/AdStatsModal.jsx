@@ -76,8 +76,8 @@ export default function AdStatsModal({ ad, name, onClose }) {
                     clicks: d.clicks,
                   }))}
                   series={[
-                    { key: 'impressions', color: 'var(--p-accent)', label: t('stat.impressions') },
-                    { key: 'clicks', color: 'var(--p-primary)', label: t('stat.clicks') },
+                    { key: 'impressions', label: t('stat.impressions') },
+                    { key: 'clicks', label: t('stat.clicks') },
                   ]}
                 />
               </div>

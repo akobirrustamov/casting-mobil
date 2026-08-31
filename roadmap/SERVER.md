@@ -52,7 +52,8 @@ apt install -y openjdk-17-jdk
 apt install -y postgresql postgresql-contrib
 
 # ⚠️ FFmpeg — MAJBURIY. Usiz video qayta ishlanmaydi.
-apt install -y ffmpeg
+
+
 
 # Nginx — reverse proxy va TLS
 apt install -y nginx certbot python3-certbot-nginx

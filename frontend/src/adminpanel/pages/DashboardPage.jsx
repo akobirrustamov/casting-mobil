@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { adminApi } from '../api/client';
 import { useApi } from '../api/useApi';
 import TrendChart from '../components/TrendChart';
+import DonutChart from '../components/charts/DonutChart';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { PageHeader, TableWrap } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
@@ -145,23 +146,45 @@ export default function DashboardPage() {
     }, {})
   ).sort((a, b) => (a.day < b.day ? -1 : 1));
 
-  const DONATION_COLORS = ['var(--p-gold)', 'var(--p-accent)', 'var(--p-primary)'];
 
   return (
     <>
       <PageHeader title={t('dash.title')} subtitle={t('dash.subtitle')} />
 
-      <div className="grid gap-4 mb-8" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))' }}>
-        <StatCard label={t('dash.totalContent')} value={data.totalContent} accent="var(--p-accent)" />
-        <StatCard label={t('dash.published')} value={data.publishedContent} accent="var(--p-success)" />
-        <StatCard label={t('dash.draft')} value={data.draftContent} />
-        <StatCard label={t('dash.scheduled')} value={data.scheduledContent} accent="var(--p-warning)" />
-        <StatCard label={t('dash.episodes')} value={data.totalEpisodes} />
-        <StatCard label={t('dash.creators')} value={data.totalCreators} accent="var(--p-gold)" />
-        <StatCard label={t('dash.categories')} value={data.totalCategories} />
-        <StatCard label={t('dash.media')} value={data.totalMedia} />
-        <StatCard label={t('dash.staff')} value={data.totalStaff} />
-        <StatCard label={t('dash.applications')} value={data.totalCastingApplications} />
+      {/*
+        ⚠️ Nashr holati endi RAQAM emas, TARKIB bo'lib ko'rsatiladi.
+
+        Ilgari «jami 120 · nashr 80 · qoralama 30 · rejada 10» to'rtta
+        alohida son edi va ular orasidagi nisbatni odam o'zi hisoblab
+        chiqishi kerak bo'lardi. Aslida savol aynan nisbat haqida:
+        «qancha qismi nashrga chiqqan».
+      */}
+      <div className="grid gap-4 mb-6"
+           style={{ gridTemplateColumns: 'minmax(260px, 320px) 1fr' }}>
+        <div className="uz-card p-5">
+          <div className="uz-h2 mb-3" style={{ fontSize: 15 }}>{t('chart.composition')}</div>
+          <DonutChart
+            height={170}
+            total={data.totalContent}
+            totalLabel={t('dash.totalContent')}
+            formatValue={count}
+            data={[
+              { label: t('dash.published'), value: data.publishedContent },
+              { label: t('dash.draft'), value: data.draftContent },
+              { label: t('dash.scheduled'), value: data.scheduledContent },
+            ]}
+          />
+        </div>
+
+        <div className="grid gap-4"
+             style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', alignContent: 'start' }}>
+          <StatCard label={t('dash.episodes')} value={data.totalEpisodes} />
+          <StatCard label={t('dash.creators')} value={data.totalCreators} />
+          <StatCard label={t('dash.categories')} value={data.totalCategories} />
+          <StatCard label={t('dash.media')} value={data.totalMedia} />
+          <StatCard label={t('dash.staff')} value={data.totalStaff} />
+          <StatCard label={t('dash.applications')} value={data.totalCastingApplications} />
+        </div>
       </div>
 
       {/* Analitika - kunlik jamlanmadan, so'nggi 30 kun */}
@@ -220,28 +243,29 @@ export default function DashboardPage() {
             title={t('dash.userGrowth')}
             note={t('dash.userGrowthNote')}
             points={charts.data?.userGrowth}
-            series={[{ key: 'value', color: 'var(--p-primary)', label: t('dash.userGrowth') }]}
+            series={[{ key: 'value', label: t('dash.userGrowth') }]}
           />
           <ChartCard
             title={t('dash.viewsChart')}
             points={charts.data?.views}
-            series={[{ key: 'value', color: 'var(--p-accent)', label: t('dash.viewsChart') }]}
+            series={[{ key: 'value', label: t('dash.viewsChart') }]}
           />
           <ChartCard
             title={t('dash.subRevenueChart')}
             points={charts.data?.subscriptionRevenue}
-            series={[{ key: 'value', color: 'var(--p-success)', label: t('dash.subRevenueChart') }]}
+            series={[{ key: 'value', label: t('dash.subRevenueChart') }]}
             formatValue={money}
           />
           <ChartCard
             title={t('dash.donationsChart')}
             note={t('dash.donationsChartNote')}
             points={donationsByDay}
-            series={donationKinds.map((kind, i) => ({
-              key: kind,
-              color: DONATION_COLORS[i % DONATION_COLORS.length],
-              label: kind,
-            }))}
+            /* ⚠️ Rang tartib bo'yicha, AYLANTIRILMASDAN.
+               Ilgari `% uzunlik` bilan aylantirilardi: to'rtinchi
+               valyuta paydo bo'lsa birinchisi bilan bir xil rangda
+               chizilardi va ikkalasini ajratib bo'lmasdi. Palitra
+               to'rtta rang bilan cheklangan aynan shuning uchun. */
+            series={donationKinds.map((kind) => ({ key: kind, label: kind }))}
           />
         </div>
       )}
