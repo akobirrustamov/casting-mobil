@@ -10,7 +10,10 @@ import { Rail } from '@/components/ui/Rail';
 import { StoryCircle } from '@/components/ui/StoryCircle';
 import { trackAdClick, trackAdImpression } from '@/features/analytics/api';
 import { categoryIcon } from '@/features/content/categoryIcons';
+import { formatDuration } from '@/features/content/duration';
 import { cardRatio, rowRatio } from '@/features/content/orientation';
+
+import { seeAllRoute, seeAllTab } from './seeAll';
 import { mediaUrl } from '@/lib/api';
 import { colors } from '@/theme/tokens';
 
@@ -82,12 +85,21 @@ export function ContentPoster({
   const { t } = useTranslation();
   const badge = accessBadge(card.accessPolicy);
 
+  // У многосерийного контента своей длительности нет — там число серий.
+  // Показываем то, что сервер действительно знает, а не среднее по палате.
+  const subtitle =
+    card.episodeCount !== null
+      ? t('content.episodeCount', { count: card.episodeCount })
+      : (card.shortDescription ?? undefined);
+
   return (
     <PosterCard
       width={width}
       ratio={ratio ?? cardRatio(card.orientation)}
       title={card.title ?? ''}
-      subtitle={card.shortDescription ?? undefined}
+      subtitle={subtitle}
+      meta={card.genre ?? undefined}
+      duration={formatDuration(card.durationSeconds) ?? undefined}
       imageUrl={mediaUrl(card.posterMediaId)}
       badge={badge?.tone ?? null}
       badgeLabel={badge ? t(badge.key) : undefined}
@@ -182,8 +194,12 @@ export function HomeSectionView({
 }) {
   const title = section.title ?? '';
 
-  // ---- баннеры: реклама и премьеры приходят одной формой
+  // ---- баннеры: реклама и премьеры приходят одной формой,
+  //      но показываются по-разному (`type` влияет только на подачу)
   if (section.banners.length > 0) {
+    if (section.type === 'NEW_PREMIERES') {
+      return <PremiereRail section={section} title={title} />;
+    }
     return <BannerSection section={section} title={title} active={active} />;
   }
 
@@ -232,8 +248,15 @@ export function HomeSectionView({
     // делает строку разновысокой и подписи разъезжаются по вертикали.
     const ratio = rowRatio(section.content.map((c) => c.orientation));
 
+    // «Barchasi ›» — только там, где есть куда вести: у подборок
+    // («Танланган», «Машҳур») своей вкладки на экране «Media» нет.
+    const tab = seeAllTab(section.type);
+
     return (
-      <Rail title={title}>
+      <Rail
+        title={title}
+        onSeeAll={tab ? () => router.push(seeAllRoute(tab)) : undefined}
+      >
         {section.content.map((card) => (
           <ContentPoster key={card.id} card={card} ratio={ratio} />
         ))}
@@ -242,6 +265,47 @@ export function HomeSectionView({
   }
 
   return null;
+}
+
+/**
+ * Премьеры — ряд постеров, а не большая карусель.
+ *
+ * Заказчик прислал макет, где «Yangi premyeralar» стоит рядом с остальными
+ * рядами: обложка, пламенный бейдж в левом верхнем углу, название и номер
+ * серии. Раньше премьеры занимали второй экранный баннер подряд — после
+ * рекламного блока это читалось как ещё одна реклама.
+ *
+ * ⚠️ Цены на карточке нет намеренно. На макете она есть, но заказчик
+ * отдельно сказал «faqat button kk emas»: фид цену и не отдаёт — она
+ * приходит вместе с правом доступа из `/watch`, уже на экране просмотра.
+ */
+function PremiereRail({ section, title }: { section: HomeSection; title: string }) {
+  const { t } = useTranslation();
+
+  const items = section.banners.filter((b) => b.title || b.imageMediaId);
+  if (items.length === 0) return null;
+
+  return (
+    <Rail
+      title={title}
+      icon="flame"
+      onSeeAll={() => router.push(seeAllRoute('series'))}
+    >
+      {items.map((b) => (
+        <PosterCard
+          key={b.id}
+          ratio={cardRatio('LANDSCAPE')}
+          title={b.title ?? ''}
+          subtitle={b.subtitle ?? b.description ?? undefined}
+          imageUrl={mediaUrl(b.imageMediaId)}
+          badge="premiere"
+          badgeIcon="flame"
+          badgeLabel={t('common.premiere')}
+          onPress={bannerTarget(b) ? () => openBanner(b) : undefined}
+        />
+      ))}
+    </Rail>
+  );
 }
 
 /**

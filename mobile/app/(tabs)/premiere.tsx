@@ -1,12 +1,13 @@
+import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ScreenState } from '@/components/states/ScreenState';
 import { Screen } from '@/components/ui/Screen';
 import { SkeletonGrid } from '@/components/ui/Skeleton';
 import { contentCards, HomeFeedUnavailableError, useHomeFeed } from '@/features/home/api';
-import { rowRatio } from '@/features/content/orientation';
+import { isVertical, rowRatio } from '@/features/content/orientation';
 import { ContentPoster, HomeSectionView } from '@/features/home/sections';
 import type { ContentCard } from '@/features/home/types';
 import { useIsOffline } from '@/lib/network';
@@ -28,25 +29,53 @@ import { useIsOffline } from '@/lib/network';
  * ⚠️ Цены на карточках нет намеренно: фид её не отдаёт — она приходит вместе
  * с правом доступа из `/api/v1/app/watch/{episodeId}` (экран 17).
  */
+/**
+ * Вкладки — с макета заказчика (28.08.2026):
+ * Seriallar · Podkastlar · Reels seriallar · Kliplar · Stream.
+ *
+ * ⚠️ «Shoular» и «Filmlar» добавлены СВЕРХ макета. На макете их нет, но
+ * без них выпуски шоу и фильмы не открывались бы отсюда вообще — контент
+ * в базе есть, а вкладки под него нет. Ряд прокручивается, поэтому пять
+ * с макета стоят первыми и видны сразу.
+ *
+ * ⚠️ «Reels seriallar» фильтруется по ФОРМАТУ, а не по типу: вертикальным
+ * бывает и мини-сериал, и клип (ТЗ §13 — оси независимы). Фильтруй его по
+ * `contentType` — и половина рилсов пропала бы.
+ *
+ * Ключ — строка, а не индекс: по ней приходит переход с главной
+ * (`features/home/seeAll`), и перестановка вкладок не должна ломать ссылки.
+ */
 const TABS = [
-  { key: 'tabsAll', types: null },
-  { key: 'tabsSeries', types: ['SERIES', 'MINI_SERIES'] },
-  { key: 'tabsShows', types: ['SHOW'] },
-  { key: 'tabsMovies', types: ['MOVIE', 'SHORT_FILM'] },
+  { key: 'series', label: 'tabsSeries', types: ['SERIES', 'MINI_SERIES'] },
+  { key: 'podcasts', label: 'tabsPodcasts', types: ['PODCAST'] },
+  { key: 'reels', label: 'tabsReels', types: null, vertical: true },
+  { key: 'clips', label: 'tabsClips', types: ['CLIP'] },
+  { key: 'streams', label: 'tabsStreams', types: ['STREAM'] },
+  { key: 'shows', label: 'tabsShows', types: ['SHOW'] },
+  { key: 'movies', label: 'tabsMovies', types: ['MOVIE', 'SHORT_FILM'] },
 ] as const;
 
 const CARD_WIDTH = 158;
 
 export default function PremiereScreen() {
   const { t } = useTranslation();
-  const [active, setActive] = useState(0);
   const feed = useHomeFeed();
   const isOffline = useIsOffline();
+
+  // Вкладка может прийти из ряда на главной. Незнакомый ключ — первая:
+  // экран не должен падать из-за адреса, набранного руками.
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
+  const fromRoute = TABS.findIndex((x) => x.key === tab);
+  const [active, setActive] = useState(fromRoute >= 0 ? fromRoute : 0);
 
   const all = useMemo(() => contentCards(feed.data), [feed.data]);
 
   const visible = useMemo(() => {
-    const types = TABS[active].types;
+    const current = TABS[active];
+    if ('vertical' in current && current.vertical) {
+      return all.filter((c) => isVertical(c.orientation));
+    }
+    const types = current.types;
     if (!types) return all;
     return all.filter(
       (c) => c.contentType !== null && (types as readonly string[]).includes(c.contentType)
@@ -64,10 +93,16 @@ export default function PremiereScreen() {
     >
       {premieres ? <HomeSectionView section={premieres} /> : null}
 
-      <View className="flex-row gap-2">
-        {TABS.map((tab, i) => (
+      {/* Вкладок семь, в строку они не помещаются — ряд прокручивается.
+          Пять с макета стоят первыми и видны без прокрутки. */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerClassName="gap-2 pr-4"
+      >
+        {TABS.map((item, i) => (
           <Pressable
-            key={tab.key}
+            key={item.key}
             onPress={() => setActive(i)}
             accessibilityRole="button"
             accessibilityState={{ selected: i === active }}
@@ -80,11 +115,26 @@ export default function PremiereScreen() {
                 i === active ? 'font-semibold text-white' : 'text-text-muted'
               }`}
             >
-              {t(`premiere.${tab.key}`)}
+              {t(`premiere.${item.label}`)}
             </Text>
           </Pressable>
         ))}
-      </View>
+      </ScrollView>
+
+      {/* Название раздела и счётчик — как на макете заказчика.
+          ⚠️ Выпадашки сортировки рядом нет: сервер отдаёт один порядок
+          (по дате публикации), и выбор из одного пункта был бы
+          притворством. Появится вместе с параметром сортировки в API. */}
+      {visible.length > 0 ? (
+        <View className="flex-row items-baseline justify-between">
+          <Text className="text-body font-semibold text-text">
+            {t(`premiere.${TABS[active].label}`)}
+          </Text>
+          <Text className="text-caption text-text-muted">
+            {t('premiere.count', { count: visible.length })}
+          </Text>
+        </View>
+      ) : null}
 
       <PremiereGrid
         feed={feed}

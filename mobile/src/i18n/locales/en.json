@@ -112,11 +112,15 @@
   "premiere": {
     "title": "Premiere",
     "subtitle": "Exclusive content hub",
-    "tabsAll": "All",
     "tabsSeries": "Series",
     "tabsShows": "Shows",
     "tabsMovies": "Films",
-    "emptyByTab": "No content in this tab yet."
+    "emptyByTab": "No content in this tab yet.",
+    "tabsPodcasts": "Podcasts",
+    "tabsReels": "Reels series",
+    "tabsClips": "Clips",
+    "tabsStreams": "Streams",
+    "count": "{{count}} items"
   },
   "profile": {
     "title": "Profile",
@@ -209,7 +213,8 @@
     "userBlocked": "Your account is blocked. Please contact support.",
     "episodes": "Episodes",
     "season": "Season {{number}}",
-    "episodesEmpty": "No episodes in this season yet"
+    "episodesEmpty": "No episodes in this season yet",
+    "episodeCount": "{{count}} episodes"
   },
   "contentType": {
     "SHORT_FILM": "Short film",

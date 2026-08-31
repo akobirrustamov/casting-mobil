@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -13,6 +14,7 @@ import { frameRatio, isVertical } from '@/features/content/orientation';
 import { contentCards, useHomeFeed } from '@/features/home/api';
 import type { ContentCard } from '@/features/home/types';
 import { mediaUrl } from '@/lib/api';
+import { colors } from '@/theme/tokens';
 import { useIsOffline } from '@/lib/network';
 
 import {
@@ -355,6 +357,18 @@ function LockedPanel({ info }: { info: WatchInfo }) {
   const { t } = useTranslation();
   const action: RequiredAction = info.requiredAction;
 
+  /**
+   * Показывать ли «оплата скоро».
+   *
+   * Раньше кнопка стояла выключенной, а подпись висела всегда. Выключенная
+   * кнопка на 40% прозрачности выглядит блёклой — на макете заказчика она
+   * в полном цвете, и на скриншоте разница бросается в глаза.
+   *
+   * Теперь кнопка обычная, а на нажатие честно отвечает, что оплаты пока
+   * нет. Это не «кнопка в никуда»: на касание она реагирует и объясняет.
+   */
+  const [paymentNote, setPaymentNote] = useState(false);
+
   const needsSignIn = action === 'SIGN_IN';
   const needsPurchase =
     action === 'BUY_EPISODE' || action === 'BUY_PREMIERE' || action === 'BUY_OR_SUBSCRIBE';
@@ -373,20 +387,26 @@ function LockedPanel({ info }: { info: WatchInfo }) {
       ) : null}
 
       {needsPurchase ? (
-        <Button variant="premium" disabled>
+        // Ромб и цена — форма кнопки покупки с макета заказчика.
+        // Слово «купить» на ней лишнее: цена и знак говорят то же самое.
+        <Button
+          variant="purchase"
+          onPress={() => setPaymentNote(true)}
+          leading={<Ionicons name="diamond" size={16} color={colors.white} />}
+        >
           {price === null
             ? t('common.buy')
-            : `${t('common.buy')} · ${t('common.price', { amount: groupDigits(price) })}`}
+            : t('common.price', { amount: groupDigits(price) })}
         </Button>
       ) : null}
 
       {needsSubscription ? (
-        <Button variant="gold" disabled>
+        <Button variant="gold" onPress={() => setPaymentNote(true)}>
           {t('content.subscribe')}
         </Button>
       ) : null}
 
-      {needsPurchase || needsSubscription ? (
+      {paymentNote ? (
         <Text className="text-micro text-text-muted">{t('content.paymentSoon')}</Text>
       ) : null}
     </View>

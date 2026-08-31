@@ -53,6 +53,13 @@ export type ContentCard = {
   accessPolicy: AccessPolicy | null;
   ageRating: string | null;
   posterMediaId: number | null;
+
+  /** Своя длительность контента. У многосерийного — `null`. */
+  durationSeconds: number | null;
+  /** Сколько ОПУБЛИКОВАННЫХ серий. У цельного — `null`. */
+  episodeCount: number | null;
+  /** Первый жанр на языке интерфейса. Полный список — на карточке контента. */
+  genre: string | null;
 };
 
 /** Реклама и премьера приходят одной формой — широкий баннер. */

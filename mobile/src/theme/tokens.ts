@@ -68,8 +68,15 @@ export const gradients = {
   brand: [colors.blue, colors.purple] as [string, string],
   /** Полная шкала — кромка карточки, крупные плашки. */
   brandWide: [colors.blue, colors.violet, colors.magenta] as [string, string, string],
-  /** Premium: покупка, подписка, VIP. */
+  /** Premium: промо, баннеры, VIP. */
   premium: [colors.purple, colors.magenta] as [string, string],
+  /**
+   * Кнопка покупки — сиреневая от края до края.
+   *
+   * Отдельно от `premium`: та уходит в розовый, а на макете заказчика
+   * кнопка с ценой остаётся в одном тоне.
+   */
+  purchase: [colors.purple, colors.violet] as [string, string],
 };
 
 /**

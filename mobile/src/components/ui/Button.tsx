@@ -14,7 +14,8 @@ import { TOUCH_TARGET, colors, gradients, radius } from '@/theme/tokens';
  * ТЗ: на экране только один главный CTA, touch target минимум 44px.
  *
  * primary   — фирменный градиент синий → фиолетовый, основное действие
- * premium   — фиолетовый → маджента, покупка / подписка / VIP
+ * purchase  — сиреневый, ромб и цена. Форма с макета заказчика
+ * premium   — фиолетовый → маджента, промо и баннеры
  * gold      — Gold, вывод денег и «Premium'ga o'tish» по макету Screen 4
  * secondary — контурная, второстепенное действие
  *
@@ -32,14 +33,19 @@ import { TOUCH_TARGET, colors, gradients, radius } from '@/theme/tokens';
  * строка, отступы, минимальная высота. Градиент — фон в `absoluteFill`,
  * на размеры он не влияет вообще.
  */
-type Variant = 'primary' | 'premium' | 'gold' | 'secondary';
+type Variant = 'primary' | 'purchase' | 'premium' | 'gold' | 'secondary';
 
 /**
- * На макетах входа и презентации кнопки — скруглённые прямоугольники,
- * а не пилюли. Форма вынесена в параметр, чтобы не переверстывать экраны,
- * которых в макете нет.
+ * Скруглённый прямоугольник — форма по умолчанию.
+ *
+ * Заказчик (28.08.2026): «buttonlar shunaqa shaklda bolsin» с картинкой
+ * фиолетовой кнопки-прямоугольника. Раньше по умолчанию была пилюля, и
+ * форма расходилась от экрана к экрану: вход уже был прямоугольным, а
+ * баннеры и покупка оставались пилюлями.
+ *
+ * `pill` оставлен для мест, где кнопка стоит в ряду с другими пилюлями.
  */
-type Shape = 'pill' | 'card';
+type Shape = 'card' | 'pill';
 
 type Props = Omit<PressableProps, 'children'> & {
   children: string;
@@ -54,16 +60,22 @@ type Props = Omit<PressableProps, 'children'> & {
    * набора знак пришёл. Сегодня это Ionicons, завтра может быть SVG.
    */
   trailing?: ReactNode;
+  /** Знак слева — ромб на кнопке покупки, как на макете заказчика. */
+  leading?: ReactNode;
 };
 
 /** Градиентные варианты. Остальные — плоская заливка классом. */
 const GRADIENT: Partial<Record<Variant, [string, string]>> = {
   primary: gradients.brand,
+  // ⚠️ Без мадженты. На макете кнопка покупки сиреневая от края до края;
+  // `premium` уходит в розовый и рядом с ней выглядит другой кнопкой.
+  purchase: gradients.purchase,
   premium: gradients.premium,
 };
 
 const FLAT_BG: Record<Variant, string> = {
   primary: '',
+  purchase: '',
   premium: '',
   gold: 'bg-gold',
   secondary: 'bg-transparent border border-border',
@@ -71,6 +83,7 @@ const FLAT_BG: Record<Variant, string> = {
 
 const FG: Record<Variant, string> = {
   primary: 'text-white',
+  purchase: 'text-white',
   premium: 'text-white',
   gold: 'text-ink',
   secondary: 'text-text',
@@ -79,11 +92,12 @@ const FG: Record<Variant, string> = {
 export function Button({
   children,
   variant = 'primary',
-  shape = 'pill',
+  shape = 'card',
   loading = false,
   disabled = false,
   className = '',
   trailing,
+  leading,
   ...rest
 }: Props) {
   const isInactive = disabled || loading;
@@ -115,7 +129,9 @@ export function Button({
           size="small"
           color={variant === 'gold' ? colors.ink : colors.white}
         />
-      ) : null}
+      ) : (
+        leading
+      )}
       <Text className={`text-body font-semibold ${FG[variant]}`}>{children}</Text>
       {trailing}
     </Pressable>

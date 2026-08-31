@@ -63,6 +63,32 @@ public class HomeFeedDto {
         private String accessPolicy;
         private String ageRating;
         private Long posterMediaId;
+
+        /**
+         * Kontentning O'Z davomiyligi (soniya). Ko'p qismlida — {@code null}.
+         *
+         * Serialning «davomiyligi» degan narsa yo'q: har qismning o'ziniki
+         * bor. O'rtachasini hisoblab yozish son o'ylab topish bo'lardi,
+         * shuning uchun u yerda {@link #episodeCount} turadi.
+         */
+        private Integer durationSeconds;
+
+        /**
+         * Nechta NASHR QILINGAN qism. Yaxlit kontentda — {@code null}.
+         *
+         * Qoralama qismlar sanalmaydi: odam ochib ko'ra oladigan son
+         * bo'lishi kerak.
+         */
+        private Integer episodeCount;
+
+        /**
+         * BIRINCHI janr nomi, so'ralgan tilda.
+         *
+         * Kartochkada bitta qator joy bor, janr esa bir nechta bo'lishi
+         * mumkin. Hammasini vergul bilan yozish sarlavhani siqib chiqarardi;
+         * to'liq ro'yxat kontent sahifasida ko'rsatiladi.
+         */
+        private String genre;
     }
 
     /** Reklama va premyera — bir xil ko'rinishdagi kartochka. */

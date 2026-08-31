@@ -12,8 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Mobil ilova bosh sahifasini quradi (ТЗ §31).
@@ -42,6 +46,7 @@ public class HomeFeedService {
     private final PremiereRepo premiereRepo;
     private final CategoryRepo categoryRepo;
     private final ContentRepo contentRepo;
+    private final EpisodeRepo episodeRepo;
     private final AccessService accessService;
     private final com.example.backend.Cms.Repository.UserAccountRepo userAccountRepo;
     private final HomepageService homepageService;
@@ -60,11 +65,57 @@ public class HomeFeedService {
             }
         }
 
+        fillEpisodeCounts(sections);
+
         return HomeFeedDto.builder()
                 .locale(lang)
                 .showAds(showAds)
                 .sections(sections)
                 .build();
+    }
+
+    /**
+     * Qismlar sonini TAYYOR kartochkalarga to'ldiradi.
+     *
+     * <h2>Nima uchun oxirida, alohida yurishda</h2>
+     * Sonni kartochka yig'ilayotganda olish uchun tayyor xaritani to'rtta
+     * metod orqali uzatish kerak bo'lardi. Bu yerda esa hamma bo'limlar
+     * allaqachon yig'ilgan: id larni yig'ib olamiz, BITTA guruhlangan
+     * so'rov yuboramiz va maydonni to'ldiramiz.
+     *
+     * Bir xil kontent bir nechta qatorda uchrashi mumkin — id lar to'plamga
+     * yig'iladi, ya'ni ikki marta so'ralmaydi.
+     */
+    private void fillEpisodeCounts(List<HomeFeedDto.Section> sections) {
+        List<HomeFeedDto.ContentCard> cards = sections.stream()
+                .flatMap(s -> s.getContent().stream())
+                .toList();
+        if (cards.isEmpty()) {
+            return;
+        }
+
+        Set<Long> ids = cards.stream()
+                .map(HomeFeedDto.ContentCard::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (ids.isEmpty()) {
+            return;
+        }
+
+        Map<Long, Integer> counts = new HashMap<>();
+        for (Object[] row : episodeRepo.countPublishedByContentIds(
+                ids, PublicationStatus.PUBLISHED)) {
+            counts.put((Long) row[0], ((Number) row[1]).intValue());
+        }
+
+        // Nol qism — bu «qism yo'q», ya'ni yozadigan narsa yo'q. Shuning
+        // uchun faqat topilganlariga qo'yiladi, qolganlarida null qoladi.
+        for (HomeFeedDto.ContentCard card : cards) {
+            Integer count = counts.get(card.getId());
+            if (count != null && count > 0) {
+                card.setEpisodeCount(count);
+            }
+        }
     }
 
     // ------------------------------------------------------------ bo'limlar
@@ -291,7 +342,28 @@ public class HomeFeedService {
                 .accessPolicy(c.getAccessPolicy() == null ? null : c.getAccessPolicy().name())
                 .ageRating(c.getAgeRating())
                 .posterMediaId(poster(c, lang))
+                // Ko'p qismli kontentda o'z davomiyligi yo'q — u yerda
+                // qismlar soni ko'rsatiladi (`fillEpisodeCounts`).
+                .durationSeconds(c.getDurationMinutes() == null
+                        ? null : c.getDurationMinutes() * 60)
+                .genre(firstGenre(c, lang))
                 .build();
+    }
+
+    /**
+     * Birinchi janr nomi so'ralgan tilda.
+     *
+     * Kartochkada bitta qator joy bor. Barcha janrlarni vergul bilan
+     * yozish sarlavhani siqib chiqarardi; to'liq ro'yxat kontent
+     * sahifasida ko'rsatiladi.
+     */
+    private String firstGenre(Content c, Locale lang) {
+        if (c.getGenres() == null || c.getGenres().isEmpty()) {
+            return null;
+        }
+        Genre genre = c.getGenres().iterator().next();
+        return pick(genre.getTranslations(), lang,
+                GenreTranslation::getLocale, GenreTranslation::getName);
     }
 
     /** Til bo'yicha afisha bo'lsa o'sha, bo'lmasa umumiysi. */
