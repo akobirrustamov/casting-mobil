@@ -162,7 +162,11 @@
     "language": "Til / Language",
     "about": "About the app",
     "soon": "Coming soon",
-    "guestBody": "Sign in to see your balance, purchases and favorites here"
+    "guestBody": "Sign in to see your balance, purchases and favorites here",
+    "subscriptionActive": "Active",
+    "subscriptionExpired": "Expired",
+    "subscriptionNone": "No subscription",
+    "subscriptionUntil": "until {{date}}"
   },
   "catalog": {
     "title": "Catalog",

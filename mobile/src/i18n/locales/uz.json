@@ -162,7 +162,11 @@
     "language": "Til / Language",
     "about": "Ilova haqida",
     "soon": "Tez orada",
-    "guestBody": "Kirsangiz balans, xaridlar va sevimlilar shu yerda ko'rinadi"
+    "guestBody": "Kirsangiz balans, xaridlar va sevimlilar shu yerda ko'rinadi",
+    "subscriptionActive": "Faol",
+    "subscriptionExpired": "Muddati tugagan",
+    "subscriptionNone": "Obuna yo'q",
+    "subscriptionUntil": "{{date}} gacha"
   },
   "catalog": {
     "title": "Katalog",

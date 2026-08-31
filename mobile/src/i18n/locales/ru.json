@@ -162,7 +162,11 @@
     "language": "Til / Language",
     "about": "О приложении",
     "soon": "Скоро",
-    "guestBody": "Войдите — здесь появятся баланс, покупки и избранное"
+    "guestBody": "Войдите — здесь появятся баланс, покупки и избранное",
+    "subscriptionActive": "Активна",
+    "subscriptionExpired": "Истекла",
+    "subscriptionNone": "Нет подписки",
+    "subscriptionUntil": "до {{date}}"
   },
   "catalog": {
     "title": "Каталог",

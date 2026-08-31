@@ -13,7 +13,12 @@ import { GlowCard } from '@/components/ui/GlowCard';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { Screen } from '@/components/ui/Screen';
 import { useAuthStore } from '@/features/auth/store';
-import { useBalance } from '@/features/profile/api';
+import {
+  formatDate,
+  premiumState,
+  useBalance,
+  useMe,
+} from '@/features/profile/api';
 import { LANGUAGE_LABELS, isSupportedLanguage, type Language } from '@/i18n';
 import { colors, gradients, radius } from '@/theme/tokens';
 
@@ -68,8 +73,32 @@ export default function ProfileScreen() {
   const language: Language = isSupportedLanguage(i18n.language) ? i18n.language : 'uz';
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
+  const me = useMe();
+  const state = premiumState(me.data?.premium);
+  const until = formatDate(me.data?.premium.until ?? null);
+
+  const subscriptionValue =
+    state === 'active'
+      ? t('profile.subscriptionActive')
+      : state === 'expired'
+        ? t('profile.subscriptionExpired')
+        : t('profile.subscriptionNone');
+
+  // Дата нужна и когда подписка кончилась: «истекла 28.08» объясняет,
+  // почему платный контент вдруг закрылся.
+  const subscriptionHint =
+    until !== null ? t('profile.subscriptionUntil', { date: until }) : undefined;
+
   const account: Row[] = [
-    { key: 'mySubscription', label: t('profile.mySubscription'), hint: t('profile.mySubscriptionHint'), icon: 'ribbon-outline' },
+    {
+      key: 'mySubscription',
+      label: t('profile.mySubscription'),
+      hint: subscriptionHint,
+      icon: 'ribbon-outline',
+      // Ряд информационный: статус и срок — это и есть всё, что можно
+      // сказать о подписке, пока нет экрана управления ею.
+      value: subscriptionValue,
+    },
     { key: 'topUp', label: t('profile.topUp'), hint: t('profile.topUpHint'), icon: 'card-outline' },
     { key: 'promocodes', label: t('profile.promocodes'), hint: t('profile.promocodesHint'), icon: 'pricetag-outline' },
     { key: 'paymentHistory', label: t('profile.paymentHistory'), hint: t('profile.paymentHistoryHint'), icon: 'time-outline' },
@@ -126,7 +155,9 @@ export default function ProfileScreen() {
     >
       <ProfileCard />
 
-      <PremiumBanner />
+      {/* Подписчику незачем предлагать подписку: баннер выглядел бы так,
+          будто платёж не прошёл. */}
+      {state === 'active' ? null : <PremiumBanner />}
 
       <RowGroup rows={account} />
 
@@ -167,6 +198,9 @@ function ProfileCard() {
   const isAuthorized = useAuthStore((s) => s.isAuthorized);
   const balance = useBalance();
 
+  // Тот же ключ запроса, что и на экране выше, — повторного обращения нет.
+  const premium = premiumState(useMe().data?.premium);
+
   // Имени может не быть: Google отдаёт его не всегда. Тогда показываем email,
   // иначе карточка выглядит пустой у реально вошедшего человека.
   const displayName = user?.name || user?.email || user?.phone || '—';
@@ -192,6 +226,18 @@ function ProfileCard() {
               </Text>
             )}
             {isAuthorized && user?.id ? <UserIdRow id={user.id} /> : null}
+
+            {/* Метка подписчика — как на макете Screen 4. Показывается
+                только по ответу сервера: нарисовать её «на всякий случай»
+                значило бы пообещать доступ, которого нет. */}
+            {premium === 'active' ? (
+              <View className="mt-1 flex-row items-center gap-1 self-start rounded-pill bg-purple px-3 py-1">
+                <Ionicons name="diamond" size={11} color={colors.white} />
+                <Text className="text-micro font-semibold text-white">
+                  {t('profile.premiumMember')}
+                </Text>
+              </View>
+            ) : null}
           </View>
         </View>
 
