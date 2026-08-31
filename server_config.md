@@ -305,7 +305,23 @@ To'ldiriladigan qiymatlar:
 ⚠️ `APP_JWT_SECRET` almashtirilsa **barcha foydalanuvchilar tizimdan
 chiqib ketadi**.
 
-### 6.2. TEKSHIRUV — serverga qo'yishdan oldin
+### 6.2. Lokalda sinab ko'rish
+
+```bash
+sh deploy/run.sh
+```
+
+⚠️ **`java -jar backend.jar` deb to'g'ridan-to'g'ri ishga
+tushirmang.** `uzcasting.env` ni faqat systemd o'qiydi
+(`EnvironmentFile`); Java esa faqat MUHIT o'zgaruvchilarini ko'radi.
+Fayl to'ldirilgan bo'lsa ham birinchi xato `Could not resolve
+placeholder 'app.jwt.secret'` bo'ladi — sababi «to'ldirilmagan» emas,
+«o'qilmagan», va bu farq stack trace'dan ko'rinmaydi.
+
+`run.sh` faylni o'qiydi, to'liqligini tekshiradi va keyin ishga
+tushiradi.
+
+### 6.3. TEKSHIRUV — serverga qo'yishdan oldin
 
 ```bash
 sh deploy/check-env.sh deploy/uzcasting.env
@@ -317,7 +333,7 @@ xato bilan to'xtaydi, `S3_BUCKET` bo'lmasa esa ilova **ko'tariladi**
 va nosozlik faqat birinchi fayl yuklashda, butunlay boshqa joyda
 chiqadi.
 
-### 6.3. Serverga qo'yish
+### 6.4. Serverga qo'yish
 
 ```bash
 scp deploy/uzcasting.env <user>@uzcasting.site:/tmp/
