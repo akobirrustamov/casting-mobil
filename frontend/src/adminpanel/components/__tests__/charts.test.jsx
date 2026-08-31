@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 
+import BarChart from '../charts/BarChart';
 import DonutChart from '../charts/DonutChart';
 import { SERIES, seriesColor } from '../charts/theme';
 import TrendChart from '../TrendChart';
@@ -164,5 +165,80 @@ describe('Tarkib grafigi', () => {
 
     expect(screen.getByText('Nashr')).toBeInTheDocument();
     expect(screen.getByText('Qoralama')).toBeInTheDocument();
+  });
+});
+
+describe('Taqqoslash grafigi', () => {
+  const ads = [
+    { label: 'Yozgi chegirma', impressions: 1572, clicks: 120 },
+    { label: 'Premium taklifi', impressions: 1558, clicks: 117 },
+  ];
+  const bars = [
+    { key: 'impressions', label: 'Ko\'rsatishlar' },
+    { key: 'clicks', label: 'Bosishlar' },
+  ];
+
+  it('ma\'lumotsiz bo\'sh holat ko\'rsatadi', () => {
+    show(<BarChart data={[]} bars={bars} />);
+
+    expect(screen.getByText(/ma'lumot|нет данных|no data/i)).toBeInTheDocument();
+  });
+
+  it('ikkita qator uchun legend chizadi', () => {
+    show(<BarChart data={ads} bars={bars} />);
+
+    expect(screen.getByText('Ko\'rsatishlar')).toBeInTheDocument();
+    expect(screen.getByText('Bosishlar')).toBeInTheDocument();
+  });
+
+  /**
+   * ⚠️ Bitta qator uchun legend ortiqcha — sarlavha uni allaqachon
+   * nomlagan va qo'shimcha qator bekorga joy egallardi.
+   */
+  it('bitta qator uchun legend chizmaydi', () => {
+    show(<BarChart data={ads} bars={[bars[0]]} />);
+
+    expect(screen.queryByText('Bosishlar')).not.toBeInTheDocument();
+  });
+});
+
+describe('⚠️ Foiz va son bitta o\'qqa qo\'shilmaydi', () => {
+  /**
+   * Bu grafiklardagi eng ko'p uchraydigan xato.
+   *
+   * CTR — foiz (7.57), ko'rsatishlar — son (4358). Ularni bitta o'qqa
+   * qo'yish 7.57 ustunini ko'rinmas chiziqqa aylantiradi; ikkinchi o'q
+   * qo'shish esa ikkita shkalani bir-biriga yolg'on taqqoslatadi.
+   *
+   * Shuning uchun hisobotlar sahifasida CTR grafikka EMAS, yonidagi
+   * jadvalga tushadi. Bu test aynan shuni qo'riqlaydi.
+   */
+  it('reklama grafigida CTR qatori yo\'q', () => {
+    const source = require('fs').readFileSync(
+      'src/adminpanel/pages/ReportsPage.jsx', 'utf8',
+    );
+
+    const start = source.indexOf('<BarChart');
+    expect(start).toBeGreaterThan(0);
+
+    const chart = source.slice(start, source.indexOf('/>', start));
+    expect(chart).not.toMatch(/ctr/i);
+  });
+
+  /**
+   * ⚠️ Valyutalar ham qo'shilmaydi: 100 yulduz va 100 tanga bir xil
+   * son, lekin ular boshqa narsa. Backend DTO izohida bu qoida ochiq
+   * yozilgan va sahifa unga amal qilishi kerak.
+   */
+  it('donatlar valyuta bo\'yicha AJRATILADI', () => {
+    const source = require('fs').readFileSync(
+      'src/adminpanel/pages/DonationsPage.jsx', 'utf8',
+    );
+
+    // ⚠️ Ta'rifning borligi YETARLI EMAS — u chaqirilishi kerak.
+    // Avvalgi variant faqat nomni qidirardi va valyutalar bitta
+    // grafikka qo'shib yuborilganda ham yashil qolaverdi.
+    expect(source).toMatch(/groupByKind\(\s*report\.data\?\.daily/);
+    expect(source).toMatch(/groupByKind\(\s*\n?\s*report\.data\?\.monthly/);
   });
 });

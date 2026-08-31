@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { adminApi } from '../api/client';
 import { useApi } from '../api/useApi';
 import TrendChart from '../components/TrendChart';
+import BarChart from '../components/charts/BarChart';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { PageHeader, TableWrap } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
@@ -153,6 +154,37 @@ export default function ReportsPage() {
 
             <div>
               <div className="uz-h2 mb-3" style={{ fontSize: 15 }}>{t('rp.topAds')}</div>
+
+              {/*
+                ⚠️ Grafik va jadval BIR-BIRINI TAKRORLAMAYDI.
+
+                Grafik bitta savolga javob beradi: qaysi reklama ko'proq
+                ko'rsatilgan va bosilgan. Jadval esa aniq sonlarni va
+                CTR ni beradi.
+
+                CTR grafikka QO'SHILMAYDI: u foiz, ustunlar esa son.
+                Bitta o'qqa qo'yilsa 7.57 ustuni 4358 yonida ko'rinmas
+                chiziqqa aylanardi; ikkinchi o'q qo'shilsa esa ikkita
+                shkala bir-birini yolg'on taqqoslardi.
+              */}
+              {data.topAds?.length > 0 && (
+                <div className="uz-card p-4 mb-3">
+                  <BarChart
+                    height={Math.max(160, data.topAds.length * 42)}
+                    formatValue={count}
+                    data={data.topAds.map((a) => ({
+                      label: a.name,
+                      impressions: a.impressions,
+                      clicks: a.clicks,
+                    }))}
+                    bars={[
+                      { key: 'impressions', label: t('rp.impressions') },
+                      { key: 'clicks', label: t('rp.clicks') },
+                    ]}
+                  />
+                </div>
+              )}
+
               <div className="uz-card overflow-hidden">
                 {!data.topAds?.length ? <EmptyState icon="📢" body={t('rp.noData')} /> : (
                   <TableWrap>

@@ -3,7 +3,10 @@ import { adminApi } from '../api/client';
 import { useApi } from '../api/useApi';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, TableWrap } from '../components/Ui';
+import TrendChart from '../components/TrendChart';
+import BarChart from '../components/charts/BarChart';
 import { usePanelI18n } from '../i18n';
+import { count } from '../utils/format';
 
 /**
  * Donatlar hisoboti (ТЗ §42).
@@ -27,6 +30,22 @@ export default function DonationsPage() {
 
   const byKind = report.data?.byKind || [];
 
+  /*
+   * ⚠️ Kunlik qatorlar VALYUTA BO'YICHA ajratiladi.
+   *
+   * Backend `{date, kind, total}` qaytaradi. Ularni bitta chiziqqa
+   * qo'shish 100 yulduz va 100 tangani qo'shishday bo'lardi — DTO
+   * izohida bu qoida ochiq yozilgan.
+   *
+   * Shuning uchun har valyuta O'Z grafigida chiziladi: bitta o'q,
+   * bitta o'lchov.
+   */
+  const dailyByKind = groupByKind(report.data?.daily, (r) => r.date);
+  const monthlyByKind = groupByKind(
+    report.data?.monthly,
+    (r) => `${r.year}-${String(r.month).padStart(2, '0')}`,
+  );
+
   return (
     <>
       <PageHeader title={t('dn.title')} subtitle={t('dn.subtitle')} />
@@ -34,7 +53,14 @@ export default function DonationsPage() {
       {/* Valyuta bo'yicha jamlanma */}
       {report.loading ? <LoadingState rows={2} /> :
        report.error ? <ErrorState error={report.error} onRetry={report.reload} /> : (
-        <div className="uz-grid-cards mb-6">
+        /*
+          ⚠️ `uz-grid-cards` klassi CSS da UMUMAN yo'q edi — u faqat
+          shu bir joyda ishlatilardi va hech qachon yozilmagan. Natijada
+          kartochkalar butun kenglikka cho'zilib, bittadan ustma-ust
+          turardi.
+        */
+        <div className="grid gap-4 mb-6"
+             style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
           {byKind.length === 0 ? (
             <div className="uz-card p-5">
               <EmptyState icon="✨" title={t('dn.noDonations')} />
@@ -46,6 +72,47 @@ export default function DonationsPage() {
               <div className="uz-muted text-xs">
                 {k.transactions} {t('dn.transactions')}
               </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/*
+        ⚠️ Kunlik va oylik ma'lumot backendda ALLAQACHON bor edi
+        (`DonationReportDto.daily` / `.monthly`, §42), lekin bu sahifa
+        ikkalasini ham ishlatmasdi. Raqamlar hisoblanardi va hech kim
+        ko'rmasdi.
+      */}
+      {!report.loading && !report.error && (
+        <div className="grid gap-4 mb-6"
+             style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))' }}>
+          {Object.entries(dailyByKind).map(([kind, points]) => (
+            <div className="uz-card p-5" key={`d-${kind}`}>
+              <div className="uz-h2 mb-1" style={{ fontSize: 15 }}>
+                {t('dn.dailyChart')} — {kind}
+              </div>
+              <p className="uz-muted mb-3" style={{ fontSize: 12 }}>{t('dn.perKindNote')}</p>
+              <TrendChart
+                height={150}
+                points={points}
+                formatValue={count}
+                series={[{ key: 'total', label: kind }]}
+              />
+            </div>
+          ))}
+
+          {Object.entries(monthlyByKind).map(([kind, points]) => (
+            <div className="uz-card p-5" key={`m-${kind}`}>
+              <div className="uz-h2 mb-1" style={{ fontSize: 15 }}>
+                {t('dn.monthlyChart')} — {kind}
+              </div>
+              <p className="uz-muted mb-3" style={{ fontSize: 12 }}>{t('dn.monthlyNote')}</p>
+              <TrendChart
+                height={150}
+                points={points}
+                formatValue={count}
+                series={[{ key: 'total', label: kind }]}
+              />
             </div>
           ))}
         </div>
@@ -145,4 +212,26 @@ function TopList({ title, rows, emptyIcon }) {
       )}
     </div>
   );
+}
+
+/**
+ * Qatorlarni valyuta bo'yicha ajratadi.
+ *
+ * ⚠️ Bu shunchaki guruhlash emas, QOIDA: har valyuta o'z grafigida
+ * chiziladi. Bitta grafikda ikkita valyuta bo'lsa, ularning shkalasi
+ * ham bitta bo'lardi — va 100 yulduz 100 tanga bilan bir balandlikda
+ * turib, ular tengdek ko'rinardi.
+ *
+ * @param toDay qatordan grafik uchun sana yorlig'ini oladi
+ */
+function groupByKind(rows, toDay) {
+  const grouped = {};
+  (rows || []).forEach((r) => {
+    const kind = r.kind || '—';
+    (grouped[kind] = grouped[kind] || []).push({
+      day: toDay(r),
+      total: Number(r.total) || 0,
+    });
+  });
+  return grouped;
 }

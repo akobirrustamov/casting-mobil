@@ -99,7 +99,7 @@ Ikkalasi chiqmasa — video kodlanmaydi.
 ⚠️ Shuning uchun S3 majburiy.
 
 ---
-
+    
 ## 5. Transcoding tezligi — O'LCHANGAN
 
 ### O'lchov usuli
