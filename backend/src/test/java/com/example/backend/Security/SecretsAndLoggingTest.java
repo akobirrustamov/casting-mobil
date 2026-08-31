@@ -87,6 +87,128 @@ class SecretsAndLoggingTest {
         }
 
         /**
+         * ⚠️ JAR ICHIGA sir tushmasin — {@code .gitignore} dan QAT'IY
+         * NAZAR.
+         *
+         * <h2>Haqiqiy nosozlik</h2>
+         * Yuqoridagi test {@code .gitignore} ni ko'rib O'TKAZIB
+         * YUBORARDI va shu sabab quyidagini ushlamadi:
+         *
+         *   spring.datasource.password=${DB_PASSWORD:akow8434}
+         *
+         * Ikkita mustaqil kamchilik bir vaqtda ishladi:
+         *
+         *   1. «gitignore = xavfsiz» degan taxmin NOTO'G'RI. Maven bu
+         *      faylni `.gitignore` ga qaramasdan JAR ICHIGA joylaydi.
+         *      Repozitoriyda yo'q, lekin serverga ketadigan 107 MB
+         *      faylning ichida bor — va jar `scp` bilan yuboriladi,
+         *      `/tmp` da yotadi, zaxira nusxaga tushadi.
+         *
+         *   2. Tekshiruv {@code ${} bilan boshlansa xavfsiz} deb
+         *      hisoblardi. Lekin {@code ${VAR:qiymat}} shaklida
+         *      `qiymat` ochiq matn bo'lib qolaveradi va VAR
+         *      berilmaganda AYNAN O'SHA ishlatiladi.
+         *
+         * Shuning uchun bu test boshqa savol beradi: repozitoriyda
+         * nima bor emas, JARDA nima bo'ladi.
+         *
+         * ⚠️ Dasturchining lokal paroli ham shu qoidaga tushadi va bu
+         * ataylab — u ham jar ichiga tushardi. Lokal parol uchun joy:
+         * `backend/application.properties` (ishchi papkada, resources
+         * ICHIDA emas) yoki `DB_PASSWORD` environment o'zgaruvchisi.
+         */
+        @Test
+        @DisplayName("Jar ichiga tushadigan sozlamada sir yo'q (gitignore ahamiyatsiz)")
+        void packagedConfigHasNoSecretDefaults() throws IOException {
+            List<String> violations = new ArrayList<>();
+
+            for (Path p : List.of(
+                    Path.of("src/main/resources/application.properties"),
+                    Path.of("src/main/resources/application-dev.properties"))) {
+
+                if (!Files.exists(p)) {
+                    continue;
+                }
+                for (String line : Files.readString(p).split("\n")) {
+                    String trimmed = line.trim();
+                    if (trimmed.startsWith("#") || !trimmed.contains("=")) {
+                        continue;
+                    }
+                    String key = trimmed.substring(0, trimmed.indexOf('=')).toLowerCase();
+                    String value = trimmed.substring(trimmed.indexOf('=') + 1).trim();
+
+                    if (!isSensitiveKey(key)) {
+                        continue;
+                    }
+
+                    // ⚠️ `${VAR:zaxira}` ichiga QARAYMIZ — bu asosiy farq.
+                    Matcher m = Pattern
+                            .compile("^\\$\\{[A-Za-z0-9_]+:(.*)}$")
+                            .matcher(value);
+                    String effective = m.matches() ? m.group(1).trim() : value;
+
+                    if (effective.isEmpty() || effective.startsWith("${")) {
+                        continue;
+                    }
+                    // ⚠️ `true`/`false` — bayroq, sir bo'la olmaydi
+                    // (`allow-weak-password` kabi kalitlar shunday).
+                    if (effective.equals("true") || effective.equals("false")) {
+                        continue;
+                    }
+
+                    // ⚠️ RAQAM ISTISNO EMAS — bu shu testning O'ZIDAGI
+                    // teshik edi.
+                    //
+                    // Avval `matches("\\d+")` ham o'tkazib yuborilardi
+                    // («bu shunchaki son, sir emas» degan taxmin bilan).
+                    // Natijada dev profilidagi
+                    //
+                    //     app.admin.password=00000000
+                    //
+                    // tekshiruvdan bemalol o'tib ketdi. Aynan raqamli
+                    // parol esa eng zaiflaridan biri.
+                    //
+                    // Endi raqam faqat sir BO'LMAGAN kalitlar uchun
+                    // ma'qul (masalan `*-ms`, `*-limit`) — ular bu
+                    // yergacha yetib ham kelmaydi, chunki
+                    // `isSensitiveKey` ularni oldin filtrlaydi.
+
+                    // ⚠️ Dev profilida qiymat bo'lishi MUMKIN, lekin u
+                    // «dev» bilan boshlanishi SHART.
+                    //
+                    // Dev profili faqat `--spring.profiles.active=dev`
+                    // bilan yoqiladi va JWT kaliti u yerda ataylab
+                    // turibdi — aks holda «kalitsiz lokal sinov» yo'li
+                    // ishlamasdi.
+                    //
+                    // Butun faylni tekshiruvdan CHIQARIB tashlamadim:
+                    // shunda unga haqiqiy baza paroli ham jimgina
+                    // yozilib qolardi. Prefiks talabi esa niyatni
+                    // KO'RINADIGAN qiladi — qiymat o'zi «men soxtaman»
+                    // deb turadi.
+                    boolean devProfile = p.getFileName().toString()
+                            .equals("application-dev.properties");
+                    if (devProfile && effective.startsWith("dev")) {
+                        continue;
+                    }
+
+                    violations.add(p.getFileName() + " -> " + key);
+                }
+            }
+
+            assertThat(violations)
+                    .as("bu fayllar JAR ICHIGA tushadi — sir zaxira qiymat "
+                            + "sifatida ham qolmasin")
+                    .isEmpty();
+        }
+
+        private boolean isSensitiveKey(String key) {
+            return key.contains("password") || key.contains("secret")
+                    || key.contains("api-key") || key.contains("access-key")
+                    || key.contains("token");
+        }
+
+        /**
          * ⚠️ Namuna fayl ESKIRIB QOLMASIN.
          *
          * Unda `APP_JWT_ACCESS_TOKEN_MS=6000000` (100 daqiqa) yozib
