@@ -85,16 +85,57 @@ class JwtSecretRequiredTest {
         }
 
         /**
-         * Har bir yo'l xabarda bo'lishi kerak: foydalanuvchi qaysi
-         * holatda ekanini bilmasligi mumkin.
+         * ⚠️ ENG MUHIM TEKSHIRUV — va u haqiqiy nosozlikdan tug'ilgan.
+         *
+         * Xabar ilgari «sh deploy/run.sh» deb maslahat berardi. Ikki
+         * jihatdan noto'g'ri edi:
+         *
+         *   1. `run.sh` keyinchalik o'chirildi va xabar mavjud
+         *      bo'lmagan faylga yuborardi;
+         *   2. undan ham muhimi — bu xabar SERVERDA o'qiladi, u yerda
+         *      esa loyiha kodi UMUMAN yo'q. Serverda faqat ikkita
+         *      fayl bor: `backend.jar` va `application.properties`.
+         *
+         * Ya'ni manba daraxtidagi har qanday yo'l bu yerda befoyda.
+         * Birinchi xatoni oddiy `contains(...)` ushlay olmadi: fayl
+         * o'chirilganda ham xabarda o'sha satr turaverdi va test
+         * yashil qolaverdi.
+         *
+         * Shuning uchun endi teskarisini tekshiramiz.
          */
         @Test
-        @DisplayName("Uchala yo'l ham ko'rsatiladi")
+        @DisplayName("Loyiha ichidagi fayllarga YUBORMAYDI")
+        void doesNotPointAtRepositoryFiles() {
+            assertThat(message())
+                    .as("serverda loyiha kodi yo'q — u yerdagi yo'l befoyda")
+                    .doesNotContain("deploy/")
+                    .doesNotContain(".sh");
+        }
+
+        /**
+         * ⚠️ Haqiqiy sabab deyarli har doim bitta: Spring Boot
+         * `application.properties` ni JAR YONIDAN emas, JORIY
+         * PAPKADAN o'qiydi.
+         *
+         * Foydalanuvchi `/root` da turib `java -jar /opt/uzcasting/
+         * backend.jar` deb yozdi va fayl o'qilmadi. Stack trace esa
+         * «kalit yo'q» derdi — bu to'g'ri, lekin sababni yashirardi.
+         */
+        @Test
+        @DisplayName("Joriy papkani KO'RSATADI")
+        void namesTheWorkingDirectory() {
+            assertThat(message())
+                    .as("sabab papkada — demak papka xabarda bo'lsin")
+                    .contains(System.getProperty("user.dir"));
+        }
+
+        @Test
+        @DisplayName("Ikkala tuzatish yo'li ham beriladi")
         void everyOptionIsListed() {
             assertThat(message())
+                    .contains("cd /opt/uzcasting")
+                    .contains("--spring.config.additional-location")
                     .contains("openssl rand -hex 32")
-                    .contains("APP_JWT_SECRET=")
-                    .contains("deploy/run.sh")
                     .contains("--spring.profiles.active=dev");
         }
 
