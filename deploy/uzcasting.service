@@ -9,20 +9,21 @@ User=uzcasting
 Group=uzcasting
 WorkingDirectory=/opt/uzcasting
 
-# ⚠️ Sirlar SHU FAYLDAN, unit ichidan emas.
+# ⚠️ Sozlama fayli bu yerda KO'RSATILMAYDI va bu ataylab.
 #
-# `systemctl cat uzcasting` unit faylini har kimga ko'rsatadi va
-# `Environment=` qatorlari o'sha yerda ochiq turardi. Alohida fayl
-# esa 600 huquqi bilan yopiladi.
-EnvironmentFile=/opt/uzcasting/uzcasting.env
+# Spring Boot ishchi papkadagi `application.properties` ni O'ZI
+# topadi. `WorkingDirectory` yuqorida berilgan, ya'ni
+# `/opt/uzcasting/application.properties` avtomatik o'qiladi.
+#
+# Bitta fayl, bitta joy — na muhit o'zgaruvchisi, na qo'shimcha
+# bayroq. Sirlar esa jar ichida emas, o'sha faylda (600 huquqi bilan).
 
 # ⚠️ -Xmx4g — 16 GB serverda.
 #
 # Qolgani PostgreSQL (2–4 GB) va uchta parallel FFmpeg (~4.5 GB)
 # uchun kerak. Ko'proq berilsa transcoding paytida OS almashtirishga
 # tushadi va butun sayt sekinlashadi.
-ExecStart=/usr/bin/java -Xmx4g -jar /opt/uzcasting/backend.jar \
-  --spring.config.additional-location=file:/opt/uzcasting/application.properties
+ExecStart=/usr/bin/java -Xmx4g -jar /opt/uzcasting/backend.jar
 
 Restart=on-failure
 RestartSec=10
