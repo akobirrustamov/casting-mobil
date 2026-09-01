@@ -10,11 +10,11 @@
 #                              birinchi fayl yuklashda, butunlay
 #                              boshqa joyda chiqadi
 #
-#      sh deploy/check-config.sh deploy/application.properties
+#      sh yuklash/check-config.sh yuklash/application.properties
 # ==========================================================================
 set -e
 
-FILE="${1:-deploy/application.properties}"
+FILE="${1:-yuklash/application.properties}"
 
 if [ ! -f "$FILE" ]; then
     echo "✗ Fayl topilmadi: $FILE"

@@ -202,7 +202,29 @@ class SecretsAndLoggingTest {
                     .isEmpty();
         }
 
+        /**
+         * ⚠️ O'LCHOV BIRLIGI bilan tugagan kalit — sozlama, sir emas.
+         *
+         * `app.jwt.access-token-ms=900000` kalitida «token» so'zi bor,
+         * lekin qiymat 15 daqiqaning millisoniyadagi ifodasi. Uni sir
+         * deb belgilash YOLG'ON OGOHLANTIRISH bo'lardi — va yolg'on
+         * ogohlantirish tekshiruvni befoyda qiladi: odam uni o'qimay
+         * o'tishni o'rganadi.
+         *
+         * ⚠️ Bu «raqam — sir emas» degan ESKI, keng istisnoning
+         * O'RNIGA turibdi. Eskisi juda keng edi va
+         * `app.admin.password=00000000` ni ham o'tkazib yuborardi.
+         * Bu esa kalit NOMIGA qaraydi, qiymatiga emas — ya'ni raqamli
+         * parol baribir ushlanadi.
+         */
+        private static final List<String> UNIT_SUFFIXES = List.of(
+                "-ms", "-seconds", "-minutes", "-hours", "-days",
+                "-attempts", "-ttl", "-window", "-size", "-length");
+
         private boolean isSensitiveKey(String key) {
+            if (UNIT_SUFFIXES.stream().anyMatch(key::endsWith)) {
+                return false;
+            }
             return key.contains("password") || key.contains("secret")
                     || key.contains("api-key") || key.contains("access-key")
                     || key.contains("token");
