@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Screen } from '@/components/ui/Screen';
 import { isVertical } from '@/features/content/orientation';
@@ -12,36 +12,28 @@ import { colors } from '@/theme/tokens';
 
 /**
  * Каталог премьер. По ТЗ (V3, стр. 17 «16. Premyera katalogi»):
- * табы Seriallar/Ko'rsatuvlar/Filmlar · premiere badge · exclusive status.
+ * premiere badge · exclusive status.
  *
  * <h2>Откуда что берётся</h2>
  * Сверху — секция `NEW_PREMIERES` из `GET /api/v1/app/home`: это промо-баннеры
  * премьер, которыми управляет админ-панель. Ниже — карточки контента из того же
- * фида, отфильтрованные по табам.
- *
- * <h2>Почему табы фильтруют по `contentType`, а не по категории</h2>
- * ТЗ §13: тип, категория и жанр — три разные оси. «Сериалы» и «Фильмы» —
- * это ТИП контента; фильтровать их по категории каталога значило бы смешать
- * несмешиваемое (в «Драме» лежат и сериал, и подкаст, и фильм).
+ * фида.
  *
  * ⚠️ Цены на карточках нет намеренно: фид её не отдаёт — она приходит вместе
  * с правом доступа из `/api/v1/app/watch/{episodeId}` (экран 17).
  */
 /**
- * Вкладки — с макета заказчика (28.08.2026):
- * Seriallar · Podkastlar · Reels seriallar · Kliplar · Stream.
+ * Разделы каталога. Заказчик (31.08.2026) убрал ряд вкладок с экрана: сам
+ * список открывается целиком, без фильтра сверху.
  *
- * ⚠️ «Shoular» и «Filmlar» добавлены СВЕРХ макета. На макете их нет, но
- * без них выпуски шоу и фильмы не открывались бы отсюда вообще — контент
- * в базе есть, а вкладки под него нет. Ряд прокручивается, поэтому пять
- * с макета стоят первыми и видны сразу.
+ * ⚠️ Разделы при этом остались — по ним приходит переход «Barchasi ›» с
+ * главной (`features/home/seeAll`): человек нажал на ряде «Подкасты» и должен
+ * увидеть подкасты, а не весь каталог. Видимого переключателя нет, фильтр
+ * задаёт только адрес.
  *
  * ⚠️ «Reels seriallar» фильтруется по ФОРМАТУ, а не по типу: вертикальным
  * бывает и мини-сериал, и клип (ТЗ §13 — оси независимы). Фильтруй его по
  * `contentType` — и половина рилсов пропала бы.
- *
- * Ключ — строка, а не индекс: по ней приходит переход с главной
- * (`features/home/seeAll`), и перестановка вкладок не должна ломать ссылки.
  */
 const TABS = [
   { key: 'series', label: 'tabsSeries', icon: 'film-outline', types: ['SERIES', 'MINI_SERIES'] },
@@ -63,7 +55,7 @@ export default function PremiereScreen() {
   const all = useMemo(() => contentCards(feed.data), [feed.data]);
 
   const visible = useMemo(() => {
-    const current = TABS[active];
+    if (!current) return all;
     if ('vertical' in current && current.vertical) {
       return all.filter((c) => isVertical(c.orientation));
     }
@@ -72,7 +64,7 @@ export default function PremiereScreen() {
     return all.filter(
       (c) => c.contentType !== null && (types as readonly string[]).includes(c.contentType)
     );
-  }, [all, active]);
+  }, [all, current]);
 
   const premieres = feed.data?.sections.find((s) => s.type === 'NEW_PREMIERES');
 

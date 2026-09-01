@@ -37,7 +37,12 @@ public class OtpService {
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final int CODE_LENGTH = 4;
 
-    private final EskizSmsClient smsClient;
+    /**
+     * ⚠️ Aniq tur emas, INTERFEYS. Prod'da bu {@link EskizSmsClient},
+     * lokal profilda {@link LoggingSmsClient} — bu servisning mantiqi
+     * ikkalasida ham bir xil ishlaydi.
+     */
+    private final SmsClient smsClient;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${app.otp.ttl-seconds:180}")
