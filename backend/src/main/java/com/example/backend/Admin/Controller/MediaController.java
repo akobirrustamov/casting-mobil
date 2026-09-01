@@ -83,6 +83,9 @@ public class MediaController {
      */
     private final java.util.Optional<com.example.backend.Cms.Service.Video.SignedUrlProvider> signedUrls;
 
+    /** Chiptali HLS havolasi — moslashuvchan oqim uchun. */
+    private final com.example.backend.Cms.Service.Video.PlaybackUrlService playbackUrlService;
+
     // ------------------------------------------------------------ ochiq qism
 
     /**
@@ -418,6 +421,15 @@ public class MediaController {
 
         return ResponseEntity.ok(PreviewDto.builder()
                 .mediaId(id)
+                // ⚠️ HLS BIRINCHI o'rinda: u sifatni tomoshabin
+                // internetiga qarab o'zi tanlaydi (1080 / 720 / 480).
+                //
+                // Asl fayl esa BITTA sifat — 4K manbada admin
+                // sekin internetda uni umuman ocholmasdi.
+                //
+                // `null` bo'lsa transcoding hali tugamagan yoki
+                // yiqilgan — klient asl faylga qaytadi.
+                .hlsUrl(playbackUrlService.hlsUrlFor(actor, asset))
                 .url(previewUrl(actor, asset))
                 .type(asset.getType())
                 .mimeType(asset.getMimeType())
@@ -461,6 +473,13 @@ public class MediaController {
     @lombok.Builder
     public static class PreviewDto {
         private Long mediaId;
+        /**
+         * Moslashuvchan oqim — sifat internetga qarab tanlanadi.
+         *
+         * ⚠️ Transcoding tugamagan bo'lsa {@code null}. Klient
+         * o'shanda {@code url} ga (asl fayl) qaytadi.
+         */
+        private String hlsUrl;
         /** Chipta bilan to'liq manzil — to'g'ridan-to'g'ri `<video src>` ga. */
         private String url;
         private MediaType type;
