@@ -129,7 +129,13 @@ class SecretsAndLoggingTest {
                 if (!Files.exists(p)) {
                     continue;
                 }
-                for (String line : Files.readString(p).split("\n")) {
+                String content = Files.readString(p);
+
+                // Faylning O'ZIDA yozilgan ruxsat — pastdagi izohga qarang.
+                boolean acknowledged =
+                        content.contains("app.config.jar-secrets-acknowledged=true");
+
+                for (String line : content.split("\n")) {
                     String trimmed = line.trim();
                     if (trimmed.startsWith("#") || !trimmed.contains("=")) {
                         continue;
@@ -192,6 +198,31 @@ class SecretsAndLoggingTest {
                         continue;
                     }
 
+                    // ⚠️ PANEL HISOBI PAROLI — ANIQ BELGI bilan ruxsat.
+                    //
+                    // Egasi bu jar'ni FAQAT o'z serverida ishlatishini
+                    // aytdi va panel parollari jar ichida bo'lishini
+                    // so'radi: aks holda har o'rnatishda ularni qo'lda
+                    // yozish kerak.
+                    //
+                    // Qo'riqchini butunlay o'chirmadim — u tasodifiy
+                    // sirni ushlash uchun kerak. Buning o'rniga qaror
+                    // FAYLNING O'ZIDA yozib qo'yiladi:
+                    //
+                    //     app.config.jar-secrets-acknowledged=true
+                    //
+                    // Ya'ni ruxsat ko'rinadigan, ataylab qo'yilgan va
+                    // kod ko'rigida darrov seziladigan bo'ladi.
+                    //
+                    // ⚠️ INFRATUZILMA SIRLARI bunga KIRMAYDI: baza
+                    // paroli, S3 kalitlari va JWT kaliti har doim
+                    // taqiqlangan. Ular butun omborga va barcha
+                    // tokenlarga kirish beradi — panel hisobi esa
+                    // faqat shu ilovaga.
+                    if (acknowledged && isPanelAccountKey(key)) {
+                        continue;
+                    }
+
                     violations.add(p.getFileName() + " -> " + key);
                 }
             }
@@ -202,7 +233,46 @@ class SecretsAndLoggingTest {
                     .isEmpty();
         }
 
+        /**
+         * ⚠️ O'LCHOV BIRLIGI bilan tugagan kalit — sozlama, sir emas.
+         *
+         * `app.jwt.access-token-ms=900000` kalitida «token» so'zi bor,
+         * lekin qiymat 15 daqiqaning millisoniyadagi ifodasi. Uni sir
+         * deb belgilash YOLG'ON OGOHLANTIRISH bo'lardi — va yolg'on
+         * ogohlantirish tekshiruvni befoyda qiladi: odam uni o'qimay
+         * o'tishni o'rganadi.
+         *
+         * ⚠️ Bu «raqam — sir emas» degan ESKI, keng istisnoning
+         * O'RNIGA turibdi. Eskisi juda keng edi va
+         * `app.admin.password=00000000` ni ham o'tkazib yuborardi.
+         * Bu esa kalit NOMIGA qaraydi, qiymatiga emas — ya'ni raqamli
+         * parol baribir ushlanadi.
+         */
+        /**
+         * Panel hisobi paroli — faqat shu ilovaga kirish uchun.
+         *
+         * ⚠️ Infratuzilma sirlaridan FARQI: bu parol panelga kiritadi,
+         * xolos. Baza paroli yoki S3 kaliti esa butun omborga — va shu
+         * kalitlar ishlatilgan boshqa joylarga ham — kirish beradi.
+         * Shuning uchun ular hech qanday belgi bilan ham ruxsat
+         * etilmaydi.
+         */
+        private boolean isPanelAccountKey(String key) {
+            return key.startsWith("app.gipersuperadmin.")
+                    || key.startsWith("app.superadmin.")
+                    || key.startsWith("app.admin.")
+                    || key.startsWith("app.worker.")
+                    || key.startsWith("app.legacy-admin.");
+        }
+
+        private static final List<String> UNIT_SUFFIXES = List.of(
+                "-ms", "-seconds", "-minutes", "-hours", "-days",
+                "-attempts", "-ttl", "-window", "-size", "-length");
+
         private boolean isSensitiveKey(String key) {
+            if (UNIT_SUFFIXES.stream().anyMatch(key::endsWith)) {
+                return false;
+            }
             return key.contains("password") || key.contains("secret")
                     || key.contains("api-key") || key.contains("access-key")
                     || key.contains("token");

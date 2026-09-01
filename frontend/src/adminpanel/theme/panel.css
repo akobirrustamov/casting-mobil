@@ -132,6 +132,11 @@
     --p-surface-2:   var(--surface-2);
     --p-surface-3:   var(--surface-3);
     --p-border:      var(--border);
+
+    /* ⚠️ Video ortidagi fon — ATAYLAB qora, mavzuga bog'liq emas.
+       Pleyer kadri har doim qora hoshiyada ko'rinadi: yorug' fonda
+       tik video yon tomonlari oq bo'lib, kadr chegarasi yo'qolardi. */
+    --p-video-backdrop: #000;
     --p-border-soft: var(--border-soft);
 
     --p-primary:       var(--brand-primary);

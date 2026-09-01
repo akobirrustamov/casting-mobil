@@ -97,4 +97,13 @@ public final class AuditAction {
     public static final String CURRENCY_PACKAGE_PURCHASED = "CURRENCY_PACKAGE_PURCHASED";
 
     public static final String SETTING_CHANGED = "SETTING_CHANGED";
+
+    /**
+     * Ombordagi yetim fayl o'chirildi.
+     *
+     * ⚠️ Bu amal QAYTARIB BO'LMAYDI va uni faqat audit yozuvidan
+     * bilish mumkin: fayl ombordan yo'qoladi, bazada esa u haqda
+     * hech qanday iz yo'q edi (yetim fayl — aynan shu degani).
+     */
+    public static final String STORAGE_ORPHAN_DELETE = "STORAGE_ORPHAN_DELETE";
 }

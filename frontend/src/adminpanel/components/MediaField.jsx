@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { adminApi, mediaUrl } from '../api/client';
 import { usePanelI18n } from '../i18n';
 import MediaPicker from './MediaPicker';
-import MediaSpec from './MediaSpec';
 
 /**
  * Bitta rasm maydoni: oldindan ko'rish + tanlash/almashtirish/olib tashlash.
@@ -17,6 +16,7 @@ import MediaSpec from './MediaSpec';
 export default function MediaField({ label, value, onChange, hint, spec, type = 'IMAGE' }) {
   const { t } = usePanelI18n();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   /**
    * Tanlangan video pleyerda ochiladimi.
@@ -97,6 +97,18 @@ export default function MediaField({ label, value, onChange, hint, spec, type = 
         >
           {value ? t('media.change') : t('media.upload')}
         </button>
+        {/* ⚠️ Faqat VIDEO uchun. Rasm allaqachon eskizda ko'rinadi —
+            unga tugma qo'yish ortiqcha bosqich bo'lardi. */}
+        {value && type === 'VIDEO' && (
+          <button
+            type="button"
+            className="uz-btn uz-btn-ghost"
+            style={{ minHeight: 36, fontSize: 13 }}
+            onClick={() => setPreviewOpen(true)}
+          >
+            {t('media.previewOpen')}
+          </button>
+        )}
         {value && (
           <button
             type="button"
@@ -132,8 +144,6 @@ export default function MediaField({ label, value, onChange, hint, spec, type = 
         </p>
       )}
       {hint && <p className="uz-muted mt-1" style={{ fontSize: 11 }}>{hint}</p>}
-
-      {spec && <MediaSpec name={spec} />}
 
       <MediaPicker
         open={pickerOpen}

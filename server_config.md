@@ -285,7 +285,7 @@ cd /opt/uzcasting && java -jar backend.jar
 
 ### 6.1. To'ldirish
 
-`deploy/application.properties` da to'rtta joy `BU_YERGA…` deb
+`yuklash/application.properties` da to'rtta joy `BU_YERGA…` deb
 belgilangan:
 
 | Nima | Qayerdan |
@@ -303,7 +303,7 @@ almashtirsangiz barcha foydalanuvchilar tizimdan chiqib ketadi.
 ### 6.2. TEKSHIRUV — serverga qo'yishdan oldin
 
 ```bash
-sh deploy/check-config.sh deploy/application.properties
+sh yuklash/check-config.sh yuklash/application.properties
 ```
 
 ⚠️ O'tkazib yubormang. To'ldirilmagan qiymat ilovani **turlicha**
@@ -316,8 +316,8 @@ boshqa joyda chiqadi.
 
 ```bash
 scp backend/target/backend-0.0.1-SNAPSHOT.jar <user>@uzcasting.site:/tmp/backend.jar
-scp deploy/application.properties <user>@uzcasting.site:/tmp/
-scp deploy/uzcasting.service <user>@uzcasting.site:/tmp/
+scp yuklash/application.properties <user>@uzcasting.site:/tmp/
+scp yuklash/uzcasting.service <user>@uzcasting.site:/tmp/
 ```
 
 ```bash
@@ -337,7 +337,7 @@ o'qiladigan bo'lib qolishi mumkin.
 
 ## 7. systemd xizmati
 
-Unit fayl 6.3 da allaqachon qo'yilgan (`deploy/uzcasting.service`).
+Unit fayl 6.3 da allaqachon qo'yilgan (`yuklash/uzcasting.service`).
 
 ```bash
 sudo systemctl daemon-reload

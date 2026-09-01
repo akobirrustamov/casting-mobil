@@ -44,6 +44,7 @@ export default function AdminLayout() {
         { to: '/app/panel/categories', icon: '▤', label: t('nav.categories'), show: can('CATEGORY_VIEW') },
         { to: '/app/panel/genres', icon: '#', label: t('nav.genres'), show: can('GENRE_VIEW') },
         { to: '/app/panel/media', icon: '🖼', label: t('nav.media'), show: can('MEDIA_VIEW') },
+        { to: '/app/panel/storage', icon: '☁', label: t('nav.storage'), show: can('MEDIA_DELETE') },
       ],
     },
     {

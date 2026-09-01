@@ -31,8 +31,24 @@ dist/
 .next/
 out/
 .env
-.env.*
+.env.local
+.env.*.local
 !.env.example
+
+# ⚠️ `.env.production` REPOZITORIYDA TURISHI SHART.
+#
+# Ilgari uni `.env.*` yashirardi. Natijada toza klondan qurilgan
+# prod bundle panelni `http://localhost:8080` ga yo'naltirardi:
+# fayl bo'lmaganda `REACT_APP_API_URL` aniqlanmaydi va koddagi
+# zaxira qiymat ishga tushadi.
+#
+# Xato CHIQMAYDI — har bir tashrifchining brauzeri o'z
+# kompyuteriga so'rov yuborardi.
+#
+# Faylda sir yo'q: unda bitta bo'sh qiymat bor va u «API bilan
+# bitta domen» degani.
+!.env.production
+!.env.development
 
 # ======================
 
@@ -60,8 +76,26 @@ out/
 
 # Maven
 
-.mvn/
+# ⚠️ `.mvn/` ni BUTUNLAY chiqarib bo'lmaydi.
+#
+# Git papkaning o'zi chiqarilgan bo'lsa, ICHIDAGI inkorlarni umuman
+# ko'rmaydi — shuning uchun quyidagi `!` qatori ilgari ishlamasdi va
+# toza klonda `./mvnw` ishga tushmasdi:
+#
+#     Could not find or load main class
+#     org.apache.maven.wrapper.MavenWrapperMain
+#
+# Wrapper'ning butun ma'nosi — Maven o'rnatmasdan qurish. Uni
+# yashirish o'sha ma'noni bekor qiladi.
+#
+# Shuning uchun papka emas, ICHIDAGILAR chiqariladi va wrapper
+# qaytariladi. `maven-wrapper.jar` uchun alohida inkor kerak, chunki
+# yuqoridagi `*.jar` uni ham tutadi.
+.mvn/*
+!.mvn/wrapper/
+.mvn/wrapper/*
 !.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
 
 # Gradle
 
@@ -78,6 +112,20 @@ application.properties
 application.yml
 application-*.properties
 application-*.yml
+
+# ⚠️ `dev` va `schemagen` profillari REPOZITORIYDA turishi kerak.
+#
+# Ularni yashirish 43 ta sozlamani yo'qotardi va toza klonda
+# `--spring.profiles.active=dev` hech narsa qilmasdi.
+#
+# Ularda sir yo'q va bo'lishi ham mumkin emas: qiymatlar ataylab
+# o'zini tanitadi (`dev...`, `schemagen...`), buni esa
+# `packagedConfigHasNoSecretDefaults` testi qo'riqlaydi.
+#
+# ⚠️ `src/main/resources/application.properties` YASHIRIN QOLADI —
+# unda haqiqiy panel parollari bor (pastdagi qatorga qarang).
+!application-dev.properties
+!application-schemagen.properties
 
 # agar resources ichida bo‘lsa:
 
@@ -186,4 +234,4 @@ backend/data/
 # ==========================================================================
 #  ⚠️ Haqiqiy qiymatli fayl HECH QACHON repozitoriyga tushmasin.
 #  Namunasi (`.example`) esa tushadi — u yerda faqat bo'sh joylar bor.
-deploy/uzcasting.env
+yuklash/application.properties
