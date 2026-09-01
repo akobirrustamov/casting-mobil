@@ -618,6 +618,17 @@ export const adminApi = {
    * bilan `/raw` ga.
    */
   mediaPreview: (id) => api.get(`/api/v1/app/admin/media/${id}/preview`),
+
+  /**
+   * Ombor holati — oxirgi skanerlash natijasi.
+   *
+   * ⚠️ Hech qachon skanerlanmagan bo'lsa server 204 qaytaradi va bu
+   * XATO EMAS. `null` bilan farqlanadi.
+   */
+  storage: () => api.get('/api/v1/app/admin/storage'),
+
+  /** ⚠️ QIMMAT: butun omborni qayta sanaydi. Faqat admin so'raganda. */
+  storageScan: () => api.post('/api/v1/app/admin/storage/scan'),
   /** Yiqilgan transcoding'ni navbatga qaytaradi (MEDIA_UPLOAD). */
   retryTranscoding: (id) => api.post(`/api/v1/app/admin/media/${id}/retry-transcoding`),
   /** Navbat holati — panel yangilashni qachon to'xtatishni biladi. */
