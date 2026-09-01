@@ -3,6 +3,7 @@ package com.example.backend.Sms;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -34,11 +35,21 @@ import java.util.concurrent.atomic.AtomicReference;
  * "Это тест от Eskiz", "This is test from Eskiz". Haqiqiy OTP matni
  * moderatsiya tasdiqlanguncha yetib bormaydi — bu Eskiz tomonidagi
  * cheklov, kod bilan chetlab bo'lmaydi.
+ *
+ * <h2>⚠️ Nega {@code @Profile("!local")}</h2>
+ * Lokal stendda Eskiz kabineti yo'q, ya'ni bu klient u yerda faqat
+ * {@code SMS_NOT_CONFIGURED} qaytara olardi va telefon orqali kirishni
+ * sinab bo'lmasdi. Lokal profilda uning o'rnini {@link LoggingSmsClient}
+ * egallaydi — kodni SMS o'rniga logga yozadi.
+ *
+ * Serverda {@code local} profili yo'q, demak bu yerda hamma narsa
+ * avvalgidek: haqiqiy SMS yoki halol xato.
  */
 @Slf4j
 @Component
+@Profile("!local")
 @RequiredArgsConstructor
-public class EskizSmsClient {
+public class EskizSmsClient implements SmsClient {
 
     private final RestTemplate restTemplate;
 
@@ -71,6 +82,7 @@ public class EskizSmsClient {
      * @throws org.springframework.web.client.RestClientException Eskiz javob
      *                                         bermasa yoki xato qaytarsa
      */
+    @Override
     public void send(String phone, String message) {
         if (!isConfigured()) {
             throw new IllegalStateException(

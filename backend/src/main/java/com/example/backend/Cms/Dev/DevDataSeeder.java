@@ -1,6 +1,7 @@
 package com.example.backend.Cms.Dev;
 
 import com.example.backend.Cms.Entity.*;
+import com.example.backend.Cms.Service.HomepageService;
 import com.example.backend.Cms.Enums.*;
 import com.example.backend.Cms.Enums.Locale;
 import com.example.backend.Cms.Repository.*;
@@ -82,6 +83,20 @@ public class DevDataSeeder implements CommandLineRunner {
     private final PurchaseRepo purchaseRepo;
     private final TariffRepo tariffRepo;
 
+    /**
+     * ⚠️ Bosh sahifa bo'limlarini yaratish uchun.
+     *
+     * `HomeFeedService` bo'limlarni `homepage_section` jadvalidan o'qiydi,
+     * jadval esa migratsiyada TO'LDIRILMAYDI — satrlar birinchi marta
+     * admin paneli ochilganda paydo bo'ladi ({@code HomepageService.sections()}).
+     *
+     * Lokal stendda admin paneliga hech kim kirmaydi, natijada
+     * {@code /api/v1/app/home} kontent bor bo'lsa ham BO'SH qaytardi va
+     * ilova ishlamayotgandek ko'rinardi. Mantiq takrorlanmaydi — ayni
+     * o'sha metod chaqiriladi.
+     */
+    private final HomepageService homepageService;
+
     @Override
     @Transactional
     public void run(String... args) {
@@ -105,6 +120,12 @@ public class DevDataSeeder implements CommandLineRunner {
         // Xarid qism narxiga bog'lanadi, shuning uchun kontentdan KEYIN.
         seedAppUsers();
 
+        // ⚠️ Kontent blokidan TASHQARIDA va idempotent: metod faqat
+        // YETISHMAYOTGAN bo'lim turlarini qo'shadi. Usiz bosh sahifa
+        // bo'sh bo'lardi - kontent bazada bo'lsa ham.
+        int sectionCount = homepageService.sections().size();
+
+        log.info("DevDataSeeder: {} ta bosh sahifa bo'limi", sectionCount);
         log.info("DevDataSeeder: {} ilova foydalanuvchisi, {} obuna, {} xarid",
                 userAccountRepo.count(), subscriptionRepo.count(), purchaseRepo.count());
         log.info("DevDataSeeder: {} kategoriya, {} janr, {} ijodkor, {} kontent, {} qism, "

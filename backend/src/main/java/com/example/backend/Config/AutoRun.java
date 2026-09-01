@@ -11,13 +11,32 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * ⚠️ {@code @Order(0)} — ENG BIRINCHI ishlaydi.
+ *
+ * Ilgari tartib umuman ko'rsatilmagan edi, ya'ni Spring bu runner'ga
+ * eng past ustuvorlikni berardi va u BARCHA seeder'lardan KEYIN
+ * ishlardi. Holbuki {@code LocalSeeder} ham, {@code DevDataSeeder} ham
+ * o'z izohida "AutoRun rollarni yaratib bo'lgandan keyin" deb yozadi —
+ * ya'ni hujjat bir narsani, kod boshqa narsani aytardi.
+ *
+ * Bu jimgina nosozlik berardi: Tomcat runner'lar tugashini kutmaydi,
+ * shuning uchun ishga tushgandan keyingi bir necha o'n soniya ichida
+ * kelgan {@code /otp/verify} so'rovi ROLSIZ hisob yaratardi
+ * ({@code AuthServiceImpl.createPhoneUser} da {@code roleRepo.findByName}
+ * {@code null} qaytarsa, ro'yxat bo'sh qoladi). Odam kira olardi, lekin
+ * huquq talab qiladigan hamma narsa u uchun yopiq bo'lardi — va buni
+ * bog'lash juda qiyin, chunki xato faqat birinchi so'rovlarda chiqadi.
+ */
 @Slf4j
 @Configuration
+@Order(0)
 @RequiredArgsConstructor
 public class AutoRun implements CommandLineRunner {
     private final RoleRepo roleRepo;

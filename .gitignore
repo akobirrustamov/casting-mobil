@@ -98,6 +98,18 @@ src/main/resources/application.yml
 # fayl repozitoriyda yo'q va toza klonda testlar ishga tushmaydi.
 !backend/src/test/resources/application-test.properties
 
+# ⚠️ LOCAL profili ham ISTISNO — u ham repozitoriyda turishi SHART.
+#
+# Unda ham sir yo'q: baza xotiradagi H2, JWT kaliti faqat shu stend
+# uchun, Eskiz kabineti umuman ishlatilmaydi (`LoggingSmsClient` kodni
+# logga yozadi).
+#
+# ⚠️ Usiz mobile/docs/LOCAL_BACKEND.md dagi ko'rsatma YOLG'ON bo'ladi:
+# hujjatda `--spring.profiles.active=local` yozilgan, lekin fayl
+# repozitoriyga hech qachon tushmagani uchun toza klonda u hech narsa
+# qilmasdi — ilova ishlab chiquvchining shaxsiy Postgres'iga ulanardi.
+!backend/src/main/resources/application-local.properties
+
 # ======================
 
 # Secrets / Keys
