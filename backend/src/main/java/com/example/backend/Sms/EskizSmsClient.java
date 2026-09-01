@@ -3,7 +3,6 @@ package com.example.backend.Sms;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -36,18 +35,22 @@ import java.util.concurrent.atomic.AtomicReference;
  * moderatsiya tasdiqlanguncha yetib bormaydi — bu Eskiz tomonidagi
  * cheklov, kod bilan chetlab bo'lmaydi.
  *
- * <h2>⚠️ Nega {@code @Profile("!local")}</h2>
- * Lokal stendda Eskiz kabineti yo'q, ya'ni bu klient u yerda faqat
- * {@code SMS_NOT_CONFIGURED} qaytara olardi va telefon orqali kirishni
- * sinab bo'lmasdi. Lokal profilda uning o'rnini {@link LoggingSmsClient}
- * egallaydi — kodni SMS o'rniga logga yozadi.
+ * <h2>Qaysi profilda mavjud</h2>
+ * HAMMASIDA. Ilgari bu yerda {@code @Profile("!local")} turardi va lokal
+ * stendda haqiqiy SMS ni sinash umuman imkonsiz edi — kabinet sozlangan
+ * bo'lsa ham bean yaratilmasdi.
  *
- * Serverda {@code local} profili yo'q, demak bu yerda hamma narsa
- * avvalgidek: haqiqiy SMS yoki halol xato.
+ * Endi tanlovni profil emas, KONFIGURATSIYA hal qiladi:
+ * {@code eskiz.email} berilgan bo'lsa shu klient ishlaydi (lokalda ham),
+ * berilmagan bo'lsa lokal profilda uning o'rnini {@link LoggingSmsClient}
+ * egallaydi.
+ *
+ * Serverda hamma narsa avvalgidek: {@link LoggingSmsClient} u yerda
+ * baribir yaratilmaydi ({@code @Profile("local")}), ya'ni sozlanmagan
+ * kabinet halol xato beradi — soxta "yuborildi" hech qachon qaytmaydi.
  */
 @Slf4j
 @Component
-@Profile("!local")
 @RequiredArgsConstructor
 public class EskizSmsClient implements SmsClient {
 

@@ -1,6 +1,8 @@
 package com.example.backend.Sms;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -22,10 +24,35 @@ import jakarta.annotation.PostConstruct;
  * ============================================================
  * </pre>
  *
+ * <h2>Qachon ishlaydi</h2>
+ * Faqat {@code local} profilida VA {@code eskiz.email} berilmagan bo'lsa.
+ *
+ * Ilgari lokal profilda SMS shlyuzi butunlay o'chirilardi: {@link EskizSmsClient}
+ * da {@code @Profile("!local")} turgani uchun kabinet sozlangan bo'lsa ham
+ * haqiqiy SMS ni sinab bo'lmasdi — kod har doim shu yerga, logga tushardi.
+ *
+ * Endi lokal stendda ikkala yo'l ham ochiq:
+ * <pre>
+ *   eskiz.email berilgan     -> EskizSmsClient, HAQIQIY SMS
+ *   eskiz.email berilmagan   -> shu bean, kod logga
+ * </pre>
+ *
  * <h2>⚠️ Nega bu prod'ga uchib ketmaydi</h2>
- * Bean {@code @Profile("local")} bilan qulflangan, {@link EskizSmsClient}
- * esa {@code @Profile("!local")}. Ya'ni bir vaqtda faqat bittasi mavjud
- * bo'ladi va tanlov tasodifiy xossaga emas, profilga bog'liq.
+ * Bean {@code @Profile("local")} bilan qulflangan — bu shart O'ZGARMADI.
+ * Serverda {@code local} profili yo'q, demak bu bean u yerda yaratilmaydi
+ * va {@link EskizSmsClient} yagona shlyuz bo'lib qoladi.
+ *
+ * {@code @Primary} kerak, chunki lokalda ikkala bean ham mavjud bo'lishi
+ * mumkin (Eskiz klienti endi profilga bog'lanmagan). Sozlanmagan holatda
+ * tanlov shu beanga tushishi kerak — aks holda lokal stend yana
+ * {@code SMS_NOT_CONFIGURED} bilan o'lik bo'lib qolardi.
+ *
+ * <h2>⚠️ Nega {@code @ConditionalOnExpression}, {@code @ConditionalOnProperty} emas</h2>
+ * {@code @ConditionalOnProperty(name = "eskiz.email", havingValue = "")}
+ * TUZOQ: bo'sh {@code havingValue} — bu Spring Boot'ning SUKUT qiymati va
+ * u "qiymat {@code false} ga TENG EMAS bo'lsa mos keladi" degani, "bo'sh
+ * bo'lsa" degani EMAS. Natijada kabinet sozlangan bo'lsa ham shart mos
+ * kelaverardi va lokalda haqiqiy SMS hech qachon yoqilmasdi.
  *
  * {@code local} profili esa serverda ishlatib bo'lmaydi: u bazani
  * XOTIRADAGI H2 ga o'tkazadi va sinov ma'lumotlarini seed qiladi
@@ -37,13 +64,16 @@ import jakarta.annotation.PostConstruct;
  */
 @Slf4j
 @Component
+@Primary
 @Profile("local")
+@ConditionalOnExpression("'${eskiz.email:}'.trim().isEmpty()")
 public class LoggingSmsClient implements SmsClient {
 
     @PostConstruct
     void warn() {
-        log.warn("⚠️  SMS shlyuzi O'CHIRILGAN (local profili). OTP kodlari "
-                + "SMS o'rniga shu logga yoziladi. Serverda bu bean yo'q.");
+        log.warn("⚠️  SMS shlyuzi O'CHIRILGAN: local profili va eskiz.email "
+                + "berilmagan. OTP kodlari SMS o'rniga shu logga yoziladi. "
+                + "Haqiqiy SMS uchun eskiz.email/eskiz.password bering.");
     }
 
     /**
