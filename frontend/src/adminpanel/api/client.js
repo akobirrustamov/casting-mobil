@@ -640,6 +640,15 @@ export const adminApi = {
    * ⚠️ Kalit tanada: u `/` belgilarini o'z ichiga oladi va manzilga
    * solinganda yo'l sifatida talqin qilinardi.
    */
+  /**
+   * Papkani ochadi.
+   *
+   * ⚠️ Bu `storageScan` dan tubdan ARZON va keshlanmaydi: S3 bitta
+   * darajani qaytaradi, ichkariga kirmaydi.
+   */
+  storageBrowse: (prefix) =>
+    api.get('/api/v1/app/admin/storage/browse', { prefix: prefix || '' }),
+
   storageDeleteOrphan: (key) =>
     api.post('/api/v1/app/admin/storage/orphan/delete', { key }),
   /** Yiqilgan transcoding'ni navbatga qaytaradi (MEDIA_UPLOAD). */

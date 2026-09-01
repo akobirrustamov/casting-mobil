@@ -93,6 +93,66 @@ public class StorageInventory {
         return new Scan(items, complete);
     }
 
+    /**
+     * BITTA darajani ko'rsatadi — fayl menejeridagi kabi.
+     *
+     * <h2>⚠️ Bu `scan()` dan tubdan ARZON</h2>
+     * {@code delimiter="/"} berilganda S3 ichki papkalarga
+     * KIRMAYDI: u faqat shu darajadagi fayllarni va ichki papka
+     * NOMLARINI qaytaradi.
+     *
+     * Ya'ni `videos/` ni ochish 192 ta obyektni emas, 3 ta papka
+     * nomini o'qiydi. Butun omborni skanerlash esa har papkani
+     * ochishda takrorlanardi va sahifa sekinlashardi.
+     *
+     * ⚠️ Shu sababli natija KESHLANMAYDI — u har doim jonli.
+     * Skanerlash hisoboti eskirishi mumkin, bu esa yo'q.
+     */
+    public Level browse(String prefix) {
+        String safe = prefix == null ? "" : prefix;
+
+        List<String> folders = new ArrayList<>();
+        List<Item> files = new ArrayList<>();
+        String token = null;
+
+        do {
+            ListObjectsV2Request.Builder request = ListObjectsV2Request.builder()
+                    .bucket(properties.getBucket())
+                    .prefix(safe)
+                    // ⚠️ Aynan shu qator «papka» tushunchasini beradi.
+                    .delimiter("/")
+                    .maxKeys(1000);
+            if (token != null) {
+                request.continuationToken(token);
+            }
+
+            ListObjectsV2Response response = s3.listObjectsV2(request.build());
+
+            response.commonPrefixes().forEach(p -> folders.add(p.prefix()));
+            for (S3Object object : response.contents()) {
+                // ⚠️ Papkaning o'zi ham obyekt sifatida qaytishi mumkin
+                // (`videos/` kabi, nol baytli). Uni fayl deb ko'rsatish
+                // adminni chalkashtirardi.
+                if (!object.key().equals(safe)) {
+                    files.add(new Item(object.key(), object.size()));
+                }
+            }
+
+            token = Boolean.TRUE.equals(response.isTruncated())
+                    ? response.nextContinuationToken() : null;
+        } while (token != null && files.size() < MAX_OBJECTS);
+
+        return new Level(safe, folders, files);
+    }
+
+    @Data
+    public static class Level {
+        private final String prefix;
+        /** Ichki papkalar — to'liq prefiks bilan (`videos/146/`). */
+        private final List<String> folders;
+        private final List<Item> files;
+    }
+
     @Data
     public static class Item {
         private final String key;
