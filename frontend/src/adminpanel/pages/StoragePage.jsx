@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
 import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
+import StorageBrowser from '../components/StorageBrowser';
 import { PageHeader } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
 
@@ -58,6 +59,23 @@ export default function StoragePage() {
   // ro'yxatda qolsa admin uni yana o'chirishga urinardi va
   // «topilmadi» xatosini olardi.
   const confirmer = useConfirm(load);
+
+  /**
+   * Yetim faylni o'chirish — ikki joydan chaqiriladi.
+   *
+   * ⚠️ `after` — ko'rinishni yangilash. Papka ko'rinishida hisobot
+   * emas, o'sha PAPKA qayta o'qilishi kerak: aks holda o'chirilgan
+   * fayl ro'yxatda qolardi.
+   */
+  const askDeleteOrphan = (key, sizeBytes, after) => confirmer.ask({
+    title: t('storage.deleteOrphan'),
+    message: `${key} — ${humanSize(sizeBytes)}`,
+    note: t('storage.deleteWarning'),
+    confirmLabel: t('media.delete'),
+    run: () => adminApi.storageDeleteOrphan(key).then(() => {
+      if (after) after();
+    }),
+  });
 
   const scan = () => {
     setScanning(true);
@@ -122,6 +140,10 @@ export default function StoragePage() {
             />
           </div>
 
+          <Section title={t('storage.browse')} hint={t('storage.browseHint')}>
+            <StorageBrowser t={t} onDeleteOrphan={askDeleteOrphan} />
+          </Section>
+
           <Section title={t('storage.byFolder')}>
             <table className="uz-table">
               <thead>
@@ -170,14 +192,7 @@ export default function StoragePage() {
                               type="button"
                               className="uz-btn uz-btn-danger"
                               style={{ minHeight: 32, fontSize: 12 }}
-                              onClick={() => confirmer.ask({
-                                title: t('storage.deleteOrphan'),
-                                message: `${o.key} — ${humanSize(o.sizeBytes)}`,
-                                // ⚠️ Qaytarib bo'lmasligi ochiq aytiladi.
-                                note: t('storage.deleteWarning'),
-                                confirmLabel: t('media.delete'),
-                                run: () => adminApi.storageDeleteOrphan(o.key),
-                              })}
+                              onClick={() => askDeleteOrphan(o.key, o.sizeBytes)}
                             >
                               {t('media.delete')}
                             </button>

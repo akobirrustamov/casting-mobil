@@ -23,6 +23,19 @@ import org.springframework.data.repository.query.Param;
  */
 public interface MediaAssetRepo extends JpaRepository<MediaAsset, Long> {
 
+    /**
+     * Berilgan kalitlar bo'yicha — ombor ko'rinishi uchun.
+     *
+     * ⚠️ `findAll()` O'RNIGA. Papka ochilganda faqat SHU DARAJADAGI
+     * kalitlar kerak (ko'pi bilan 1000 ta), butun jadval emas —
+     * o'n minglab yozuvli kutubxonada har papka ochilishi butun
+     * jadvalni xotiraga tortardi.
+     *
+     * ⚠️ Kalit ikki shaklda saqlanishi mumkin: `/content/x.mp4` va
+     * `content/x.mp4`. Chaqiruvchi ikkalasini ham beradi.
+     */
+    java.util.List<MediaAsset> findByStorageKeyIn(java.util.Collection<String> keys);
+
     Page<MediaAsset> findAllByTypeOrderByCreatedAtDesc(MediaType type, Pageable pageable);
 
     /**

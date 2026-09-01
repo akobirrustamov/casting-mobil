@@ -17,6 +17,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -216,6 +217,141 @@ public class StorageStatsService {
         // admin uni qayta o'chirishga urinardi.
         cached = null;
         return size;
+    }
+
+    /**
+     * Papkani ochadi — fayl menejeridagi kabi.
+     *
+     * <h2>⚠️ Har fayl KIMNIKI ekani ko'rsatiladi</h2>
+     * Yalang'och kalit (`content/2ac6ed2b-....png`) adminga hech
+     * narsa aytmaydi: nomlar UUID, chunki ular server tomonida
+     * yasaladi.
+     *
+     * Shuning uchun har qator media yozuvi bilan bog'lanadi va
+     * ASL FAYL NOMI ko'rsatiladi. Bog'lanmagani esa ochiq
+     * «yetim» deb belgilanadi — o'sha yerdan o'chirsa bo'ladi.
+     *
+     * <h2>⚠️ Baza so'rovi CHEGARALANGAN</h2>
+     * Faqat shu sahifadagi kalitlar so'raladi (ko'pi bilan 1000 ta),
+     * butun jadval emas. `findAll()` bo'lsa har papka ochilishi
+     * o'n minglab yozuvni xotiraga tortardi.
+     */
+    @Transactional(readOnly = true)
+    public Browse browse(String prefix) {
+        StorageInventory.Level level = inventory.browse(prefix);
+
+        // Shu darajadagi kalitlarni bazadan qidiramiz.
+        List<String> keys = level.getFiles().stream()
+                .map(f -> normalize(f.getKey()))
+                .toList();
+
+        Map<String, MediaAsset> byKey = new HashMap<>();
+        if (!keys.isEmpty()) {
+            // ⚠️ Ikkala shakl ham so'raladi: baza `/content/x` deb
+            // saqlashi mumkin, S3 esa `content/x` deb qaytaradi.
+            Set<String> both = new HashSet<>(keys);
+            keys.forEach(k -> both.add("/" + k));
+
+            for (MediaAsset asset : mediaAssetRepo.findByStorageKeyIn(both)) {
+                byKey.put(normalize(asset.getStorageKey()), asset);
+            }
+        }
+
+        // ⚠️ HLS papkalari va fayllari uchun media id bo'yicha qidiramiz.
+        //
+        // Bu ALOHIDA so'rov, chunki `videos/146/...` kalitini bazadan
+        // topib bo'lmaydi — u yerda faqat `hlsMasterKey` bor. Ilgari
+        // bu xarita fayl bo'lmagan darajalarda umuman to'ldirilmasdi
+        // va `videos/` ochilganda papkalar nomsiz ko'rinardi.
+        Set<Long> wanted = new HashSet<>();
+        level.getFolders().forEach(f -> {
+            Long id = mediaIdOfHls(normalize(f));
+            if (id != null) wanted.add(id);
+        });
+        level.getFiles().forEach(f -> {
+            Long id = mediaIdOfHls(normalize(f.getKey()));
+            if (id != null) wanted.add(id);
+        });
+
+        Map<Long, MediaAsset> byId = new HashMap<>();
+        if (!wanted.isEmpty()) {
+            mediaAssetRepo.findAllById(wanted).forEach(a -> byId.put(a.getId(), a));
+        }
+
+        List<Entry> entries = new ArrayList<>();
+
+        for (String folder : level.getFolders()) {
+            // ⚠️ Papka hajmi bu yerda HISOBLANMAYDI: buning uchun
+            // ichkariga kirish kerak va u arzon ko'rinishni qimmatga
+            // aylantirardi. Admin ichiga kirsa ko'radi.
+            entries.add(Entry.folder(folder, folderLabel(folder, byId)));
+        }
+
+        for (StorageInventory.Item file : level.getFiles()) {
+            String key = normalize(file.getKey());
+            MediaAsset direct = byKey.get(key);
+            Long hlsOwner = mediaIdOfHls(key);
+            MediaAsset owner = direct != null ? direct
+                    : (hlsOwner != null ? byId.get(hlsOwner) : null);
+
+            entries.add(Entry.file(file.getKey(), file.getSizeBytes(),
+                    owner == null ? null : owner.getId(),
+                    owner == null ? null : owner.getOriginalFilename(),
+                    owner == null));
+        }
+
+        return new Browse(level.getPrefix(), entries);
+    }
+
+    /**
+     * Papka nomi yonidagi izoh.
+     *
+     * `videos/146/` — bu 146-media'ning transkodlangan natijasi.
+     * Raqamning o'zi hech narsa demaydi, fayl nomi esa aytadi.
+     */
+    private String folderLabel(String folder, Map<Long, MediaAsset> byId) {
+        Long id = mediaIdOfHls(normalize(folder));
+        if (id == null) {
+            return null;
+        }
+        MediaAsset asset = byId.get(id);
+        return asset == null ? null : asset.getOriginalFilename();
+    }
+
+    @Data
+    @lombok.AllArgsConstructor
+    public static class Browse {
+        private String prefix;
+        private List<Entry> entries;
+    }
+
+    @Data
+    @lombok.AllArgsConstructor
+    public static class Entry {
+        private boolean folder;
+        /** To'liq kalit yoki papka prefiksi. */
+        private String key;
+        /** Ro'yxatda ko'rinadigan qisqa nom. */
+        private String name;
+        private long sizeBytes;
+        /** Qaysi media'ga tegishli — bo'lmasa {@code null}. */
+        private Long mediaId;
+        private String mediaFilename;
+        /** Bazada hech qanday bog'lanish yo'q. */
+        private boolean orphan;
+
+        static Entry folder(String prefix, String label) {
+            String[] parts = prefix.split("/");
+            String name = parts.length == 0 ? prefix : parts[parts.length - 1];
+            return new Entry(true, prefix, name, 0, null, label, false);
+        }
+
+        static Entry file(String key, long size, Long mediaId,
+                          String filename, boolean orphan) {
+            int slash = key.lastIndexOf('/');
+            return new Entry(false, key, slash < 0 ? key : key.substring(slash + 1),
+                    size, mediaId, filename, orphan);
+        }
     }
 
     /** Ro'yxatlarda ko'pi bilan shuncha element qaytariladi. */

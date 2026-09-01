@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -71,6 +72,24 @@ public class StorageStatsController {
     public ResponseEntity<StorageStatsService.Report> scan() {
         require();
         return ResponseEntity.ok(statsService.refresh());
+    }
+
+    /**
+     * Papkani ochadi — fayl menejeridagi kabi.
+     *
+     * ⚠️ Bu `scan` dan tubdan ARZON va KESHLANMAYDI: S3 bitta
+     * darajani qaytaradi, ichkariga kirmaydi. Shuning uchun natija
+     * har doim jonli.
+     *
+     * ⚠️ Prefiks `..` yoki boshqa yo'l hiylalarini o'z ichiga
+     * ololmaydi: S3 da yo'l tushunchasi yo'q, prefiks shunchaki
+     * satr taqqoslash. Ombor esa bitta bucket bilan chegaralangan.
+     */
+    @GetMapping("/browse")
+    public ResponseEntity<StorageStatsService.Browse> browse(
+            @RequestParam(required = false, defaultValue = "") String prefix) {
+        require();
+        return ResponseEntity.ok(statsService.browse(prefix));
     }
 
     /**
