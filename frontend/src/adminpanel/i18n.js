@@ -139,6 +139,9 @@ const dict = {
     'media.pick': 'Media tanlash',
     'media.upload': 'Fayl yuklash',
     'media.change': 'Almashtirish',
+    'media.preview': 'Videoni ko\'rish',
+    'media.previewOpen': 'Ko\'rish',
+    'media.previewUnsupported': "Brauzer bu videoni ocholmadi.",
     'media.clear': 'Olib tashlash',
     'media.notPlayable': 'Pleyerda ochilmaydi',
 
@@ -891,6 +894,9 @@ const dict = {
     'media.pick': 'Выбор медиа',
     'media.upload': 'Загрузить файл',
     'media.change': 'Заменить',
+    'media.preview': 'Просмотр видео',
+    'media.previewOpen': 'Смотреть',
+    'media.previewUnsupported': 'Браузер не смог открыть это видео.',
     'media.clear': 'Убрать',
     'media.notPlayable': 'Не воспроизводится',
 
@@ -1641,6 +1647,9 @@ const dict = {
     'media.pick': 'Pick media',
     'media.upload': 'Upload file',
     'media.change': 'Replace',
+    'media.preview': 'Preview video',
+    'media.previewOpen': 'Preview',
+    'media.previewUnsupported': 'Your browser could not play this video.',
     'media.clear': 'Clear',
     'media.notPlayable': 'Not playable',
 

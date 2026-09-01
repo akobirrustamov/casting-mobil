@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { adminApi, mediaUrl } from '../api/client';
 import { usePanelI18n } from '../i18n';
 import MediaPicker from './MediaPicker';
+import VideoPreview from './VideoPreview';
 
 /**
  * Bitta rasm maydoni: oldindan ko'rish + tanlash/almashtirish/olib tashlash.
@@ -9,6 +10,7 @@ import MediaPicker from './MediaPicker';
 export default function MediaField({ label, value, onChange, hint, type = 'IMAGE' }) {
   const { t } = usePanelI18n();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   /**
    * Tanlangan video pleyerda ochiladimi.
@@ -89,6 +91,18 @@ export default function MediaField({ label, value, onChange, hint, type = 'IMAGE
         >
           {value ? t('media.change') : t('media.upload')}
         </button>
+        {/* ⚠️ Faqat VIDEO uchun. Rasm allaqachon eskizda ko'rinadi —
+            unga tugma qo'yish ortiqcha bosqich bo'lardi. */}
+        {value && type === 'VIDEO' && (
+          <button
+            type="button"
+            className="uz-btn uz-btn-ghost"
+            style={{ minHeight: 36, fontSize: 13 }}
+            onClick={() => setPreviewOpen(true)}
+          >
+            {t('media.previewOpen')}
+          </button>
+        )}
         {value && (
           <button
             type="button"
@@ -124,6 +138,14 @@ export default function MediaField({ label, value, onChange, hint, type = 'IMAGE
         </p>
       )}
       {hint && <p className="uz-muted mt-1" style={{ fontSize: 11 }}>{hint}</p>}
+
+      <VideoPreview
+        open={previewOpen}
+        mediaId={value}
+        title={label}
+        onClose={() => setPreviewOpen(false)}
+        t={t}
+      />
 
       <MediaPicker
         open={pickerOpen}

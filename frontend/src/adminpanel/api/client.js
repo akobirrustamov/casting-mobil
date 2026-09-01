@@ -608,6 +608,16 @@ export const adminApi = {
   media: (params) => api.get('/api/v1/app/admin/media', params),
   /** Bitta fayl — media maydonida faqat `mediaId` bo'lgani uchun kerak. */
   mediaAsset: (id) => api.get(`/api/v1/app/admin/media/${id}`),
+
+  /**
+   * Videoni panelda ko'rish uchun havola.
+   *
+   * ⚠️ Nega alohida so'rov: `<video src>` `Authorization` sarlavhasini
+   * YUBORMAYDI. Server shu sababli manzilning o'ziga imzo qo'yib
+   * beradi — S3 da to'g'ridan-to'g'ri omborga, lokalda esa chipta
+   * bilan `/raw` ga.
+   */
+  mediaPreview: (id) => api.get(`/api/v1/app/admin/media/${id}/preview`),
   /** Yiqilgan transcoding'ni navbatga qaytaradi (MEDIA_UPLOAD). */
   retryTranscoding: (id) => api.post(`/api/v1/app/admin/media/${id}/retry-transcoding`),
   /** Navbat holati — panel yangilashni qachon to'xtatishni biladi. */
