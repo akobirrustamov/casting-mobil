@@ -63,6 +63,7 @@ public class StorageStatsService {
     private final StorageInventory inventory;
     private final MediaAssetRepo mediaAssetRepo;
     private final MediaUsageService mediaUsageService;
+    private final com.example.backend.Cms.Service.StorageService storageService;
 
     /**
      * Oxirgi skanerlash natijasi.
@@ -164,6 +165,57 @@ public class StorageStatsService {
                 report.objectCount, report.totalBytes / 1024 / 1024,
                 report.orphanCount, report.scanMillis);
         return report;
+    }
+
+    /**
+     * Bitta yetim faylni o'chiradi.
+     *
+     * <h2>⚠️ KESHGA ISHONILMAYDI — QAYTA TEKSHIRILADI</h2>
+     * Hisobot bir necha soat oldin olingan bo'lishi mumkin. O'sha
+     * paytdan beri fayl kontentga biriktirilgan bo'lishi mumkin:
+     * boshqa admin uni kutubxonadan tanlab qo'ygan bo'lsa yetarli.
+     *
+     * Keshdagi ro'yxatga ishonib o'chirish — ishlab turgan videoni
+     * yo'q qilish demakdir. Shuning uchun har o'chirishdan oldin
+     * bazadan QAYTA hisoblanadi.
+     *
+     * @return o'chirilgan bayt hajmi
+     * @throws IllegalStateException fayl endi yetim EMAS
+     */
+    @Transactional(readOnly = true)
+    public long deleteOrphan(String rawKey) {
+        String key = normalize(rawKey);
+
+        Set<String> knownKeys = new HashSet<>();
+        Set<Long> knownMediaIds = new HashSet<>();
+        for (MediaAsset asset : mediaAssetRepo.findAll()) {
+            knownMediaIds.add(asset.getId());
+            if (asset.getStorageKey() != null) {
+                knownKeys.add(normalize(asset.getStorageKey()));
+            }
+        }
+
+        if (isReferenced(key, knownKeys, knownMediaIds)) {
+            throw new IllegalStateException(
+                    "Fayl endi ishlatilmoqda — o'chirilmadi: " + rawKey);
+        }
+
+        // ⚠️ Hajm keshdan emas, OMBORDAN olinadi — hisobot eskirgan
+        // bo'lishi mumkin. Olib bo'lmasa nol qaytadi: hisobot uchun
+        // aniq raqam o'chirishning o'zidan muhimroq emas.
+        long size = 0;
+        try {
+            size = storageService.load(key).contentLength();
+        } catch (Exception e) {
+            log.debug("Hajmni o'qib bo'lmadi: {}", key);
+        }
+
+        storageService.delete(key);
+
+        // ⚠️ Kesh endi yolg'on: o'chirilgan fayl ro'yxatda qolardi va
+        // admin uni qayta o'chirishga urinardi.
+        cached = null;
+        return size;
     }
 
     /** Ro'yxatlarda ko'pi bilan shuncha element qaytariladi. */

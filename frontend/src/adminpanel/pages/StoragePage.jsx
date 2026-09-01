@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
+import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { PageHeader } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
@@ -47,18 +48,23 @@ export default function StoragePage() {
       // ⚠️ 204 — hali skanerlanmagan. Bu XATO EMAS: bo'sh hisobot
       // ko'rsatish «ombor bo'sh» degan yolg'on taassurot berardi.
       .then((r) => setReport(r || null))
-      .catch((e) => setError(e?.message || t('common.error')))
+      .catch((e) => setError(e?.message || t('error.title')))
       .finally(() => setLoading(false));
   }, [t]);
 
   useEffect(load, [load]);
+
+  // ⚠️ O'chirgandan keyin hisobot QAYTA olinadi: o'chirilgan qator
+  // ro'yxatda qolsa admin uni yana o'chirishga urinardi va
+  // «topilmadi» xatosini olardi.
+  const confirmer = useConfirm(load);
 
   const scan = () => {
     setScanning(true);
     setError(null);
     adminApi.storageScan()
       .then(setReport)
-      .catch((e) => setError(e?.message || t('common.error')))
+      .catch((e) => setError(e?.message || t('error.title')))
       .finally(() => setScanning(false));
   };
 
@@ -86,6 +92,8 @@ export default function StoragePage() {
           </span>
         )}
       </div>
+
+      <ConfirmDialog {...confirmer.props} />
 
       {!report && <EmptyState text={t('storage.neverScanned')} />}
 
@@ -148,7 +156,7 @@ export default function StoragePage() {
                 <>
                   <table className="uz-table">
                     <thead>
-                      <tr><th>{t('storage.key')}</th><th>{t('storage.size')}</th></tr>
+                      <tr><th>{t('storage.key')}</th><th>{t('storage.size')}</th><th /></tr>
                     </thead>
                     <tbody>
                       {report.orphans.map((o) => (
@@ -156,6 +164,23 @@ export default function StoragePage() {
                           <td><code style={{ fontSize: 12 }}>{o.key}</code></td>
                           <td style={{ fontVariantNumeric: 'tabular-nums' }}>
                             {humanSize(o.sizeBytes)}
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <button
+                              type="button"
+                              className="uz-btn uz-btn-danger"
+                              style={{ minHeight: 32, fontSize: 12 }}
+                              onClick={() => confirmer.ask({
+                                title: t('storage.deleteOrphan'),
+                                message: `${o.key} — ${humanSize(o.sizeBytes)}`,
+                                // ⚠️ Qaytarib bo'lmasligi ochiq aytiladi.
+                                note: t('storage.deleteWarning'),
+                                confirmLabel: t('media.delete'),
+                                run: () => adminApi.storageDeleteOrphan(o.key),
+                              })}
+                            >
+                              {t('media.delete')}
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -178,6 +203,7 @@ export default function StoragePage() {
                       <th>{t('storage.file')}</th>
                       <th>{t('storage.type')}</th>
                       <th>{t('storage.size')}</th>
+                      <th />
                     </tr>
                   </thead>
                   <tbody>
@@ -188,6 +214,25 @@ export default function StoragePage() {
                         <td>{u.type}</td>
                         <td style={{ fontVariantNumeric: 'tabular-nums' }}>
                           {humanSize(u.sizeBytes)}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <button
+                            type="button"
+                            className="uz-btn uz-btn-danger"
+                            style={{ minHeight: 32, fontSize: 12 }}
+                            onClick={() => confirmer.ask({
+                              title: t('storage.deleteAsset'),
+                              message: `${u.filename} — ${humanSize(u.sizeBytes)}`,
+                              // ⚠️ Bu yerdagi ogohlantirish BOSHQACHA:
+                              // fayl kutubxonada ko'rinadi va ataylab
+                              // saqlanayotgan bo'lishi mumkin.
+                              note: t('storage.deleteAssetWarning'),
+                              confirmLabel: t('media.delete'),
+                              run: () => adminApi.deleteMedia(u.id),
+                            })}
+                          >
+                            {t('media.delete')}
+                          </button>
                         </td>
                       </tr>
                     ))}

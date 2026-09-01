@@ -3,6 +3,7 @@ package com.example.backend.Admin.Controller;
 import com.example.backend.Admin.CurrentUser;
 import com.example.backend.Cms.Service.Storage.StorageStatsService;
 import com.example.backend.Enums.Permission;
+import com.example.backend.Services.AuditService.AuditAction;
 import com.example.backend.Services.PermissionService.PermissionService;
 import com.example.backend.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -40,6 +42,7 @@ public class StorageStatsController {
 
     private final StorageStatsService statsService;
     private final PermissionService permissionService;
+    private final com.example.backend.Services.AuditService.AuditService auditService;
 
     /**
      * Oxirgi skanerlash natijasi.
@@ -68,6 +71,59 @@ public class StorageStatsController {
     public ResponseEntity<StorageStatsService.Report> scan() {
         require();
         return ResponseEntity.ok(statsService.refresh());
+    }
+
+    /**
+     * Yetim faylni o'chiradi.
+     *
+     * <h2>⚠️ QAYTARIB BO'LMAYDI</h2>
+     * Ombordan o'chirilgan fayl tiklanmaydi. Shuning uchun server
+     * KESHGA ISHONMAYDI: har o'chirishdan oldin fayl hali ham yetim
+     * ekani bazadan QAYTA hisoblanadi.
+     *
+     * Hisobot bir necha soat oldin olingan bo'lishi mumkin va o'sha
+     * paytdan beri boshqa admin faylni kontentga biriktirgan
+     * bo'lishi mumkin — o'shanda {@code 409} qaytadi va fayl
+     * TEGILMAYDI.
+     *
+     * ⚠️ Kalit so'rov TANASIDA, manzilda emas: u `/` belgilarini
+     * o'z ichiga oladi va manzilga solinganda yo'l sifatida
+     * talqin qilinardi.
+     */
+    @PostMapping("/orphan/delete")
+    public ResponseEntity<Deleted> deleteOrphan(@RequestBody DeleteRequest request) {
+        require();
+
+        if (request == null || request.getKey() == null || request.getKey().isBlank()) {
+            throw BusinessException.validation("Kalit ko'rsatilmagan");
+        }
+
+        long freed;
+        try {
+            freed = statsService.deleteOrphan(request.getKey());
+        } catch (IllegalStateException e) {
+            // ⚠️ 409, 404 emas: fayl BOR, lekin o'chirish endi
+            // xavfli. Admin sababni ko'rishi kerak.
+            throw new BusinessException("FILE_IN_USE", e.getMessage(),
+                    org.springframework.http.HttpStatus.CONFLICT);
+        }
+
+        auditService.log(CurrentUser.get(), AuditAction.STORAGE_ORPHAN_DELETE,
+                "StorageObject", request.getKey());
+
+        return ResponseEntity.ok(new Deleted(request.getKey(), freed));
+    }
+
+    @lombok.Data
+    public static class DeleteRequest {
+        private String key;
+    }
+
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    public static class Deleted {
+        private String key;
+        private long freedBytes;
     }
 
     /**

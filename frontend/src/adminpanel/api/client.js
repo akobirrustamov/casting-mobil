@@ -629,6 +629,19 @@ export const adminApi = {
 
   /** ⚠️ QIMMAT: butun omborni qayta sanaydi. Faqat admin so'raganda. */
   storageScan: () => api.post('/api/v1/app/admin/storage/scan'),
+
+  /**
+   * Yetim faylni o'chiradi.
+   *
+   * ⚠️ QAYTARIB BO'LMAYDI. Server keshga ISHONMAYDI: fayl hali ham
+   * yetim ekanini bazadan qayta hisoblaydi va biriktirilgan bo'lsa
+   * `409` qaytaradi.
+   *
+   * ⚠️ Kalit tanada: u `/` belgilarini o'z ichiga oladi va manzilga
+   * solinganda yo'l sifatida talqin qilinardi.
+   */
+  storageDeleteOrphan: (key) =>
+    api.post('/api/v1/app/admin/storage/orphan/delete', { key }),
   /** Yiqilgan transcoding'ni navbatga qaytaradi (MEDIA_UPLOAD). */
   retryTranscoding: (id) => api.post(`/api/v1/app/admin/media/${id}/retry-transcoding`),
   /** Navbat holati — panel yangilashni qachon to'xtatishni biladi. */

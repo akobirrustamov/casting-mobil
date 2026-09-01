@@ -39,7 +39,7 @@ class StorageStatsTest {
 
     /** Servis bin sifatida emas, oddiy obyekt sifatida sinaladi. */
     private final StorageStatsService service =
-            new StorageStatsService(null, null, null);
+            new StorageStatsService(null, null, null, null);
 
     private Long hlsMediaId(String key) {
         return ReflectionTestUtils.invokeMethod(service, "mediaIdOfHls", key);

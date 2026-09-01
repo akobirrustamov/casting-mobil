@@ -164,6 +164,10 @@ const dict = {
     'storage.unusedHint': "Bazada bor, lekin hech qaysi kontentga ulanmagan. Kutubxonada ko'rinadi — ataylab saqlanayotgan bo'lishi mumkin.",
     'storage.noUnused': 'Hammasi biriktirilgan.',
     'storage.truncated': 'Ro\'yxat qisqartirilgan',
+    'storage.deleteOrphan': 'Yetim faylni o\'chirish',
+    'storage.deleteAsset': 'Media faylni o\'chirish',
+    'storage.deleteWarning': "Fayl ombordan BUTUNLAY o'chadi va qaytarib bo'lmaydi. Server o'chirishdan oldin uning hali ham ishlatilmayotganini qayta tekshiradi.",
+    'storage.deleteAssetWarning': "Fayl kutubxonadan ham, ombordan ham o'chadi. Kimdir uni ataylab saqlab turgan bo'lishi mumkin — ishonchingiz komil bo'lsin.",
 
     'media.preview': 'Videoni ko\'rish',
     'media.previewOpen': 'Ko\'rish',
@@ -945,6 +949,10 @@ const dict = {
     'storage.unusedHint': 'Есть в базе, но не привязаны ни к одному контенту. Видны в библиотеке — возможно, хранятся намеренно.',
     'storage.noUnused': 'Всё привязано.',
     'storage.truncated': 'Список сокращён',
+    'storage.deleteOrphan': 'Удалить осиротевший файл',
+    'storage.deleteAsset': 'Удалить медиафайл',
+    'storage.deleteWarning': 'Файл будет удалён из хранилища НАВСЕГДА. Перед удалением сервер заново проверит, что он не используется.',
+    'storage.deleteAssetWarning': 'Файл исчезнет и из библиотеки, и из хранилища. Возможно, его хранят намеренно — убедитесь.',
 
     'media.preview': 'Просмотр видео',
     'media.previewOpen': 'Смотреть',
@@ -1724,6 +1732,10 @@ const dict = {
     'storage.unusedHint': 'In the database but not attached to any content. Visible in the library — may be kept on purpose.',
     'storage.noUnused': 'Everything is attached.',
     'storage.truncated': 'List truncated',
+    'storage.deleteOrphan': 'Delete orphaned file',
+    'storage.deleteAsset': 'Delete media file',
+    'storage.deleteWarning': 'The file is removed from storage PERMANENTLY. The server re-checks that it is still unused before deleting.',
+    'storage.deleteAssetWarning': 'The file disappears from both the library and storage. Someone may be keeping it on purpose — be sure.',
 
     'media.preview': 'Preview video',
     'media.previewOpen': 'Preview',
