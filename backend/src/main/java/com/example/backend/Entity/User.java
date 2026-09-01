@@ -45,6 +45,22 @@ public class User implements UserDetails {
     private String password;
     private String name;
 
+    /**
+     * Odam parolni O'ZI o'rnatganmi (V30).
+     *
+     * <h2>⚠️ Nega {@link #password} ning o'zi yetmaydi</h2>
+     * U hech qachon bo'sh bo'lmaydi: Google va SMS orqali yaratilgan
+     * hisobga tasodifiy UUID hash qilinadi — «paroli bor, lekin hech
+     * kim bilmaydi». Bunday hisob egasi na kira olardi, na qayta
+     * ro'yxatdan o'ta olardi.
+     *
+     * {@code false} — parol hali qo'yilmagan: mobil ro'yxatdan o'tish
+     * shu hisobga parol o'rnatishi mumkin. {@code true} — raqam band,
+     * kirish faqat parol bilan.
+     */
+    @Column(name = "password_set", nullable = false)
+    private boolean passwordSet;
+
     /** Google hisobidan. */
     @Column(unique = true)
     private String email;

@@ -35,7 +35,8 @@
     "years": "{{count}} yosh",
     "premium": "Premium",
     "free": "Bepul",
-    "ad": "Reklama"
+    "ad": "Reklama",
+    "more": "Yana"
   },
   "splash": {
     "subtitle": "Ijodkorlar uchun platforma"
@@ -86,7 +87,34 @@
     "otpLocked": "Urinishlar soni tugadi, qaytadan so'rang",
     "otpCooldown": "Kod allaqachon yuborilgan, biroz kuting",
     "smsUnavailable": "SMS xizmati hozircha sozlanmagan",
-    "phoneSubtitle": "Kirish yoki ro'yxatdan o'tish uchun raqamingizni kiriting"
+    "phoneSubtitle": "Kirish yoki ro'yxatdan o'tish uchun raqamingizni kiriting",
+    "tabSignIn": "Kirish",
+    "tabSignUp": "Ro'yxatdan o'tish",
+    "signInTitle": "Hisobingizga kiring",
+    "signInSubtitle": "Telefon raqami va parolni kiriting",
+    "signUpTitle": "Yangi hisob yarating",
+    "signUpSubtitle": "Raqamingizga tasdiqlash kodi yuboriladi",
+    "signInAction": "KIRISH",
+    "passwordPlaceholder": "Parol",
+    "passwordConfirmPlaceholder": "Parolni takrorlang",
+    "forgotPassword": "Parolni unutdingizmi?",
+    "soon": "tez orada",
+    "setPasswordTitle": "Ism va parol",
+    "setPasswordSubtitle": "Ismingizni kiriting va parol o'ylab toping (kamida {{min}} ta belgi)",
+    "finishSignUp": "RO'YXATDAN O'TISH",
+    "passwordTooShort": "Parol kamida 6 ta belgidan iborat bo'lsin",
+    "passwordTooLong": "Parol juda uzun",
+    "passwordMismatch": "Parollar mos kelmadi",
+    "phoneAlreadyRegistered": "Bu raqam allaqachon ro'yxatdan o'tgan. Kirish bo'limidan foydalaning.",
+    "phoneNotRegistered": "Bu raqam ro'yxatdan o'tmagan. Avval ro'yxatdan o'ting.",
+    "invalidCredentials": "Telefon yoki parol noto'g'ri",
+    "passwordNotSet": "Bu raqamda parol yo'q. Ro'yxatdan o'tish bo'limida parol qo'ying.",
+    "accountLocked": "Ko'p marta xato urinildi. Birozdan keyin urinib ko'ring.",
+    "verificationExpired": "Tasdiqlash muddati tugadi. Kodni qaytadan so'rang.",
+    "requestFailed": "Amal bajarilmadi, birozdan keyin urinib ko'ring",
+    "namePlaceholder": "Ism familiya",
+    "nameInvalid": "Ismni to'liq kiriting",
+    "googleNeedsDevBuild": "Google orqali kirish Expo Go'da ishlamaydi — dev build kerak"
   },
   "home": {
     "todayPremieres": "Bugungi premyeralar",
@@ -100,7 +128,8 @@
     "unlock": "Ochish",
     "castingCreators": "Casting ijodkorlari",
     "feedUnavailableTitle": "Bosh sahifa yuklanmadi",
-    "feedUnavailableBody": "Server bosh sahifa bo'limlarini bermayapti."
+    "feedUnavailableBody": "Server bosh sahifa bo'limlarini bermayapti.",
+    "categoryRowsError": "Bo'limlar yuklanmadi"
   },
   "casting": {
     "title": "Casting e'lonlari",
@@ -110,8 +139,8 @@
     "deadline": "Muddat"
   },
   "premiere": {
-    "title": "Premyera",
-    "subtitle": "Eksklyuziv kontent markazi",
+    "title": "Media",
+    "subtitle": "Barcha kontentlar bir joyda",
     "tabsSeries": "Seriallar",
     "tabsShows": "Ko'rsatuvlar",
     "tabsMovies": "Filmlar",
@@ -120,7 +149,11 @@
     "tabsReels": "Reels seriallar",
     "tabsClips": "Kliplar",
     "tabsStreams": "Stream",
-    "count": "{{count}} ta"
+    "count": "{{count}} ta",
+    "allOf": "Barcha {{name}}",
+    "genre": "Janr",
+    "searchPlaceholder": "Nom bo'yicha qidirish...",
+    "emptyByFilters": "Tanlangan shartlarga mos kontent topilmadi."
   },
   "profile": {
     "title": "Profil",
@@ -214,7 +247,10 @@
     "episodes": "Qismlar",
     "season": "{{number}}-mavsum",
     "episodesEmpty": "Bu mavsumda hali qism yo'q",
-    "episodeCount": "{{count}} qism"
+    "episodeCount": "{{count}} qism",
+    "share": "Ulashish",
+    "copyLink": "Havolani nusxalash",
+    "linkCopied": "Havola nusxalandi"
   },
   "contentType": {
     "SHORT_FILM": "Qisqa metraj",

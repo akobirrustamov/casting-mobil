@@ -22,6 +22,18 @@ const LOCALE_PARAM: Record<Language, 'UZ' | 'RU' | 'EN'> = {
 };
 
 /**
+ * Значение `locale` для `/api/v1/app/**`.
+ *
+ * Экспортируется, потому что тот же параметр нужен каталогу категорий
+ * (`features/catalog/contentCategories`): таблица соответствия должна быть
+ * одна — с двумя копиями достаточно поправить одну, чтобы один экран
+ * молча остался на другом языке.
+ */
+export function feedLocale(language: Language): 'UZ' | 'RU' | 'EN' {
+  return LOCALE_PARAM[language];
+}
+
+/**
  * Эндпоинта нет на этом сервере.
  *
  * Отдельный тип ошибки нужен, чтобы не долбить ретраями: `/api/v1/app/**`
@@ -51,8 +63,12 @@ function list(value: unknown): unknown[] {
 /**
  * Карточки без id пропускаются: id — ключ списка и будущая точка перехода,
  * без него карточка ни на что не ведёт.
+ *
+ * Экспортируется: `/api/v1/app/catalog/categories/{id}` отдаёт РОВНО такую
+ * же карточку (на бэкенде это один и тот же `HomeFeedDto.ContentCard`), и
+ * второй разбор того же формата разъехался бы с этим при первом же новом поле.
  */
-function mapContent(raw: unknown): ContentCard | null {
+export function mapContent(raw: unknown): ContentCard | null {
   const r = raw as Record<string, unknown>;
   const id = num(r?.id);
   if (id === null) return null;

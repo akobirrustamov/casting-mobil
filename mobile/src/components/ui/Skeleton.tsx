@@ -85,21 +85,33 @@ export function SkeletonRail({
   );
 }
 
-/** Сетка заглушек — под каталог. */
+/**
+ * Сетка заглушек — под каталог.
+ *
+ * Ширина, высота и зазор приходят снаружи и совпадают с настоящей сеткой:
+ * заглушка другого размера означала бы, что раскладка прыгает ровно в тот
+ * момент, когда приезжают данные, — то есть скелетон делал бы то, ради
+ * предотвращения чего он и нужен.
+ */
 export function SkeletonGrid({
   count = 6,
   cardWidth,
+  /** Ширина к высоте кадра — та же, что у карточки. */
+  ratio = 2 / 3,
+  gap = 12,
 }: {
   count?: number;
   cardWidth: number;
+  ratio?: number;
+  gap?: number;
 }) {
   return (
-    <View className="flex-row flex-wrap gap-3 px-4">
+    <View className="flex-row flex-wrap px-4" style={{ gap }}>
       {Array.from({ length: count }, (_, i) => (
         <Skeleton
           key={i}
           width={cardWidth}
-          height={cardWidth / 0.75}
+          height={Math.round(cardWidth / ratio)}
           radius={16}
         />
       ))}

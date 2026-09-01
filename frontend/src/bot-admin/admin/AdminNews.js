@@ -378,6 +378,17 @@ const AdminNews = () => {
 
                             <div className="mb-4">
                                 <label className="block mb-2 text-[#e4e4e7] text-[0.9rem]">Asosiy Rasm</label>
+                                {/* ⚠️ O'lcham TEKSHIRILMAYDI, bu maslahat.
+                                    Server rasmni qayta o'lchamaydi: fayl
+                                    qanday yuklansa, saytda shundayligicha
+                                    ko'rinadi. Kartochkalar bir xil nisbatda
+                                    bo'lmasa, yangiliklar qatori teng
+                                    bo'lmagan balandlikda chiqadi. */}
+                                <p className="mb-2 text-[#a1a1aa] text-[0.78rem] leading-snug">
+                                    📐 1200×675 px · 16:9 · JPG / PNG / WebP · ≤2 MB.
+                                    Barcha yangiliklarda bir xil nisbat bo'lsin — aks holda
+                                    kartochkalar turli balandlikda ko'rinadi.
+                                </p>
                                 <label className="block p-4 bg-[#262626] border border-dashed border-[#404040] rounded-lg text-center cursor-pointer mb-4">
                                     {formData.mainPhotoPreview ? "Rasmni almashtirish" : "Rasm tanlang"}
                                     <input
@@ -398,6 +409,15 @@ const AdminNews = () => {
 
                             <div className="mb-4">
                                 <label className="block mb-2 text-[#e4e4e7] text-[0.9rem]">Qo'shimcha Rasmlar</label>
+                                {/* Galereya kataklari saytda 150px balandlikda
+                                    va `object-cover` bilan chiziladi — ya'ni
+                                    tik rasmning yuqori va pastki cheti
+                                    qirqiladi. */}
+                                <p className="mb-2 text-[#a1a1aa] text-[0.78rem] leading-snug">
+                                    📐 800×600 px · 4:3 · JPG / PNG / WebP · ≤1 MB.
+                                    Galereyada rasm 150px balandlikda qirqiladi —
+                                    asosiy tasvirni markazda saqlang.
+                                </p>
                                 <label className="block p-4 bg-[#262626] border border-dashed border-[#404040] rounded-lg text-center cursor-pointer mb-4">
                                     Rasmlar tanlang
                                     <input

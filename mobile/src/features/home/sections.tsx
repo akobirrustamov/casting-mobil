@@ -3,17 +3,14 @@ import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking } from 'react-native';
 
-import { CategoryTile } from '@/components/ui/CategoryTile';
 import { HeroCarousel, type HeroItem } from '@/components/ui/HeroCarousel';
 import { PosterCard, type PosterBadge } from '@/components/ui/PosterCard';
 import { Rail } from '@/components/ui/Rail';
 import { StoryCircle } from '@/components/ui/StoryCircle';
 import { trackAdClick, trackAdImpression } from '@/features/analytics/api';
-import { categoryIcon } from '@/features/content/categoryIcons';
 import { formatDuration } from '@/features/content/duration';
-import { cardRatio, rowRatio } from '@/features/content/orientation';
+import { CARD_RATIO, useRailCardWidth } from '@/features/content/railLayout';
 import { mediaUrl } from '@/lib/api';
-import { colors } from '@/theme/tokens';
 
 import type { AccessPolicy, BannerCard, ContentCard, HomeSection } from './types';
 
@@ -27,9 +24,6 @@ import type { AccessPolicy, BannerCard, ContentCard, HomeSection } from './types
  * обратного: состав главной меняется без релиза. Поэтому решает форма данных
  * (баннеры / категории / креаторы / контент), а `type` влияет только на подачу.
  */
-
-/** Плитки категорий приходят без цвета — акцент подбираем по позиции. */
-const TILE_ACCENTS = [colors.purple, colors.magenta, colors.cyan, colors.gold];
 
 /**
  * Через сколько карусель показывает следующий баннер.
@@ -66,19 +60,23 @@ function accessBadge(
 /**
  * Карточка контента.
  *
- * Форму задаёт `orientation`, а не секция, в которой карточка оказалась:
- * вертикальный клип может попасть и в «Популярное», и в ручной ряд — там он
- * тоже должен выглядеть рилсом (ТЗ §13: формат и тип — разные оси).
+ * Форма кадра одна на всё приложение (`railLayout.CARD_RATIO`): ряд, сетка
+ * и экран «Barchasi» показывают карточку одного размера. Раньше форму
+ * задавал `orientation`, и вертикальный ряд получался другой высоты — по
+ * нажатию «Barchasi ›» карточки менялись на глазах.
  */
 export function ContentPoster({
   card,
   width,
   ratio,
+  onMenu,
 }: {
   card: ContentCard;
   width?: number;
-  /** Пропорция ряда. Без неё карточка берёт форму по своему формату. */
+  /** Пропорция кадра. По умолчанию — общая для всего приложения. */
   ratio?: number;
+  /** Знак «⋮» на кадре. Задаёт только СЕТКА — в рядах меню нет. */
+  onMenu?: () => void;
 }) {
   const { t } = useTranslation();
   const badge = accessBadge(card.accessPolicy);
@@ -93,7 +91,7 @@ export function ContentPoster({
   return (
     <PosterCard
       width={width}
-      ratio={ratio ?? cardRatio(card.orientation)}
+      ratio={ratio ?? CARD_RATIO}
       title={card.title ?? ''}
       subtitle={subtitle}
       meta={card.genre ?? undefined}
@@ -101,6 +99,8 @@ export function ContentPoster({
       imageUrl={mediaUrl(card.posterMediaId)}
       badge={badge?.tone ?? null}
       badgeLabel={badge ? t(badge.key) : undefined}
+      onMenu={onMenu}
+      menuLabel={t('common.more')}
       // Экран 17: право на просмотр и цену спрашивает уже он — в фиде их нет.
       onPress={() => router.push(`/content/${card.id}`)}
     />
@@ -191,37 +191,33 @@ export function HomeSectionView({
   active?: boolean;
 }) {
   const title = section.title ?? '';
+  // Три карточки в кадре — правило всего экрана, а не одного блока
+  // (см. `features/content/railLayout`). Хук вызывается до любых
+  // ветвлений: иначе он выпадал бы из вызова на секциях с баннерами.
+  const cardWidth = useRailCardWidth();
 
   // ---- баннеры: реклама и премьеры приходят одной формой,
   //      но показываются по-разному (`type` влияет только на подачу)
   if (section.banners.length > 0) {
     if (section.type === 'NEW_PREMIERES') {
-      return <PremiereRail section={section} title={title} />;
+      return <PremiereRail section={section} title={title} cardWidth={cardWidth} />;
     }
     return <BannerSection section={section} title={title} active={active} />;
   }
 
-  // ---- категории каталога
+  // ---- категории каталога: ряд плиток НЕ рисуется
+  //
+  // Заказчик (01.09.2026): «kategoriyalarni o'chirib ber va har bir
+  // kategoriyani alohida get qilib ol». Плитка показывала название и не
+  // вела никуда — то есть занимала экран, ничего не давая. Теперь каждая
+  // категория приходит своим запросом и разворачивается в полноценный ряд
+  // с карточками (`features/catalog/CategoryRows`), как «Podkastlar».
+  //
+  // Секция гасится ЗДЕСЬ, а не фильтром на экране: её рисует любой, кто
+  // отдаёт секции фида в `HomeSectionView`, и фильтр на одном экране
+  // оставил бы плитки на другом.
   if (section.categories.length > 0) {
-    return (
-      <Rail title={title}>
-        {section.categories.map((c, i) => (
-          <CategoryTile
-            key={c.id}
-            title={c.name ?? ''}
-            accent={TILE_ACCENTS[i % TILE_ACCENTS.length]}
-            icon={categoryIcon(c.slug)}
-            // ⚠️ `iconMediaId` намеренно не передаётся: в этом поле лежит
-            // изображение размером с постер, а не глиф (см. CategoryTile).
-            //
-            // ⚠️ Это разделы каталога контента («O'zbek kinosi», «Bolalar uchun»),
-            // а не 10 направлений кастинга из `features/catalog/categories`.
-            // Переход на `/catalog/{id}` открыл бы совсем другую сущность,
-            // поэтому его здесь нет — он появится с экраном каталога контента.
-          />
-        ))}
-      </Rail>
-    );
+    return null;
   }
 
   // ---- креаторы каталога контента
@@ -242,10 +238,6 @@ export function HomeSectionView({
 
   // ---- ряды контента: тип, «Танланган», «Машҳур», ручной ряд
   if (section.content.length > 0) {
-    // Одна форма на ряд: иначе вертикальная карточка рядом с обычной
-    // делает строку разновысокой и подписи разъезжаются по вертикали.
-    const ratio = rowRatio(section.content.map((c) => c.orientation));
-
     return (
       <Rail
         title={title}
@@ -256,7 +248,7 @@ export function HomeSectionView({
         onSeeAll={() => router.push(`/section/${section.id}`)}
       >
         {section.content.map((card) => (
-          <ContentPoster key={card.id} card={card} ratio={ratio} />
+          <ContentPoster key={card.id} card={card} width={cardWidth} />
         ))}
       </Rail>
     );
@@ -277,7 +269,15 @@ export function HomeSectionView({
  * отдельно сказал «faqat button kk emas»: фид цену и не отдаёт — она
  * приходит вместе с правом доступа из `/watch`, уже на экране просмотра.
  */
-function PremiereRail({ section, title }: { section: HomeSection; title: string }) {
+function PremiereRail({
+  section,
+  title,
+  cardWidth,
+}: {
+  section: HomeSection;
+  title: string;
+  cardWidth: number;
+}) {
   const { t } = useTranslation();
 
   const items = section.banners.filter((b) => b.title || b.imageMediaId);
@@ -292,7 +292,8 @@ function PremiereRail({ section, title }: { section: HomeSection; title: string 
       {items.map((b) => (
         <PosterCard
           key={b.id}
-          ratio={cardRatio('LANDSCAPE')}
+          width={cardWidth}
+          ratio={CARD_RATIO}
           title={b.title ?? ''}
           subtitle={b.subtitle ?? b.description ?? undefined}
           imageUrl={mediaUrl(b.imageMediaId)}

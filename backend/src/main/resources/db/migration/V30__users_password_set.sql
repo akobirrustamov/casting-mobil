@@ -1,0 +1,27 @@
+-- V30 — foydalanuvchi O'ZI parol o'rnatganmi.
+--
+-- Mobil ilovada kirish parol bilan bo'ldi: ro'yxatdan o'tishda odam
+-- telefon → SMS kod → parol ketma-ketligidan o'tadi va keyin telefon +
+-- parol bilan kiradi.
+--
+-- ⚠️ `password` ustuni buni AYTA OLMAYDI. U hech qachon bo'sh emas:
+-- Google orqali va SMS orqali yaratilgan hisoblarga tasodifiy UUID
+-- hash qilib yozib qo'yiladi (`AuthServiceImpl.createGoogleUser`,
+-- `createPhoneUser`) — ya'ni «paroli bor, lekin hech kim bilmaydi»
+-- degan holat. Bunday hisobni parolsiz deb bilmasak, egasi na kira
+-- oladi, na qayta ro'yxatdan o'ta oladi.
+--
+-- Shu bayroq ikkita savolga javob beradi:
+--   • ro'yxatdan o'tishda: raqam BAND deb aytilsinmi (parol bor) yoki
+--     mavjud hisobga parol o'rnatishga ruxsat berilsinmi (parol yo'q);
+--   • kirishda: «parol noto'g'ri» deyilsinmi yoki «bu raqamda parol
+--     yo'q, ro'yxatdan o'ting» deyilsinmi.
+--
+-- ⚠️ Mavjud satrlarga `false` qo'yiladi — ular haqida haqiqatni
+-- BILMAYMIZ va o'ylab topmaymiz. Xodimlar shundan himoyalanadi:
+-- kod bayroqdan tashqari rolni ham tekshiradi, ya'ni ROLE_USER dan
+-- boshqa roli bori uchun SMS orqali parol o'rnatib bo'lmaydi
+-- (`AppAccountService.canSetPassword`). Eski parolli hisob birinchi
+-- muvaffaqiyatli kirishdayoq `true` ga o'tadi.
+alter table users
+    add column if not exists password_set boolean not null default false;

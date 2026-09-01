@@ -2,11 +2,19 @@ import { useEffect, useState } from 'react';
 import { adminApi, mediaUrl } from '../api/client';
 import { usePanelI18n } from '../i18n';
 import MediaPicker from './MediaPicker';
+import MediaSpec from './MediaSpec';
 
 /**
  * Bitta rasm maydoni: oldindan ko'rish + tanlash/almashtirish/olib tashlash.
+ *
+ * `spec` - `mediaSpecs.js` dagi kalit. Berilsa, maydon tagida tavsiya
+ * etilgan o'lcham chiqadi va u fayl tanlash oynasiga ham uzatiladi.
+ *
+ * ⚠️ Nega ikkala joyda. Maydon yonidagi yozuv adminni tayyorlaydi, lekin
+ * u faylni brauzer oynasida tanlaydi - ya'ni panel ko'rinmay qoladi.
+ * Oynadagi takror yozuv aynan tanlash ONIDA ko'z oldida turadi.
  */
-export default function MediaField({ label, value, onChange, hint, type = 'IMAGE' }) {
+export default function MediaField({ label, value, onChange, hint, spec, type = 'IMAGE' }) {
   const { t } = usePanelI18n();
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -125,9 +133,12 @@ export default function MediaField({ label, value, onChange, hint, type = 'IMAGE
       )}
       {hint && <p className="uz-muted mt-1" style={{ fontSize: 11 }}>{hint}</p>}
 
+      {spec && <MediaSpec name={spec} />}
+
       <MediaPicker
         open={pickerOpen}
         type={type}
+        spec={spec}
         onClose={() => setPickerOpen(false)}
         onSelect={onChange}
       />

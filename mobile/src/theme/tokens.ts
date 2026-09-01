@@ -64,19 +64,18 @@ export const colors = {
 // Кортежи, а не массивы: `LinearGradient` требует минимум два цвета на
 // уровне типа, и обычный `string[]` он не принимает.
 export const gradients = {
-  /** Основное действие и фирменные подписи: синий → фиолетовый. */
+  /**
+   * Основное действие и фирменные подписи: синий → фиолетовый.
+   *
+   * ⚠️ У КНОПОК его больше нет. Заказчик (01.09.2026) попросил одну
+   * заливку на все кнопки — сплошной `purple` (см. `components/ui/Button`).
+   * Градиент остался для оформления: кромка карточки, знак, шапка профиля.
+   */
   brand: [colors.blue, colors.purple] as [string, string],
   /** Полная шкала — кромка карточки, крупные плашки. */
   brandWide: [colors.blue, colors.violet, colors.magenta] as [string, string, string],
-  /** Premium: промо, баннеры, VIP. */
+  /** Premium: промо, баннеры, VIP. Не кнопки. */
   premium: [colors.purple, colors.magenta] as [string, string],
-  /**
-   * Кнопка покупки — сиреневая от края до края.
-   *
-   * Отдельно от `premium`: та уходит в розовый, а на макете заказчика
-   * кнопка с ценой остаётся в одном тоне.
-   */
-  purchase: [colors.purple, colors.violet] as [string, string],
 };
 
 /**

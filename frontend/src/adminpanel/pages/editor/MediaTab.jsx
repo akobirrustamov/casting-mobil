@@ -29,12 +29,13 @@ export default function MediaTab({ form, set, t, locale, isSingle }) {
           <div className="uz-col">
             <MediaField
               label={`${t('editor.poster')} — ${t('editor.posterDefault')}`}
+              spec="poster"
               value={form.posterDefault}
               onChange={(id) => set({ posterDefault: id })}
             />
           </div>
           <div className="uz-col">
-            <MediaField label={t('editor.cover')} value={form.cover}
+            <MediaField label={t('editor.cover')} spec="cover" value={form.cover}
                         onChange={(id) => set({ cover: id })} />
           </div>
         </div>
@@ -52,6 +53,7 @@ export default function MediaTab({ form, set, t, locale, isSingle }) {
                   type="VIDEO"
                   label={t('editor.mainVideo')}
                   hint={t('editor.mainVideoHint')}
+                  spec="video"
                   value={form.video}
                   onChange={(id) => set({ video: id })}
                 />
@@ -70,6 +72,7 @@ export default function MediaTab({ form, set, t, locale, isSingle }) {
                 type="VIDEO"
                 label={t('editor.trailer')}
                 hint={t('editor.trailerHint')}
+                spec="trailer"
                 value={form.trailer}
                 onChange={(id) => set({ trailer: id })}
               />
@@ -96,6 +99,7 @@ export default function MediaTab({ form, set, t, locale, isSingle }) {
                 <div className="uz-col" key={l}>
                   <MediaField
                     label={l.toUpperCase()}
+                    spec="poster"
                     value={form.posterByLocale[code] || null}
                     onChange={(id) =>
                       set({ posterByLocale: { ...form.posterByLocale, [code]: id } })}

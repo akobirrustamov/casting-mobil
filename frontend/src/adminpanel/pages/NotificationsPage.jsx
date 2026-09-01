@@ -308,7 +308,7 @@ export default function NotificationsPage() {
 
         <div className="uz-row mb-4">
           <div className="uz-col" style={{ maxWidth: 260 }}>
-            <MediaField label={t('ads.image')} value={form.imageMediaId}
+            <MediaField label={t('ads.image')} spec="notificationImage" value={form.imageMediaId}
                         onChange={(id) => setForm({ ...form, imageMediaId: id })} />
           </div>
         </div>

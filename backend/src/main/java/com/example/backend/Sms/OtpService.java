@@ -59,7 +59,21 @@ public class OtpService {
     @Value("${app.otp.message-template:UzCasting platformasida ro'yxatdan o'tish uchun tasdiqlash kod: %s}")
     private String messageTemplate;
 
+    /**
+     * Kod tasdiqlangandan keyin parol qo'yishga berilgan muhlat.
+     *
+     * ⚠️ Kodning o'z muddati 3 daqiqa. Ro'yxatdan o'tishda kod
+     * tasdiqlangach odam yana parol o'ylab topishi kerak — 3 daqiqa
+     * unga ham, tasdiqlashga ham yetmaydi. Shuning uchun tasdiqlangan
+     * raqam alohida, uzunroq muhlat bilan belgilab qo'yiladi.
+     */
+    @Value("${app.otp.verified-ttl-seconds:900}")
+    private int verifiedTtlSeconds;
+
     private final Map<String, Entry> codes = new ConcurrentHashMap<>();
+
+    /** Kodi tasdiqlangan raqamlar → belgi qachongacha amal qiladi. */
+    private final Map<String, Instant> verified = new ConcurrentHashMap<>();
 
     /** @return kod amal qilish muddati (soniya) — javobda ilovaga ko'rsatish uchun. */
     public int send(String rawPhone) {
@@ -120,6 +134,45 @@ public class OtpService {
         }
 
         codes.remove(phone);
+    }
+
+    /**
+     * «Bu raqamning egasi kodni kiritdi» degan belgi.
+     *
+     * Ro'yxatdan o'tish IKKI qadamdan iborat: avval kod, keyin parol.
+     * Kodni {@link #verify} o'chirib yuboradi (bir kod — bir marta),
+     * shuning uchun parol qadami uchun kodni qayta so'rash mumkin emas
+     * va kerak ham emas.
+     *
+     * @return belgi necha soniya amal qilishi — klient sanog'i uchun
+     */
+    public int markVerified(String rawPhone) {
+        String phone = normalize(rawPhone);
+        Instant now = Instant.now();
+
+        // Tashlandiq belgilar shu yerda tozalanadi: ular faqat
+        // ro'yxatdan o'tish oxiriga yetmaganlardan qoladi.
+        verified.values().removeIf(expiry -> expiry.isBefore(now));
+
+        verified.put(phone, now.plusSeconds(verifiedTtlSeconds));
+        return verifiedTtlSeconds;
+    }
+
+    /**
+     * Belgini TEKSHIRADI VA O'CHIRADI — bitta tasdiqlash bitta parol
+     * o'rnatishga yetadi.
+     *
+     * @throws BusinessException raqam tasdiqlanmagan yoki muhlat o'tgan bo'lsa
+     */
+    public void consumeVerified(String rawPhone) {
+        String phone = normalize(rawPhone);
+        Instant expiry = verified.remove(phone);
+
+        if (expiry == null || expiry.isBefore(Instant.now())) {
+            throw new BusinessException("PHONE_NOT_VERIFIED",
+                    "Raqam tasdiqlanmagan yoki muddati o'tgan, kodni qaytadan so'rang",
+                    HttpStatus.UNPROCESSABLE_ENTITY);
+        }
     }
 
     /** +998 formatidagi telefon raqamni Eskiz kutgan "998XXXXXXXXX" ko'rinishiga keltiradi. */

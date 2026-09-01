@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   Text,
   TextInput,
@@ -14,56 +15,117 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
 import { GlowBackdrop } from '@/components/ui/GlowBackdrop';
+import { PasswordField } from '@/components/ui/PasswordField';
 import { Wordmark } from '@/components/ui/Wordmark';
-import { exchangeGoogleToken, sendOtp } from '@/features/auth/api';
+import {
+  AuthError,
+  exchangeGoogleToken,
+  registerStart,
+  signInWithPassword,
+} from '@/features/auth/api';
+import { authErrorKey } from '@/features/auth/authErrors';
 import type { DevLoginResult } from '@/features/auth/devLogin';
 import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton';
-import { otpErrorKey } from '@/features/auth/otpErrors';
 import { useAuthStore } from '@/features/auth/store';
 import { colors } from '@/theme/tokens';
 
 /**
- * S03 — вход по телефону. Раскладка с макета заказчика:
- * логотип сверху, заголовок, поле +998 с разделителем, «yoki», Google,
- * согласие ссылками и одна крупная кнопка внизу.
+ * S03 — вход и регистрация. Два раздела на одном экране (заказчик,
+ * 01.09.2026): «Kirish» — номер и пароль, «Ro'yxatdan o'tish» — номер,
+ * SMS-код, имя и пароль с повтором.
  *
- * Принцип с подписи к макету: один экран — одно действие.
+ * <h2>Почему один экран с переключателем, а не два</h2>
+ * Поле номера одно и то же, логотип один и тот же. Два отдельных экрана
+ * означали бы прыжок с перерисовкой всего ради одного лишнего поля —
+ * и человек терял бы уже набранный номер на переходе. Здесь номер
+ * ПЕРЕЖИВАЕТ переключение: если регистрация ответила «номер занят»,
+ * он же остаётся во вкладке входа.
  *
- * Код отправляется через Eskiz SMS (`POST /api/v1/app/auth/otp/send`,
- * см. docs/API.md §5). Экран otp.tsx проверяет его и делает
- * вход/регистрацию одним запросом.
+ * <h2>Раскладка</h2>
+ * Знак вверху, форма в середине (только она и прокручивается), главная
+ * кнопка внизу — на всех трёх экранах входа одинаково.
+ *
+ * <h2>Куда ведут кнопки</h2>
+ * Вход — сразу `/(tabs)`. Регистрация — `otp.tsx` (код) → `password.tsx`
+ * (имя, пароль и повтор) → `/(tabs)`. Сессия выдаётся на последнем шаге,
+ * второй раз входить не нужно.
+ *
+ * ⚠️ «Забыли пароль» намеренно неактивна: эндпоинта восстановления на
+ * бэкенде нет. Живая ссылка в никуда хуже честно погашенной.
  */
 const PHONE_DIGITS = 9; // после +998
+
+type Mode = 'signIn' | 'signUp';
 
 export default function SignInScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const signIn = useAuthStore((s) => s.signIn);
 
+  const [mode, setMode] = useState<Mode>('signIn');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [googleError, setGoogleError] = useState<string | null>(null);
-  const [otpError, setOtpError] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const digits = phone.replace(/\D/g, '');
   const isPhoneValid = digits.length === PHONE_DIGITS;
+  const canSubmit = mode === 'signIn' ? isPhoneValid && password.length > 0 : isPhoneValid;
+
+  const switchMode = (next: Mode) => {
+    if (next === mode) return;
+    setMode(next);
+    setError(null);
+  };
 
   const onChangePhone = (raw: string) => {
     setPhone(formatPhone(raw.replace(/\D/g, '').slice(0, PHONE_DIGITS)));
-    setOtpError(null);
+    setError(null);
   };
 
-  const onContinue = async () => {
-    const fullPhone = `+998${digits}`;
-    setOtpError(null);
-    setSending(true);
+  const onChangePassword = (value: string) => {
+    setPassword(value);
+    setError(null);
+  };
+
+  /** Вход: номер и пароль, без SMS. */
+  const onSignIn = async () => {
+    setError(null);
+    setBusy(true);
     try {
-      await sendOtp(fullPhone);
+      const session = await signInWithPassword(`+998${digits}`, password);
+      await signIn(session.token, session.user, session.refreshToken);
+      router.replace('/(tabs)');
+    } catch (e) {
+      setError(t(authErrorKey(e)));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /**
+   * Регистрация: просим код.
+   *
+   * ⚠️ Занятый номер бэкенд отбивает ДО отправки SMS
+   * (`PHONE_ALREADY_REGISTERED`). Тогда экран сам переключается на вход
+   * с уже набранным номером — человеку остаётся только пароль.
+   */
+  const onSignUp = async () => {
+    const fullPhone = `+998${digits}`;
+    setError(null);
+    setBusy(true);
+    try {
+      await registerStart(fullPhone);
       router.push({ pathname: '/(auth)/otp', params: { phone: fullPhone } });
     } catch (e) {
-      setOtpError(t(otpErrorKey(e)));
+      const message = t(authErrorKey(e));
+      if (e instanceof AuthError && e.code === 'PHONE_ALREADY_REGISTERED') {
+        setMode('signIn');
+      }
+      setError(message);
     } finally {
-      setSending(false);
+      setBusy(false);
     }
   };
 
@@ -102,122 +164,213 @@ export default function SignInScreen() {
           делает всю картинку, поэтому здесь оно ярче обычного. */}
       <GlowBackdrop intensity="hero" decor />
 
+      {/*
+        Три яруса, и порядок задан заказчиком (01.09.2026): знак ВВЕРХУ,
+        кнопка ВСЕГДА ВНИЗУ, форма между ними.
+
+        ⚠️ Знак и кнопка вынесены ИЗ прокрутки. Пока они лежали в общем
+        потоке, оба уезжали: на низком экране с открытой клавиатурой
+        человек видел середину формы без знака сверху и без кнопки
+        снизу — экран выглядел обрезанным с обеих сторон.
+
+        Теперь прокручивается только середина, а края стоят на месте:
+        куда смотреть и что нажать — видно всегда.
+      */}
+      <View className="items-center pb-1 pt-2">
+        <Wordmark variant="stacked" markSize={92} showTagline={false} />
+      </View>
+
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 16 }}
+        className="flex-1"
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/*
-          Знак и форма — одна группа, отцентрованная по вертикали.
+        <View className="gap-4 px-6 py-2">
+          <ModeSwitch mode={mode} onChange={switchMode} disabled={busy} />
 
-          Раньше свободное место собиралось в ОДНУ дыру внизу: всё лежало
-          сверху, а `flex-1` перед согласием отжимал кнопку к краю. Теперь
-          остаток делится поровну над группой и под ней, и пустоты в глаза
-          не бросается ни сверху, ни снизу.
-        */}
-        <View className="flex-1 justify-center gap-7">
-          {/* Композиция с референса заказчика: знак крупно, под ним
-              название и слоган. На экране входа это единственный «герой». */}
-          <View className="items-center">
-            <Wordmark variant="stacked" />
-          </View>
+          {/* Заголовок убран намеренно: раздел уже назван в переключателе
+              прямо над ним, и второй такой же заголовок только удлинял
+              экран. Осталась строка, которая говорит, ЧТО делать. */}
+          <Text className="text-center text-caption text-text-muted">
+            {mode === 'signIn' ? t('auth.signInSubtitle') : t('auth.signUpSubtitle')}
+          </Text>
 
-          <View className="gap-6 px-6">
-            <View className="gap-2">
-              <Text className="text-center text-h2 text-text">
-                {t('auth.phoneTitle')}
-              </Text>
-              <Text className="text-center text-caption text-text-muted">
-                {t('auth.phoneSubtitle')}
-              </Text>
-            </View>
+          {/* Рамка загорается синим — началом фирменной шкалы, — когда
+              номер введён полностью.
 
-            {/* Рамка загорается синим — началом фирменной шкалы, — когда
-                номер введён полностью.
-
-                ⚠️ Выбора страны нет намеренно: OTP уходит через Eskiz, а он
-                шлёт только на узбекские номера. Стрелка-раскрывашка с
-                референса здесь была бы обещанием, которого бэкенд не держит. */}
+              ⚠️ Выбора страны нет намеренно: OTP уходит через Eskiz, а он
+              шлёт только на узбекские номера. Стрелка-раскрывашка с
+              референса здесь была бы обещанием, которого бэкенд не держит. */}
+          <View
+            className="flex-row items-center gap-3 rounded-card-lg border bg-surface p-2.5"
+            style={{ borderColor: isPhoneValid ? colors.blue : colors.border }}
+          >
             <View
-              className="flex-row items-center gap-3 rounded-card-lg border bg-surface p-2.5"
-              style={{ borderColor: isPhoneValid ? colors.blue : colors.border }}
+              className="items-center justify-center rounded-card"
+              style={{ width: 44, height: 44, backgroundColor: `${colors.purple}26` }}
             >
-              <View
-                className="items-center justify-center rounded-card"
-                style={{ width: 44, height: 44, backgroundColor: `${colors.purple}26` }}
-              >
-                <Ionicons name="call" size={20} color={colors.magenta} />
-              </View>
-
-              <Text className="text-h2 text-text">+998</Text>
-              <View className="h-7 w-px" style={{ backgroundColor: colors.border }} />
-
-              <TextInput
-                value={phone}
-                onChangeText={onChangePhone}
-                placeholder={t('auth.phonePlaceholder')}
-                placeholderTextColor={colors.textDisabled}
-                keyboardType="phone-pad"
-                inputMode="tel"
-                maxLength={12}
-                className="flex-1 text-h2"
-                style={{ color: colors.white }}
-              />
+              <Ionicons name="call" size={20} color={colors.magenta} />
             </View>
 
-            <View className="flex-row items-center gap-3">
-              <View className="h-px flex-1 bg-border" />
-              <View className="rounded-pill border border-border px-4 py-1.5">
-                <Text className="text-caption text-text-muted">{t('auth.or')}</Text>
-              </View>
-              <View className="h-px flex-1 bg-border" />
-            </View>
+            <Text className="text-h2 text-text">+998</Text>
+            <View className="h-7 w-px" style={{ backgroundColor: colors.border }} />
 
-            <GoogleSignInButton
-              onSuccess={onGoogleSuccess}
-              onDevSession={onDevSession}
+            <TextInput
+              value={phone}
+              onChangeText={onChangePhone}
+              placeholder={t('auth.phonePlaceholder')}
+              placeholderTextColor={colors.textDisabled}
+              keyboardType="phone-pad"
+              inputMode="tel"
+              maxLength={12}
+              editable={!busy}
+              className="flex-1 text-h2"
+              style={{ color: colors.white }}
             />
-
-            {googleError ? (
-              <Text className="text-center text-caption text-danger">{googleError}</Text>
-            ) : null}
           </View>
-        </View>
 
-        {/* Согласие и главная кнопка — у нижнего края, как на макете. */}
-        <View className="gap-4 px-6 pt-6">
+          {/* Пароль — только во входе. На регистрации его задают после
+              SMS: до подтверждения номера аккаунта ещё нет. */}
+          {mode === 'signIn' ? (
+            <View className="gap-2">
+              <PasswordField
+                value={password}
+                onChangeText={onChangePassword}
+                placeholder={t('auth.passwordPlaceholder')}
+                valid={password.length > 0}
+                editable={!busy}
+                onSubmitEditing={canSubmit && !busy ? onSignIn : undefined}
+              />
+
+              {/* ⚠️ Отключена: восстановления пароля на бэкенде пока нет. */}
+              <Pressable disabled hitSlop={8} className="self-end">
+                <Text className="text-caption" style={{ color: colors.textDisabled }}>
+                  {t('auth.forgotPassword')} · {t('auth.soon')}
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          <View className="flex-row items-center gap-3">
+            <View className="h-px flex-1 bg-border" />
+            <View className="rounded-pill border border-border px-4 py-1.5">
+              <Text className="text-caption text-text-muted">{t('auth.or')}</Text>
+            </View>
+            <View className="h-px flex-1 bg-border" />
+          </View>
+
+          <GoogleSignInButton onSuccess={onGoogleSuccess} onDevSession={onDevSession} />
+
+          {googleError ? (
+            <Text className="text-center text-caption text-danger">{googleError}</Text>
+          ) : null}
+
           <Text className="text-center text-caption text-text-muted">
             <Text className="text-cyan underline">{t('auth.termsLink')}</Text>
             {' ' + t('auth.consentMiddle') + ' '}
             <Text className="text-cyan underline">{t('auth.privacyLink')}</Text>
             {' ' + t('auth.consentTail')}
           </Text>
-
-          {otpError ? (
-            <Text className="text-center text-caption text-danger">{otpError}</Text>
-          ) : null}
-
-          <Button
-            variant="primary"
-            shape="card"
-            loading={sending}
-            disabled={!isPhoneValid || sending}
-            onPress={onContinue}
-            className="py-1"
-            trailing={
-              <Ionicons
-                name="arrow-forward"
-                size={20}
-                color={colors.white}
-                style={{ marginLeft: 6 }}
-              />
-            }
-          >
-            {t('auth.continue')}
-          </Button>
         </View>
       </ScrollView>
+
+      {/* Главное действие — последним и всегда на виду. */}
+      <View
+        className="gap-3 px-6 pt-3"
+        style={{ paddingBottom: insets.bottom + 12 }}
+      >
+        {error ? (
+          <Text className="text-center text-caption text-danger">{error}</Text>
+        ) : null}
+
+        <Button
+          variant="primary"
+          shape="card"
+          loading={busy}
+          disabled={!canSubmit || busy}
+          onPress={mode === 'signIn' ? onSignIn : onSignUp}
+          className="py-1"
+          trailing={
+            <Ionicons
+              name="arrow-forward"
+              size={20}
+              color={colors.white}
+              style={{ marginLeft: 6 }}
+            />
+          }
+        >
+          {mode === 'signIn' ? t('auth.signInAction') : t('auth.continue')}
+        </Button>
+      </View>
     </KeyboardAvoidingView>
+  );
+}
+
+/**
+ * Переключатель разделов.
+ *
+ * Активный лежит на фирменном градиенте — том же, что у главной кнопки:
+ * на экране должно быть видно, ЧТО именно сделает нижняя кнопка.
+ */
+function ModeSwitch({
+  mode,
+  onChange,
+  disabled,
+}: {
+  mode: Mode;
+  onChange: (mode: Mode) => void;
+  disabled: boolean;
+}) {
+  const { t } = useTranslation();
+
+  const tabs: { key: Mode; label: string }[] = [
+    { key: 'signIn', label: t('auth.tabSignIn') },
+    { key: 'signUp', label: t('auth.tabSignUp') },
+  ];
+
+  return (
+    <View
+      className="flex-row rounded-card-lg border p-1"
+      style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+    >
+      {tabs.map((tab) => {
+        const active = tab.key === mode;
+        return (
+          <Pressable
+            key={tab.key}
+            onPress={() => onChange(tab.key)}
+            disabled={disabled}
+            className="flex-1 overflow-hidden rounded-card"
+            style={{ minHeight: 44 }}
+          >
+            {/* Активная вкладка — сплошной фиолетовый, как у кнопок
+                (заказчик 01.09.2026). Раньше здесь был фирменный градиент,
+                и переключатель на экране входа оказывался единственным
+                местом с ним. */}
+            {active ? (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  bottom: 0,
+                  left: 0,
+                  backgroundColor: colors.purple,
+                }}
+              />
+            ) : null}
+
+            <Text
+              className="py-3 text-center text-caption"
+              style={{ color: active ? colors.white : colors.textMuted }}
+            >
+              {tab.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 

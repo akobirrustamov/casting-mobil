@@ -5,7 +5,7 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { GoogleMark } from '@/components/ui/GoogleMark';
 import { colors } from '@/theme/tokens';
 
-import { isGoogleConfigured } from './config';
+import { googleUnavailableReason, isGoogleConfigured } from './config';
 import { devLogin, isDevLoginEnabled, type DevLoginResult } from './devLogin';
 import { useGoogleSignIn } from './useGoogleSignIn';
 
@@ -81,6 +81,13 @@ function DevLoginButton({
   );
 }
 
+/**
+ * Неактивная кнопка и ЧЕСТНАЯ причина под ней.
+ *
+ * Причины две и они разные: ключей нет вовсе — или мы в Expo Go, где
+ * Google отклоняет redirect (см. `config.ts`). Одинаковая подпись
+ * отправляла бы искать ключи там, где они уже прописаны.
+ */
 function GoogleButtonPlaceholder() {
   const { t } = useTranslation();
 
@@ -88,7 +95,9 @@ function GoogleButtonPlaceholder() {
     <View className="gap-2">
       <ButtonShell disabled label={t('auth.google')} />
       <Text className="text-center text-caption text-text-muted">
-        {t('auth.googleUnavailable')}
+        {googleUnavailableReason === 'expoGo'
+          ? t('auth.googleNeedsDevBuild')
+          : t('auth.googleUnavailable')}
       </Text>
     </View>
   );

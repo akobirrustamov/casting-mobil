@@ -5,6 +5,7 @@ import { LoadingState, ErrorState, EmptyState } from './States';
 import Modal from './Modal';
 import ConfirmDialog from './ConfirmDialog';
 import TranscodingBadge from './TranscodingBadge';
+import MediaSpec from './MediaSpec';
 import { needsDownscaleWarning, probeVideoSize } from '../utils/videoProbe';
 
 /**
@@ -12,8 +13,16 @@ import { needsDownscaleWarning, probeVideoSize } from '../utils/videoProbe';
  *
  * Ikki vazifani birlashtiradi (§54 dagi creator naqshi kabi): avval mavjudini
  * qidiradi, topilmasa shu yerning o'zida yuklaydi.
+ *
+ * `spec` - qaysi maydon uchun ochilgani (`mediaSpecs.js` kaliti). Berilsa,
+ * yuklash tugmasi TAGIDA tavsiya etilgan o'lcham turadi.
+ *
+ * ⚠️ Nega bu yerda ham kerak. Kutubxona oynasi maydonni to'sib qo'yadi,
+ * ya'ni maydon yonidagi yozuv aynan fayl tanlanadigan onda ko'rinmay
+ * qoladi. Bo'sh berilsa (masalan «Media» bo'limidan ochilganda) hech narsa
+ * chizilmaydi: u yerda fayl qaysi maydonga borishi hali ma'lum emas.
  */
-export default function MediaPicker({ open, onClose, onSelect, type = 'IMAGE' }) {
+export default function MediaPicker({ open, onClose, onSelect, spec, type = 'IMAGE' }) {
   const { t } = usePanelI18n();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -128,6 +137,7 @@ export default function MediaPicker({ open, onClose, onSelect, type = 'IMAGE' })
         <label htmlFor="uz-media-upload" className="uz-btn uz-btn-ghost" style={{ cursor: 'pointer' }}>
           ⬆ {t('media.upload')}
         </label>
+        {spec && <MediaSpec name={spec} />}
         {progress !== null && (
           <div className="uz-progress mt-3" role="progressbar" aria-valuenow={progress}>
             <div style={{ width: `${progress}%` }} />
