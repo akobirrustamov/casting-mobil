@@ -104,6 +104,25 @@ function normalizeError(error) {
       errors: data?.errors || [],
     };
   }
+  // ⚠️ Omborga to'g'ridan-to'g'ri yuborishdagi uzilish — ALOHIDA hol.
+  //
+  // Bu yerda umumiy «Server bilan aloqa yo'q» xabari CHALG'ITADI:
+  // server bilan aloqa BOR, imzoni u hozirgina berdi. Uzilgani —
+  // ombor, va eng ehtimolli sabab bucketda CORS sozlanmagani.
+  //
+  // Xabar `uploadChunked` da yasaladi, chunki kontekst faqat o'sha
+  // yerda ma'lum. Bu yerda uni saqlab qolamiz — ilgari u shu qatorda
+  // jimgina yo'qolardi va foydalanuvchi internetini tekshirib
+  // o'tirardi.
+  if (error.storageUnreachable) {
+    return {
+      status: 0,
+      code: 'STORAGE_UNREACHABLE',
+      message: error.message,
+      errors: [],
+    };
+  }
+
   return {
     status: 0,
     code: 'NETWORK_ERROR',
@@ -210,6 +229,18 @@ const COMPLETE_TIMEOUT_MS = 300000;
 
 /** Bitta bo'lak necha marta qayta urinadi. */
 const CHUNK_RETRIES = 3;
+
+/**
+ * Omborga to'g'ridan-to'g'ri yuborish uzilganda ko'rsatiladigan xabar.
+ *
+ * ⚠️ Sabab TAXMIN qilib aytiladi, da'vo qilinmaydi: brauzer CORS
+ * blokini ham, haqiqiy uzilishni ham bir xil `TypeError` bilan beradi.
+ * Lekin birinchisi ancha ehtimolliroq va uni tekshirish oson —
+ * shuning uchun aynan u ko'rsatiladi.
+ */
+const STORAGE_UNREACHABLE = "Ombor javob bermadi. Ko'p hollarda sabab — "
+  + "bucketda CORS sozlanmagani (`ExposeHeaders: ETag` bilan). "
+  + "Internet uzilgan bo'lishi ham mumkin.";
 
 /**
  * Fayl so'rovi — 401 da tokenni yangilab QAYTA uradi.
@@ -406,7 +437,30 @@ async function uploadChunked(file, folder, onProgress, options = {}) {
           // qo'shadi. Ombor esa imzoni tekshiradi va begona
           // sarlavhani ko'rib so'rovni RAD ETADI.
           const url = await partUrl(uploadId, index);
-          const response = await fetch(url, { method: 'PUT', body: blob });
+
+          // ⚠️ CORS bloklaganida `fetch` `TypeError` tashlaydi va
+          // internet uzilganidan FARQ QILMAYDI — brauzer sababni
+          // ataylab aytmaydi (aks holda sahifa boshqa domenlarni
+          // skanerlay olardi).
+          //
+          // Lekin bu yerda kontekst bor: bo'lak OMBORGA ketyapti,
+          // imzoni esa server hozirgina berdi — demak server bilan
+          // aloqa BOR. Shu sababli eng ehtimolli sabab bucketda CORS
+          // sozlanmagani.
+          //
+          // Buni aytmaslik qimmatga tushdi: xabar «Internetni
+          // tekshiring» derdi va odam soatlab tarmoqni tekshirardi,
+          // ayb esa ombor sozlamasida edi.
+          let response;
+          try {
+            response = await fetch(url, { method: 'PUT', body: blob });
+          } catch (cause) {
+            const error = new Error(STORAGE_UNREACHABLE);
+            error.storageUnreachable = true;
+            error.cause = cause;
+            throw error;
+          }
+
           if (!response.ok) {
             const error = new Error(`Bo'lak yuborilmadi (${response.status})`);
             error.response = { status: response.status };
