@@ -17,7 +17,6 @@ import Footer from "../footer/Footer"
 import { motion } from "framer-motion";
 import { fadeIn } from "../framerMotion/variants";
 
-import useTypingEffect from "./useTypingEffect";
 
 function Home() {
     const navigate = useNavigate();

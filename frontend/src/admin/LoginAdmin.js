@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 
 
 import { useNavigate } from "react-router-dom";
-import Header from "../pages/header/Header";
-import Footer from "../pages/footer/Footer";
 import ApiCall from "../config/index"
 const LoginStudent = () => {
     const [adminData, setAdminData] = useState({ phone: '', password: '', rememberMe: false });
