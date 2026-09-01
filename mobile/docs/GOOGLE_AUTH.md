@@ -153,6 +153,25 @@ iOS-клиент добавится сюда же на 2-м этапе.
 
 ## 7. Что блокирует финальную настройку
 
+### ⚠️ «Доступ заблокирован: ошибка авторизации», `Ошибка 400: invalid_request`
+
+Симптом (01.09.2026, телефон заказчика): после нажатия на кнопку Google
+открывается вкладка `accounts.google.com`, аккаунт выбран, и сразу —
+«приложение не соответствует политике Google OAuth 2.0».
+
+Причина не в client ID и не в test users: это **Expo Go**.
+`expo-auth-session` там строит `redirect_uri` на схему самого Expo Go,
+а такие адреса Google отклоняет для всех проектов.
+
+Лечится только dev build'ом (`eas build --profile development` или
+`npx expo run:android`): в нём redirect выводится из package name —
+`uz.uzcasting.app:/oauthredirect`, и Android-клиент его принимает.
+
+Чтобы никто больше не упирался в эту страницу, приложение теперь
+**само глушит кнопку в Expo Go** (`src/features/auth/config.ts`,
+`googleUnavailableReason === 'expoGo'`) и пишет под ней, что нужен
+dev build. Вход по телефону при этом работает как обычно.
+
 | # | Что | Статус |
 |---|---|---|
 | 1 | **Android client ID** — клиент с package `uz.uzcasting.app` и SHA-1 выше | ✅ создан, ID в `.env` и `eas.json` |

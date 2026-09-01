@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { mediaUrl } from '../api/client';
 import { usePanelI18n } from '../i18n';
 import MediaPicker from './MediaPicker';
+import MediaSpec from './MediaSpec';
 
 /**
  * Galereya: bir nechta rasm, tartibi bilan.
@@ -12,8 +13,12 @@ import MediaPicker from './MediaPicker';
  * Nega drag-and-drop emas: strelkali tugmalar klaviatura bilan ham
  * ishlaydi va sensorli ekranda ham ishonchli. Bu yerda tartib kamdan-kam
  * o'zgaradi, shuning uchun soddaligi afzal.
+ *
+ * ⚠️ O'lcham talabi bu yerda AYNIQSA muhim: galereya bitta rasm emas,
+ * qator. Bittasi boshqa nisbatda bo'lsa, butun qator teng bo'lmagan
+ * balandlikda ko'rinadi va bu «buzilgan» degan taassurot beradi.
  */
-export default function GalleryField({ value = [], onChange }) {
+export default function GalleryField({ value = [], onChange, spec = 'gallery' }) {
   const { t } = usePanelI18n();
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -51,6 +56,12 @@ export default function GalleryField({ value = [], onChange }) {
           + {t('media.upload')}
         </button>
       </div>
+
+      {spec && (
+        <div className="mb-3">
+          <MediaSpec name={spec} />
+        </div>
+      )}
 
       {items.length === 0 ? (
         <p className="uz-muted" style={{ fontSize: 13 }}>{t('editor.galleryEmpty')}</p>
@@ -99,6 +110,7 @@ export default function GalleryField({ value = [], onChange }) {
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         onSelect={add}
+        spec={spec}
         type="IMAGE"
       />
     </div>

@@ -109,6 +109,7 @@ export default function CreatorQuickCreate({ open, initialName, onClose, onCreat
       <MediaField
         label={t('cr.photo')}
         value={form.photoMediaId}
+        spec="creatorPhoto"
         type="IMAGE"
         onChange={(id) => setForm((prev) => ({ ...prev, photoMediaId: id }))}
       />

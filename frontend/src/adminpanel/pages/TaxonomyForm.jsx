@@ -175,7 +175,7 @@ export default function TaxonomyForm({ open, kind, row, onClose, onSaved }) {
 
       {isCategory && (
         <div className="mt-4" style={{ maxWidth: 260 }}>
-          <MediaField label={t('tax.icon')} value={form.iconMediaId}
+          <MediaField label={t('tax.icon')} spec="categoryIcon" value={form.iconMediaId}
                       onChange={(id) => setForm({ ...form, iconMediaId: id })} />
         </div>
       )}

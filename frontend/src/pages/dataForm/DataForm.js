@@ -88,6 +88,12 @@ function DataForm() {
             price: "Kutilayotgan narx ($)",
             uploadPhotos: "Rasmlar yuklash (bir nechta rasm yuklash mumkin)",
             photoHint: "Iltimos, yuzingiz va butun tanaingiz ko'rinadigan aniq rasmlarni yuklang(6 tadan kam bo'lmasin)",
+            // ⚠️ Raqamlar mobil ilovadagi HAQIQIY ramkadan olingan:
+            // kartochka 3:4 (`CreatorCard` aspectRatio 0.75), anketa
+            // galereyasi esa 4:5 (`creator/[id]` Gallery). Ikkalasi ham
+            // ortiqchasini QIRQADI - shuning uchun tik rasm va markazdagi
+            // yuz talab qilinadi.
+            photoSize: "📐 Tik (vertikal) rasm: 1200×1600 px · 3:4 · JPG / PNG · ≤3 MB. Rasm ilovada qirqiladi — yuzni markazda saqlang, chekkaga yozuv qo'ymang.",
             remove: "×",
             loading: "Ma'lumotlar yuklanmoqda...",
             uploadingPhotos: "Rasmlar yuklanmoqda..."
@@ -136,6 +142,7 @@ function DataForm() {
             price: "Ожидаемая цена ($)",
             uploadPhotos: "Загрузить фотографии (можно несколько)",
             photoHint: "Пожалуйста, загрузите чёткие фотографии, на которых видно ваше лицо и всё тело (не менее 6 штук)",
+            photoSize: "📐 Вертикальное фото: 1200×1600 px · 3:4 · JPG / PNG · ≤3 MB. В приложении фото обрезается — держите лицо по центру и не размещайте надписи по краям.",
             remove: "×",
             loading: "Данные загружаются...",
             uploadingPhotos: "Фотографии загружаются..."
@@ -670,6 +677,7 @@ function DataForm() {
                         <div className={formGroupClass}>
                             <label>{translations[language].uploadPhotos}*</label>
                             <p className="text-[0.8rem] text-white opacity-70 mt-2 leading-[1.4]">{translations[language].photoHint}</p>
+                            <p className="text-[0.8rem] text-white opacity-70 mt-2 leading-[1.4]">{translations[language].photoSize}</p>
 
                             {/* Render file inputs dynamically */}
                             {Array.from({ length: MAX_PHOTOS }).map((_, index) => (

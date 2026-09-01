@@ -1,6 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import {
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTabBarHeight } from '@/components/navigation/TabBar';
@@ -35,6 +43,15 @@ export function Screen({
   refreshing = false,
   /** Убрать свечение — для экранов, где фон занят своим изображением. */
   glow = true,
+  /**
+   * Прокрутка подошла к концу списка — подгрузить следующую страницу.
+   *
+   * Вызывается на КАЖДОМ подходящем кадре прокрутки, а не один раз:
+   * решать, нужен ли ещё запрос, должен тот, кто знает состояние
+   * загрузки (у `useInfiniteQuery` это `hasNextPage` и
+   * `isFetchingNextPage`). Экран этого знать не может.
+   */
+  onEndReached,
   children,
 }: {
   title?: string;
@@ -47,11 +64,24 @@ export function Screen({
   onRefresh?: () => void;
   refreshing?: boolean;
   glow?: boolean;
+  onEndReached?: () => void;
   children: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useTabBarHeight();
   const bottomPad = underTabBar ? tabBarHeight + 8 : insets.bottom + 24;
+
+  // Порог с запасом в экран: страница успевает приехать до того, как
+  // человек упрётся в конец списка, и прокрутка не «дёргается» ожиданием.
+  const handleScroll = onEndReached
+    ? (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+        const left = contentSize.height - contentOffset.y - layoutMeasurement.height;
+        if (left < layoutMeasurement.height) {
+          onEndReached();
+        }
+      }
+    : undefined;
 
   if (!scroll) {
     return (
@@ -84,6 +114,10 @@ export function Screen({
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        // Реже, чем каждый кадр: обработчик только сравнивает числа, но
+        // 60 вызовов в секунду через мост не нужны ни одному экрану.
+        scrollEventThrottle={200}
         contentContainerClassName="px-4 gap-4"
         contentContainerStyle={{ paddingBottom: bottomPad }}
         refreshControl={

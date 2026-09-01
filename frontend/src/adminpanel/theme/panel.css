@@ -797,3 +797,34 @@
     font-size: 12px;
     line-height: 1.4;
 }
+
+/* ---------------------------------------------------- media o'lchami
+   Maydon yonidagi «600×900 px · 2:3 · JPG/PNG/WebP · ≤2 MB» yozuvi.
+
+   ⚠️ Bu OGOHLANTIRISH EMAS, shuning uchun sariq `uz-field-warn` emas:
+   admin hali hech narsa qilmagan, unga xato ko'rsatish noto'g'ri
+   bo'lardi. Neytral surat + o'lchamning qalin ko'rsatilishi yetarli. */
+.uz-spec {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 6px;
+    padding: 6px 8px;
+    border-radius: var(--p-radius);
+    background: var(--p-surface-2);
+    border: 1px solid var(--p-border-soft);
+}
+
+.uz-spec-size {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--p-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.uz-spec-note {
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--p-muted);
+}

@@ -2198,7 +2198,11 @@ qulf va ochish sahifasidagi qulf bitta qoidadan
 
 **Klient uchun hali ochilmagan:**
 
-- `[ ]` `/api/v1/app/catalog` — bosh sahifa bo'limlari bilan
+- `[x]` `/api/v1/app/catalog/categories` va `/catalog/categories/{id}` —
+  katalog kategoriyalari va ularning kontenti (sahifalab). Bosh sahifadagi
+  «Drama» qatori shundan quriladi: feeddagi `CATEGORIES` faqat NOMLARNI
+  beradi, kontent qatorlari esa TUR bo'yicha yig'iladi (§13), ya'ni
+  kategoriya qatorini feeddan yig'ib bo'lmasdi
 - `[ ]` `/api/v1/app/content/{slug}` — kontent sahifasi (tavsif, janrlar,
   rollar). Hozircha ilova afishani bosh sahifa keshidan oladi: kartochka
   endpointi yo'q, to'g'ridan-to'g'ri havola bilan kirilganda kesh bo'sh

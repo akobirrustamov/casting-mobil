@@ -164,9 +164,9 @@ export default function CreatorForm({ open, row, onClose, onSaved }) {
       </div>
 
       <div className="uz-row mb-4">
-        <div className="uz-col"><MediaField label={t('cr.photo')} value={form.photoMediaId}
+        <div className="uz-col"><MediaField label={t('cr.photo')} spec="creatorPhoto" value={form.photoMediaId}
               onChange={(id) => setForm({ ...form, photoMediaId: id })} /></div>
-        <div className="uz-col"><MediaField label={t('cr.cover')} value={form.coverMediaId}
+        <div className="uz-col"><MediaField label={t('cr.cover')} spec="creatorCover" value={form.coverMediaId}
               onChange={(id) => setForm({ ...form, coverMediaId: id })} /></div>
       </div>
 

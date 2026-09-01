@@ -480,10 +480,16 @@ class MobileRefreshTest {
          *
          * Uzatilmasa `signIn` uni `null` deb yozardi va natija
          * tuzatishdan oldingi holat bilan bir xil bo'lardi.
+         *
+         * ⚠️ Ekranlar ro'yxati 01.09.2026 da o'zgardi: kirish parolga
+         * o'tdi va sessiya beradigan ekranlar boshqa bo'ldi —
+         * {@code sign-in.tsx} (parol va Google) hamda
+         * {@code password.tsx} (ro'yxatdan o'tishning oxirgi qadami).
+         * {@code otp.tsx} endi sessiya bermaydi.
          */
         @Test
-        @DisplayName("Ikkala kirish oqimi ham tokenni uzatadi")
-        void bothLoginFlowsPassIt() throws Exception {
+        @DisplayName("Sessiya beradigan har bir oqim tokenni uzatadi")
+        void everyLoginFlowPassesIt() throws Exception {
             if (mobileMissing()) {
                 return;
             }
@@ -491,12 +497,37 @@ class MobileRefreshTest {
                     .as("kirish javobidan refresh token o'qilmayapti")
                     .contains("refreshToken: data.refresh_token");
 
-            for (String screen : List.of("../mobile/app/(auth)/otp.tsx",
-                    "../mobile/app/(auth)/sign-in.tsx")) {
-                assertThat(read(java.nio.file.Path.of(screen)))
+            // Chaqiruv shakli har ekranda bir xil emas (`refreshToken`
+            // yoki `session.refreshToken`), shuning uchun so'zma-so'z
+            // emas, MA'NO tekshiriladi: uchinchi argument bor.
+            java.util.regex.Pattern passesToken =
+                    java.util.regex.Pattern.compile("signIn\\([^)]*refreshToken\\)");
+
+            for (String screen : List.of("../mobile/app/(auth)/sign-in.tsx",
+                    "../mobile/app/(auth)/password.tsx")) {
+                assertThat(passesToken.matcher(read(java.nio.file.Path.of(screen))).find())
                         .as("%s refresh tokenni `signIn` ga bermayapti", screen)
-                        .contains("signIn(token, user, refreshToken)");
+                        .isTrue();
             }
+        }
+
+        /**
+         * ⚠️ Kod tasdiqlangani bilan hisob ochilmaydi.
+         *
+         * SMS ekrani sessiya bersa, parolsiz hisob paydo bo'lardi — va
+         * odam keyin unga kira olmasdi: kirish endi parol so'raydi,
+         * «parolni unutdim» esa hali yo'q.
+         */
+        @Test
+        @DisplayName("SMS ekrani sessiya BERMAYDI")
+        void otpScreenDoesNotSignIn() throws Exception {
+            if (mobileMissing()) {
+                return;
+            }
+            assertThat(read(java.nio.file.Path.of("../mobile/app/(auth)/otp.tsx")))
+                    .as("kod ekrani kirgizib yuboryapti — parol qadami "
+                            + "chetlab o'tilardi")
+                    .doesNotContain("signIn(");
         }
 
         /**

@@ -1,37 +1,35 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
-  StyleSheet,
   Text,
   type PressableProps,
 } from 'react-native';
 
-import { TOUCH_TARGET, colors, gradients, radius } from '@/theme/tokens';
+import { TOUCH_TARGET, colors, radius } from '@/theme/tokens';
 
 /**
  * ТЗ: на экране только один главный CTA, touch target минимум 44px.
  *
- * primary   — фирменный градиент синий → фиолетовый, основное действие
- * purchase  — сиреневый, ромб и цена. Форма с макета заказчика
- * premium   — фиолетовый → маджента, промо и баннеры
- * gold      — Gold, вывод денег и «Premium'ga o'tish» по макету Screen 4
- * secondary — контурная, второстепенное действие
+ * <h2>Одна кнопка на всё приложение</h2>
+ * Заказчик (01.09.2026) прислал кнопку «◆ 5 000 so'm» — сплошная
+ * фиолетовая заливка, белая подпись, скруглённый прямоугольник — со
+ * словами «barcha joyda buttonning bg rang va dizayni shunaqa bulsin».
  *
- * <h2>Почему главная кнопка градиентная</h2>
- * На референсе заказчика фирменный цвет — это ПЕРЕХОД от синего к
- * фиолетовому, а не одна заливка. Плоский `bg-purple` рядом со свечением
- * фона выглядел выцветшим: тот же тон, но без глубины.
+ * До этого заливок было четыре: градиент синий → фиолетовый у главного
+ * действия, отдельный сиреневый у покупки, фиолетовый → маджента у промо
+ * и золотая у Premium. На одном экране их встречалось по две-три, и
+ * одинаковые по смыслу кнопки на разных экранах выглядели по-разному.
  *
- * <h2>⚠️ Градиент лежит ПОД содержимым, а не оборачивает его</h2>
- * Сначала он был обёрткой с `flex: 1` — и кнопка растянулась на всю
- * доступную высоту. На баннере премьеры это дало магентовый купол в пол-карточки,
- * который вытолкнул заголовок за края.
+ * ⚠️ Имена вариантов ОСТАВЛЕНЫ, хотя все заливные рисуются одинаково.
+ * Они говорят, ЧТО это за действие, — а значит, если заказчик захочет
+ * вернуть золотую кнопку Premium, это правка одной строки в `FLAT_BG`, а
+ * не поиск нужных кнопок по всем экранам заново.
  *
- * Раскладку задаёт сам `Pressable`, ровно как до появления градиента:
- * строка, отступы, минимальная высота. Градиент — фон в `absoluteFill`,
- * на размеры он не влияет вообще.
+ * `secondary` осталась контурной намеренно: это единственное, что
+ * отличает второстепенное действие от главного, когда они стоят рядом
+ * (экран кастинга, состояния экрана). Сделай её тоже фиолетовой — и на
+ * экране станет два одинаковых главных CTA, чего ТЗ прямо не допускает.
  */
 type Variant = 'primary' | 'purchase' | 'premium' | 'gold' | 'secondary';
 
@@ -64,20 +62,12 @@ type Props = Omit<PressableProps, 'children'> & {
   leading?: ReactNode;
 };
 
-/** Градиентные варианты. Остальные — плоская заливка классом. */
-const GRADIENT: Partial<Record<Variant, [string, string]>> = {
-  primary: gradients.brand,
-  // ⚠️ Без мадженты. На макете кнопка покупки сиреневая от края до края;
-  // `premium` уходит в розовый и рядом с ней выглядит другой кнопкой.
-  purchase: gradients.purchase,
-  premium: gradients.premium,
-};
-
+/** Заливка. Одна на все заливные варианты — см. шапку файла. */
 const FLAT_BG: Record<Variant, string> = {
-  primary: '',
-  purchase: '',
-  premium: '',
-  gold: 'bg-gold',
+  primary: 'bg-purple',
+  purchase: 'bg-purple',
+  premium: 'bg-purple',
+  gold: 'bg-purple',
   secondary: 'bg-transparent border border-border',
 };
 
@@ -85,7 +75,7 @@ const FG: Record<Variant, string> = {
   primary: 'text-white',
   purchase: 'text-white',
   premium: 'text-white',
-  gold: 'text-ink',
+  gold: 'text-white',
   secondary: 'text-text',
 };
 
@@ -102,7 +92,6 @@ export function Button({
 }: Props) {
   const isInactive = disabled || loading;
   const corner = shape === 'card' ? radius.card : radius.pill;
-  const stripe = GRADIENT[variant];
 
   return (
     <Pressable
@@ -115,20 +104,8 @@ export function Button({
       } ${className}`}
       {...rest}
     >
-      {stripe ? (
-        <LinearGradient
-          colors={stripe}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-      ) : null}
-
       {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === 'gold' ? colors.ink : colors.white}
-        />
+        <ActivityIndicator size="small" color={colors.white} />
       ) : (
         leading
       )}

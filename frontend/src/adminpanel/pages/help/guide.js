@@ -305,6 +305,63 @@ export const GUIDE = [
           ],
         },
       },
+      /*
+       * ⚠️ Bu band raqamlarni TAKRORLAMAYDI, ularni tushuntiradi.
+       * Aniq o'lchamlar `mediaSpecs.js` da va har bir maydonning
+       * YONIDA turadi — u yerda ular kerak bo'lgan onda ko'rinadi.
+       * Bu yerda ikkinchi ro'yxat tutilsa, ikkitasi bir-biridan
+       * ajralib ketardi va qaysi biri to'g'ri ekani bilinmasdi.
+       */
+      {
+        id: 'media-sizes',
+        perm: null,
+        icon: '📐',
+        title: {
+          uz: "Rasm va video o'lchamlari",
+          ru: 'Размеры изображений и видео',
+          en: 'Image and video sizes',
+        },
+        what: {
+          uz: "Har bir maydon tagida tavsiya etilgan o'lcham yozilgan. Uni bajarish shart emas, lekin bajarilmasa rasm telefonda qirqiladi.",
+          ru: 'Под каждым полем написан рекомендуемый размер. Он не обязателен, но при несоблюдении изображение обрежется на телефоне.',
+          en: 'Each field shows a recommended size. It is not enforced, but ignoring it means the image gets cropped on the phone.',
+        },
+        steps: {
+          uz: [
+            "Maydon tagidagi 📐 yozuvga qarang: «1200×1800 px · 2:3 · JPG/PNG/WebP · ≤2 MB».",
+            "⚠️ Server rasmni QAYTA O'LCHAMAYDI — fayl qanday yuklansa, telefonga shundayligicha boradi.",
+            "Ilova rasmni ramkaga sig'dirmaydi, ortiqchasini QIRQADI. Nisbat noto'g'ri bo'lsa yuzning chekkasi kesiladi.",
+            "Afisha — 1200×1800 (2:3), vertikal Reels uchun 720×1280 (9:16). ⚠️ Kichikroq yuklamang: yopiq kontent ekranida afisha butun ekran kengligida chiziladi.",
+            "Reklama banneri — 1280×720 (16:9), muhim narsa markazda. Pastki chap burchakni matn va tugma yopadi.",
+            "⚠️ Premyera rasmi banner EMAS: u tik afisha (2:3) bo'lib chiqadi.",
+            "Qism kadri — 720×480 (3:2), 16:9 emas: keng kadrning cheti qirqiladi.",
+            "Ijodkor surati — 400×400 (1:1), dumaloq qirqiladi, yuz markazda.",
+            "Video — 1920×1080 yoki vertikal 1080×1920, MP4 (H.264). 1080p dan kattasi sifat qo'shmaydi.",
+          ],
+          ru: [
+            'Смотрите строку 📐 под полем: «600×900 px · 2:3 · JPG/PNG/WebP · ≤2 MB».',
+            '⚠️ Сервер НЕ пережимает изображение — файл уходит на телефон как есть.',
+            'Приложение не вписывает картинку в рамку, а ОБРЕЗАЕТ лишнее. При неверной пропорции срежется край лица.',
+            'Афиша — 1200×1800 (2:3), для вертикального Reels — 720×1280 (9:16). ⚠️ Меньше не загружайте: на экране закрытого контента афиша рисуется во всю ширину экрана.',
+            'Рекламный баннер — 1280×720 (16:9), главное в центре. Левый нижний угол закрывают текст и кнопка.',
+            '⚠️ Изображение премьеры — НЕ баннер: оно показывается вертикальной афишей (2:3).',
+            'Кадр серии — 720×480 (3:2), а не 16:9: у широкого кадра обрежутся края.',
+            'Фото креатора — 400×400 (1:1), обрезается по кругу, лицо по центру.',
+            'Видео — 1920×1080 или вертикальное 1080×1920, MP4 (H.264). Больше 1080p качества не добавит.',
+          ],
+          en: [
+            'Look at the 📐 line under the field: “1200×1800 px · 2:3 · JPG/PNG/WebP · ≤2 MB”.',
+            '⚠️ The server does NOT resize images — the file reaches the phone exactly as uploaded.',
+            'The app does not fit the image into the frame, it CROPS the excess. A wrong ratio cuts off the edge of a face.',
+            'Poster — 1200×1800 (2:3); for vertical Reels — 720×1280 (9:16). ⚠️ Do not go smaller: on the locked-content screen the poster is drawn at full screen width.',
+            'Ad banner — 1280×720 (16:9), keep the subject centred. The bottom-left corner is covered by text and the button.',
+            '⚠️ A premiere image is NOT a banner: it is shown as an upright 2:3 poster.',
+            'Episode still — 720×480 (3:2), not 16:9: a wide frame loses its edges.',
+            'Creator photo — 400×400 (1:1), cropped to a circle, face centred.',
+            'Video — 1920×1080 or vertical 1080×1920, MP4 (H.264). Above 1080p adds no quality.',
+          ],
+        },
+      },
     ],
   },
 
