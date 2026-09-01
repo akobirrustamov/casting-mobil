@@ -113,6 +113,14 @@ export default function StoragePage() {
 
       <ConfirmDialog {...confirmer.props} />
 
+      {/* ⚠️ Papka ko'rinishi hisobotga BOG'LIQ EMAS.
+          U jonli va arzon — bitta daraja o'qiladi. Ilgari u
+          hisobot ichida edi va papkani ochish uchun avval qimmat
+          skanerlashni yurgizish kerak bo'lardi. */}
+      <Section title={t('storage.browse')} hint={t('storage.browseHint')}>
+        <StorageBrowser t={t} onDeleteOrphan={askDeleteOrphan} />
+      </Section>
+
       {!report && <EmptyState text={t('storage.neverScanned')} />}
 
       {report && (
@@ -139,10 +147,6 @@ export default function StoragePage() {
               tone={report.unusedAssetCount > 0 ? 'warn' : null}
             />
           </div>
-
-          <Section title={t('storage.browse')} hint={t('storage.browseHint')}>
-            <StorageBrowser t={t} onDeleteOrphan={askDeleteOrphan} />
-          </Section>
 
           <Section title={t('storage.byFolder')}>
             <table className="uz-table">
