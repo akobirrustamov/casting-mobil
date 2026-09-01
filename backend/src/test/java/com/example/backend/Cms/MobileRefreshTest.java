@@ -22,6 +22,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -367,6 +368,72 @@ class MobileRefreshTest {
             assertThat(refreshTokenRepo.findById(jti).orElseThrow().getRevokedAt())
                     .as("eski token bekor qilinmadi — u qayta ishlatilaverardi")
                     .isNotNull();
+        }
+    }
+
+    @Nested
+    @DisplayName("⚠️ Jadval cheksiz o'smaydi")
+    class Cleanup {
+
+        /**
+         * ⚠️ Bu tozalash mobil ulanganidan KEYIN zarur bo'lib qoldi.
+         *
+         * `deleteExpired` so'rovi allaqachon yozilgan edi, lekin uni
+         * hech kim chaqirmasdi. Ilgari sezilmasdi: jadvalga faqat
+         * admin panelga kirishda yozilardi.
+         *
+         * Endi faol foydalanuvchi har 15 daqiqada yangilaydi —
+         * sutkasiga ~96 qator, 3000 kishida kuniga ~288 000.
+         */
+        @Test
+        @DisplayName("Muddati o'tgan yozuv o'chiriladi")
+        void expiredRowsAreRemoved() {
+            User u = user();
+            String token = refreshTokenService.issue(u, null);
+            UUID jti = jwtService.jtiOf(token);
+
+            // Muddatini o'tgan qilib qo'yamiz.
+            RefreshToken row = refreshTokenRepo.findById(jti).orElseThrow();
+            row.setExpiresAt(LocalDateTime.now().minusDays(1));
+            refreshTokenRepo.save(row);
+
+            refreshTokenService.cleanUpExpired();
+
+            assertThat(refreshTokenRepo.findById(jti)).isEmpty();
+        }
+
+        /**
+         * ⚠️ ENG MUHIM CHEGARA.
+         *
+         * Bekor qilingan, lekin muddati O'TMAGAN yozuvlar qoladi —
+         * aynan ular o'g'rilikni aniqlash uchun kerak. O'chirilsa,
+         * nusxa ko'chirilgan token «notanish» bo'lib qolardi va
+         * `rotate` uni oddiy yaroqsiz token deb rad etardi, butun
+         * zanjirni yopmasdan.
+         */
+        @Test
+        @DisplayName("Bekor qilingan, lekin YANGI yozuv saqlanadi")
+        void revokedButFreshRowsSurvive() throws Exception {
+            User u = user();
+            String first = refreshTokenService.issue(u, null);
+            UUID jti = jwtService.jtiOf(first);
+
+            refresh(first);
+            refreshTokenService.cleanUpExpired();
+
+            assertThat(refreshTokenRepo.findById(jti))
+                    .as("o'g'rilikni aniqlash uchun kerakli yozuv o'chirildi")
+                    .isPresent();
+        }
+
+        @Test
+        @DisplayName("Faol yozuvga tegilmaydi")
+        void activeRowsSurvive() {
+            UUID jti = jwtService.jtiOf(refreshTokenService.issue(user(), null));
+
+            refreshTokenService.cleanUpExpired();
+
+            assertThat(refreshTokenRepo.findById(jti)).isPresent();
         }
     }
 

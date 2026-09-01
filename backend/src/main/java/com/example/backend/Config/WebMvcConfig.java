@@ -116,7 +116,21 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         .map(loc -> createRelative(loc, requestPath))
                         .filter(resource -> resource != null && resource.exists())
                         .findFirst()
-                        .orElseGet(null);
+                        // ⚠️ `orElse`, `orElseGet` EMAS.
+                        //
+                        // `orElseGet(null)` — bu «bo'sh bo'lsa SHU
+                        // FUNKSIYANI chaqir» degani, va funksiya null.
+                        // Ya'ni fayl topilmagan zahoti
+                        // `supplier.get()` da NullPointerException
+                        // chiqardi.
+                        //
+                        // Natijada mavjud bo'lmagan har qanday statik
+                        // fayl 404 emas, 500 qaytarardi va logga
+                        // stack trace yozilardi. `manifest.json`
+                        // so'raydigan `logo192.png` ham shular
+                        // qatorida — ya'ni buni HAR BIR brauzer
+                        // keltirib chiqarardi.
+                        .orElse(null);
             }
             return index;
         }

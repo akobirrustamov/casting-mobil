@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -157,6 +158,37 @@ public class RefreshTokenService {
     @Transactional
     public int revokeAll(UUID userId) {
         return repo.revokeAllForUser(userId, LocalDateTime.now());
+    }
+
+    /**
+     * Muddati o'tgan yozuvlarni tozalaydi.
+     *
+     * <h2>⚠️ Nima uchun bu ZARUR bo'lib qoldi</h2>
+     * {@code deleteExpired} so'rovi allaqachon yozilgan edi, lekin uni
+     * HECH KIM chaqirmasdi. Ilgari bu sezilmasdi: jadvalga faqat admin
+     * panelga kirishda yozilardi.
+     *
+     * Mobil ilova yangilash oqimiga ulangach hisob butunlay o'zgardi.
+     * Faol foydalanuvchi har 15 daqiqada tokenini yangilaydi, ya'ni
+     * sutkasiga ~96 qator. 3000 foydalanuvchida bu kuniga ~288 000
+     * qator — va ularning hech biri o'chirilmasdi.
+     *
+     * <h2>Nima o'chiriladi</h2>
+     * Faqat muddati o'tganlari. Ular baribir ishlamaydi: {@code rotate}
+     * muddatni tekshiradi va rad etadi.
+     *
+     * ⚠️ Bekor qilingan, lekin muddati o'tmagan yozuvlar QOLADI —
+     * aynan ular o'g'rilikni aniqlash uchun kerak. Ularni erta
+     * o'chirish nusxa ko'chirilgan tokenni «notanish» qilib qo'yardi
+     * va zanjir yopilmasdi.
+     */
+    @Scheduled(cron = "${app.auth.refresh-cleanup-cron:0 15 3 * * *}")
+    @Transactional
+    public void cleanUpExpired() {
+        int removed = repo.deleteExpired(LocalDateTime.now());
+        if (removed > 0) {
+            log.info("Muddati o'tgan {} ta refresh token o'chirildi", removed);
+        }
     }
 
     private BusinessException unauthorized(String message) {

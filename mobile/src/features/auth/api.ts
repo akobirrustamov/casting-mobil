@@ -161,3 +161,70 @@ export async function refreshSession(refreshToken: string): Promise<RefreshResul
 
   return { token: data.access_token, refreshToken: data.refresh_token };
 }
+
+/**
+ * Свой профиль — `GET /api/v1/app/me`.
+ *
+ * <h2>⚠️ Зачем, если профиль уже пришёл при входе</h2>
+ * Тот профиль сохранялся на телефон и больше НИКОГДА не обновлялся.
+ * Имя поменяли в панели, выдали Premium, заблокировали аккаунт —
+ * приложение об этом не узнавало.
+ *
+ * Починка сессии сделала это заметнее: раньше токен жил 15 минут и
+ * человек перелогинивался по нескольку раз в день, обновляя профиль
+ * заодно. Теперь сессия живёт сутками — и устаревший профиль вместе
+ * с ней.
+ *
+ * <h2>⚠️ Старая сборка бэкенда отвечает `index.html` со статусом 200</h2>
+ * Как и на `/donations/balance`. Поэтому ответ проверяется по форме,
+ * а не по коду: без этого в профиль попал бы кусок HTML, и экран
+ * показал бы пустые поля вместо человека.
+ */
+export class ProfileUnavailableError extends Error {
+  constructor() {
+    super('/api/v1/app/me недоступен на этом сервере');
+    this.name = 'ProfileUnavailableError';
+  }
+}
+
+type MeResponse = {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  email: string | null;
+  avatarUrl: string | null;
+  roles: { name: string }[];
+  premium: { active: boolean; until: string | null };
+};
+
+export type Me = {
+  user: AuthUser;
+  premium: { active: boolean; until: string | null };
+};
+
+export async function fetchMe(): Promise<Me> {
+  const { data } = await api.get<unknown>('/api/v1/app/me');
+  const raw = data as Partial<MeResponse> | null;
+
+  // `id` есть у любого настоящего ответа и не бывает у HTML-заглушки.
+  if (!raw || typeof raw.id !== 'string') {
+    throw new ProfileUnavailableError();
+  }
+
+  return {
+    user: {
+      id: raw.id,
+      name: raw.name || null,
+      email: raw.email || null,
+      phone: raw.phone || null,
+      avatarUrl: raw.avatarUrl || null,
+      // ⚠️ Та же форма `[{name}]`, что и в ответе входа, — поэтому
+      // здесь работает уже написанный `toRole`.
+      role: toRole(raw.roles),
+    },
+    premium: {
+      active: raw.premium?.active === true,
+      until: raw.premium?.until ?? null,
+    },
+  };
+}

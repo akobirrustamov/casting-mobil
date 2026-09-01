@@ -161,6 +161,39 @@ server.error.include-exception=false
 # ⚠️ Eski fayllar S3 yoqilgandan keyin ham LOKAL diskdan o'qilishda
 # davom etadi (`RoutingStorageService`). Ularni ko'chirish alohida
 # qaror talab qiladi.
+# ==========================================================================
+#  Yuklanadigan fayl hajmi
+# ==========================================================================
+#  ⚠️ Bu satrlar BO'LMASA Spring sukut bo'yicha 1 MB qo'yadi va 2 MB lik
+#  afisha ham yuklanmaydi. Xato esa «Maximum upload size exceeded» —
+#  admin uni fayl bilan bog'liq deb o'ylardi.
+#
+#  8 MB dan katta fayl baribir bo'laklab yuklanadi (panel o'zi
+#  tanlaydi), ya'ni bu chegara faqat kichik fayllarga tegishli.
+spring.servlet.multipart.max-file-size=${MAX_UPLOAD_SIZE:50MB}
+spring.servlet.multipart.max-request-size=${MAX_UPLOAD_SIZE:50MB}
+
+# ==========================================================================
+#  CORS
+# ==========================================================================
+#  ⚠️ Sukut qiymat `*` — bu FAQAT ishlab chiqish uchun. Ishlab
+#  chiqarishda aniq domen yoziladi, aks holda istalgan sayt
+#  foydalanuvchi brauzeri orqali API'ga murojaat qila oladi.
+#
+#  Panel va API bitta domendan berilsa (jar ichidagi statik fayllar),
+#  bu yerda faqat mobil ilova uchun kerak bo'lgan manzillar qoladi.
+app.cors.allowed-origins=${CORS_ORIGINS:https://uzcasting.site}
+
+# ==========================================================================
+#  Birinchi ishga tushirish
+# ==========================================================================
+#  ⚠️ ISHLAB CHIQARISHDA DOIM `false`.
+#
+#  `true` bo'lsa zaif parolli hisoblar yaratiladi (`12345678`). U faqat
+#  lokal stend uchun. Sukut qiymat allaqachon `false` — bu satr shuning
+#  uchun ATAYLAB izohda qoldirilgan, uni yoqish ongli qaror bo'lsin.
+# app.bootstrap.allow-weak-password=false
+
 app.storage.provider=${STORAGE_PROVIDER:local}
 
 app.storage.s3.endpoint=${S3_ENDPOINT:https://s3.twcstorage.ru}

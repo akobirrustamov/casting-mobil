@@ -335,6 +335,44 @@ public class AccessService {
         return account.hasActivePremium();
     }
 
+    /**
+     * Premium holati — KO'RSATISH uchun ({@code /api/v1/app/me}).
+     *
+     * <h2>⚠️ Nega bu yerda, kontrollerda emas</h2>
+     * «Obuna faolmi» degan savolga javob beradigan joy bitta bo'lishi
+     * shart (ТЗ §37) va buni {@code PremiumRightsTest} qo'riqlaydi.
+     * Kontroller {@code account.hasActivePremium()} ni o'zi chaqirsa,
+     * qoidaning ikkinchi nusxasi paydo bo'lardi — va u vaqt o'tib
+     * asl nusxadan chetga chiqib, «nega ilovada Premium ko'rinadi,
+     * saytda yo'q» degan xatolarni keltirib chiqarardi.
+     *
+     * <h2>⚠️ Qaror SERVERDA qabul qilinadi</h2>
+     * Klientga tayyor {@code active} beriladi, sana emas. Klient
+     * «muddat o'tganmi» ni o'zi hisoblasa, telefon soati noto'g'ri
+     * qo'yilgan qurilmada javob ham noto'g'ri bo'lardi.
+     *
+     * @return {@code until} — obuna qachongacha; {@code null} bo'lsa
+     *         obuna umuman bo'lmagan. Muddati o'tganda sana SAQLANADI:
+     *         ilova «obunangiz tugadi» deb aniq ayta oladi, «obuna
+     *         yo'q» emas — bu ikki boshqa xabar va ikki boshqa tugma
+     */
+    @Transactional(readOnly = true)
+    public PremiumStatus premiumStatus(User user) {
+        if (user == null) {
+            return new PremiumStatus(false, null);
+        }
+        return accountRepo.findByUserId(user.getId())
+                .map(a -> new PremiumStatus(a.hasActivePremium(), a.getPremiumUntil()))
+                .orElseGet(() -> new PremiumStatus(false, null));
+    }
+
+    /**
+     * @param active hozir amal qilyaptimi
+     * @param until  qachongacha; {@code null} — obuna bo'lmagan
+     */
+    public record PremiumStatus(boolean active, java.time.LocalDateTime until) {
+    }
+
     /** Reklama ko'rsatilishi kerakmi: faol tarifi bo'lganlarga reklama yo'q. */
     @Transactional(readOnly = true)
     public boolean shouldShowAds(User user) {

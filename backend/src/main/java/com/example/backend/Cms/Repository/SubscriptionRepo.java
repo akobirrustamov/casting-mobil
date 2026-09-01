@@ -133,6 +133,101 @@ public interface SubscriptionRepo extends JpaRepository<Subscription, Long> {
     List<DayMoney> revenueByDay(
             @org.springframework.data.repository.query.Param("from") java.time.LocalDateTime from);
 
+    /**
+     * Tarif bo'yicha obunachilar SONI va daromadi (§45, §47).
+     *
+     * <h2>⚠️ Son va daromad BOSHQA narsa</h2>
+     * Sovg'a obunalarda ({@code ADMIN_GIFT}) {@code paidAmount} bo'sh.
+     * Ular obunachi sifatida SANALADI, lekin daromadga kirmaydi —
+     * shuning uchun ikkala qiymat alohida hisoblanadi.
+     *
+     * Ularni bitta songa qo'shish «10 ta obuna sotildi» degan yolg'on
+     * xulosa berardi, holbuki ularning yarmi bepul berilgan.
+     *
+     * ⚠️ Bekor qilinganlar ({@code revokedAt}) umuman kirmaydi: ular
+     * na obunachi, na daromad.
+     */
+    @org.springframework.data.jpa.repository.Query("""
+            select t.id as tariffId,
+                   count(s) as subscribers,
+                   coalesce(sum(s.paidAmount), 0) as revenue
+            from Subscription s join s.tariff t
+            where s.revokedAt is null
+            group by t.id
+            order by count(s) desc
+            """)
+    List<TariffTotal> totalsByTariff();
+
+    /**
+     * Manba bo'yicha son: sotib olingan va sovg'a qilingan.
+     *
+     * ⚠️ Faqat SON. Daromad bu yerda yo'q va bo'lmaydi ham —
+     * sovg'aning daromadi tushunchasi mavjud emas.
+     */
+    @org.springframework.data.jpa.repository.Query("""
+            select s.source as source, count(s) as total
+            from Subscription s
+            where s.revokedAt is null
+            group by s.source
+            """)
+    List<SourceTotal> totalsBySource();
+
+    /**
+     * Hozir amal qilayotgan obunalar soni.
+     *
+     * ⚠️ «Faol» — bu muddati o'tmagan VA bekor qilinmagan. Ikkalasi
+     * ham tekshiriladi: bekor qilingan obunaning muddati hali
+     * tugamagan bo'lishi mumkin.
+     */
+    @org.springframework.data.jpa.repository.Query("""
+            select count(s) from Subscription s
+            where s.revokedAt is null and s.endAt > :now
+            """)
+    long countActive(@org.springframework.data.repository.query.Param("now")
+                     java.time.LocalDateTime now);
+
+    /** Muddati o'tganlar — bekor qilinganlarsiz. */
+    @org.springframework.data.jpa.repository.Query("""
+            select count(s) from Subscription s
+            where s.revokedAt is null and s.endAt <= :now
+            """)
+    long countExpired(@org.springframework.data.repository.query.Param("now")
+                      java.time.LocalDateTime now);
+
+    /**
+     * Kunlik YANGI obunalar SONI (daromad emas).
+     *
+     * ⚠️ `revenueByDay` dan farqi shundaki, bu yerda sovg'alar ham
+     * sanaladi: savol «nechta obuna boshlandi», «qancha pul keldi»
+     * emas. Ikkala savol ham kerak va ular bitta grafikka
+     * qo'shilmaydi.
+     */
+    @org.springframework.data.jpa.repository.Query("""
+            select cast(s.startAt as date) as day, count(s) as value
+            from Subscription s
+            where s.revokedAt is null and s.startAt >= :from
+            group by cast(s.startAt as date)
+            order by cast(s.startAt as date)
+            """)
+    List<DayCount> newByDay(@org.springframework.data.repository.query.Param("from")
+                            java.time.LocalDateTime from);
+
+    interface TariffTotal {
+        Long getTariffId();
+        Long getSubscribers();
+        java.math.BigDecimal getRevenue();
+    }
+
+    interface SourceTotal {
+        com.example.backend.Cms.Enums.SubscriptionSource getSource();
+        Long getTotal();
+    }
+
+    interface DayCount {
+        java.time.LocalDate getDay();
+        Long getValue();
+    }
+
     /** Kunlik pul — grafik uchun proyeksiya. */
     interface DayMoney {
         java.time.LocalDate getDay();

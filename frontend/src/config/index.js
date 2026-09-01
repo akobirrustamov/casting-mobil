@@ -2,7 +2,10 @@ import axios from "axios";
 
 // Bazaviy manzil: .env dagi REACT_APP_API_URL bo'lsa o'sha, aks holda lokal server.
 // Prod uchun: REACT_APP_API_URL=https://uzcasting.site
-export let baseUrl = process.env.REACT_APP_API_URL || "http://localhost:8080";
+// ⚠️ `??`, `||` EMAS: bo'sh qiymat «xuddi shu domen» degani va u
+// haqiqiy sozlama. `||` bilan u localhost'ga tushib ketardi va prod
+// buildida foydalanuvchi brauzeri o'z kompyuteriga murojaat qilardi.
+export let baseUrl = process.env.REACT_APP_API_URL ?? "http://localhost:8080";
 
 /**
  * @param {string} url        endpoint (masalan "/api/v1/news")

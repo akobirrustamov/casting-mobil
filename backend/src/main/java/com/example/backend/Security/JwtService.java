@@ -33,8 +33,90 @@ public class JwtService {
      * bering (u git tarixida), aks holda hamma qaytadan kiradi.
      * Batafsil - application.properties.example.
      */
-    @Value("${app.jwt.secret}")
+    /*
+     * ⚠️ Sukut BO'SH, lekin talab saqlanadi.
+     *
+     * Ilgari bu yerda sukut umuman yo'q edi va Spring
+     * `Could not resolve placeholder 'app.jwt.secret'` degan xato
+     * berardi. U TO'G'RI, lekin nima qilish kerakligini aytmaydi:
+     * o'ttiz qatorli stack trace ichida «kalitni environmentga
+     * qo'ying» degan xulosa yo'q.
+     *
+     * Endi tekshiruv `@PostConstruct` da va xabar aniq — pastga
+     * qarang.
+     */
+    @Value("${app.jwt.secret:}")
     private String secret;
+
+    /**
+     * HS256 uchun kalitning eng kam uzunligi.
+     *
+     * ⚠️ Qisqa kalit ishga tushirishda emas, BIRINCHI KIRISHDA
+     * yiqilardi: `Keys.hmacShaKeyFor` uni o'shanda rad etadi. Ya'ni
+     * server ko'tarilib, ishlayotgandek ko'rinardi va nosozlik
+     * birinchi foydalanuvchida chiqardi.
+     */
+    private static final int MIN_SECRET_LENGTH = 32;
+
+    /**
+     * Kalit borligini ISHGA TUSHISHDA tekshiradi.
+     *
+     * ⚠️ Bu «qattiqqo'llik» emas: kalitsiz ilova tokenlarni yasay
+     * ham, tekshira ham olmaydi — ya'ni hech kim kira olmaydi.
+     * Shunday holatda ko'tarilishdan ko'ra darhol, tushunarli xato
+     * bilan to'xtagani yaxshiroq.
+     */
+    @jakarta.annotation.PostConstruct
+    void verifySecret() {
+        if (secret != null && secret.trim().length() >= MIN_SECRET_LENGTH) {
+            return;
+        }
+
+        String problem = (secret == null || secret.isBlank())
+                ? "berilmagan"
+                : "juda qisqa (" + secret.trim().length() + " belgi, kamida "
+                        + MIN_SECRET_LENGTH + " kerak)";
+
+        throw new IllegalStateException(String.join("\n",
+                "",
+                "=========================================================",
+                "  JWT KALITI " + problem.toUpperCase() + ".",
+                "=========================================================",
+                "",
+                "  SABABI ODATDA BITTA: sozlama fayli TOPILMADI.",
+                "",
+                "  Spring Boot `application.properties` ni JAR YONIDAN",
+                "  emas, JORIY PAPKADAN o'qiydi — ya'ni papka muhim.",
+                "",
+                "  Hozirgi ishchi papka:",
+                "      " + System.getProperty("user.dir"),
+                "",
+                "  Shu papkada `application.properties` bormi? Yo'q bo'lsa",
+                "  sabab shu.",
+                "",
+                "  TO'G'RILASH — papkaga KIRIB ishga tushiring:",
+                "",
+                "      cd /opt/uzcasting && java -jar backend.jar",
+                "",
+                "  Yoki faylni to'g'ridan-to'g'ri ko'rsating:",
+                "",
+                "      java -jar backend.jar \\",
+                "        --spring.config.additional-location=/opt/uzcasting/application.properties",
+                "",
+                "  Fayl BOR, lekin `app.jwt.secret` bo'sh bo'lsa — kalit",
+                "  yasang va o'sha faylga yozing:",
+                "",
+                "      openssl rand -hex 32",
+                "",
+                "  Faqat lokal sinov uchun — kalit talab qilinmaydi:",
+                "",
+                "      java -jar backend.jar --spring.profiles.active=dev",
+                "",
+                "  ⚠️ Kalitni almashtirsangiz barcha foydalanuvchilar",
+                "     tizimdan chiqib ketadi.",
+                "=========================================================",
+                ""));
+    }
 
     /** Access token amal qilish muddati (ms). Default - avvalgidek 6 000 000 ms. */
     /*

@@ -60,10 +60,12 @@ export function PosterCard({
           />
         ) : null}
 
-        {/* Таймкод в правом верхнем углу — как на макете заказчика.
-            Подложка сквозная: под ней виден кадр. */}
+        {/* Таймкод — правый НИЖНИЙ угол обложки, как на макете «Media».
+            Сверху там метка доступа, а на макете ещё и меню карточки;
+            внизу таймкод никому не мешает и читается привычно, как в
+            видеосервисах. Подложка сквозная: под ней виден кадр. */}
         {duration ? (
-          <View className="absolute right-2 top-2 rounded-pill bg-ink/70 px-2 py-0.5">
+          <View className="absolute bottom-2 right-2 rounded-pill bg-ink/70 px-2 py-0.5">
             <Text className="text-micro font-semibold text-text">{duration}</Text>
           </View>
         ) : null}
