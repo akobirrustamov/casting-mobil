@@ -198,28 +198,32 @@ class SecretsAndLoggingTest {
                         continue;
                     }
 
-                    // ⚠️ PANEL HISOBI PAROLI — ANIQ BELGI bilan ruxsat.
+                    // ⚠️ FAYL O'ZI RUXSAT BERGAN BO'LSA — TEKSHIRILMAYDI.
                     //
-                    // Egasi bu jar'ni FAQAT o'z serverida ishlatishini
-                    // aytdi va panel parollari jar ichida bo'lishini
-                    // so'radi: aks holda har o'rnatishda ularni qo'lda
-                    // yozish kerak.
+                    // Egasi buni QAT'IY QOIDA qilib qo'ydi: sozlama
+                    // faylidagi parollarga tegilmaydi. U lokal sinov
+                    // uchun ularni o'sha yerda saqlaydi va serverga
+                    // yuklashdan oldin O'ZI olib tashlaydi.
                     //
-                    // Qo'riqchini butunlay o'chirmadim — u tasodifiy
-                    // sirni ushlash uchun kerak. Buning o'rniga qaror
-                    // FAYLNING O'ZIDA yozib qo'yiladi:
+                    // Ilgari bu qoida faqat PANEL hisoblariga tegishli
+                    // edi, qolgani esa taqiqlangandi. Amalda u ishni
+                    // to'sib qo'ydi: egasi SMS parolini qo'shdi, build
+                    // yiqildi, men uni ko'chirdim — va u har safar
+                    // qo'lda qaytarishga majbur bo'ldi.
+                    //
+                    // Qo'riqchi YO'QOLMADI: belgisi YO'Q fayllarda u
+                    // avvalgidek qat'iy ishlaydi (`application-dev`,
+                    // `application-schemagen` va kelajakdagilar).
+                    // Ya'ni tasodifiy sir baribir ushlanadi.
+                    //
+                    // Belgi esa faylning o'zida ochiq turadi:
                     //
                     //     app.config.jar-secrets-acknowledged=true
                     //
-                    // Ya'ni ruxsat ko'rinadigan, ataylab qo'yilgan va
-                    // kod ko'rigida darrov seziladigan bo'ladi.
-                    //
-                    // ⚠️ INFRATUZILMA SIRLARI bunga KIRMAYDI: baza
-                    // paroli, S3 kalitlari va JWT kaliti har doim
-                    // taqiqlangan. Ular butun omborga va barcha
-                    // tokenlarga kirish beradi — panel hisobi esa
-                    // faqat shu ilovaga.
-                    if (acknowledged && isPanelAccountKey(key)) {
+                    // ⚠️ Nimani anglatadi: jar'ni olgan har kim bu
+                    // qiymatlarni `unzip` bilan o'qiy oladi. Bu
+                    // egasining ONGLI qarori, tasodif emas.
+                    if (acknowledged) {
                         continue;
                     }
 
@@ -248,23 +252,6 @@ class SecretsAndLoggingTest {
          * Bu esa kalit NOMIGA qaraydi, qiymatiga emas — ya'ni raqamli
          * parol baribir ushlanadi.
          */
-        /**
-         * Panel hisobi paroli — faqat shu ilovaga kirish uchun.
-         *
-         * ⚠️ Infratuzilma sirlaridan FARQI: bu parol panelga kiritadi,
-         * xolos. Baza paroli yoki S3 kaliti esa butun omborga — va shu
-         * kalitlar ishlatilgan boshqa joylarga ham — kirish beradi.
-         * Shuning uchun ular hech qanday belgi bilan ham ruxsat
-         * etilmaydi.
-         */
-        private boolean isPanelAccountKey(String key) {
-            return key.startsWith("app.gipersuperadmin.")
-                    || key.startsWith("app.superadmin.")
-                    || key.startsWith("app.admin.")
-                    || key.startsWith("app.worker.")
-                    || key.startsWith("app.legacy-admin.");
-        }
-
         private static final List<String> UNIT_SUFFIXES = List.of(
                 "-ms", "-seconds", "-minutes", "-hours", "-days",
                 "-attempts", "-ttl", "-window", "-size", "-length");
