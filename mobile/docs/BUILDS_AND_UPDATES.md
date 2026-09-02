@@ -50,10 +50,19 @@ npx eas whoami          # → bukakish (authenticated using EXPO_TOKEN)
 разработчика».
 
 ⚠️ **Новый ключ — новый SHA-1, и его надо вписать в Android-клиент Google**,
-иначе вход через Google в собранной APK не заработает. Отпечаток:
+иначе вход через Google в собранной APK не заработает:
+
+```
+0B:74:39:49:34:24:BD:16:CB:71:EF:78:F2:2C:7C:71:75:88:70:CF
+```
+
+⚠️ `keytool -printcert -jarfile` на этой APK **не сработает** — ответит «Not a
+signed jar file». EAS подписывает схемами v2/v3, а старой подписи внутри ZIP,
+которую умеет читать `keytool`, там просто нет. Отпечаток берётся из хранилища
+EAS — интерактивно (`eas credentials -p android`) или запросом:
 
 ```bash
-npx eas credentials -p android          # Keystore → SHA-1 Fingerprint
+curl -s https://api.expo.dev/graphql -H "Authorization: Bearer $EXPO_TOKEN"   -H "Content-Type: application/json"   -d '{"query":"query{app{byFullName(fullName:\"@bukakish/uzcasting\"){androidAppCredentials{androidAppBuildCredentialsList{androidKeystore{sha1CertificateFingerprint}}}}}}"}'
 ```
 
 ### 1.3. EAS CLI — ставится ГЛОБАЛЬНО, не в проект
@@ -220,3 +229,26 @@ grep -E 'datasource|jpa.hibernate.ddl-auto' /opt/uzcasting/application.propertie
 
 Ждём `jdbc:postgresql://...`. Строка вида `jdbc:h2:mem:` означает, что база
 живёт до первого рестарта.
+
+---
+
+## 4. Первая сборка на домене — 02.09.2026
+
+| | |
+|---|---|
+| Профиль | `preview` (APK, internal) |
+| Сборка | `69939476-6a2a-4855-89cb-8fe04fe4effe` |
+| Установка | https://expo.dev/accounts/bukakish/projects/uzcasting/builds/69939476-6a2a-4855-89cb-8fe04fe4effe |
+| Размер | 115 МБ |
+| Версия | 1.0.0 (versionCode 1) |
+
+Что проверено в самой APK, а не по конфигу:
+
+- в бандле есть `https://uzcasting.com` и **нет** `http://uzcasting.com`;
+- Android client ID на месте — значит `env` профиля доехал до сборки;
+- в манифесте нет `usesCleartextTraffic` — послабление осталось только у
+  профиля `development`, как и задумано.
+
+⚠️ Чего в этой сборке ждать НЕ надо: вход через Google. Он упрётся сначала в
+`503` от сервера (§3.2), а потом в несовпадение SHA-1 (§1.2). Вход по номеру
+телефона должен работать — SMS на сервере настроен.
