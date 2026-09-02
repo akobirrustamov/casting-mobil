@@ -78,21 +78,29 @@ SHA-1:        7C:DF:FA:38:8C:A2:00:A1:92:48:B9:25:6C:88:2A:C5:60:C3:95:FC
 
 Отсюда два следствия, оба видны не сразу:
 
-1. Профили `development` и `preview` стоят на `"credentialsSource": "local"` — EAS
-   ищет `credentials.json` и **сборка не стартует вовсе**.
+1. Профили `development` и `preview` стояли на `"credentialsSource": "local"` — EAS
+   искал `credentials.json` и **сборка не стартовала вовсе**.
 2. Отпечаток восстановить нельзя: debug-keystore у каждой машины свой, случайный.
    Любой новый ключ даст ДРУГОЙ SHA-1, а в Android-клиенте Google записан старый.
 
-Развилка: либо найти старый keystore в бэкапе/на другой машине, либо отдать ключ
-EAS (убрать `credentialsSource`, дальше `eas credentials` покажет новый SHA-1) и
-**вписать этот SHA-1 в Android-клиент** в Google Cloud Console. Второй путь надёжнее:
-ключ хранится на стороне EAS и больше не теряется.
+**Решено 02.09.2026: ключ отдан EAS.** `credentialsSource` убран из обоих
+профилей, EAS сгенерировал keystore на своей стороне («Created keystore» в логе
+сборки) и хранит его у себя — вместе с машиной он больше не пропадёт.
 
-Перечитать отпечаток:
+⚠️ **SHA-1 стал другим, а в Android-клиенте Google лежит старый.** Пока новый
+отпечаток туда не вписан, вход через Google в собранной APK не работает — даже
+после того, как сервер начнёт отдавать `401` вместо `503`.
+
+Прочитать новый отпечаток — из самой APK (ничего не спрашивает):
 
 ```bash
-keytool -list -v -keystore ~/.android/debug.keystore \
-  -alias androiddebugkey -storepass android -keypass android
+keytool -printcert -jarfile <скачанный>.apk
+```
+
+Или из хранилища EAS, там же будет и релизный ключ:
+
+```bash
+eas credentials -p android      # Keystore -> SHA-1 Fingerprint
 ```
 
 **Этот же отпечаток работает и в облачных сборках EAS.** По умолчанию EAS генерирует
