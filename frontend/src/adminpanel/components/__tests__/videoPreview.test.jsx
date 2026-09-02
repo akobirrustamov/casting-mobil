@@ -27,7 +27,11 @@ const mockHls = {
   loadSource: jest.fn(),
   attachMedia: jest.fn(),
   destroy: jest.fn(),
+  // ⚠️ IKKALASI ham bor: test aynan QAYSI BIRI ishlatilganini
+  // tekshiradi. `currentLevel` buferni tozalaydi va video bir zumga
+  // to'xtaydi — shuning uchun unga TEGILMASLIGI kerak.
   currentLevel: -1,
+  nextLevel: -1,
   levels: [{ width: 480, height: 852 },
            { width: 720, height: 1280 },
            { width: 1080, height: 1920 }],
@@ -316,7 +320,40 @@ describe('Videoni ko\'rish', () => {
     fireEvent.click(btn);
 
     // 720p — ro'yxatdagi 1-indeks (480, 720, 1080).
-    expect(mockHls.currentLevel).toBe(1);
+    expect(mockHls.nextLevel).toBe(1);
+  });
+
+  /**
+   * ⚠️ BUFER TOZALANMASIN — video uzilmasligi shunga bog'liq.
+   *
+   * `hls.js` da ikkita yo'l bor va ikkalasi ham `currentTime` ni
+   * saqlaydi, ya'ni video boshidan boshlanmaydi. Farq sezilishida:
+   *
+   *   currentLevel → buferni tozalaydi → 1-3 soniya to'xtash
+   *   nextLevel    → segment chegarasida → uzilishsiz
+   *
+   * Aynan shu farq «sifatni almashtirsam video qaytadan yuklanyapti»
+   * shikoyatining sababi edi. Farq KO'ZGA ko'rinadi, lekin
+   * `currentTime` ni o'lchaydigan test uni SEZMAYDI — ikkalasida ham
+   * pozitsiya joyida qoladi. Shuning uchun test qaysi xossa
+   * ishlatilganini bevosita tekshiradi.
+   */
+  it('Sifat almashganda bufer tozalanmaydi (currentLevel ga tegilmaydi)', async () => {
+    adminApi.mediaPreview.mockResolvedValue({
+      mediaId: 7, url: '/raw', hlsUrl: '/hls/master.m3u8',
+    });
+
+    mockHls.currentLevel = -1;
+
+    render(<VideoPreview open mediaId={7} onClose={jest.fn()} t={t} />);
+    await waitFor(() => expect(mockHls.on).toHaveBeenCalled());
+    manifestParsed();
+
+    fireEvent.click(await screen.findByRole('button', { name: '1080p' }));
+
+    expect(mockHls.nextLevel).toBe(2);
+    expect(mockHls.currentLevel)
+      .toBe(-1);
   });
 
   /**
@@ -335,10 +372,10 @@ describe('Videoni ko\'rish', () => {
     manifestParsed();
 
     fireEvent.click(await screen.findByRole('button', { name: '480p' }));
-    expect(mockHls.currentLevel).toBe(0);
+    expect(mockHls.nextLevel).toBe(0);
 
     fireEvent.click(screen.getByRole('button', { name: 'media.qualityAuto' }));
-    expect(mockHls.currentLevel).toBe(-1);
+    expect(mockHls.nextLevel).toBe(-1);
   });
 
   /**

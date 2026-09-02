@@ -17,6 +17,7 @@ import { CategoryRows } from '@/features/catalog/CategoryRows';
 import { useCreators, withPhotos } from '@/features/creators/api';
 import { HomeFeedUnavailableError, useHomeFeed } from '@/features/home/api';
 import { HomeSectionView } from '@/features/home/sections';
+import { ContinueRail } from '@/features/watch/ContinueRail';
 import { useIsOffline } from '@/lib/network';
 import { CASTINGS } from '@/lib/placeholder';
 import { colors } from '@/theme/tokens';
@@ -73,6 +74,15 @@ export default function HomeScreen() {
         <Ionicons name="search-outline" size={18} color={colors.textMuted} />
         <Text className="text-body text-text-muted">{t('common.search')}</Text>
       </Pressable>
+
+      {/* «Продолжить просмотр» — ПЕРЕД фидом.
+          Человек, у которого есть незаконченное видео, чаще всего
+          открывает приложение именно ради него. Ниже фида этот ряд
+          пришлось бы искать пролистыванием.
+
+          ⚠️ Блока нет совсем, когда продолжать нечего — у нового
+          человека он занимал бы верх экрана и не сообщал ничего. */}
+      <ContinueRail />
 
       <HomeFeedBlock feed={feed} isOffline={isOffline} active={isFocused} />
 

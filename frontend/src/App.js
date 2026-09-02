@@ -15,6 +15,9 @@ import LoginPage from "./admin/LoginAdmin"
 import BotHome from "./pages/HomeBot/BotHome"
 
 import PanelApp from "./adminpanel/PanelApp";
+import ViewerLayout from "./viewer/ViewerLayout";
+import ViewerSignIn from "./viewer/pages/SignInPage";
+import ViewerWatch from "./viewer/pages/WatchPage";
 
 import BotAdminHome from "./bot-admin/admin/AdminHome";
 import BotAdminNews from "./bot-admin/admin/AdminNews";
@@ -105,6 +108,14 @@ function App() {
         <Route path={"/aadmin/casting-users/:castingUserId"} element={<CastingUserDetail />} />
         {/* UZCASTING admin paneli - o'z ichida marshrutlanadi */}
         <Route path={"/app/panel/*"} element={<PanelApp />} />
+
+        {/* UZCASTING tomoshabin yuzasi — video ko'rish.
+            Yo'lsiz marshrut faqat qobiq beradi (tarjima va palitra),
+            manzillarga tegmaydi — shuning uchun ular qisqa. */}
+        <Route element={<ViewerLayout />}>
+          <Route path={"/kirish"} element={<ViewerSignIn />} />
+          <Route path={"/tomosha/:type/:id"} element={<ViewerWatch />} />
+        </Route>
         <Route path={"/*"} element={<PageNotFound />} />
         <Route path={"/"} element={<Home />} />
 

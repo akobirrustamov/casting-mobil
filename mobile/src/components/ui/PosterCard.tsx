@@ -44,6 +44,7 @@ export function PosterCard({
   /** Ширина к высоте кадра. См. `features/content/railLayout.CARD_RATIO`. */
   ratio = 2 / 3,
   onPress,
+  progressPercent,
 }: {
   title: string;
   subtitle?: string;
@@ -58,6 +59,20 @@ export function PosterCard({
   width?: number;
   ratio?: number;
   onPress?: () => void;
+
+  /**
+   * Полоса досмотра внизу обложки, 0–100. Без неё карточка обычная.
+   *
+   * ⚠️ Живёт ЗДЕСЬ, а не в отдельной карточке для «продолжить»: форма
+   * кадра одна на всё приложение, и второй компонент со временем
+   * разошёлся бы с этим по размеру, скруглению и подписям — а стоят
+   * они на одном экране, друг под другом.
+   *
+   * `null`/`undefined` — длительность неизвестна: полосу рисовать не
+   * из чего. Ноль в этом случае был бы ложью — «не начинал», хотя
+   * человек мог посмотреть половину.
+   */
+  progressPercent?: number | null;
 }) {
   return (
     <Pressable style={{ width }} onPress={onPress} className="gap-2 active:opacity-70">
@@ -102,6 +117,18 @@ export function PosterCard({
               style={{ textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 6 }}
             />
           </Pressable>
+        ) : null}
+
+        {/* Полоса досмотра — по нижнему краю кадра, во всю ширину.
+            Таймкод сидит чуть выше неё в том же углу и не перекрывается:
+            полоса тонкая и прижата к самому краю. */}
+        {typeof progressPercent === 'number' ? (
+          <View className="absolute bottom-0 left-0 right-0 h-1 bg-ink/60">
+            <View
+              style={{ width: `${Math.min(100, Math.max(0, progressPercent))}%` }}
+              className="h-full bg-magenta"
+            />
+          </View>
         ) : null}
 
         {badge && badgeLabel ? (

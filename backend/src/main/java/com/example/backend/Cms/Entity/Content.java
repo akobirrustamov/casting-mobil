@@ -118,6 +118,35 @@ public class Content {
      * so'rov ko'rsatdi, 2 satrda esa 10 ta — ya'ni har satr ikkitadan
      * qo'shardi.
      */
+    /**
+     * ⚠️ {@code @OrderBy} — TARTIB, ko'rinish uchun emas, TO'G'RILIK uchun.
+     *
+     * Usiz bitta kontent har so'rovda BOSHQA janr ko'rsatardi: bosh
+     * sahifada «Romantika», sahifani yangilagach «Komediya», keyin
+     * yana «Romantika». Panelda ham janr teglari o'rin almashardi.
+     *
+     * <h2>Nega bu ko'zga tashlanmagan</h2>
+     * Maydon {@code LinkedHashSet} deb e'lon qilingan va shuning uchun
+     * tartibli KO'RINADI. Lekin bu qiymat faqat YANGI obyektda
+     * ishlatiladi: bazadan yuklashda Hibernate uni o'z
+     * {@code PersistentSet} i bilan almashtiradi, u esa ichida
+     * {@code HashSet} saqlaydi.
+     *
+     * {@link Genre} da esa {@code equals}/{@code hashCode} yozilmagan,
+     * ya'ni {@code Object} nikidan foydalaniladi — u obyekt
+     * MANZILIGA bog'liq. Har so'rovda janrlar yangi obyekt bo'lib
+     * yuklanadi, hash boshqa chiqadi va {@code HashSet} dagi tartib
+     * o'zgaradi.
+     *
+     * <h2>Nega nom bo'yicha emas</h2>
+     * Tartib TILGA BOG'LIQ BO'LMASLIGI kerak: aks holda ayni kontent
+     * o'zbekchada bir janr, ruschada boshqasini ko'rsatardi — bu esa
+     * xatoning yarmi o'z holicha qolishi demak.
+     *
+     * {@code sortOrder} — admin belgilagan tartib, {@code id} esa u
+     * teng bo'lganda hal qiluvchi mezon.
+     */
+    @OrderBy("sortOrder, id")
     @org.hibernate.annotations.BatchSize(size = 50)
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "cms_content_genre",

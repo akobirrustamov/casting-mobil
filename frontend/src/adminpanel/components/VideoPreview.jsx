@@ -195,6 +195,39 @@ export default function VideoPreview({ open, mediaId, title, onClose, t }) {
     };
   }, [source, t]);
 
+  /**
+   * Sifatni almashtiradi — videoni TO'XTATMASDAN.
+   *
+   * <h2>⚠️ Nega `nextLevel`, `currentLevel` emas</h2>
+   * Ikkalasi ham ishlaydi va ikkalasida ham `currentTime` saqlanadi —
+   * video 1:32:45 da qolaveradi, boshidan boshlanmaydi. Farq
+   * BUFERDA:
+   *
+   * <pre>
+   *   currentLevel → buferni TOZALAYDI va darhol almashtiradi
+   *                  → 1-3 soniya qora ekran, «qayta yuklandi» kabi
+   *
+   *   nextLevel    → keyingi segment chegarasida almashtiradi
+   *                  → uzilish yo'q, odam sezmaydi
+   * </pre>
+   *
+   * Aynan `currentLevel` ning bufer tozalashi «video qaytadan
+   * yuklanyapti» degan taassurot berardi. Pozitsiya hech qachon
+   * yo'qolmagan — ko'zga tashlangani uzilish edi.
+   *
+   * ⚠️ Almashish DARHOL ko'rinmaydi: pleyer avval buferdagi joriy
+   * segmentni tugatadi (bizda segment 6 soniya —
+   * `FfmpegCommandBuilder.SEGMENT_SECONDS`). Tugma esa darhol
+   * yonadi, chunki u TANLOVNI bildiradi; joriy sifat yozuvi esa
+   * `LEVEL_SWITCHED` kelganda yangilanadi — ya'ni haqiqatan
+   * almashganda.
+   *
+   * @param index sifat indeksi, yoki `-1` — avtomatik rejim
+   */
+  const switchQuality = (index) => {
+    if (hlsRef.current) hlsRef.current.nextLevel = index;
+  };
+
   return (
     <Modal open={open} title={title || t('media.preview')} onClose={onClose}>
       {error && <div className="uz-alert uz-alert-danger">{error}</div>}
@@ -238,7 +271,7 @@ export default function VideoPreview({ open, mediaId, title, onClose, t }) {
                 onClick={() => {
                   setSelected(-1);
                   // ⚠️ `-1` — `hls.js` da «o'zing tanla» degani.
-                  if (hlsRef.current) hlsRef.current.currentLevel = -1;
+                  switchQuality(-1);
                 }}
                 label={t('media.qualityAuto')}
               />
@@ -250,7 +283,7 @@ export default function VideoPreview({ open, mediaId, title, onClose, t }) {
                   active={selected === level.index}
                   onClick={() => {
                     setSelected(level.index);
-                    if (hlsRef.current) hlsRef.current.currentLevel = level.index;
+                    switchQuality(level.index);
                   }}
                   label={level.label}
                 />

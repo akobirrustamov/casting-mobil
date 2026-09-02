@@ -7,6 +7,8 @@ import { trackContentComplete, trackContentPlay } from '@/features/analytics/api
 import { type Orientation, frameRatio, isVertical } from '@/features/content/orientation';
 import { BASE_URL, authHeaders } from '@/lib/api';
 
+import { useWatchProgress } from './useWatchProgress';
+
 import type { VideoSource } from './types';
 
 /**
@@ -126,6 +128,23 @@ export function Player({
 
   useEventListener(player, 'playToEnd', () => {
     if (contentId !== null) trackContentComplete(contentId, episodeId);
+  });
+
+  /**
+   * «Продолжить просмотр»: запоминает секунду, на которой остановились.
+   *
+   * <h2>⚠️ Серия важнее контента</h2>
+   * У многосерийного контента позиция принадлежит КОНКРЕТНОЙ серии.
+   * Если писать её на контент, вторая серия перетирала бы первую и
+   * человек возвращался бы в середину не той серии.
+   *
+   * `episodeId` есть только у многосерийного, у фильма он `null` — и
+   * тогда единица просмотра действительно контент.
+   */
+  useWatchProgress({
+    player,
+    type: episodeId !== null ? 'EPISODE' : 'CONTENT',
+    targetId: episodeId ?? contentId,
   });
 
   // Ширину меряем, а не считаем из размера окна: у экрана свои отступы,

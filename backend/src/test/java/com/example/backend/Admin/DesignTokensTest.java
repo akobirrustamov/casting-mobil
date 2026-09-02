@@ -36,6 +36,20 @@ class DesignTokensTest {
     private static final Path PANEL = Path.of("../frontend/src/adminpanel");
     private static final Path THEME = PANEL.resolve("theme/panel.css");
 
+    /**
+     * TOMOSHABIN yuzasi — video ko'rish sahifalari.
+     *
+     * ⚠️ Ayni qoida, ikkinchi yuza. Qo'shilmaganda test yashil turardi,
+     * chunki u faqat panelga qarardi — ya'ni yangi yuzada hex ranglar
+     * erkin tarqalardi va buni hech kim sezmasdi.
+     *
+     * Palitrasi panelnikidan BOSHQA (mobil ilova gammasi) va bu
+     * ataylab: bu yuzani ilovani ochadigan odam ko'radi. Qoida esa
+     * bir xil — ranglar bitta faylda.
+     */
+    private static final Path VIEWER = Path.of("../frontend/src/viewer");
+    private static final Path VIEWER_THEME = VIEWER.resolve("theme/viewer.css");
+
     /** {@code #fff}, {@code #1E3163}, {@code #ffffffcc} — barchasi. */
     private static final Pattern HEX = Pattern.compile("#[0-9a-fA-F]{3,8}\\b");
 
@@ -84,6 +98,63 @@ class DesignTokensTest {
             }
 
             assertThat(offenders).isEmpty();
+        }
+
+        @Test
+        @DisplayName("⚠️ Tomoshabin komponentlarida ham hex YO'Q")
+        void noHexColoursInViewer() throws IOException {
+            List<String> offenders = new ArrayList<>();
+
+            try (Stream<Path> files = Files.walk(VIEWER)) {
+                for (Path file : files.filter(DesignTokensTest::isScript).toList()) {
+                    Matcher m = HEX.matcher(Files.readString(file));
+                    while (m.find()) {
+                        offenders.add(VIEWER.relativize(file) + " → " + m.group());
+                    }
+                }
+            }
+
+            assertThat(offenders)
+                    .as("Tomoshabin komponentiga hex rang yozilgan. Ranglar "
+                            + "faqat `viewer/theme/viewer.css` da.")
+                    .isEmpty();
+        }
+
+        @Test
+        @DisplayName("Tomoshabin komponentlarida rgb()/rgba() ham yo'q")
+        void noRgbColoursInViewer() throws IOException {
+            List<String> offenders = new ArrayList<>();
+
+            try (Stream<Path> files = Files.walk(VIEWER)) {
+                for (Path file : files.filter(DesignTokensTest::isScript).toList()) {
+                    if (RGB.matcher(Files.readString(file)).find()) {
+                        offenders.add(VIEWER.relativize(file).toString());
+                    }
+                }
+            }
+
+            assertThat(offenders).isEmpty();
+        }
+
+        /**
+         * ⚠️ Palitra HAQIQATAN shu faylda bo'lsin.
+         *
+         * Yuqoridagi ikki test faqat «komponentda rang yo'q» deydi.
+         * Ular uslub fayli ham bo'sh bo'lganda yashil turardi — ya'ni
+         * ranglar umuman yo'q holatni to'g'ri deb hisoblardi.
+         */
+        @Test
+        @DisplayName("Tomoshabin palitrasi o'z faylida e'lon qilingan")
+        void viewerPaletteExists() throws IOException {
+            String css = Files.readString(VIEWER_THEME);
+
+            List<String> required = List.of(
+                    "--v-ink", "--v-surface", "--v-border",
+                    "--v-purple", "--v-text", "--v-muted", "--v-danger");
+
+            assertThat(required.stream().filter(tok -> !css.contains(tok + ":")).toList())
+                    .as("tomoshabin tokeni e'lon qilinmagan")
+                    .isEmpty();
         }
 
         @Test
