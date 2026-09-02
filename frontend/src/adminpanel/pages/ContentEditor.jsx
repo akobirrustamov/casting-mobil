@@ -12,6 +12,7 @@ import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
 import Modal from '../components/Modal';
 import { usePanelI18n } from '../i18n';
 import EpisodesTab from './EpisodesTab';
+import { buildMediaLinks, pickMedia, passthroughMedia } from './editor/contentMedia';
 
 
 const emptyForm = () => ({
@@ -35,6 +36,12 @@ const emptyForm = () => ({
   posterByLocale: {},
   cover: null,
   gallery: [],
+  video: null,
+  trailer: null,
+  // ⚠️ Panel boshqarmaydigan rollar (TEASER, THUMBNAIL va kelajakdagilar).
+  // Ular shu yerda SAQLANIB turadi va saqlashda qaytariladi — sabab
+  // pastdagi `otherMedia` izohida.
+  otherMedia: [],
   credits: [],
   version: null,
 });
@@ -144,6 +151,11 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
           posterByLocale: c.localePosters || {},
           cover: c.coverMediaId || null,
           gallery: Array.isArray(c.gallery) ? c.gallery : [],
+          // ⚠️ Qulaylik maydonlari (poster/cover/gallery) FAQAT uchta rolni
+          // qamraydi. Qolganini xom ro'yxatdan olamiz — DTO'dagi `media`.
+          video: pickMedia(c.media, 'VIDEO'),
+          trailer: pickMedia(c.media, 'TRAILER'),
+          otherMedia: passthroughMedia(c.media),
         });
         setDirty(false);
       })
@@ -166,14 +178,7 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
     setSaving(true);
     setError(null);
 
-    // Media ro'yxatini yig'amiz: umumiy afisha + tilga xoslari + muqova + galereya
-    const media = [];
-    if (form.posterDefault) media.push({ role: 'POSTER', mediaId: form.posterDefault, sortOrder: 0 });
-    Object.entries(form.posterByLocale).forEach(([loc, id]) => {
-      if (id) media.push({ role: 'POSTER', locale: loc, mediaId: id, sortOrder: 0 });
-    });
-    if (form.cover) media.push({ role: 'COVER', mediaId: form.cover, sortOrder: 0 });
-    form.gallery.forEach((id, i) => media.push({ role: 'GALLERY', mediaId: id, sortOrder: i }));
+    const media = buildMediaLinks(form);
 
     const payload = {
       slug: form.slug || undefined,
@@ -313,7 +318,7 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
       )}
 
       {tab === 'media' && (
-        <MediaTab form={form} set={set} t={t} locale={locale} />
+        <MediaTab form={form} set={set} t={t} locale={locale} isSingle={!hasParts} />
       )}
 
       {tab === 'creators' && (

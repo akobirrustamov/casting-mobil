@@ -5,19 +5,19 @@ import ApiCall from "./config/index"
 // my pages
 import Home from "./pages/home/Home"
 import PageNotFound from "./pages/404/404";
-import AdminHome from "./admin/admin/AdminHome";
-import AdminNews from "./admin/admin/AdminNews";
 import DataForm from "./pages/dataForm/DataForm";
 import History from "./pages/history/History";
 import Appeal from "./pages/appeal/Appeal";
 import CastingUser from "./admin/admin/CastingUser";
 import CastingUserDetail from "./admin/admin/CastingUserDetail";
-import CastingUserAccepted from "./admin/admin/CastingUserAccepted";
 import Models from "./pages/models/Models";
 import LoginPage from "./admin/LoginAdmin"
 import BotHome from "./pages/HomeBot/BotHome"
 
 import PanelApp from "./adminpanel/PanelApp";
+import ViewerLayout from "./viewer/ViewerLayout";
+import ViewerSignIn from "./viewer/pages/SignInPage";
+import ViewerWatch from "./viewer/pages/WatchPage";
 
 import BotAdminHome from "./bot-admin/admin/AdminHome";
 import BotAdminNews from "./bot-admin/admin/AdminNews";
@@ -108,6 +108,14 @@ function App() {
         <Route path={"/aadmin/casting-users/:castingUserId"} element={<CastingUserDetail />} />
         {/* UZCASTING admin paneli - o'z ichida marshrutlanadi */}
         <Route path={"/app/panel/*"} element={<PanelApp />} />
+
+        {/* UZCASTING tomoshabin yuzasi — video ko'rish.
+            Yo'lsiz marshrut faqat qobiq beradi (tarjima va palitra),
+            manzillarga tegmaydi — shuning uchun ular qisqa. */}
+        <Route element={<ViewerLayout />}>
+          <Route path={"/kirish"} element={<ViewerSignIn />} />
+          <Route path={"/tomosha/:type/:id"} element={<ViewerWatch />} />
+        </Route>
         <Route path={"/*"} element={<PageNotFound />} />
         <Route path={"/"} element={<Home />} />
 

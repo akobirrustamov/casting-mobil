@@ -1,14 +1,35 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, useWindowDimensions } from 'react-native';
 
 import { ScreenState } from '@/components/states/ScreenState';
 import { SkeletonGrid } from '@/components/ui/Skeleton';
-import { rowRatio } from '@/features/content/orientation';
+import {
+  CARD_RATIO,
+  gridGap,
+  useRailCardWidth,
+} from '@/features/content/railLayout';
 import { useIsOffline } from '@/lib/network';
 
-import { HomeFeedUnavailableError, type useHomeFeed } from './api';
+import { HomeFeedUnavailableError } from './api';
+import { CardMenu } from './CardMenu';
 import { ContentPoster } from './sections';
 import type { ContentCard } from './types';
+
+/**
+ * Состояние запроса, из которого сетка рисует loading / error.
+ *
+ * Структурный тип, а не `ReturnType<typeof useHomeFeed>`: тем же экраном
+ * пользуется страница одной категории (`/category/{id}`), где данные едут
+ * из `/api/v1/app/catalog`, а не из фида. Форма у обоих запросов одна —
+ * это `useQuery`, — и сетке достаточно знать ровно эти четыре поля.
+ */
+type FeedState = {
+  isPending: boolean;
+  isError: boolean;
+  error: unknown;
+  refetch: () => unknown;
+};
 
 /**
  * Сетка карточек контента — экран «Media» и экран одного ряда.
@@ -18,12 +39,11 @@ import type { ContentCard } from './types';
  * одинаково ведут себя в загрузке, ошибке и пустоте. Пока это было два
  * места, любая правка (три колонки вместо двух, таймкод, жанр) требовала
  * помнить про второе — а забытое второе выглядело бы как поломка.
+ *
+ * Меню карточки («⋮» с макета «Media») живёт ЗДЕСЬ, а не в карточке: лист
+ * открыт один на всю сетку, иначе каждая из десятков карточек держала бы
+ * собственное состояние и собственный `Modal`.
  */
-
-/** Три карточки в ряду — заказчик: «3 ta content». */
-const COLUMNS = 3;
-const GRID_GAP = 8;
-const SCREEN_PADDING = 16;
 
 export function ContentGrid({
   feed,
@@ -34,38 +54,46 @@ export function ContentGrid({
    */
   hasAny,
   emptyBody,
+  unavailable,
 }: {
-  feed: ReturnType<typeof useHomeFeed>;
+  feed: FeedState;
   cards: ContentCard[];
   hasAny?: boolean;
   emptyBody?: string;
+  /**
+   * «Эндпоинта нет на этом сервере» — если запрос не из фида и определяет
+   * это по своему типу ошибки. По умолчанию проверяется ошибка фида.
+   */
+  unavailable?: boolean;
 }) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const isOffline = useIsOffline();
+  const [menuCard, setMenuCard] = useState<ContentCard | null>(null);
 
-  // Ширина считается от экрана, а не задана числом: с фиксированной
-  // шириной на узком телефоне влезали две карточки, на широком три —
-  // сетка разъезжалась от устройства к устройству.
-  const cardWidth =
-    (width - SCREEN_PADDING * 2 - GRID_GAP * (COLUMNS - 1)) / COLUMNS;
+  // Та же ширина, что у карточки в ряду (`features/content/railLayout`).
+  // Заказчик: «barchasi qilib ichiga kirgandan song ham cardlarni dizayni
+  // o'zgarmasin». Раньше сетка считала ширину по своей формуле, и карточка
+  // на экране «Barchasi» была шире, чем та, на которую нажали.
+  const cardWidth = useRailCardWidth();
+  const gap = gridGap(width);
 
   if (feed.isPending) {
     return (
       <View className="-mx-4">
-        <SkeletonGrid count={6} cardWidth={cardWidth} />
+        <SkeletonGrid count={6} cardWidth={cardWidth} ratio={CARD_RATIO} gap={gap} />
       </View>
     );
   }
 
   if (feed.isError) {
-    const unavailable = feed.error instanceof HomeFeedUnavailableError;
+    const missing = unavailable ?? feed.error instanceof HomeFeedUnavailableError;
     return (
       <View className="h-64">
         <ScreenState
           kind={isOffline ? 'offline' : 'error'}
-          title={unavailable ? t('home.feedUnavailableTitle') : undefined}
-          body={unavailable ? t('home.feedUnavailableBody') : undefined}
+          title={missing ? t('home.feedUnavailableTitle') : undefined}
+          body={missing ? t('home.feedUnavailableBody') : undefined}
           onRetry={() => feed.refetch()}
         />
       </View>
@@ -80,15 +108,20 @@ export function ContentGrid({
     );
   }
 
-  // Одна форма на всю сетку: вертикальная карточка рядом с обычной делает
-  // строку разновысокой и подписи разъезжаются по вертикали.
-  const ratio = rowRatio(cards.map((c) => c.orientation));
-
   return (
-    <View className="flex-row flex-wrap" style={{ gap: GRID_GAP }}>
-      {cards.map((card) => (
-        <ContentPoster key={card.id} card={card} width={cardWidth} ratio={ratio} />
-      ))}
-    </View>
+    <>
+      <View className="flex-row flex-wrap" style={{ gap }}>
+        {cards.map((card) => (
+          <ContentPoster
+            key={card.id}
+            card={card}
+            width={cardWidth}
+            onMenu={() => setMenuCard(card)}
+          />
+        ))}
+      </View>
+
+      <CardMenu card={menuCard} onClose={() => setMenuCard(null)} />
+    </>
   );
 }

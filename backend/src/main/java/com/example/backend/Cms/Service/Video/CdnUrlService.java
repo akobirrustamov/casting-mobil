@@ -41,6 +41,25 @@ public class CdnUrlService {
     }
 
     /**
+     * CDN ildizi, oxirgi qiyshiq chiziqsiz. Sozlanmagan bo'lsa
+     * {@code null}.
+     *
+     * ⚠️ Segment manzilini yasash uchun kerak
+     * ({@link PresignedUrlProvider}): u kalitdan emas, TAYYOR
+     * imzolangan manzildan yo'lni oladi va faqat domenni almashtiradi.
+     * Shuning uchun {@link #masterUrl} kabi kalit qabul qiladigan
+     * metod bu yerda yaramaydi.
+     */
+    public String base() {
+        if (!isConfigured()) {
+            return null;
+        }
+        return cdnBaseUrl.endsWith("/")
+                ? cdnBaseUrl.substring(0, cdnBaseUrl.length() - 1)
+                : cdnBaseUrl;
+    }
+
+    /**
      * Kalitdan to'liq manzil yasaydi.
      *
      * @param key {@code MediaAsset.hlsMasterKey}. {@code null} bo'lsa

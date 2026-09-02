@@ -3,6 +3,7 @@ package com.example.backend.Cms.Repository;
 import com.example.backend.Cms.Entity.Content;
 import com.example.backend.Cms.Enums.ContentOrientation;
 import com.example.backend.Cms.Enums.ContentType;
+import com.example.backend.Cms.Enums.ContentVisibility;
 import com.example.backend.Cms.Enums.PublicationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -79,6 +80,21 @@ public interface ContentRepo extends JpaRepository<Content, Long> {
     List<Content> findAllByDeletedAtIsNullAndOrientationAndStatus(
             ContentOrientation orientation, PublicationStatus status);
 
+    /**
+     * Kategoriya bo'yicha kontent — katalog qatorlari uchun
+     * ({@code GET /api/v1/app/catalog/categories/{id}}).
+     *
+     * ⚠️ Kategoriya kontent TURI emas (§13): «Drama» — mavzu, MINI_SERIES —
+     * tuzilish. Shuning uchun bu yerda {@code contentType} bo'yicha shart
+     * YO'Q: bitta kategoriyada film ham, podkast ham bo'lishi mumkin.
+     *
+     * Ko'rinish (PRIVATE / UNLISTED) bu yerda tekshirilmaydi — u
+     * {@link com.example.backend.Cms.Service.HomeFeedService#isVisible}
+     * da, bosh sahifa qatorlari bilan BITTA qoidadan chiqadi.
+     */
+    List<Content> findAllByDeletedAtIsNullAndCategoryIdAndStatus(
+            Long categoryId, PublicationStatus status);
+
     // ---------------------------------------------------- hisobot filtrlari
     //
     // ТЗ §47: hisobotlar kontent, kategoriya va ijodkor bo'yicha
@@ -133,4 +149,34 @@ public interface ContentRepo extends JpaRepository<Content, Long> {
 
     /** Shu janr biriktirilgan tirik kontent soni (ТЗ §17). */
     long countByGenres_IdAndDeletedAtIsNull(Long genreId);
+
+    /**
+     * Har bir kategoriyada nechta KO'RINADIGAN kontent bor — bitta so'rovda.
+     *
+     * <h2>Nima uchun {@link #countByCategoryIdAndDeletedAtIsNull} yaramaydi</h2>
+     * U qoralamani ham, PRIVATE ni ham sanaydi. Katalogda esa son odam
+     * ochib ko'ra oladigan narsani bildirishi kerak: «Drama (7)» deb yozib,
+     * ichida 2 ta kontent chiqishi — o'ylab topilgan raqam.
+     *
+     * <h2>Nima uchun guruhlangan</h2>
+     * Kategoriya soni cheklanmagan. Har biriga alohida {@code count}
+     * yuborish katalog ro'yxatini N ta so'rovga aylantirardi.
+     *
+     * ⚠️ {@code visibility is null} ham ko'rinadigan deb sanaladi: maydon
+     * qoida joriy qilinishidan oldingi satrlarda bo'sh qolgan, va
+     * {@code HomeFeedService.isVisible} ham aynan shunday qaraydi. Ikkala
+     * joyda bitta qoida bo'lishi shart — aks holda son va ro'yxat
+     * ajralib ketardi.
+     */
+    @Query("""
+            select c.category.id, count(c) from Content c
+            where c.deletedAt is null
+              and c.status = :status
+              and c.category is not null
+              and (c.visibility is null or c.visibility = :visibility)
+            group by c.category.id
+            """)
+    List<Object[]> countVisibleByCategory(
+            @Param("status") PublicationStatus status,
+            @Param("visibility") ContentVisibility visibility);
 }

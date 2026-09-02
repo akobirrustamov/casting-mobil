@@ -3,6 +3,7 @@ import { router, useIsFocused } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
+import { HomeHeaderActions } from '@/components/navigation/HeaderActions';
 import { ScreenState } from '@/components/states/ScreenState';
 import { Button } from '@/components/ui/Button';
 import { CategoryTile } from '@/components/ui/CategoryTile';
@@ -12,9 +13,11 @@ import { Skeleton, SkeletonRail } from '@/components/ui/Skeleton';
 import { StoryCircle } from '@/components/ui/StoryCircle';
 import { Wordmark } from '@/components/ui/Wordmark';
 import { CATEGORIES } from '@/features/catalog/categories';
+import { CategoryRows } from '@/features/catalog/CategoryRows';
 import { useCreators, withPhotos } from '@/features/creators/api';
 import { HomeFeedUnavailableError, useHomeFeed } from '@/features/home/api';
 import { HomeSectionView } from '@/features/home/sections';
+import { ContinueRail } from '@/features/watch/ContinueRail';
 import { useIsOffline } from '@/lib/network';
 import { CASTINGS } from '@/lib/placeholder';
 import { colors } from '@/theme/tokens';
@@ -51,13 +54,11 @@ export default function HomeScreen() {
 
   return (
     <Screen
-      // Логотип вместо текста — у Yangi.TV в шапке главной именно знак,
-      // по центру и без иконок вокруг (docs/STRUCTURE.md §3.1)
-      titleContent={
-        <View className="items-center py-1">
-          <Wordmark />
-        </View>
-      }
+      // Шапка по макету заказчика (01.09.2026): слева знак и «UzCasting»,
+      // справа «Premium» и колокольчик. Знак больше не по центру — на
+      // макете он прижат к левому краю, как в большинстве витрин.
+      titleContent={<Wordmark variant="compact" shine />}
+      headerRight={<HomeHeaderActions />}
       onRefresh={() => {
         void feed.refetch();
         void creators.refetch();
@@ -74,7 +75,25 @@ export default function HomeScreen() {
         <Text className="text-body text-text-muted">{t('common.search')}</Text>
       </Pressable>
 
+      {/* «Продолжить просмотр» — ПЕРЕД фидом.
+          Человек, у которого есть незаконченное видео, чаще всего
+          открывает приложение именно ради него. Ниже фида этот ряд
+          пришлось бы искать пролистыванием.
+
+          ⚠️ Блока нет совсем, когда продолжать нечего — у нового
+          человека он занимал бы верх экрана и не сообщал ничего. */}
+      <ContinueRail />
+
       <HomeFeedBlock feed={feed} isOffline={isOffline} active={isFocused} />
+
+      {/* Разделы каталога контента: «Drama», под ним карточки — такой же
+          ряд, как «Podkastlar» из фида. Стоят сразу под фидом, потому что
+          это продолжение того же списка контента; блоки кастинга ниже —
+          другой продукт и другой бэкенд.
+
+          ⚠️ Не путать со следующим рельсом: там 10 направлений КАСТИНГА
+          (анкеты людей), здесь разделы каталога КОНТЕНТА (фильмы). */}
+      <CategoryRows />
 
       <Rail title={t('home.categories')} onSeeAll={() => router.push('/catalog/all')}>
         {CATEGORIES.map((c) => (

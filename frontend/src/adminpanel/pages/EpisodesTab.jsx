@@ -192,7 +192,7 @@ export default function EpisodesTab({ contentId, structureType, contentAccessPol
         </div>
 
         <div style={{ maxWidth: 280 }}>
-          <MediaField label={t('ep.poster')} value={seasonForm.posterMediaId}
+          <MediaField label={t('ep.poster')} spec="seasonPoster" value={seasonForm.posterMediaId}
                       onChange={(id) => setSeasonForm({ ...seasonForm, posterMediaId: id })} />
         </div>
       </>
@@ -303,7 +303,7 @@ export default function EpisodesTab({ contentId, structureType, contentAccessPol
 
         <div className="uz-row mb-5">
           <div className="uz-col" style={{ maxWidth: 260 }}>
-            <MediaField label={t('ep.thumbnail')} value={episodeForm.thumbnailMediaId}
+            <MediaField label={t('ep.thumbnail')} spec="episodeThumb" value={episodeForm.thumbnailMediaId}
                         onChange={(id) => setEpisodeForm({ ...episodeForm, thumbnailMediaId: id })} />
           </div>
           <div className="uz-col">
@@ -374,7 +374,7 @@ export default function EpisodesTab({ contentId, structureType, contentAccessPol
                   </Select>
                 </div>
                 <div className="uz-col" style={{ maxWidth: 220 }}>
-                  <MediaField label="" type="VIDEO" value={v.mediaId}
+                  <MediaField label="" type="VIDEO" spec="episodeVideo" value={v.mediaId}
                               onChange={(id) => {
                                 const next = [...episodeForm.videos];
                                 next[i] = { ...v, mediaId: id };

@@ -1,13 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import {Link, useNavigate} from "react-router-dom";
+import React, { useEffect } from 'react';
 import Header from "../header/Header";
 
 
 
 
 function PageNotFound(props) {
-    const [message, setMessage] = useState([]);
-    const navigate = useNavigate();
 
     useEffect(() => {
 

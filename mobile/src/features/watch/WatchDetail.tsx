@@ -10,7 +10,7 @@ import { Badge, type BadgeTone } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
 import { trackContentView } from '@/features/analytics/api';
-import { frameRatio, isVertical } from '@/features/content/orientation';
+import { CARD_RATIO } from '@/features/content/railLayout';
 import { contentCards, useHomeFeed } from '@/features/home/api';
 import type { ContentCard } from '@/features/home/types';
 import { mediaUrl } from '@/lib/api';
@@ -222,32 +222,50 @@ function Stage({ info, card }: { info: WatchInfo; card: ContentCard | undefined 
     );
   }
 
-  return <LockedPoster info={info} card={card} />;
+  return <LockedPoster card={card} />;
 }
 
-/** Обложка закрытого контента — в пропорции его формата. */
+/**
+ * Обложка закрытого контента.
+ *
+ * <h2>Почему 2:3, а не формат видео</h2>
+ * Раньше рамка бралась из `frameRatio(orientation)` — 16:9 у обычного
+ * контента. Довод был такой: пусть закрытый экран выглядит как плеер,
+ * тогда после покупки раскладка не прыгнет.
+ *
+ * Но в админку загружается ОДНА афиша, и загружается она вертикальной
+ * (2:3 — `adminpanel/mediaSpecs.poster`), потому что во всём остальном
+ * приложении карточка именно такая (`railLayout.CARD_RATIO`). В рамке
+ * 16:9 от такой афиши оставалась горизонтальная полоса посередине: у
+ * постера срезало примерно две трети высоты вместе с названием сверху.
+ *
+ * То есть выбор был не «прыгнет или нет», а «показать афишу целиком или
+ * её середину». Скачок раскладки случается ОДИН раз и только после
+ * покупки; обрезанная афиша — на каждом открытии закрытого контента.
+ *
+ * Форма кадра у ПЛЕЕРА не изменилась: он по-прежнему рисует 16:9 или 9:16
+ * по `orientation`, то есть рилс открывается вертикальным.
+ */
 function LockedPoster({
-  info,
   card,
 }: {
-  info: WatchInfo;
   card: ContentCard | undefined;
 }) {
   const { height: windowHeight } = useWindowDimensions();
   const poster = mediaUrl(card?.posterMediaId);
 
-  const vertical = isVertical(info.orientation);
   const [boxWidth, setBoxWidth] = useState(0);
 
-  // Рамка та же, что у плеера: закрытый экран не должен менять раскладку
-  // после покупки — иначе кадр прыгнет, как только доступ появится.
-  const ratio = frameRatio(info.orientation);
+  // Одна форма афиши на всё приложение — ряд, сетка, «Barchasi» и этот
+  // экран. Загруженный файл 2:3 нигде не обрезается.
+  const ratio = CARD_RATIO;
 
-  // Вертикальная афиша во всю высоту вытолкнула бы цену за нижний край —
-  // а именно её человек и должен увидеть на этом экране.
+  // Афиша во всю ширину вытолкнула бы цену за нижний край — а именно её
+  // человек и должен увидеть на этом экране. Поэтому высота ограничена, а
+  // ширина считается обратно от неё: кадр сужается, но не обрезается.
   const full = boxWidth > 0 ? Math.round(boxWidth / ratio) : 224;
-  const height = vertical ? Math.min(full, Math.round(windowHeight * 0.45)) : full;
-  const width = vertical ? Math.round(height * ratio) : boxWidth;
+  const height = Math.min(full, Math.round(windowHeight * 0.45));
+  const width = Math.round(height * ratio);
 
   return (
     <View

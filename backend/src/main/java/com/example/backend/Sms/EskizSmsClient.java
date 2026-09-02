@@ -34,11 +34,25 @@ import java.util.concurrent.atomic.AtomicReference;
  * "Это тест от Eskiz", "This is test from Eskiz". Haqiqiy OTP matni
  * moderatsiya tasdiqlanguncha yetib bormaydi — bu Eskiz tomonidagi
  * cheklov, kod bilan chetlab bo'lmaydi.
+ *
+ * <h2>Qaysi profilda mavjud</h2>
+ * HAMMASIDA. Ilgari bu yerda {@code @Profile("!local")} turardi va lokal
+ * stendda haqiqiy SMS ni sinash umuman imkonsiz edi — kabinet sozlangan
+ * bo'lsa ham bean yaratilmasdi.
+ *
+ * Endi tanlovni profil emas, KONFIGURATSIYA hal qiladi:
+ * {@code eskiz.email} berilgan bo'lsa shu klient ishlaydi (lokalda ham),
+ * berilmagan bo'lsa lokal profilda uning o'rnini {@link LoggingSmsClient}
+ * egallaydi.
+ *
+ * Serverda hamma narsa avvalgidek: {@link LoggingSmsClient} u yerda
+ * baribir yaratilmaydi ({@code @Profile("local")}), ya'ni sozlanmagan
+ * kabinet halol xato beradi — soxta "yuborildi" hech qachon qaytmaydi.
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class EskizSmsClient {
+public class EskizSmsClient implements SmsClient {
 
     private final RestTemplate restTemplate;
 
@@ -71,6 +85,7 @@ public class EskizSmsClient {
      * @throws org.springframework.web.client.RestClientException Eskiz javob
      *                                         bermasa yoki xato qaytarsa
      */
+    @Override
     public void send(String phone, String message) {
         if (!isConfigured()) {
             throw new IllegalStateException(

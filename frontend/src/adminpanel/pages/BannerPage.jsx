@@ -388,18 +388,24 @@ export default function BannerPage({ kind }) {
 
         <div className="uz-row mb-4">
           <div className="uz-col" style={{ maxWidth: 260 }}>
-            <MediaField label={t('ads.image')} value={form.imageMediaId}
+            {/* ⚠️ Reklama va premyera bir xil maydonga yuklanadi, lekin
+                ilovada TURLICHA ko'rsatiladi: reklama — keng karusel kadri,
+                premyera — tik 2:3 afisha (`PremiereRail`). Shuning uchun
+                o'lcham talabi ham ikki xil. */}
+            <MediaField label={t('ads.image')} spec={isAd ? 'banner' : 'premiereImage'}
+                        value={form.imageMediaId}
                         onChange={(id) => setForm({ ...form, imageMediaId: id })} />
           </div>
           {isAd ? (
             <div className="uz-col" style={{ maxWidth: 260 }}>
-              <MediaField label={t('ads.mobileImage')} value={form.mobileImageMediaId}
+              <MediaField label={t('ads.mobileImage')} spec="bannerMobile"
+                          value={form.mobileImageMediaId}
                           hint={t('ads.mobileHint')}
                           onChange={(id) => setForm({ ...form, mobileImageMediaId: id })} />
             </div>
           ) : (
             <div className="uz-col" style={{ maxWidth: 260 }}>
-              <MediaField label={t('pr.video')} type="VIDEO" value={form.videoMediaId}
+              <MediaField label={t('pr.video')} type="VIDEO" spec="premiereVideo" value={form.videoMediaId}
                           onChange={(id) => setForm({ ...form, videoMediaId: id })} />
             </div>
           )}

@@ -35,7 +35,8 @@
     "years": "{{count}} y.o.",
     "premium": "Premium",
     "free": "Free",
-    "ad": "Ad"
+    "ad": "Ad",
+    "more": "More"
   },
   "splash": {
     "subtitle": "A platform for creators"
@@ -87,6 +88,33 @@
     "otpCooldown": "Code already sent, please wait",
     "smsUnavailable": "SMS sign-in is not configured yet",
     "phoneSubtitle": "Enter your number to sign in or sign up",
+    "tabSignIn": "Sign in",
+    "tabSignUp": "Sign up",
+    "signInTitle": "Sign in to your account",
+    "signInSubtitle": "Enter your phone number and password",
+    "signUpTitle": "Create an account",
+    "signUpSubtitle": "We'll text a confirmation code to your number",
+    "signInAction": "SIGN IN",
+    "passwordPlaceholder": "Password",
+    "passwordConfirmPlaceholder": "Repeat password",
+    "forgotPassword": "Forgot password?",
+    "soon": "soon",
+    "setPasswordTitle": "Name and password",
+    "setPasswordSubtitle": "Enter your name and create a password (at least {{min}} characters)",
+    "finishSignUp": "SIGN UP",
+    "passwordTooShort": "Password is too short: at least 6 characters",
+    "passwordTooLong": "Password is too long",
+    "passwordMismatch": "Passwords don't match",
+    "phoneAlreadyRegistered": "This number is already registered. Sign in with your password.",
+    "phoneNotRegistered": "This number isn't registered. Sign up first.",
+    "invalidCredentials": "Wrong number or password",
+    "passwordNotSet": "This number has no password. Set one in the sign-up section.",
+    "accountLocked": "Too many attempts. Try again later.",
+    "verificationExpired": "Verification expired. Request a new code.",
+    "requestFailed": "Couldn't complete the request, try again shortly",
+    "namePlaceholder": "Full name",
+    "nameInvalid": "Enter your full name",
+    "googleNeedsDevBuild": "Google sign-in doesn't work in Expo Go — a dev build is required",
     "googleServerNotReady": "Google sign-in is not enabled on the server yet",
     "googleRejected": "Google account was rejected, please try again",
     "googleFailed": "Sign-in failed, please try again",
@@ -94,6 +122,7 @@
   },
   "home": {
     "todayPremieres": "Today's premieres",
+    "continueWatching": "Continue watching",
     "popularCreators": "Popular creators",
     "categories": "Categories",
     "castings": "Casting calls",
@@ -104,7 +133,8 @@
     "unlock": "Unlock",
     "castingCreators": "Casting talent",
     "feedUnavailableTitle": "Home feed unavailable",
-    "feedUnavailableBody": "The server does not provide home sections."
+    "feedUnavailableBody": "The server does not provide home sections.",
+    "categoryRowsError": "Sections did not load"
   },
   "casting": {
     "title": "Casting calls",
@@ -114,8 +144,8 @@
     "deadline": "Deadline"
   },
   "premiere": {
-    "title": "Premiere",
-    "subtitle": "Exclusive content hub",
+    "title": "Media",
+    "subtitle": "All content in one place",
     "tabsSeries": "Series",
     "tabsShows": "Shows",
     "tabsMovies": "Films",
@@ -124,7 +154,11 @@
     "tabsReels": "Reels series",
     "tabsClips": "Clips",
     "tabsStreams": "Streams",
-    "count": "{{count}} items"
+    "count": "{{count}} items",
+    "allOf": "All {{name}}",
+    "genre": "Genre",
+    "searchPlaceholder": "Search by title...",
+    "emptyByFilters": "Nothing matches the selected filters."
   },
   "profile": {
     "title": "Profile",
@@ -222,7 +256,10 @@
     "episodes": "Episodes",
     "season": "Season {{number}}",
     "episodesEmpty": "No episodes in this season yet",
-    "episodeCount": "{{count}} episodes"
+    "episodeCount": "{{count}} episodes",
+    "share": "Share",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied"
   },
   "contentType": {
     "SHORT_FILM": "Short film",

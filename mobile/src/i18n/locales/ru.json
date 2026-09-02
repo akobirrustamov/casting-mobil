@@ -35,7 +35,8 @@
     "years": "{{count}} лет",
     "premium": "Premium",
     "free": "Бесплатно",
-    "ad": "Реклама"
+    "ad": "Реклама",
+    "more": "Ещё"
   },
   "splash": {
     "subtitle": "Платформа для креаторов"
@@ -87,6 +88,33 @@
     "otpCooldown": "Код уже отправлен, подождите",
     "smsUnavailable": "Вход по SMS пока не настроен",
     "phoneSubtitle": "Введите номер, чтобы войти или зарегистрироваться",
+    "tabSignIn": "Вход",
+    "tabSignUp": "Регистрация",
+    "signInTitle": "Войдите в аккаунт",
+    "signInSubtitle": "Введите номер телефона и пароль",
+    "signUpTitle": "Создайте аккаунт",
+    "signUpSubtitle": "На номер придёт код подтверждения",
+    "signInAction": "ВОЙТИ",
+    "passwordPlaceholder": "Пароль",
+    "passwordConfirmPlaceholder": "Повторите пароль",
+    "forgotPassword": "Забыли пароль?",
+    "soon": "скоро",
+    "setPasswordTitle": "Имя и пароль",
+    "setPasswordSubtitle": "Укажите имя и придумайте пароль (минимум {{min}} символов)",
+    "finishSignUp": "ЗАРЕГИСТРИРОВАТЬСЯ",
+    "passwordTooShort": "Пароль слишком короткий: минимум 6 символов",
+    "passwordTooLong": "Пароль слишком длинный",
+    "passwordMismatch": "Пароли не совпадают",
+    "phoneAlreadyRegistered": "Этот номер уже зарегистрирован. Войдите с паролем.",
+    "phoneNotRegistered": "Этот номер не зарегистрирован. Сначала зарегистрируйтесь.",
+    "invalidCredentials": "Неверный номер или пароль",
+    "passwordNotSet": "У этого номера нет пароля. Задайте его в разделе регистрации.",
+    "accountLocked": "Слишком много попыток. Попробуйте позже.",
+    "verificationExpired": "Подтверждение истекло. Запросите код заново.",
+    "requestFailed": "Не удалось выполнить, попробуйте позже",
+    "namePlaceholder": "Имя и фамилия",
+    "nameInvalid": "Укажите имя полностью",
+    "googleNeedsDevBuild": "Вход через Google не работает в Expo Go — нужен dev build",
     "googleServerNotReady": "Вход через Google на сервере ещё не настроен",
     "googleRejected": "Google-аккаунт не принят, попробуйте ещё раз",
     "googleFailed": "Не удалось войти, попробуйте ещё раз",
@@ -94,6 +122,7 @@
   },
   "home": {
     "todayPremieres": "Сегодняшние премьеры",
+    "continueWatching": "Продолжить просмотр",
     "popularCreators": "Популярные креаторы",
     "categories": "Направления",
     "castings": "Кастинги",
@@ -104,7 +133,8 @@
     "unlock": "Открыть",
     "castingCreators": "Креаторы кастинга",
     "feedUnavailableTitle": "Главная не загрузилась",
-    "feedUnavailableBody": "Сервер не отдаёт блоки главной."
+    "feedUnavailableBody": "Сервер не отдаёт блоки главной.",
+    "categoryRowsError": "Разделы не загрузились"
   },
   "casting": {
     "title": "Кастинги",
@@ -114,8 +144,8 @@
     "deadline": "Срок"
   },
   "premiere": {
-    "title": "Премьера",
-    "subtitle": "Центр эксклюзивного контента",
+    "title": "Media",
+    "subtitle": "Весь контент в одном месте",
     "tabsSeries": "Сериалы",
     "tabsShows": "Шоу",
     "tabsMovies": "Фильмы",
@@ -124,7 +154,11 @@
     "tabsReels": "Reels-сериалы",
     "tabsClips": "Клипы",
     "tabsStreams": "Стримы",
-    "count": "{{count}} шт."
+    "count": "{{count}} шт.",
+    "allOf": "Все {{name}}",
+    "genre": "Жанр",
+    "searchPlaceholder": "Поиск по названию...",
+    "emptyByFilters": "По выбранным условиям контент не найден."
   },
   "profile": {
     "title": "Профиль",
@@ -222,7 +256,10 @@
     "episodes": "Серии",
     "season": "Сезон {{number}}",
     "episodesEmpty": "В этом сезоне пока нет серий",
-    "episodeCount": "{{count}} серии"
+    "episodeCount": "{{count}} серии",
+    "share": "Поделиться",
+    "copyLink": "Скопировать ссылку",
+    "linkCopied": "Ссылка скопирована"
   },
   "contentType": {
     "SHORT_FILM": "Короткий метр",

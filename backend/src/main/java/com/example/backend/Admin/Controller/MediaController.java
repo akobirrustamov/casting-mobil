@@ -9,6 +9,7 @@ import com.example.backend.Cms.Service.Video.VideoSystemHealth;
 import com.example.backend.Cms.Enums.VideoProcessingStatus;
 import com.example.backend.Cms.Enums.MediaStatus;
 import com.example.backend.Cms.Enums.MediaType;
+import com.example.backend.Entity.User;
 import com.example.backend.Cms.Repository.MediaAssetRepo;
 import com.example.backend.Cms.Service.AccessService;
 import com.example.backend.Cms.Service.MediaUsageService;
@@ -71,6 +72,20 @@ public class MediaController {
     private final AccessService accessService;
     private final MediaUsageService mediaUsageService;
 
+    /** Panelda oldindan ko'rish uchun chipta — {@code /preview} ga qarang. */
+    private final com.example.backend.Cms.Service.Video.PlaybackTicketService ticketService;
+
+    /**
+     * S3 imzolangan havola — faqat {@code app.storage.provider=s3} da.
+     *
+     * ⚠️ {@code Optional}: lokal saqlashda bunday bin YO'Q va uni
+     * majburiy qilish butun kontekstni ko'tarmasdi.
+     */
+    private final java.util.Optional<com.example.backend.Cms.Service.Video.SignedUrlProvider> signedUrls;
+
+    /** Chiptali HLS havolasi — moslashuvchan oqim uchun. */
+    private final com.example.backend.Cms.Service.Video.PlaybackUrlService playbackUrlService;
+
     // ------------------------------------------------------------ ochiq qism
 
     /**
@@ -83,8 +98,9 @@ public class MediaController {
      * sharti bilan ikkita alohida handler: har biri o'z turini aniq e'lon qiladi.
      */
     @GetMapping("/api/v1/app/media/{id}/raw")
-    public ResponseEntity<Resource> raw(@PathVariable Long id) {
-        MediaAsset asset = readable(id);
+    public ResponseEntity<Resource> raw(@PathVariable Long id,
+                                        @RequestParam(value = "t", required = false) String ticket) {
+        MediaAsset asset = readable(id, ticket);
         Resource resource = storageService.load(asset.getStorageKey());
 
         return ResponseEntity.ok()
@@ -105,9 +121,14 @@ public class MediaController {
      */
     @GetMapping(value = "/api/v1/app/media/{id}/raw", headers = "Range")
     public ResponseEntity<ResourceRegion> rawRange(@PathVariable Long id,
-                                                   @RequestHeader HttpHeaders headers)
+                                                   @RequestHeader HttpHeaders headers,
+                                                   @RequestParam(value = "t", required = false) String ticket)
             throws IOException {
-        MediaAsset asset = readable(id);
+        // ⚠️ Chipta bu yerda ham SHART. Pleyer birinchi so'rovni
+        // Range'siz yuboradi, keyingi hammasini Range bilan — ya'ni
+        // faqat yuqoridagi metodga qo'shilsa, video ochilib darrov
+        // to'xtardi.
+        MediaAsset asset = readable(id, ticket);
         Resource resource = storageService.load(asset.getStorageKey());
 
         List<HttpRange> ranges = headers.getRange();
@@ -131,11 +152,45 @@ public class MediaController {
 
     /** Media yozuvi + entitlement tekshiruvi. */
     private MediaAsset readable(Long id) {
+        return readable(id, null);
+    }
+
+    /**
+     * Media yozuvi + entitlement tekshiruvi.
+     *
+     * <h2>⚠️ Nega chipta URL'da, sarlavhada emas</h2>
+     * Brauzerning {@code <video src>} elementi hech qanday
+     * {@code Authorization} sarlavhasi YUBORMAYDI — u oddiy GET
+     * qiladi. Ya'ni panel xodimi o'zi yuklagan videoni ko'ra
+     * olmasdi: token bormi-yo'qmi, element uni uzatmaydi.
+     *
+     * Shu sababli {@code HlsController} dagi mexanizm qayta
+     * ishlatiladi: chipta KIMLIGINI aytadi, huquqni esa har so'rovda
+     * {@code AccessService} beradi. Chipta bitta media'ga bog'langan
+     * va muddati cheklangan.
+     *
+     * ⚠️ Chipta ixtiyoriy: token bilan keladigan so'rovlar (panel
+     * ro'yxati, mobil ilova) avvalgidek ishlaydi.
+     */
+    private MediaAsset readable(Long id, String ticket) {
         MediaAsset asset = mediaAssetRepo.findById(id)
                 .orElseThrow(() -> BusinessException.notFound("Media", id));
 
+        User viewer = CurrentUser.getOrNull();
+
+        // Chipta bo'lsa — egasi kim ekanini o'shandan olamiz.
+        if (viewer == null && ticket != null && !ticket.isBlank()) {
+            try {
+                viewer = ticketService.holderOf(ticket, id);
+            } catch (IllegalArgumentException e) {
+                // Yaroqsiz chipta ham "topilmadi" — media bor-yo'qligi
+                // oshkor qilinmaydi.
+                throw BusinessException.notFound("Media", id);
+            }
+        }
+
         // Ruxsat yo'q bo'lsa "topilmadi" - fayl bor-yo'qligini ham oshkor qilmaymiz.
-        if (!accessService.canReadMedia(CurrentUser.getOrNull(), asset)) {
+        if (!accessService.canReadMedia(viewer, asset)) {
             throw BusinessException.notFound("Media", id);
         }
         return asset;
@@ -326,6 +381,109 @@ public class MediaController {
 
         asset.setStatus(MediaStatus.READY);
         return ResponseEntity.ok(MediaDto.from(mediaAssetRepo.save(asset)));
+    }
+
+    /**
+     * Panelda videoni OLDINDAN KO'RISH uchun havola.
+     *
+     * <h2>⚠️ Nima uchun alohida endpoint kerak bo'ldi</h2>
+     * Xodim video yuklardi, lekin uni HECH QACHON ko'ra olmasdi —
+     * panelda pleyer umuman yo'q edi. Ya'ni afisha to'g'ri
+     * biriktirilganini, video buzuq emasligini yoki dublyaj mos
+     * kelishini tekshirishning yagona yo'li — kontentni nashr qilib,
+     * ilovadan ochish edi.
+     *
+     * <h2>Nega chipta</h2>
+     * Brauzerning {@code <video>} elementi {@code Authorization}
+     * sarlavhasini yubormaydi. Chipta esa manzilning o'zida keladi —
+     * {@code HlsController} da xuddi shu sabab bilan shunday qilingan.
+     *
+     * ⚠️ Chipta HUQUQ BERMAYDI, faqat kimligini aytadi. Har so'rovda
+     * {@code AccessService} qayta tekshiradi — ya'ni xodim paneldan
+     * chiqarilsa havola o'sha zahoti ishlamay qoladi.
+     *
+     * ⚠️ Bu HLS emas, ASL fayl. Panel uchun ataylab: qo'shimcha
+     * kutubxona kerak emas va har brauzerda ishlaydi. Katta fayl
+     * to'liq tortilmaydi — pleyer {@code Range} bilan faqat kerakli
+     * bo'lakni oladi.
+     */
+    @GetMapping("/api/v1/app/admin/media/{id}/preview")
+    public ResponseEntity<PreviewDto> preview(@PathVariable Long id) {
+        require(Permission.CONTENT_VIEW);
+
+        MediaAsset asset = mediaAssetRepo.findById(id)
+                .orElseThrow(() -> BusinessException.notFound("Media", id));
+
+        User actor = CurrentUser.get();
+        if (!accessService.canReadMedia(actor, asset)) {
+            throw BusinessException.notFound("Media", id);
+        }
+
+        return ResponseEntity.ok(PreviewDto.builder()
+                .mediaId(id)
+                // ⚠️ HLS BIRINCHI o'rinda: u sifatni tomoshabin
+                // internetiga qarab o'zi tanlaydi (1080 / 720 / 480).
+                //
+                // Asl fayl esa BITTA sifat — 4K manbada admin
+                // sekin internetda uni umuman ocholmasdi.
+                //
+                // `null` bo'lsa transcoding hali tugamagan yoki
+                // yiqilgan — klient asl faylga qaytadi.
+                .hlsUrl(playbackUrlService.hlsUrlFor(actor, asset))
+                .url(previewUrl(actor, asset))
+                .type(asset.getType())
+                .mimeType(asset.getMimeType())
+                .build());
+    }
+
+    /**
+     * Oldindan ko'rish manzili.
+     *
+     * <h2>⚠️ S3 da fayl SERVER ORQALI berilmaydi</h2>
+     * Avval bu yerda chiptali {@code /raw} qaytarilardi va u kichik
+     * fayllarda ishlagandek ko'rinardi. 591 MB lik 4K manbada esa
+     * o'lchab ko'rildi:
+     *
+     *   boshidan 256 KB  →  60 soniyadan ortiq
+     *   o'rtasidan seek  →  umuman ulgurmadi
+     *
+     * Sababi: bo'lak so'ralganda ham ob'ekt S3 dan SERVERGA tortiladi
+     * va shundan keyin brauzerga uzatiladi. Ya'ni har seek — yangi
+     * yuklab olish.
+     *
+     * Imzolangan havola bilan brauzer S3 ga TO'G'RIDAN-TO'G'RI murojaat
+     * qiladi va {@code Range} ni ombor o'zi bajaradi. Bu HLS
+     * segmentlari uchun allaqachon shunday ishlaydi.
+     *
+     * ⚠️ Lokal saqlashda imzolash yo'q — o'shanda chiptali
+     * {@code /raw} qoladi. U yerda fayl diskda, ya'ni sekinlik yo'q.
+     */
+    private String previewUrl(User actor, MediaAsset asset) {
+        if (signedUrls.isPresent() && signedUrls.get().isAvailable()) {
+            return signedUrls.get().sign(asset.getStorageKey());
+        }
+
+        return "/api/v1/app/media/" + asset.getId() + "/raw?t="
+                + org.springframework.web.util.UriUtils.encode(
+                        ticketService.issue(actor, asset.getId()),
+                        java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    @lombok.Data
+    @lombok.Builder
+    public static class PreviewDto {
+        private Long mediaId;
+        /**
+         * Moslashuvchan oqim — sifat internetga qarab tanlanadi.
+         *
+         * ⚠️ Transcoding tugamagan bo'lsa {@code null}. Klient
+         * o'shanda {@code url} ga (asl fayl) qaytadi.
+         */
+        private String hlsUrl;
+        /** Chipta bilan to'liq manzil — to'g'ridan-to'g'ri `<video src>` ga. */
+        private String url;
+        private MediaType type;
+        private String mimeType;
     }
 
     @PostMapping("/api/v1/app/admin/media")

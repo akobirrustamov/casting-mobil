@@ -305,6 +305,63 @@ export const GUIDE = [
           ],
         },
       },
+      /*
+       * ⚠️ Bu band raqamlarni TAKRORLAMAYDI, ularni tushuntiradi.
+       * Aniq o'lchamlar `mediaSpecs.js` da va har bir maydonning
+       * YONIDA turadi — u yerda ular kerak bo'lgan onda ko'rinadi.
+       * Bu yerda ikkinchi ro'yxat tutilsa, ikkitasi bir-biridan
+       * ajralib ketardi va qaysi biri to'g'ri ekani bilinmasdi.
+       */
+      {
+        id: 'media-sizes',
+        perm: null,
+        icon: '📐',
+        title: {
+          uz: "Rasm va video o'lchamlari",
+          ru: 'Размеры изображений и видео',
+          en: 'Image and video sizes',
+        },
+        what: {
+          uz: "Har bir maydon tagida tavsiya etilgan o'lcham yozilgan. Uni bajarish shart emas, lekin bajarilmasa rasm telefonda qirqiladi.",
+          ru: 'Под каждым полем написан рекомендуемый размер. Он не обязателен, но при несоблюдении изображение обрежется на телефоне.',
+          en: 'Each field shows a recommended size. It is not enforced, but ignoring it means the image gets cropped on the phone.',
+        },
+        steps: {
+          uz: [
+            "Maydon tagidagi 📐 yozuvga qarang: «1200×1800 px · 2:3 · JPG/PNG/WebP · ≤2 MB».",
+            "⚠️ Server rasmni QAYTA O'LCHAMAYDI — fayl qanday yuklansa, telefonga shundayligicha boradi.",
+            "Ilova rasmni ramkaga sig'dirmaydi, ortiqchasini QIRQADI. Nisbat noto'g'ri bo'lsa yuzning chekkasi kesiladi.",
+            "Afisha — 1200×1800 (2:3). BITTA fayl hamma joy uchun: qator, katalog va yopiq kontent ekranida ramka bir xil 2:3, vertikal (Reels) kontentda ham SHU o'lcham.",
+            "Reklama banneri — 1280×720 (16:9). Kadr har qanday telefonda aynan 16:9, ya'ni fayl to'liq ko'rinadi. Pastki chap burchakni matn va tugma yopadi.",
+            "⚠️ Premyera rasmi banner EMAS: u tik afisha (2:3) bo'lib chiqadi.",
+            "Qism kadri — 720×480 (3:2), 16:9 emas: keng kadrning cheti qirqiladi.",
+            "Ijodkor surati — 400×400 (1:1), dumaloq qirqiladi, yuz markazda.",
+            "Video — 1920×1080 yoki vertikal 1080×1920, MP4 (H.264). 1080p dan kattasi sifat qo'shmaydi.",
+          ],
+          ru: [
+            'Смотрите строку 📐 под полем: «1200×1800 px · 2:3 · JPG/PNG/WebP · ≤2 MB».',
+            '⚠️ Сервер НЕ пережимает изображение — файл уходит на телефон как есть.',
+            'Приложение не вписывает картинку в рамку, а ОБРЕЗАЕТ лишнее. При неверной пропорции срежется край лица.',
+            'Афиша — 1200×1800 (2:3). ОДИН файл на все места: в ряду, каталоге и на экране закрытого контента рамка одна и та же — 2:3, у вертикального (Reels) контента ТОТ ЖЕ размер.',
+            'Рекламный баннер — 1280×720 (16:9). Кадр ровно 16:9 на любом телефоне, файл виден целиком. Левый нижний угол закрывают текст и кнопка.',
+            '⚠️ Изображение премьеры — НЕ баннер: оно показывается вертикальной афишей (2:3).',
+            'Кадр серии — 720×480 (3:2), а не 16:9: у широкого кадра обрежутся края.',
+            'Фото креатора — 400×400 (1:1), обрезается по кругу, лицо по центру.',
+            'Видео — 1920×1080 или вертикальное 1080×1920, MP4 (H.264). Больше 1080p качества не добавит.',
+          ],
+          en: [
+            'Look at the 📐 line under the field: “1200×1800 px · 2:3 · JPG/PNG/WebP · ≤2 MB”.',
+            '⚠️ The server does NOT resize images — the file reaches the phone exactly as uploaded.',
+            'The app does not fit the image into the frame, it CROPS the excess. A wrong ratio cuts off the edge of a face.',
+            'Poster — 1200×1800 (2:3). ONE file everywhere: rails, catalogue and the locked-content screen all use the same 2:3 frame, vertical (Reels) content included.',
+            'Ad banner — 1280×720 (16:9). The frame is exactly 16:9 on every phone, so the file is shown in full. The bottom-left corner is covered by text and the button.',
+            '⚠️ A premiere image is NOT a banner: it is shown as an upright 2:3 poster.',
+            'Episode still — 720×480 (3:2), not 16:9: a wide frame loses its edges.',
+            'Creator photo — 400×400 (1:1), cropped to a circle, face centred.',
+            'Video — 1920×1080 or vertical 1080×1920, MP4 (H.264). Above 1080p adds no quality.',
+          ],
+        },
+      },
     ],
   },
 

@@ -2,13 +2,22 @@ import { useEffect, useState } from 'react';
 import { adminApi, mediaUrl } from '../api/client';
 import { usePanelI18n } from '../i18n';
 import MediaPicker from './MediaPicker';
+import MediaSpec from './MediaSpec';
 
 /**
  * Bitta rasm maydoni: oldindan ko'rish + tanlash/almashtirish/olib tashlash.
+ *
+ * `spec` - `mediaSpecs.js` dagi kalit. Berilsa, maydon tagida tavsiya
+ * etilgan o'lcham chiqadi va u fayl tanlash oynasiga ham uzatiladi.
+ *
+ * ⚠️ Nega ikkala joyda. Maydon yonidagi yozuv adminni tayyorlaydi, lekin
+ * u faylni brauzer oynasida tanlaydi - ya'ni panel ko'rinmay qoladi.
+ * Oynadagi takror yozuv aynan tanlash ONIDA ko'z oldida turadi.
  */
-export default function MediaField({ label, value, onChange, hint, type = 'IMAGE' }) {
+export default function MediaField({ label, value, onChange, hint, spec, type = 'IMAGE' }) {
   const { t } = usePanelI18n();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   /**
    * Tanlangan video pleyerda ochiladimi.
@@ -89,6 +98,18 @@ export default function MediaField({ label, value, onChange, hint, type = 'IMAGE
         >
           {value ? t('media.change') : t('media.upload')}
         </button>
+        {/* ⚠️ Faqat VIDEO uchun. Rasm allaqachon eskizda ko'rinadi —
+            unga tugma qo'yish ortiqcha bosqich bo'lardi. */}
+        {value && type === 'VIDEO' && (
+          <button
+            type="button"
+            className="uz-btn uz-btn-ghost"
+            style={{ minHeight: 36, fontSize: 13 }}
+            onClick={() => setPreviewOpen(true)}
+          >
+            {t('media.previewOpen')}
+          </button>
+        )}
         {value && (
           <button
             type="button"
@@ -123,11 +144,21 @@ export default function MediaField({ label, value, onChange, hint, type = 'IMAGE
           {transcoding.error ? ` — ${transcoding.error}` : ''}
         </p>
       )}
+      {/* Tavsiya etilgan o'lcham — MAYDONNING O'ZIDA.
+          ⚠️ Ilgari u faqat fayl tanlash oynasida bor edi, ya'ni admin
+          uni «Yuklash» tugmasini bosgandan KEYIN ko'rardi. Rasmni esa
+          u bosishdan oldin, boshqa dasturda tayyorlaydi — o'lcham
+          kechikkanda kerak bo'lgan fayl allaqachon noto'g'ri edi.
+          `GalleryField` da bu yozuv bor edi, bitta rasm maydonida
+          yo'q: aynan shuning uchun farq ko'zga tashlanmasdi. */}
+      {spec && <MediaSpec name={spec} />}
+
       {hint && <p className="uz-muted mt-1" style={{ fontSize: 11 }}>{hint}</p>}
 
       <MediaPicker
         open={pickerOpen}
         type={type}
+        spec={spec}
         onClose={() => setPickerOpen(false)}
         onSelect={onChange}
       />

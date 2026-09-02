@@ -1,0 +1,248 @@
+/* ==========================================================================
+   UZCASTING — TOMOSHABIN yuzasi
+   --------------------------------------------------------------------------
+   ⚠️ RANGLAR FAQAT SHU YERDA. Komponentlarga hex yozilmaydi.
+
+   Buyurtmachi talabi: «Exact color aniqlanmagan bo'lsa kodning hamma
+   joyiga hex rang tarqatib yuborma.» `DesignTokensTest` buni panel
+   uchun ham, shu yuza uchun ham qo'riqlaydi.
+
+   --------------------------------------------------------------------------
+   GAMMA: MOBIL ILOVANIKI
+
+   ⚠️ Bu ADMIN PANEL palitrasi EMAS (`adminpanel/theme/panel.css` —
+   to'q ko'k). Sabab: bu yuzani ayni o'sha odam ko'radi, kim mobil
+   ilovani ochadi. Ikki xil gamma bitta mahsulotni ikkiga bo'lardi.
+
+   Qiymatlar `mobile/src/theme/tokens.ts` dan olingan: ТЗ V2 (18-bet)
+   «PREMIUM DESIGN SYSTEM» va buyurtmachining 26.08.2026 dagi
+   referensi.
+
+   ⚠️ Palitra o'zgarsa IKKALA fayl ham tuzatiladi — mobil tokenlar va
+   shu blok. Ular bitta gammaning ikki ifodasi.
+   ========================================================================== */
+
+.uz-viewer {
+    /* ------------------------------------------------------- fon va yuzalar */
+    --v-ink:       #05050A;
+    --v-surface:   #0D0D17;
+    --v-surface-2: #15152A;
+    --v-border:    #23233C;
+
+    /* ---------------------------------- brend shkalasi: ko'k → siyoh → magenta */
+    --v-purple:  #7C3AED;
+    --v-violet:  #A855F7;
+    --v-magenta: #EC4899;
+
+    /* ------------------------------------------------------ matn va holatlar */
+    --v-text:     #FFFFFF;
+    --v-muted:    #9A9AB8;
+    --v-danger:   #F87171;
+
+    /* Brend rangi ustidagi matn — kontrast uchun. */
+    --v-on-brand: #FFFFFF;
+
+    /* Yarim shaffof qatlamlar. Alohida token: hex'ga alfa qo'shish
+       komponentlarda rang yozish bilan barobar bo'lardi. */
+    --v-overlay:      rgba(255, 255, 255, 0.08);
+    --v-overlay-soft: rgba(124, 58, 237, 0.18);
+
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+    background: var(--v-ink);
+    color: var(--v-text);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+.uz-viewer * { box-sizing: border-box; }
+
+/* ------------------------------------------------------------------ sarlavha */
+
+.uz-viewer-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    max-width: 960px;
+    margin: 0 auto 16px;
+}
+
+.uz-viewer-title {
+    font-size: 20px;
+    font-weight: 650;
+    margin: 0 0 12px;
+}
+
+/* -------------------------------------------------------------------- pleyer */
+
+.uz-viewer-player {
+    max-width: 960px;
+    margin: 0 auto 24px;
+}
+
+/* ⚠️ `aspect-ratio` YO'Q: kadr tik ham bo'lishi mumkin (Reels
+   formatidagi kontent). Qat'iy 16:9 ramka tik videoni qora
+   maydonning o'rtasidagi tor tasmaga aylantirardi. Balandlikni
+   videoning o'zi belgilaydi, `max-height` esa uni ekrandan
+   chiqib ketishdan saqlaydi. */
+.uz-viewer-video {
+    width: 100%;
+    max-height: 70vh;
+    display: block;
+    border-radius: 12px;
+    background: var(--v-surface);
+}
+
+/* ⚠️ TIK kadr: balandlik yetakchi, kenglik unga moslashadi.
+   `width: 100%` tik videoni ekran bo'yi keng qora maydonning
+   o'rtasidagi tor tasmaga aylantirardi — kadrning o'zi esa kichkina
+   qolardi. Bu platformada Reels formatidagi kontent bor. */
+.uz-viewer-video-vertical {
+    width: auto;
+    height: 70vh;
+    max-height: 70vh;
+    margin: 0 auto;
+}
+
+.uz-viewer-resumed {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: var(--v-muted);
+}
+
+/* ------------------------------------------------------------ sifat tanlash */
+
+.uz-viewer-quality {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 13px;
+}
+
+.uz-viewer .uz-chip {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--v-border);
+    background: var(--v-surface);
+    color: var(--v-muted);
+    cursor: pointer;
+    font: inherit;
+}
+
+.uz-viewer .uz-chip:hover { color: var(--v-text); }
+
+.uz-viewer .uz-chip-active {
+    border-color: var(--v-purple);
+    background: var(--v-overlay-soft);
+    color: var(--v-text);
+}
+
+.uz-viewer .uz-chip:focus-visible,
+.uz-viewer .uz-btn:focus-visible,
+.uz-viewer input:focus-visible,
+.uz-viewer select:focus-visible {
+    outline: 2px solid var(--v-violet);
+    outline-offset: 2px;
+}
+
+/* -------------------------------------------------------------------- kirish */
+
+.uz-viewer-signin {
+    max-width: 360px;
+    margin: 48px auto 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 24px;
+    border: 1px solid var(--v-border);
+    border-radius: 16px;
+    background: var(--v-surface);
+}
+
+.uz-viewer .uz-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--v-muted);
+}
+
+.uz-viewer .uz-field input {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--v-border);
+    background: var(--v-surface-2);
+    color: var(--v-text);
+    font: inherit;
+}
+
+.uz-viewer .uz-select {
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--v-border);
+    background: var(--v-surface);
+    color: var(--v-text);
+    font: inherit;
+}
+
+/* ------------------------------------------------------------------ tugmalar */
+
+.uz-viewer .uz-btn {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+}
+
+.uz-viewer .uz-btn-primary {
+    background: var(--v-purple);
+    color: var(--v-on-brand);
+}
+
+.uz-viewer .uz-btn-primary:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.uz-viewer .uz-btn-ghost {
+    background: var(--v-overlay);
+    color: var(--v-text);
+    border-color: var(--v-border);
+}
+
+/* ------------------------------------------------------------ holat va xato */
+
+.uz-viewer-state {
+    max-width: 480px;
+    margin: 64px auto;
+    text-align: center;
+    color: var(--v-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.uz-viewer-denied {
+    margin: 0;
+    font-size: 16px;
+    color: var(--v-text);
+}
+
+.uz-viewer .uz-muted { color: var(--v-muted); }
+
+.uz-viewer .uz-alert {
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.uz-viewer .uz-alert-danger {
+    background: var(--v-overlay);
+    border: 1px solid var(--v-danger);
+    color: var(--v-danger);
+}

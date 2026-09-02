@@ -2,14 +2,13 @@ import React, { useEffect, useState } from 'react';
 import Header from "../header/Header";
 import "react-responsive-modal/styles.css";
 import ApiCall, { baseUrl } from '../../config/index';
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Modal } from "react-responsive-modal";
 import { FiArrowLeft, FiMail, FiPhone, FiInstagram, FiFacebook, FiX } from 'react-icons/fi';
 import { FaTelegramPlane } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
 function Appeal(props) {
-    const { userId } = useParams();
     const location = useLocation();
     const castingId = location.state?.castingId;
     const navigate = useNavigate();

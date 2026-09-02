@@ -1,6 +1,6 @@
 import { AxiosError, AxiosHeaders } from 'axios';
 
-import { googleErrorKey } from '../otpErrors';
+import { googleErrorKey } from '../authErrors';
 
 /**
  * Ответ сервера на обмен Google ID-токена → что видит человек.

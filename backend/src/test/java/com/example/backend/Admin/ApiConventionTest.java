@@ -270,7 +270,15 @@ class ApiConventionTest {
                 Map.entry("devices",
                         "BITTA foydalanuvchi qurilmalari. Soni "
                                 + "`account.device.limit` sozlamasi bilan "
-                                + "chegaralangan (ТЗ bo'yicha 2 ta)."));
+                                + "chegaralangan (ТЗ bo'yicha 2 ta)."),
+                Map.entry("categories",
+                        "Ilovaning KATALOG MENYUSI: faol kategoriyalar, admin "
+                                + "bergan tartibda. Klient bosh sahifani chizish "
+                                + "uchun BARCHA qatorni bilishi kerak - menyuni "
+                                + "sahifalash uni yarim chizilgan holda "
+                                + "qoldirardi. Kartochkalarning o'zi bu yerda "
+                                + "yo'q: har bir kategoriya alohida, sahifalab "
+                                + "so'raladi (`/catalog/categories/{id}`)."));
 
         /**
          * ⚠️ Bu test asosan KELAJAK uchun.

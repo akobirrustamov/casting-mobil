@@ -82,6 +82,15 @@ public class SecurityConfig {
                         // Ikkalasi ham anonim: send bosqichida hisob hali yo'q bo'lishi mumkin.
                         .requestMatchers(HttpMethod.POST, "/api/v1/app/auth/otp/send").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/app/auth/otp/verify").permitAll()
+                        // Parolli ro'yxatdan o'tish (raqam -> SMS kod -> parol) va
+                        // parol bilan kirish. Hammasi anonim: token aynan shu
+                        // yerda tug'iladi. Qo'pol kuchdan himoya controller
+                        // ostidagi servisda - LoginAttemptService va OTP
+                        // urinishlar chegarasi.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/app/auth/register/start").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/app/auth/register/confirm").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/app/auth/register/complete").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/app/auth/login").permitAll()
                         // Admin panelga kirish. Faqat LOGIN ochiq - /auth/me token talab qiladi.
                         // Rol tekshiruvi controller ichida: USER admin panelga kira olmaydi.
                         .requestMatchers(HttpMethod.POST, "/api/v1/app/admin/auth/login").permitAll()
@@ -146,6 +155,14 @@ public class SecurityConfig {
                         // Token yuborilsa hisobga olinadi: faol obunasi
                         // borlarga reklama qaytarilmaydi.
                         .requestMatchers(HttpMethod.GET, "/api/v1/app/home").permitAll()
+                        // Katalog kategoriyalari («Drama» qatori va shu kabilar).
+                        // Bosh sahifa bilan bir xil sabab: mehmon ilovada nima
+                        // borligini ko'ra olishi kerak. Video havolasi bu yerda
+                        // umuman yo'q — u faqat /watch dan chiqadi.
+                        //
+                        // Token yuborilsa hisobga olinadi: undan foydalanuvchi
+                        // tanlagan til olinadi.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/app/catalog/**").permitAll()
                         // ⚠️ Bot foydalanuvchisi anketa rasmini kirmasdan yuklaydi.
                         // Yopilsa Telegram bot oqimi ishlamay qoladi.
                         .requestMatchers(HttpMethod.POST, "/api/v1/file/upload").permitAll()

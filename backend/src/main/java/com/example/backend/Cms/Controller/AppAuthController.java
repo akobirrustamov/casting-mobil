@@ -1,5 +1,10 @@
 package com.example.backend.Cms.Controller;
 
+import com.example.backend.Cms.Dto.AppLoginRequest;
+import com.example.backend.Cms.Dto.RegisterCompleteRequest;
+import com.example.backend.Cms.Dto.RegisterConfirmRequest;
+import com.example.backend.Cms.Dto.RegisterStartRequest;
+import com.example.backend.Cms.Service.AppAccountService;
 import com.example.backend.DTO.OtpSendDTO;
 import com.example.backend.DTO.OtpVerifyDTO;
 import com.example.backend.DTO.RefreshRequestDTO;
@@ -10,6 +15,7 @@ import com.example.backend.Services.AuthService.AuthService;
 import com.example.backend.Services.AuthService.RefreshTokenService;
 import com.example.backend.exceptions.BusinessException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
@@ -23,7 +29,19 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Mobil ilova uchun SMS-kod bilan kirish.
+ * Mobil ilovaning kirish va ro'yxatdan o'tish endpointlari.
+ *
+ * <h2>Ikki bo'lim, ikki yo'l</h2>
+ * <ul>
+ *   <li><b>Ro'yxatdan o'tish</b> — {@code /register/start} (raqam va SMS),
+ *       {@code /register/confirm} (kod), {@code /register/complete}
+ *       (parol va uning takrori). SMS bu yerda faqat raqam
+ *       EGASINI tasdiqlaydi.</li>
+ *   <li><b>Kirish</b> — {@code /login}: telefon + parol, SMSsiz.</li>
+ * </ul>
+ *
+ * Eski {@code /otp/send} va {@code /otp/verify} (kod bilan bir qadamda
+ * kirish) o'z joyida qoldi — ular sindirilmaydi.
  *
  * <h2>⚠️ Nega ESKI kontrollerdan ko'chirildi</h2>
  * Bu ikki endpoint dastlab {@code /api/v1/auth/otp/**} da,
@@ -48,6 +66,7 @@ import java.util.UUID;
 public class AppAuthController {
 
     private final AuthService service;
+    private final AppAccountService accountService;
     private final RefreshTokenService refreshTokenService;
     private final JwtService jwtService;
     private final UserRepo userRepo;
@@ -73,6 +92,62 @@ public class AppAuthController {
     @PostMapping(value = "/otp/verify", consumes = "application/json")
     public HttpEntity<?> verifyOtp(@RequestBody OtpVerifyDTO dto) {
         return service.verifyOtp(dto.getPhone(), dto.getCode());
+    }
+
+    /**
+     * Ro'yxatdan o'tish, 1-qadam: raqamga SMS kod.
+     *
+     * <h2>⚠️ Nega bu {@code /otp/send} dan alohida</h2>
+     * {@code /otp/send} har qanday raqamga kod yuboradi — u kirish ham,
+     * ro'yxatdan o'tish ham bo'lgan oqim uchun yozilgan. Endi bo'limlar
+     * ikkita: band raqamga «ro'yxatdan o'tish» yo'lida SMS yuborish
+     * noto'g'ri bo'lardi, chunki javob baribir «bu raqam bor» bo'ladi —
+     * ilova odamni «kirish» bo'limiga qaytaradi.
+     *
+     * Xato: {@code 409 PHONE_ALREADY_REGISTERED}.
+     */
+    @PostMapping(value = "/register/start", consumes = "application/json")
+    public ResponseEntity<Map<String, Object>> registerStart(@Valid @RequestBody RegisterStartRequest dto) {
+        int expiresIn = accountService.startRegistration(dto.getPhone());
+        return ResponseEntity.ok(Map.of("sent", true, "expiresInSeconds", expiresIn));
+    }
+
+    /**
+     * Ro'yxatdan o'tish, 2-qadam: kodni tekshirish.
+     *
+     * ⚠️ Token BERILMAYDI va hisob YARATILMAYDI — odam hali parol
+     * qo'ymagan. Javobdagi muddat ichida 3-qadamga o'tish kerak.
+     */
+    @PostMapping(value = "/register/confirm", consumes = "application/json")
+    public ResponseEntity<Map<String, Object>> registerConfirm(@Valid @RequestBody RegisterConfirmRequest dto) {
+        int expiresIn = accountService.confirmRegistration(dto.getPhone(), dto.getCode());
+        return ResponseEntity.ok(Map.of("verified", true, "expiresInSeconds", expiresIn));
+    }
+
+    /**
+     * Ro'yxatdan o'tish, 3-qadam: ism, parol va uning takrori.
+     *
+     * Muvaffaqiyatda hisob yaratiladi va sessiya beriladi — odam
+     * qaytadan kirmaydi, to'g'ri bosh sahifaga o'tadi.
+     */
+    @PostMapping(value = "/register/complete", consumes = "application/json")
+    public ResponseEntity<Map<String, Object>> registerComplete(@Valid @RequestBody RegisterCompleteRequest dto,
+                                                                HttpServletRequest request) {
+        return ResponseEntity.ok(accountService.completeRegistration(
+                dto.getPhone(), dto.getName(), dto.getPassword(), dto.getPasswordConfirm(), request));
+    }
+
+    /**
+     * Kirish: telefon + parol.
+     *
+     * Eski {@code /api/v1/auth/login} ishlatilmaydi: u MUZLATILGAN
+     * makonda, refresh tokenni faqat {@code rememberMe} bilan beradi va
+     * javob shakli boshqacha.
+     */
+    @PostMapping(value = "/login", consumes = "application/json")
+    public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody AppLoginRequest dto,
+                                                     HttpServletRequest request) {
+        return ResponseEntity.ok(accountService.login(dto.getPhone(), dto.getPassword(), request));
     }
 
     /**

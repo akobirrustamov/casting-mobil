@@ -104,6 +104,25 @@ function normalizeError(error) {
       errors: data?.errors || [],
     };
   }
+  // ⚠️ Omborga to'g'ridan-to'g'ri yuborishdagi uzilish — ALOHIDA hol.
+  //
+  // Bu yerda umumiy «Server bilan aloqa yo'q» xabari CHALG'ITADI:
+  // server bilan aloqa BOR, imzoni u hozirgina berdi. Uzilgani —
+  // ombor, va eng ehtimolli sabab bucketda CORS sozlanmagani.
+  //
+  // Xabar `uploadChunked` da yasaladi, chunki kontekst faqat o'sha
+  // yerda ma'lum. Bu yerda uni saqlab qolamiz — ilgari u shu qatorda
+  // jimgina yo'qolardi va foydalanuvchi internetini tekshirib
+  // o'tirardi.
+  if (error.storageUnreachable) {
+    return {
+      status: 0,
+      code: 'STORAGE_UNREACHABLE',
+      message: error.message,
+      errors: [],
+    };
+  }
+
   return {
     status: 0,
     code: 'NETWORK_ERROR',
@@ -210,6 +229,18 @@ const COMPLETE_TIMEOUT_MS = 300000;
 
 /** Bitta bo'lak necha marta qayta urinadi. */
 const CHUNK_RETRIES = 3;
+
+/**
+ * Omborga to'g'ridan-to'g'ri yuborish uzilganda ko'rsatiladigan xabar.
+ *
+ * ⚠️ Sabab TAXMIN qilib aytiladi, da'vo qilinmaydi: brauzer CORS
+ * blokini ham, haqiqiy uzilishni ham bir xil `TypeError` bilan beradi.
+ * Lekin birinchisi ancha ehtimolliroq va uni tekshirish oson —
+ * shuning uchun aynan u ko'rsatiladi.
+ */
+const STORAGE_UNREACHABLE = "Ombor javob bermadi. Ko'p hollarda sabab — "
+  + "bucketda CORS sozlanmagani (`ExposeHeaders: ETag` bilan). "
+  + "Internet uzilgan bo'lishi ham mumkin.";
 
 /**
  * Fayl so'rovi — 401 da tokenni yangilab QAYTA uradi.
@@ -406,7 +437,30 @@ async function uploadChunked(file, folder, onProgress, options = {}) {
           // qo'shadi. Ombor esa imzoni tekshiradi va begona
           // sarlavhani ko'rib so'rovni RAD ETADI.
           const url = await partUrl(uploadId, index);
-          const response = await fetch(url, { method: 'PUT', body: blob });
+
+          // ⚠️ CORS bloklaganida `fetch` `TypeError` tashlaydi va
+          // internet uzilganidan FARQ QILMAYDI — brauzer sababni
+          // ataylab aytmaydi (aks holda sahifa boshqa domenlarni
+          // skanerlay olardi).
+          //
+          // Lekin bu yerda kontekst bor: bo'lak OMBORGA ketyapti,
+          // imzoni esa server hozirgina berdi — demak server bilan
+          // aloqa BOR. Shu sababli eng ehtimolli sabab bucketda CORS
+          // sozlanmagani.
+          //
+          // Buni aytmaslik qimmatga tushdi: xabar «Internetni
+          // tekshiring» derdi va odam soatlab tarmoqni tekshirardi,
+          // ayb esa ombor sozlamasida edi.
+          let response;
+          try {
+            response = await fetch(url, { method: 'PUT', body: blob });
+          } catch (cause) {
+            const error = new Error(STORAGE_UNREACHABLE);
+            error.storageUnreachable = true;
+            error.cause = cause;
+            throw error;
+          }
+
           if (!response.ok) {
             const error = new Error(`Bo'lak yuborilmadi (${response.status})`);
             error.response = { status: response.status };
@@ -554,6 +608,49 @@ export const adminApi = {
   media: (params) => api.get('/api/v1/app/admin/media', params),
   /** Bitta fayl — media maydonida faqat `mediaId` bo'lgani uchun kerak. */
   mediaAsset: (id) => api.get(`/api/v1/app/admin/media/${id}`),
+
+  /**
+   * Videoni panelda ko'rish uchun havola.
+   *
+   * ⚠️ Nega alohida so'rov: `<video src>` `Authorization` sarlavhasini
+   * YUBORMAYDI. Server shu sababli manzilning o'ziga imzo qo'yib
+   * beradi — S3 da to'g'ridan-to'g'ri omborga, lokalda esa chipta
+   * bilan `/raw` ga.
+   */
+  mediaPreview: (id) => api.get(`/api/v1/app/admin/media/${id}/preview`),
+
+  /**
+   * Ombor holati — oxirgi skanerlash natijasi.
+   *
+   * ⚠️ Hech qachon skanerlanmagan bo'lsa server 204 qaytaradi va bu
+   * XATO EMAS. `null` bilan farqlanadi.
+   */
+  storage: () => api.get('/api/v1/app/admin/storage'),
+
+  /** ⚠️ QIMMAT: butun omborni qayta sanaydi. Faqat admin so'raganda. */
+  storageScan: () => api.post('/api/v1/app/admin/storage/scan'),
+
+  /**
+   * Yetim faylni o'chiradi.
+   *
+   * ⚠️ QAYTARIB BO'LMAYDI. Server keshga ISHONMAYDI: fayl hali ham
+   * yetim ekanini bazadan qayta hisoblaydi va biriktirilgan bo'lsa
+   * `409` qaytaradi.
+   *
+   * ⚠️ Kalit tanada: u `/` belgilarini o'z ichiga oladi va manzilga
+   * solinganda yo'l sifatida talqin qilinardi.
+   */
+  /**
+   * Papkani ochadi.
+   *
+   * ⚠️ Bu `storageScan` dan tubdan ARZON va keshlanmaydi: S3 bitta
+   * darajani qaytaradi, ichkariga kirmaydi.
+   */
+  storageBrowse: (prefix) =>
+    api.get('/api/v1/app/admin/storage/browse', { prefix: prefix || '' }),
+
+  storageDeleteOrphan: (key) =>
+    api.post('/api/v1/app/admin/storage/orphan/delete', { key }),
   /** Yiqilgan transcoding'ni navbatga qaytaradi (MEDIA_UPLOAD). */
   retryTranscoding: (id) => api.post(`/api/v1/app/admin/media/${id}/retry-transcoding`),
   /** Navbat holati — panel yangilashni qachon to'xtatishni biladi. */

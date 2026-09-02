@@ -324,12 +324,37 @@ describe('Read-only режим', () => {
   );
 
   /**
+   * ⚠️ «Продолжить просмотр» — та же категория, что избранное:
+   * собственные данные вошедшего человека.
+   *
+   * Без разрешения функция ломается ТИХО и наполовину: позиция
+   * сохраняется на телефоне, видео продолжается — а на сервер не
+   * уходит ничего, и на втором устройстве всё выглядит так, будто
+   * человек и не смотрел.
+   */
+  it.each(['put', 'delete'] as const)(
+    'позиция просмотра разрешена (%s)',
+    async (method) => {
+      const url = '/api/v1/app/watch-progress/CONTENT/1';
+      const response = method === 'put'
+        ? await api.put(url, {})
+        : await api.delete(url);
+
+      expect(response.status).toBe(200);
+      expect(sent).toHaveLength(1);
+    },
+  );
+
+  /**
    * ⚠️ Разрешение НЕ должно расползаться на соседние адреса.
    *
    * Список сравнивается по началу строки, поэтому слишком короткий
    * префикс открыл бы и то, что открывать не собирались.
    */
-  it('разрешение не распространяется на соседние адреса', async () => {
-    await expect(api.post('/api/v1/app/favorites-import', {})).rejects.toThrow(/READ_ONLY/);
+  it.each([
+    '/api/v1/app/favorites-import',
+    '/api/v1/app/watch-progress-export',
+  ])('разрешение не распространяется на %s', async (url) => {
+    await expect(api.post(url, {})).rejects.toThrow(/READ_ONLY/);
   });
 });

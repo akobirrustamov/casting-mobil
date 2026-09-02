@@ -70,6 +70,23 @@ export default function ProfileScreen() {
 
   const [languageOpen, setLanguageOpen] = useState(false);
 
+  /**
+   * Выход — и сразу на экран входа.
+   *
+   * ⚠️ Раньше здесь стоял голый `signOut`: сессия стиралась, но человек
+   * оставался в профиле, только уже в гостевом виде. Экран выглядел
+   * так, будто выход НЕ сработал, — те же вкладки, тот же заголовок,
+   * просто пропало содержимое.
+   *
+   * `replace`, а не `push`: возвращаться кнопкой «назад» в профиль
+   * вышедшего человека некуда, да и нечего показывать. Тот же переход
+   * делает запуск приложения без токена (`app/_layout.tsx`).
+   */
+  const onSignOut = async () => {
+    await signOut();
+    router.replace('/(auth)/sign-in');
+  };
+
   const language: Language = isSupportedLanguage(i18n.language) ? i18n.language : 'uz';
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
@@ -131,7 +148,7 @@ export default function ProfileScreen() {
             key: 'logout',
             label: t('profile.logout'),
             icon: 'log-out-outline' as const,
-            onPress: signOut,
+            onPress: onSignOut,
             danger: true,
           },
         ]

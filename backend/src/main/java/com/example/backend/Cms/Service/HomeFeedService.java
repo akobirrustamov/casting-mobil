@@ -65,7 +65,7 @@ public class HomeFeedService {
             }
         }
 
-        fillEpisodeCounts(sections);
+        fillSectionEpisodeCounts(sections);
 
         return HomeFeedDto.builder()
                 .locale(lang)
@@ -86,10 +86,20 @@ public class HomeFeedService {
      * Bir xil kontent bir nechta qatorda uchrashi mumkin — id lar to'plamga
      * yig'iladi, ya'ni ikki marta so'ralmaydi.
      */
-    private void fillEpisodeCounts(List<HomeFeedDto.Section> sections) {
-        List<HomeFeedDto.ContentCard> cards = sections.stream()
+    private void fillSectionEpisodeCounts(List<HomeFeedDto.Section> sections) {
+        fillEpisodeCounts(sections.stream()
                 .flatMap(s -> s.getContent().stream())
-                .toList();
+                .toList());
+    }
+
+    /**
+     * Kartochkalarga qismlar sonini qo'yadi — BITTA guruhlangan so'rov bilan.
+     *
+     * Ochiq: bosh sahifa qatorlari ham, katalog qatorlari ham
+     * ({@link AppCatalogService}) shu yerdan o'tadi, ya'ni «12 qism» ikkala
+     * ekranda ham bir xil qoidadan chiqadi.
+     */
+    public void fillEpisodeCounts(List<HomeFeedDto.ContentCard> cards) {
         if (cards.isEmpty()) {
             return;
         }
@@ -172,7 +182,7 @@ public class HomeFeedService {
      * ruscha so'zlashuvchi foydalanuvchi ham o'zbekcha bosh sahifani
      * olardi, garchi u tilni allaqachon tanlagan bo'lsa ham.
      */
-    private Locale resolveLanguage(User user, Locale requested) {
+    public Locale resolveLanguage(User user, Locale requested) {
         if (requested != null) {
             return requested;
         }
@@ -320,7 +330,7 @@ public class HomeFeedService {
      * PRIVATE — faqat xodimlarga, UNLISTED — havola orqali, ya'ni qatorlarda
      * chiqmaydi. Nashr qilinmagan kontent ham chiqmaydi.
      */
-    private boolean isVisible(Content c, User user) {
+    public boolean isVisible(Content c, User user) {
         if (c == null || c.getDeletedAt() != null) {
             return false;
         }
@@ -330,7 +340,7 @@ public class HomeFeedService {
         return c.getVisibility() == null || c.getVisibility() == ContentVisibility.PUBLIC;
     }
 
-    private HomeFeedDto.ContentCard contentCard(Content c, Locale lang) {
+    public HomeFeedDto.ContentCard contentCard(Content c, Locale lang) {
         ContentTranslation t = translation(c, lang);
         return HomeFeedDto.ContentCard.builder()
                 .id(c.getId())

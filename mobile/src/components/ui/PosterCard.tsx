@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
 
+import { colors } from '@/theme/tokens';
+
 import { Badge } from './Badge';
 
 /**
@@ -10,9 +12,9 @@ import { Badge } from './Badge';
  * По умолчанию постер 2:3 — паттерн из Yangi.TV, бейджи по ТЗ
  * (locked / purchased вместо PREMIUM / Bepul).
  *
- * Пропорция вынесена наружу ради вертикального формата: у рилса карточка
- * повторяет форму самого видео (9:16). Обрезать его до 2:3 значило бы
- * показать не тот кадр, который снимали.
+ * Пропорция вынесена наружу, но во всём приложении она одна
+ * (`features/content/railLayout.CARD_RATIO`): ряд, сетка и экран
+ * «Barchasi» показывают карточку одного размера — заказчик 01.09.2026.
  */
 export type PosterBadge = 'premiere' | 'locked' | 'purchased' | null;
 
@@ -28,10 +30,21 @@ export function PosterCard({
   duration,
   /** Третья строка: жанр. */
   meta,
+  /**
+   * Меню карточки — знак «⋮» в правом верхнем углу кадра (макет «Media»).
+   *
+   * Необязательный: в РЯДАХ на главной меню нет. Там карточка узкая и
+   * стоит вплотную к соседней, и знак поверх кадра ловил бы нажатия,
+   * которыми люди листают ряд вбок.
+   */
+  onMenu,
+  /** Подпись знака «⋮» для озвучки. Переводит вызывающий — здесь нет i18n. */
+  menuLabel,
   width = 132,
-  /** Ширина к высоте кадра. См. `features/content/orientation.cardRatio`. */
+  /** Ширина к высоте кадра. См. `features/content/railLayout.CARD_RATIO`. */
   ratio = 2 / 3,
   onPress,
+  progressPercent,
 }: {
   title: string;
   subtitle?: string;
@@ -41,9 +54,25 @@ export function PosterCard({
   badgeIcon?: keyof typeof Ionicons.glyphMap;
   duration?: string;
   meta?: string;
+  onMenu?: () => void;
+  menuLabel?: string;
   width?: number;
   ratio?: number;
   onPress?: () => void;
+
+  /**
+   * Полоса досмотра внизу обложки, 0–100. Без неё карточка обычная.
+   *
+   * ⚠️ Живёт ЗДЕСЬ, а не в отдельной карточке для «продолжить»: форма
+   * кадра одна на всё приложение, и второй компонент со временем
+   * разошёлся бы с этим по размеру, скруглению и подписям — а стоят
+   * они на одном экране, друг под другом.
+   *
+   * `null`/`undefined` — длительность неизвестна: полосу рисовать не
+   * из чего. Ноль в этом случае был бы ложью — «не начинал», хотя
+   * человек мог посмотреть половину.
+   */
+  progressPercent?: number | null;
 }) {
   return (
     <Pressable style={{ width }} onPress={onPress} className="gap-2 active:opacity-70">
@@ -70,6 +99,38 @@ export function PosterCard({
           </View>
         ) : null}
 
+        {onMenu ? (
+          // Знак без подложки, как на макете. Тень под ним — чтобы белое
+          // не пропадало на светлом кадре: подложка в этом углу спорила бы
+          // с меткой доступа слева.
+          <Pressable
+            onPress={onMenu}
+            accessibilityRole="button"
+            accessibilityLabel={menuLabel}
+            hitSlop={10}
+            className="absolute right-1 top-1 h-7 w-7 items-center justify-center active:opacity-60"
+          >
+            <Ionicons
+              name="ellipsis-vertical"
+              size={16}
+              color={colors.white}
+              style={{ textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 6 }}
+            />
+          </Pressable>
+        ) : null}
+
+        {/* Полоса досмотра — по нижнему краю кадра, во всю ширину.
+            Таймкод сидит чуть выше неё в том же углу и не перекрывается:
+            полоса тонкая и прижата к самому краю. */}
+        {typeof progressPercent === 'number' ? (
+          <View className="absolute bottom-0 left-0 right-0 h-1 bg-ink/60">
+            <View
+              style={{ width: `${Math.min(100, Math.max(0, progressPercent))}%` }}
+              className="h-full bg-magenta"
+            />
+          </View>
+        ) : null}
+
         {badge && badgeLabel ? (
           // Левый верхний угол — как на макете заказчика. Справа он налезал
           // на лица: у постеров герой обычно смещён вправо.
@@ -90,10 +151,10 @@ export function PosterCard({
             {subtitle}
           </Text>
         ) : null}
-        {/* Жанр отдельной строкой и бледнее подписи — на макете это
-            третий уровень, а не продолжение второго. */}
+        {/* Жанр отдельной строкой и фирменным фиолетовым — на макете
+            «Media» это акцент под подписью, а не третий серый уровень. */}
         {meta ? (
-          <Text numberOfLines={1} className="text-micro text-text-disabled">
+          <Text numberOfLines={1} className="text-micro text-violet">
             {meta}
           </Text>
         ) : null}

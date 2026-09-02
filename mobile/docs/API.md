@@ -66,7 +66,7 @@
 
 Авторизация — заголовок `Authorization` с токеном (на сайте лежит в `localStorage.access_token`). В мобильном будем хранить в `expo-secure-store`.
 
-### Телефон + OTP (Eskiz SMS)
+### Телефон, пароль и SMS-код (Eskiz)
 
 ⚠️ **OTP переехал в `/api/v1/app/**` (28.08.2026).**
 
@@ -77,9 +77,59 @@
 
 Тест `OldCastingFrozenTest` это и поймал.
 
-Вход и регистрация — один поток: `otp/verify` находит хозяина номера или создаёт
-нового пользователя с ролью `ROLE_USER`, как это делает `auth/google` для Google.
-Экраны: `app/(auth)/sign-in.tsx` → `app/(auth)/otp.tsx`.
+⚠️ **Приложение больше не входит по одному коду (01.09.2026).** Заказчик
+попросил два раздела: «Kirish» — номер и пароль, «Ro'yxatdan o'tish» —
+номер, SMS-код, имя и пароль с повтором. SMS теперь подтверждает ТОЛЬКО
+владение номером; повседневный вход идёт по паролю.
+
+`otp/send` и `otp/verify` на сервере остались и работают как раньше
+(вход и регистрация одним запросом), но мобильное приложение их не
+зовёт. Ниже — то, чем оно пользуется.
+
+```jsonc
+// Регистрация, шаг 1. Занятый номер получает 409 и НИ ОДНОЙ SMS.
+POST /api/v1/app/auth/register/start     { "phone": "+998901234567" }
+→ { "sent": true, "expiresInSeconds": 180 }
+→ 409 { "code": "PHONE_ALREADY_REGISTERED" }   // экран уводит на вкладку входа
+
+// Регистрация, шаг 2. Токена нет: аккаунта ещё не существует.
+POST /api/v1/app/auth/register/confirm   { "phone": "+998901234567", "code": "1234" }
+→ { "verified": true, "expiresInSeconds": 900 }
+
+// Регистрация, шаг 3. Здесь создаётся аккаунт и сразу выдаётся сессия.
+// `name` обязателен (2–60 символов): без него аккаунт оставался безымянным
+// в профиле и под комментариями.
+POST /api/v1/app/auth/register/complete
+     { "phone": "+998901234567", "name": "Aziz Karimov",
+       "password": "parol123", "passwordConfirm": "parol123" }
+→ { "access_token": "...", "refresh_token": "...",
+    "roles": [{ "name": "ROLE_USER" }],
+    "user": { "id": "...", "name": "", "phone": "998901234567" } }
+
+// Вход. Тот же формат ответа — клиент пишет одну обработку на все потоки.
+POST /api/v1/app/auth/login              { "phone": "+998901234567", "password": "parol123" }
+→ { "access_token": "...", "refresh_token": "...", "roles": [...], "user": {...} }
+```
+
+Экраны: `app/(auth)/sign-in.tsx` → `app/(auth)/otp.tsx` → `app/(auth)/password.tsx`.
+
+**Почему шага три, а не один.** Код живёт 3 минуты. Если бы пароль
+уходил вместе с кодом, человек придумывал бы его внутри этих трёх минут
+и упирался в `OTP_EXPIRED` на ровном месте. После `confirm` номер
+помечен подтверждённым на 15 минут (`app.otp.verified-ttl-seconds`),
+метка одноразовая.
+
+**⚠️ Аккаунты без пароля.** Созданные через SMS или Google хранят
+случайный хеш вместо пароля — войти по нему нельзя никогда. Такие
+аккаунты (`users.password_set = false`, миграция V30) проходят
+регистрацию заново и ставят пароль СВОЕМУ ЖЕ аккаунту: id, покупки и
+избранное сохраняются. Вход отвечает им `PASSWORD_NOT_SET`, а не
+«неверный пароль», — подобрать его нельзя. Аккаунт с ролью выше
+`ROLE_USER` в этот путь не попадает: пароль сотрудника выдаётся через
+панель.
+
+**⚠️ «Забыли пароль» на бэкенде нет.** Поэтому ссылка на экране входа
+намеренно неактивна.
 
 ```jsonc
 POST /api/v1/app/auth/otp/send    { "phone": "+998901234567" }
@@ -99,8 +149,14 @@ POST /api/v1/app/auth/otp/verify  { "phone": "+998901234567", "code": "1234" }
 
 Ошибки приходят обычным `ApiError { code, message }` (ТЗ §94). Текст оттуда —
 только на узбекском, поэтому приложение переводит по `code`
-(`src/features/auth/otpErrors.ts`): `OTP_COOLDOWN`, `OTP_INVALID`, `OTP_EXPIRED`,
-`OTP_LOCKED`, `SMS_NOT_CONFIGURED`, `SMS_SEND_FAILED`.
+(`src/features/auth/authErrors.ts`): `OTP_COOLDOWN`, `OTP_INVALID`, `OTP_EXPIRED`,
+`OTP_LOCKED`, `SMS_NOT_CONFIGURED`, `SMS_SEND_FAILED`, `PHONE_ALREADY_REGISTERED`,
+`PHONE_NOT_VERIFIED`, `PHONE_NOT_REGISTERED`, `PASSWORD_NOT_SET`,
+`INVALID_CREDENTIALS`, `ACCOUNT_LOCKED`, `PASSWORD_TOO_SHORT`, `PASSWORD_TOO_LONG`,
+`PASSWORD_MISMATCH`, `NAME_INVALID`.
+
+Подбор пароля ограничен так же, как в админке: 5 неверных попыток на номер —
+и `429 ACCOUNT_LOCKED` на 15 минут (`LoginAttemptService`).
 
 **⚠️ Без `ESKIZ_EMAIL` / `ESKIZ_PASSWORD` в `application.properties` отправка
 падает `503 SMS_NOT_CONFIGURED`** — намеренно, как и Google без ключей: молчаливый
@@ -228,7 +284,7 @@ POST /api/v1/app/auth/otp/verify  { "phone": "+998901234567", "code": "1234" }
 |---|---|---|
 | `ADVERTISEMENT_CAROUSEL` | `banners` | реклама; коммерческая скрыта у подписчиков |
 | `NEW_PREMIERES` | `banners` | промо-баннеры премьер |
-| `CATEGORIES` | `categories` | разделы каталога контента |
+| `CATEGORIES` | `categories` | разделы каталога контента. **Ряд плиток не рисуется** — заказчик 01.09.2026 попросил убрать; вместо него ряды с карточками из `/app/catalog` (см. ниже) |
 | `POPULAR_CREATORS` | `creators` | креаторы контента |
 | `MINI_SERIES` · `REELS_SERIES` · `PODCASTS` · `SHOWS` · `STREAMS` · `CLIPS` · `FEATURED_CONTENT` · `POPULAR_CONTENT` · `CUSTOM_ROW` | `content` | карточки контента |
 
@@ -260,6 +316,47 @@ POST /api/v1/app/auth/otp/verify  { "phone": "+998901234567", "code": "1234" }
 раздел «Bosh sahifa», `/api/v1/app/home` честно возвращает `"sections": []`, и
 приложение показывает пустое состояние. Проверено на локальном бэкенде: 0 секций до
 вызова, 12 после.
+
+### `GET /api/v1/app/catalog/categories` · `/catalog/categories/{id}`
+
+Разделы каталога КОНТЕНТА («Drama», «Komediya») — ряды на главной под фидом.
+
+⚠️ Это не 10 направлений кастинга из `src/features/catalog/categories.ts`.
+Там анкеты людей на старом API сайта, здесь фильмы и сериалы новой платформы;
+id из одного списка в другом не значит ничего.
+
+**Почему отдельный эндпоинт, а не фид.** Секция `CATEGORIES` в `/app/home`
+отдаёт только названия, а ряды контента там собраны по ТИПУ (`PODCASTS`,
+`SHOWS`, `MINI_SERIES`), не по категории (ТЗ §13 — разные оси). Поля
+`categoryId` у карточки нет, то есть ряд «Drama» из фида собрать нечем.
+
+```jsonc
+// GET /catalog/categories?locale=UZ  — только названия и счётчики
+[ { "id": 3, "slug": "drama", "name": "Drama", "iconMediaId": 12,
+    "total": 27, "page": null, "size": null, "hasMore": null, "items": [] } ]
+
+// GET /catalog/categories/3?locale=UZ&page=0&size=10
+{ "id": 3, "slug": "drama", "name": "Drama", "iconMediaId": 12,
+  "total": 27, "page": 0, "size": 10, "hasMore": true,
+  "items": [ /* HomeFeedDto.ContentCard — та же карточка, что в фиде */ ] }
+```
+
+- `total` — сколько в разделе ВСЕГО, независимо от страницы. По нему клиент
+  решает, показывать ли «Barchasi ›».
+- `hasMore` считает сервер, а не клиент: решение «страница последняя» должно
+  жить в одном месте.
+- `size` по умолчанию 20, потолок 100. Ряд на главной просит 10, экран
+  «вся категория» — по 20 на страницу.
+- Видно только `PUBLISHED` + `PUBLIC` — то же правило, что у рядов главной
+  (`HomeFeedService.isVisible`), поэтому карточка не может быть в фиде и
+  пропасть в категории.
+- Неактивная категория — `404`. «Есть, но выключена» клиент нарисовал бы
+  пустым рядом.
+
+**В приложении.** `src/features/catalog/contentCategories.ts` (список +
+запрос на каждый ряд), `CategoryRows.tsx` (ряды на главной: три карточки в
+кадре, десять в ряду), `app/category/[id].tsx` (весь раздел страницами по 20,
+догрузка при прокрутке).
 
 ### `GET /api/v1/app/media/{id}/raw`
 

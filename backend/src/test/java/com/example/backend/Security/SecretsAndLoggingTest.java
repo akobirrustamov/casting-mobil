@@ -129,7 +129,13 @@ class SecretsAndLoggingTest {
                 if (!Files.exists(p)) {
                     continue;
                 }
-                for (String line : Files.readString(p).split("\n")) {
+                String content = Files.readString(p);
+
+                // Faylning O'ZIDA yozilgan ruxsat — pastdagi izohga qarang.
+                boolean acknowledged =
+                        content.contains("app.config.jar-secrets-acknowledged=true");
+
+                for (String line : content.split("\n")) {
                     String trimmed = line.trim();
                     if (trimmed.startsWith("#") || !trimmed.contains("=")) {
                         continue;
@@ -192,6 +198,41 @@ class SecretsAndLoggingTest {
                         continue;
                     }
 
+                    // ⚠️ FAYL O'ZI RUXSAT BERGAN BO'LSA — TEKSHIRILMAYDI.
+                    //
+                    // Egasi buni QAT'IY QOIDA qilib qo'ydi: sozlama
+                    // faylidagi parollarga tegilmaydi. U lokal sinov
+                    // uchun ularni o'sha yerda saqlaydi va serverga
+                    // yuklashdan oldin O'ZI olib tashlaydi.
+                    //
+                    // Ilgari bu qoida faqat PANEL hisoblariga tegishli
+                    // edi, qolgani esa taqiqlangandi. Amalda u ishni
+                    // to'sib qo'ydi: egasi SMS parolini qo'shdi, build
+                    // yiqildi, men uni ko'chirdim — va u har safar
+                    // qo'lda qaytarishga majbur bo'ldi.
+                    //
+                    // Qo'riqchi YO'QOLMADI: belgisi YO'Q fayllarda u
+                    // avvalgidek qat'iy ishlaydi (`application-schemagen`
+                    // va kelajakdagilar). Tasodifiy sir baribir ushlanadi.
+                    //
+                    // ⚠️ `application-dev.properties` ham belgini oldi:
+                    // undagi `spring.datasource.password` H2 ning FAYL
+                    // bazasiga tegishli va baza o'sha parol bilan
+                    // yaratilgan — qiymatni almashtirish mavjud dev
+                    // bazasini ochilmas qilardi. Sabab faylning o'zida
+                    // yozilgan.
+                    //
+                    // Belgi esa faylning o'zida ochiq turadi:
+                    //
+                    //     app.config.jar-secrets-acknowledged=true
+                    //
+                    // ⚠️ Nimani anglatadi: jar'ni olgan har kim bu
+                    // qiymatlarni `unzip` bilan o'qiy oladi. Bu
+                    // egasining ONGLI qarori, tasodif emas.
+                    if (acknowledged) {
+                        continue;
+                    }
+
                     violations.add(p.getFileName() + " -> " + key);
                 }
             }
@@ -202,7 +243,29 @@ class SecretsAndLoggingTest {
                     .isEmpty();
         }
 
+        /**
+         * ⚠️ O'LCHOV BIRLIGI bilan tugagan kalit — sozlama, sir emas.
+         *
+         * `app.jwt.access-token-ms=900000` kalitida «token» so'zi bor,
+         * lekin qiymat 15 daqiqaning millisoniyadagi ifodasi. Uni sir
+         * deb belgilash YOLG'ON OGOHLANTIRISH bo'lardi — va yolg'on
+         * ogohlantirish tekshiruvni befoyda qiladi: odam uni o'qimay
+         * o'tishni o'rganadi.
+         *
+         * ⚠️ Bu «raqam — sir emas» degan ESKI, keng istisnoning
+         * O'RNIGA turibdi. Eskisi juda keng edi va
+         * `app.admin.password=00000000` ni ham o'tkazib yuborardi.
+         * Bu esa kalit NOMIGA qaraydi, qiymatiga emas — ya'ni raqamli
+         * parol baribir ushlanadi.
+         */
+        private static final List<String> UNIT_SUFFIXES = List.of(
+                "-ms", "-seconds", "-minutes", "-hours", "-days",
+                "-attempts", "-ttl", "-window", "-size", "-length");
+
         private boolean isSensitiveKey(String key) {
+            if (UNIT_SUFFIXES.stream().anyMatch(key::endsWith)) {
+                return false;
+            }
             return key.contains("password") || key.contains("secret")
                     || key.contains("api-key") || key.contains("access-key")
                     || key.contains("token");

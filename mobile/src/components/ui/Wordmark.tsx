@@ -1,6 +1,14 @@
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
-import { Platform, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Animated,
+  Easing,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+  type LayoutChangeEvent,
+} from 'react-native';
 import Svg, {
   Defs,
   Ellipse,
@@ -18,8 +26,10 @@ import { Logo } from './Logo';
 /**
  * Знак и название UzCasting.
  *
- * Два вида:
- *   `inline`  — знак и слово в строку. Шапка главной, узкие места.
+ * Три вида:
+ *   `compact` — знак и «UzCasting» в строку, слово плотное и белое.
+ *               Шапка главной, по макету заказчика.
+ *   `inline`  — то же, но название набрано капителью с градиентом.
  *   `stacked` — знак сверху, под ним название, слоган и черта.
  *               Экран входа, по референсу заказчика.
  *
@@ -33,6 +43,26 @@ const SIZES = {
   md: { mark: 22, font: 22, tracking: 1.8 },
   lg: { mark: 30, font: 30, tracking: 2.5 },
 } as const;
+
+/**
+ * Размеры вида `compact` — шапка главной по макету заказчика (01.09.2026).
+ *
+ * Знак крупный, название мельче него примерно вдвое: на макете вес несёт
+ * плитка со знаком, а слово стоит рядом подписью, а не вторым логотипом.
+ */
+const COMPACT = { mark: 36, font: 22 } as const;
+
+/** Сколько блик идёт от края до края. */
+const SHINE_SWEEP_MS = 1_100;
+
+/**
+ * Пауза между бликами.
+ *
+ * Блик — украшение, а не индикатор: если он идёт непрерывно, шапка
+ * мерцает под каждым экраном и тянет взгляд на себя. Раз в несколько
+ * секунд его замечают, но он не мешает читать.
+ */
+const SHINE_DELAY_MS = 3_400;
 
 /**
  * Доля кегля, которую занимает высота прописной буквы.
@@ -82,17 +112,134 @@ export function Wordmark({
   /** Размер знака в `stacked`. По референсу он крупный. */
   markSize = 150,
   showTagline = true,
+  /** Пробегающий блик по знаку. Только `inline`. */
+  shine = false,
 }: {
   size?: 'md' | 'lg';
-  variant?: 'inline' | 'stacked';
+  variant?: 'compact' | 'inline' | 'stacked';
   plain?: boolean;
   markSize?: number;
   showTagline?: boolean;
+  shine?: boolean;
 }) {
   if (variant === 'stacked') {
     return <StackedWordmark markSize={markSize} showTagline={showTagline} />;
   }
-  return <InlineWordmark size={size} plain={plain} />;
+  if (variant === 'compact') {
+    return <CompactWordmark shine={shine} />;
+  }
+  return <InlineWordmark size={size} plain={plain} shine={shine} />;
+}
+
+/**
+ * Знак и «UzCasting» в строку — шапка главной.
+ *
+ * <h2>Почему обычный `<Text>`, а не SVG с градиентом</h2>
+ * На макете слово плотное белое: цвет несёт плитка со знаком, а градиент
+ * ещё и на подписи спорил бы с ней. Заодно отпадает измерение строки —
+ * SVG нужен был только ради заливки.
+ */
+function CompactWordmark({ shine }: { shine: boolean }) {
+  const [frame, setFrame] = useState<{ width: number; height: number } | null>(null);
+
+  const onFrame = (e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    if (frame && frame.width === width && frame.height === height) return;
+    setFrame({ width, height });
+  };
+
+  return (
+    <View
+      // Высота фиксирована и равна `TOUCH_TARGET` (44): справа в шапке
+      // стоят «Premium» и колокольчик, а `Screen` выравнивает шапку по
+      // верху — на одной линии их держит именно одинаковая высота. Та же
+      // цифра делает соседние кнопки нажимаемыми без отдельного `hitSlop`.
+      className="h-11 flex-row items-center gap-2"
+      onLayout={shine ? onFrame : undefined}
+      style={shine ? { overflow: 'hidden' } : undefined}
+    >
+      <Logo size={COMPACT.mark} />
+
+      <Text
+        style={{
+          fontSize: COMPACT.font,
+          fontWeight: '700',
+          color: colors.white,
+        }}
+      >
+        UzCasting
+      </Text>
+
+      {shine && frame ? <Shine width={frame.width} height={frame.height} /> : null}
+    </View>
+  );
+}
+
+/**
+ * Блик: короткая световая полоса наискось, слева направо.
+ *
+ * <h2>Почему полоса, а не анимация градиента</h2>
+ * Градиент самого слова нарисован в SVG, а его `Stop` нельзя двигать через
+ * нативный драйвер — анимация шла бы по JS-потоку и дёргалась бы каждый
+ * раз, когда экран что-то грузит. Полоса же двигается через `translateX`,
+ * то есть целиком в нативном потоке.
+ *
+ * Размеры приходят снаружи: блик обязан начинаться ЗА левым краем и
+ * заканчиваться ЗА правым, иначе видно, как он появляется из ниоткуда.
+ */
+function Shine({ width, height }: { width: number; height: number }) {
+  const progress = useRef(new Animated.Value(0)).current;
+  const band = Math.max(26, Math.round(width * 0.16));
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        // Пауза первая: на первом кадре экрана блик не отвлекает от того,
+        // ради чего человек его открыл.
+        Animated.delay(SHINE_DELAY_MS),
+        Animated.timing(progress, {
+          toValue: 1,
+          duration: SHINE_SWEEP_MS,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [progress]);
+
+  const translateX = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-band, width + band],
+  });
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        left: 0,
+        // Полоса наклонена, поэтому она выше строки: без запаса сверху и
+        // снизу её углы обрезались бы прямо посреди знака.
+        top: -height,
+        width: band,
+        height: height * 3,
+        transform: [{ translateX }, { rotate: '18deg' }],
+      }}
+    >
+      <ExpoLinearGradient
+        colors={[
+          'rgba(255,255,255,0)',
+          'rgba(255,255,255,0.45)',
+          'rgba(255,255,255,0)',
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={StyleSheet.absoluteFill}
+      />
+    </Animated.View>
+  );
 }
 
 /** Знак сверху, под ним название, слоган и короткая черта — как на референсе. */
@@ -231,14 +378,31 @@ function GradientWord({ text, font }: { text: string; font: number }) {
 }
 
 /** Знак и название в строку — шапка главной. */
-function InlineWordmark({ size, plain }: { size: 'md' | 'lg'; plain: boolean }) {
+function InlineWordmark({
+  size,
+  plain,
+  shine,
+}: {
+  size: 'md' | 'lg';
+  plain: boolean;
+  shine: boolean;
+}) {
   const s = SIZES[size];
   const [box, setBox] = useState<{ width: number; height: number } | null>(null);
+  const [frame, setFrame] = useState<{ width: number; height: number } | null>(null);
 
   const onLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
     if (box && box.width === width && box.height === height) return;
     setBox({ width, height });
+  };
+
+  // Блику нужна ширина ВСЕЙ строки — знак плюс слово. Измеряется только
+  // когда блик включён: лишний `onLayout` в шапке ни к чему.
+  const onFrame = (e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    if (frame && frame.width === width && frame.height === height) return;
+    setFrame({ width, height });
   };
 
   const typography = {
@@ -248,7 +412,13 @@ function InlineWordmark({ size, plain }: { size: 'md' | 'lg'; plain: boolean }) 
   };
 
   return (
-    <View className="flex-row items-center gap-2">
+    <View
+      className="flex-row items-center gap-2"
+      onLayout={shine ? onFrame : undefined}
+      // Блик обрезается по строке — иначе он выезжал бы на соседние
+      // элементы шапки.
+      style={shine ? { overflow: 'hidden' } : undefined}
+    >
       <Logo size={s.mark} />
 
       <View>
@@ -287,6 +457,8 @@ function InlineWordmark({ size, plain }: { size: 'md' | 'lg'; plain: boolean }) 
           </Svg>
         ) : null}
       </View>
+
+      {shine && frame ? <Shine width={frame.width} height={frame.height} /> : null}
     </View>
   );
 }

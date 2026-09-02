@@ -20,6 +20,7 @@ import ContentPage from './pages/ContentPage';
 import CreatorsPage from './pages/CreatorsPage';
 import TaxonomyPage from './pages/TaxonomyPage';
 import MediaPage from './pages/MediaPage';
+import StoragePage from './pages/StoragePage';
 import HomepagePage from './pages/HomepagePage';
 import BannerPage from './pages/BannerPage';
 import CommentsPage from './pages/CommentsPage';
@@ -100,6 +101,16 @@ export default function PanelApp() {
               element={
                 <RequirePermission permission="MEDIA_VIEW">
                   <MediaPage />
+                </RequirePermission>
+              }
+            />
+            {/* ⚠️ `MEDIA_DELETE` — hisobot tizim ma'lumoti va
+                o'chirishga undaydi, ya'ni ko'rish ruxsati yetarli emas. */}
+            <Route
+              path="storage"
+              element={
+                <RequirePermission permission="MEDIA_DELETE">
+                  <StoragePage />
                 </RequirePermission>
               }
             />
