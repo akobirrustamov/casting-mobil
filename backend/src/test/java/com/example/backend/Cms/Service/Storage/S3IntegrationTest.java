@@ -2,6 +2,7 @@ package com.example.backend.Cms.Service.Storage;
 
 import com.example.backend.Cms.Service.Video.HlsUploadService;
 import com.example.backend.Cms.Service.Video.HlsPlaylistService;
+import com.example.backend.Cms.Service.Video.CdnUrlService;
 import com.example.backend.Cms.Service.Video.PresignedUrlProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -393,7 +394,11 @@ class S3IntegrationTest {
          *               AYNAN bir xil satr qaytishi kerak
          */
         private PresignedUrlProvider provider(Duration window) {
-            PresignedUrlProvider p = new PresignedUrlProvider(presigner, properties);
+            // ⚠️ CDN'siz: bu testlar IMZO va KESH ni sinaydi, manzil
+            // qaysi domenga ishora qilishini emas. CDN o'girishi
+            // alohida sinaladi (`CdnSegmentUrlTest`).
+            PresignedUrlProvider p =
+                    new PresignedUrlProvider(presigner, properties, new CdnUrlService());
             ReflectionTestUtils.setField(p, "ttl", Duration.ofHours(4));
             ReflectionTestUtils.setField(p, "window", window);
             return p;
@@ -511,7 +516,8 @@ class S3IntegrationTest {
             storage.storeAt(new ByteArrayInputStream(segment),
                     dir + "/segment_00001.m4s", MediaContentTypes.of("segment_00001.m4s"));
 
-            PresignedUrlProvider signer = new PresignedUrlProvider(presigner, properties);
+            PresignedUrlProvider signer =
+                    new PresignedUrlProvider(presigner, properties, new CdnUrlService());
             ReflectionTestUtils.setField(signer, "ttl", Duration.ofHours(4));
             ReflectionTestUtils.setField(signer, "window", Duration.ofHours(1));
 

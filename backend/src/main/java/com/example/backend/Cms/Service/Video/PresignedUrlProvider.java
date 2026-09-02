@@ -10,6 +10,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -42,6 +43,17 @@ public class PresignedUrlProvider implements SignedUrlProvider {
 
     private final S3Presigner presigner;
     private final S3Properties properties;
+
+    /**
+     * Segmentlar qaysi domendan berilishi.
+     *
+     * ⚠️ Bo'sh bo'lsa — S3 manzili o'zgarishsiz qaytariladi. Lokal
+     * ishlab chiqishda aynan shu kerak: CDN dagi CORS ro'yxatiga
+     * `localhost` ni qo'shib bo'lmaydi (Timeweb faqat haqiqiy domenni
+     * qabul qiladi), ya'ni lokalda CDN orqali segment olsak brauzer
+     * uni bloklardi.
+     */
+    private final CdnUrlService cdnUrlService;
 
     /**
      * Havola qancha yashaydi.
@@ -102,12 +114,67 @@ public class PresignedUrlProvider implements SignedUrlProvider {
                 .key(objectKey(storageKey))
                 .build();
 
-        return presigner.presignGetObject(GetObjectPresignRequest.builder()
+        String signed = presigner.presignGetObject(GetObjectPresignRequest.builder()
                         .signatureDuration(ttl)
                         .getObjectRequest(request)
                         .build())
                 .url()
                 .toString();
+
+        return viaCdn(signed);
+    }
+
+    /**
+     * S3 domenini CDN domeniga almashtiradi.
+     *
+     * <h2>⚠️ Nega imzo BUZILMAYDI</h2>
+     * Odatda AWS imzosi xost nomini ham qamrab oladi va domenni
+     * almashtirish 403 berardi. Bu yerda bermaydi: CDN origin'ga
+     * o'zining AWS kalitlari bilan boradi
+     * ({@code origin.aws} — Timeweb panelida sozlangan), ya'ni
+     * havoladagi imzo S3 ga umuman yetib bormaydi.
+     *
+     * Tekshirilgan: imzoli va imzosiz so'rov ham CDN orqali 200
+     * qaytaradi.
+     *
+     * <h2>⚠️ Bucket nomi yo'ldan TUSHADI</h2>
+     * <pre>
+     *   s3.twcstorage.ru/{bucket}/videos/7/hls/…   ← imzolangan
+     *   cdn.uzcasting.com/videos/7/hls/…           ← CDN
+     * </pre>
+     *
+     * CDN origin allaqachon o'sha bucket (u yerda bucket subdomen:
+     * {@code {bucket}.s3.twcstorage.ru}), shuning uchun yo'l
+     * bucketning ICHIDAN boshlanadi. Bucket qoldirilsa CDN uni papka
+     * deb qidiradi va 404 beradi.
+     *
+     * Ikkala uslub ham hisobga olinadi — kalit yo'lda ham
+     * ({@code /bucket/…}), subdomenda ham bo'lishi mumkin.
+     */
+    private String viaCdn(String signedUrl) {
+        String base = cdnUrlService.base();
+        if (base == null) {
+            return signedUrl;
+        }
+
+        try {
+            URI uri = URI.create(signedUrl);
+            String path = uri.getRawPath() == null ? "" : uri.getRawPath();
+
+            // Yo'l uslubi: /{bucket}/key → /key
+            String prefix = "/" + properties.getBucket() + "/";
+            if (path.startsWith(prefix)) {
+                path = path.substring(prefix.length() - 1);
+            }
+
+            String query = uri.getRawQuery();
+            return base + path + (query == null || query.isBlank() ? "" : "?" + query);
+        } catch (IllegalArgumentException e) {
+            // Manzil kutilmagan shaklda — CDN'siz qaytaramiz.
+            // Video ochilishi CDN'dan MUHIMROQ.
+            log.warn("Imzolangan manzilni CDN'ga o'girib bo'lmadi, S3 qoldirildi", e);
+            return signedUrl;
+        }
     }
 
     /** Boshidagi {@code /} — S3 uni bo'sh nomli papka deb qabul qiladi. */
