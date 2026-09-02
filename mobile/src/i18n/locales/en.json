@@ -89,7 +89,8 @@
     "phoneSubtitle": "Enter your number to sign in or sign up",
     "googleServerNotReady": "Google sign-in is not enabled on the server yet",
     "googleRejected": "Google account was rejected, please try again",
-    "googleFailed": "Sign-in failed, please try again"
+    "googleFailed": "Sign-in failed, please try again",
+    "googleNoPlayServices": "Google Play services are unavailable"
   },
   "home": {
     "todayPremieres": "Today's premieres",

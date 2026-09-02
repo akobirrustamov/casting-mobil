@@ -11,7 +11,12 @@ export const GOOGLE_CLIENT_IDS = {
   ios: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
 } as const;
 
-/** Пока клиенты не заведены, кнопку Google показываем неактивной. */
-export const isGoogleConfigured = Boolean(
-  GOOGLE_CLIENT_IDS.web || GOOGLE_CLIENT_IDS.android
-);
+/**
+ * Пока веб-клиент не задан, кнопку Google показываем неактивной.
+ *
+ * ⚠️ Проверяется именно `web`, хотя приложение android. Нативная библиотека
+ * получает ID-токен с `aud` веб-клиента — по нему бэкенд его и проверяет.
+ * Android-клиент в коде не участвует: Google узнаёт приложение по паре
+ * «package + SHA-1», заведённой в консоли.
+ */
+export const isGoogleConfigured = Boolean(GOOGLE_CLIENT_IDS.web);

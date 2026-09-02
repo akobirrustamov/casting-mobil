@@ -12,10 +12,8 @@ import { useGoogleSignIn } from './useGoogleSignIn';
 /**
  * Кнопка входа через Google.
  *
- * Хук useIdTokenAuthRequest бросает исключение, если client ID не задан,
- * а условно вызывать хуки нельзя — поэтому вся работа с ним живёт
- * в отдельном компоненте, и он монтируется только когда ключи есть.
- * Иначе показываем неактивную заглушку.
+ * Работа с Google вынесена в отдельный компонент: он монтируется, только
+ * когда client ID задан, иначе показываем неактивную заглушку.
  *
  * <h2>Dev-режим</h2>
  * На локальном контуре настоящий Google недоступен: в Expo Go его redirect
@@ -110,7 +108,9 @@ function GoogleButtonLive({ onSuccess }: { onSuccess?: (idToken: string) => void
       />
 
       {result.status === 'error' ? (
-        <Text className="text-center text-caption text-danger">{result.message}</Text>
+        <Text className="text-center text-caption text-danger">
+          {t(result.messageKey)}
+        </Text>
       ) : null}
       {result.status === 'cancelled' ? (
         <Text className="text-center text-caption text-text-muted">

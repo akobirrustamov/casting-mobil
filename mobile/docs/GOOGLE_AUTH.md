@@ -296,17 +296,41 @@ node -e "const u=process.argv[1];const s=new URL(u).searchParams.get('authError'
 | Файл | Что делает |
 |---|---|
 | `src/features/auth/config.ts` | читает client ID из `.env`, флаг `isGoogleConfigured` |
-| `src/features/auth/useGoogleSignIn.ts` | OAuth-запрос, возвращает `idToken` |
+| `src/features/auth/useGoogleSignIn.ts` | нативный вход, возвращает `idToken`; чистые `toSignInResult`/`toSignInError` покрыты тестами |
 | `src/features/auth/GoogleSignInButton.tsx` | кнопка + состояния: pending, cancelled, error, «не настроено» |
 | `src/features/auth/store.ts` | Zustand + expo-secure-store для токена |
 | `app/(auth)/sign-in.tsx` | экран входа: телефон +998, Google, согласие |
 | `app/(auth)/otp.tsx` | ввод SMS-кода (заглушка) |
 
-### Выбрана реализация на `expo-auth-session`
+### Реализация: нативная `@react-native-google-signin/google-signin` (с 02.09.2026)
 
-Браузерный OAuth, без нативных модулей. Альтернатива — нативный `@react-native-google-signin/google-signin`: красивее (системный шит выбора аккаунта), но тянет native-код, Firebase и `google-services.json`.
+Начинали с браузерного OAuth на `expo-auth-session` — она не требует ничего,
+кроме client ID. Ставка была на то, что заменить её можно позже, не переписывая
+экраны: вся работа спрятана за `GoogleSignInButton`. Так и вышло — поменялся
+один файл.
 
-Начали с `expo-auth-session`, потому что она не требует ничего, кроме client ID, и её можно заменить на нативную позже, не переписывая экраны — вся работа спрятана за `GoogleSignInButton`.
+Заменить пришлось потому, что браузерный путь в первой же APK упёрся дважды, и
+оба раза не в наш код:
+
+1. `400 invalid_request` — Google не принял запрос вовсе (разбор выше).
+2. После согласия Google вернулся на `uzcasting://oauthredirect?code=…`, и это
+   открылось как обычная ссылка: expo-router показал «Unmatched Route», а сессия
+   авторизации осталась висеть. Плюс наш обработчик ждал `id_token` в параметрах,
+   которого в code-флоу и не бывает.
+
+В SDK 57 провайдер `providers/google` помечен **deprecated**, документация Expo
+ведёт на нативную библиотеку. У неё браузера нет вовсе: системное окно выбора
+аккаунта отдаёт ID-токен напрямую — ни redirect, ни схемы, ни зависимости от
+того, какой браузер у человека.
+
+⚠️ **Config-плагин мы НЕ подключаем.** Без Firebase он делает ровно одно —
+добавляет URL-схему в `Info.plist`, то есть нужен только для iOS, а `iosUrlScheme`
+у нас пока нет. Для Android хватает автолинковки; `google-services.json` при
+работе без Firebase тоже не нужен. Плагин добавится на 2-м этапе вместе с
+iOS-клиентом.
+
+⚠️ Нативный модуль **не доставляется через `eas update`** — под него нужна новая
+сборка.
 
 ### Ключи
 

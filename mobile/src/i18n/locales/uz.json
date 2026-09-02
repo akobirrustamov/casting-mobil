@@ -89,7 +89,8 @@
     "phoneSubtitle": "Kirish yoki ro'yxatdan o'tish uchun raqamingizni kiriting",
     "googleServerNotReady": "Google orqali kirish serverda hali yoqilmagan",
     "googleRejected": "Google hisobi qabul qilinmadi, qaytadan urinib ko'ring",
-    "googleFailed": "Kirish amalga oshmadi, qaytadan urinib ko'ring"
+    "googleFailed": "Kirish amalga oshmadi, qaytadan urinib ko'ring",
+    "googleNoPlayServices": "Google Play xizmatlari mavjud emas"
   },
   "home": {
     "todayPremieres": "Bugungi premyeralar",

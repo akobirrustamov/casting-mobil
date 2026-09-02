@@ -4,10 +4,10 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
+    "@react-native-google-signin/google-signin": "^16.1.4",
     "@tanstack/react-query": "^5.101.4",
     "axios": "^1.19.0",
     "expo": "~57.0.12",
-    "expo-auth-session": "^57.0.6",
     "expo-blur": "~57.0.2",
     "expo-build-properties": "~57.0.15",
     "expo-clipboard": "~57.0.1",
@@ -67,6 +67,9 @@
     "preset": "jest-expo",
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg)"
+    ],
+    "setupFiles": [
+      "<rootDir>/node_modules/@react-native-google-signin/google-signin/jest/build/jest/setup.js"
     ]
   }
 }

@@ -89,7 +89,8 @@
     "phoneSubtitle": "Введите номер, чтобы войти или зарегистрироваться",
     "googleServerNotReady": "Вход через Google на сервере ещё не настроен",
     "googleRejected": "Google-аккаунт не принят, попробуйте ещё раз",
-    "googleFailed": "Не удалось войти, попробуйте ещё раз"
+    "googleFailed": "Не удалось войти, попробуйте ещё раз",
+    "googleNoPlayServices": "Сервисы Google Play недоступны"
   },
   "home": {
     "todayPremieres": "Сегодняшние премьеры",
