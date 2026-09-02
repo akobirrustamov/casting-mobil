@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from "react-router-dom";
 import { AdminPage, AdminPageHeader, AdminError, AdminLoading } from "./AdminLayout";
 import { FaPlus, FaTrash, FaTimes, FaSpinner, FaEdit } from 'react-icons/fa';
 
@@ -21,7 +20,6 @@ const AdminNews = () => {
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [currentNews, setCurrentNews] = useState(null);
     const [mode, setMode] = useState('create'); // 'create' or 'edit'
-    const navigate = useNavigate();
     const accessToken = localStorage.getItem("access_token");
 
 

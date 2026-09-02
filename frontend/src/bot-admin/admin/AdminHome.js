@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import ApiCall from "../../config";
 import { AdminPage, AdminPageHeader, AdminError, AdminLoading } from "./AdminLayout";
-import { useNavigate } from 'react-router-dom';
 
 const AdminHome = () => {
-    const navigate = useNavigate()
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const accessToken = localStorage.getItem("access_token");
 
 
 

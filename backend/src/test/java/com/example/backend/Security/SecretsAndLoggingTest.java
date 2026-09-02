@@ -212,9 +212,15 @@ class SecretsAndLoggingTest {
                     // qo'lda qaytarishga majbur bo'ldi.
                     //
                     // Qo'riqchi YO'QOLMADI: belgisi YO'Q fayllarda u
-                    // avvalgidek qat'iy ishlaydi (`application-dev`,
-                    // `application-schemagen` va kelajakdagilar).
-                    // Ya'ni tasodifiy sir baribir ushlanadi.
+                    // avvalgidek qat'iy ishlaydi (`application-schemagen`
+                    // va kelajakdagilar). Tasodifiy sir baribir ushlanadi.
+                    //
+                    // ⚠️ `application-dev.properties` ham belgini oldi:
+                    // undagi `spring.datasource.password` H2 ning FAYL
+                    // bazasiga tegishli va baza o'sha parol bilan
+                    // yaratilgan — qiymatni almashtirish mavjud dev
+                    // bazasini ochilmas qilardi. Sabab faylning o'zida
+                    // yozilgan.
                     //
                     // Belgi esa faylning o'zida ochiq turadi:
                     //

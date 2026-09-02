@@ -253,7 +253,6 @@ describe('Videoni ko\'rish', () => {
    * yorliqda «1920p» yozilgan edi.
    */
   it('Tik videoda sifat QISQA TOMON bilan nomlanadi', async () => {
-    const Hls = require('hls.js').default;
     adminApi.mediaPreview.mockResolvedValue({
       mediaId: 7, url: '/raw', hlsUrl: '/hls/master.m3u8',
     });

@@ -8,7 +8,6 @@ const AdminHome = () => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const accessToken = localStorage.getItem("access_token");
 
     const checkSecurity = () => {
         const accessToken = localStorage.getItem("access_token");

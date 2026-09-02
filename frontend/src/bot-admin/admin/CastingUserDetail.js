@@ -32,7 +32,6 @@ import {
 function CastingUserDetail() {
     const { castingUserId } = useParams();
     const navigate = useNavigate();
-    const accessToken = localStorage.getItem("access_token");
 
     const [casting, setCasting] = useState(null);
     const [loading, setLoading] = useState(false);

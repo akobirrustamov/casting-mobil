@@ -38,7 +38,6 @@ function Home() {
     const goClient = () => navigate(`/models`);
 
     // Берём строки из i18n; подстраховка от undefined/null
-    const heroTitle = t("hero.title") ?? "";
     const heroSubtitle = t("hero.subtitle") ?? "";
 
     return (

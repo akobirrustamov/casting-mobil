@@ -21,8 +21,10 @@ import com.example.backend.Enums.UserRoles;
 import com.example.backend.Repository.RoleRepo;
 import com.example.backend.Repository.UserPermissionRepo;
 import com.example.backend.Repository.UserRepo;
+import com.example.backend.Sms.OtpService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
@@ -58,6 +60,27 @@ public class DevDataSeeder implements CommandLineRunner {
 
     /** Barcha dev hisoblari uchun bitta parol - eslab qolish oson bo'lsin. */
     public static final String DEV_PASSWORD = "12345678";
+
+    /**
+     * Qo'lda sinash uchun QO'SHIMCHA ilova foydalanuvchisi.
+     *
+     * Yuqoridagi beshta hisob stsenariy uchun (premium, muddati o'tgan,
+     * xarid qilgan, bloklangan, bepul). Bu esa oltinchisi - egasi o'zi
+     * kiradigan, o'z raqami bilan.
+     *
+     * <h2>Nega sozlamadan, kodda emas</h2>
+     * Raqam ham, parol ham HAQIQIY. Kodga yozilsa jar ichiga tushib
+     * serverga ketardi - lokal sozlama fayli esa yuklashdan oldin
+     * tozalanadi. Bo'sh qoldirilsa hisob umuman yaratilmaydi.
+     */
+    @Value("${app.dev.test-user.phone:}")
+    private String testUserPhone;
+
+    @Value("${app.dev.test-user.password:}")
+    private String testUserPassword;
+
+    @Value("${app.dev.test-user.name:Sinov Foydalanuvchi}")
+    private String testUserName;
 
     private final UserRepo userRepo;
     private final RoleRepo roleRepo;
@@ -204,6 +227,53 @@ public class DevDataSeeder implements CommandLineRunner {
 
         // 5. Oddiy - faqat bepul kontent. Reklama shunga ko'rsatiladi.
         account(appUser("+998901112005", "Bepul Foydalanuvchi"));
+
+        // 6. Egasining o'z sinov hisobi - sozlamada raqam ko'rsatilgan bo'lsa.
+        if (testUserPhone != null && !testUserPhone.isBlank()) {
+            String password = testUserPassword == null || testUserPassword.isBlank()
+                    ? DEV_PASSWORD
+                    : testUserPassword;
+            account(loginableUser(testUserPhone, testUserName, password));
+        }
+    }
+
+    /**
+     * Haqiqatan KIRA OLADIGAN ilova foydalanuvchisi.
+     *
+     * <h2>⚠️ Nega oddiy {@link #appUser} yetmaydi</h2>
+     * Ikki jihatda undan farq qiladi, va ikkalasi ham kirishni butunlay
+     * to'sadi - hech qanday xato ko'rsatmasdan, «raqam ro'yxatdan
+     * o'tmagan» degan yolg'on javob bilan:
+     *
+     * <ol>
+     *   <li><b>Telefon formati.</b> {@code AppAccountService.login()}
+     *       raqamni {@link OtpService#normalize} orqali o'tkazadi, u esa
+     *       {@code +} ni OLIB TASHLAYDI: {@code +998901112001} ->
+     *       {@code 998901112001}. Bazada plyus bilan yotgan hisobni
+     *       qidiruv topa olmaydi.</li>
+     *   <li><b>{@code passwordSet} bayrog'i.</b> Haqiqiy ro'yxatdan
+     *       o'tish uni {@code true} qiladi. {@code false} bo'lsa parol
+     *       mos kelgan holatda kirish o'tadi va bayroq tuzatiladi -
+     *       lekin parol xato kiritilsa, ilova «parol noto'g'ri» emas,
+     *       «parol o'rnatilmagan» deydi va odamni ro'yxatdan o'tishga
+     *       yuboradi.</li>
+     * </ol>
+     *
+     * ⚠️ Yuqoridagi beshta stsenariy hisobi ({@code +99890111200x})
+     * ATAYLAB tegilmadi: ular allaqachon shu bazada plyus bilan yotibdi
+     * va formatni o'zgartirish ularni topilmas qilib, har ishga
+     * tushirishda dublikat yaratardi. Ular token bilan sinaladi, kirish
+     * orqali emas.
+     */
+    private User loginableUser(String rawPhone, String name, String password) {
+        String phone = OtpService.normalize(rawPhone);
+        return userRepo.findByPhone(phone).orElseGet(() -> userRepo.save(User.builder()
+                .phone(phone)
+                .name(name)
+                .password(passwordEncoder.encode(password))
+                .passwordSet(true)
+                .roles(List.of(ensureRole(UserRoles.ROLE_USER)))
+                .build()));
     }
 
     /**
@@ -231,10 +301,19 @@ public class DevDataSeeder implements CommandLineRunner {
     }
 
     private User appUser(String phone, String name) {
+        return appUser(phone, name, DEV_PASSWORD);
+    }
+
+    /**
+     * ⚠️ Idempotent va parolni QAYTA YOZMAYDI: hisob bor bo'lsa shundayligicha
+     * qaytariladi. Aks holda foydalanuvchi parolini o'zgartirsa, keyingi ishga
+     * tushirishda eskisi tiklanardi.
+     */
+    private User appUser(String phone, String name, String password) {
         return userRepo.findByPhone(phone).orElseGet(() -> userRepo.save(User.builder()
                 .phone(phone)
                 .name(name)
-                .password(passwordEncoder.encode(DEV_PASSWORD))
+                .password(passwordEncoder.encode(password))
                 .roles(List.of(ensureRole(UserRoles.ROLE_USER)))
                 .build()));
     }
