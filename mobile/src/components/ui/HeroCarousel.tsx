@@ -1,22 +1,55 @@
 import { Image } from 'expo-image';
 import { useEffect, useRef, useState } from 'react';
 import {
-  Dimensions,
   StyleSheet,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Pressable,
   ScrollView,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
 import { Badge, type BadgeTone } from './Badge';
 import { Button } from './Button';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH - 32;
-const STRIDE = CARD_WIDTH + 12;
+/**
+ * Форма баннера — 16:9, ОДНА на все экраны.
+ *
+ * <h2>Почему пропорция, а не высота в пикселях</h2>
+ * Раньше кадр был `ширина экрана − 32` на ЖЁСТКИЕ 210dp. Ширина при этом
+ * зависела от телефона, а высота нет — то есть пропорция кадра плавала от
+ * 1.56:1 на узком экране до 1.9:1 на широком. Файл в админку загружается
+ * ОДИН, и подойти к обеим он не мог: на одном телефоне у баннера срезало
+ * верх и низ, на другом — бока, и заранее увидеть это было нельзя.
+ *
+ * Теперь высота считается от ширины. 16:9 — формат, в котором баннер и
+ * просят загружать (`adminpanel/mediaSpecs.banner`), поэтому `cover`
+ * ничего не обрезает: загруженный файл виден целиком.
+ *
+ * Единственное исключение — `MIN_BANNER_HEIGHT` ниже.
+ */
+const BANNER_RATIO = 16 / 9;
+
+/** Зазор между баннерами — `gap-3` у ленты. */
+const BANNER_GAP = 12;
+
+/** Поля экрана — `px-4` у `Screen`. */
+const SCREEN_PADDING = 16;
+
+/**
+ * Нижняя граница высоты кадра.
+ *
+ * Внутри баннера лежит реальный текст: заголовок в две строки (60),
+ * подзаголовок (18), кнопка (44), зазоры и `p-4` — около 170dp. На экране
+ * 320dp пропорция 16:9 дала бы 162dp, и кнопка вышла бы за нижний край.
+ *
+ * То есть это не «красивое число», а высота содержимого. Срабатывает
+ * только на очень узких телефонах (<312dp), где кадр слегка обрезается по
+ * бокам — на всех современных ширинах остаётся ровно 16:9.
+ */
+const MIN_BANNER_HEIGHT = 176;
 
 export type HeroItem = {
   id: string;
@@ -74,11 +107,20 @@ export function HeroCarousel({
   const [index, setIndex] = useState(0);
   const scroller = useRef<ScrollView>(null);
 
+  // ⚠️ Хук, а не `Dimensions.get()` на уровне модуля: то значение
+  // замерялось ОДИН раз при загрузке файла и после поворота экрана или на
+  // складном телефоне оставалось старым — карусель промахивалась мимо
+  // кадра, потому что шаг прокрутки считался по прежней ширине.
+  const { width: screenWidth } = useWindowDimensions();
+  const cardWidth = screenWidth - SCREEN_PADDING * 2;
+  const cardHeight = Math.max(Math.round(cardWidth / BANNER_RATIO), MIN_BANNER_HEIGHT);
+  const stride = cardWidth + BANNER_GAP;
+
   /** Пока палец на карусели, автолистание молчит. */
   const [dragging, setDragging] = useState(false);
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const next = Math.round(e.nativeEvent.contentOffset.x / STRIDE);
+    const next = Math.round(e.nativeEvent.contentOffset.x / stride);
     if (next !== index) setIndex(next);
   };
 
@@ -98,12 +140,12 @@ export function HeroCarousel({
       // По кругу: дойдя до конца, возвращаемся к первому. Иначе карусель
       // замирала бы на последнем баннере до конца сессии.
       const next = (index + 1) % items.length;
-      scroller.current?.scrollTo({ x: next * STRIDE, animated: true });
+      scroller.current?.scrollTo({ x: next * stride, animated: true });
       setIndex(next);
     }, autoAdvanceMs);
 
     return () => clearTimeout(id);
-  }, [autoAdvanceMs, active, dragging, index, items.length]);
+  }, [autoAdvanceMs, active, dragging, index, items.length, stride]);
 
   return (
     <View className="gap-3">
@@ -111,7 +153,7 @@ export function HeroCarousel({
         ref={scroller}
         horizontal
         pagingEnabled={false}
-        snapToInterval={STRIDE}
+        snapToInterval={stride}
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
         onScroll={onScroll}
@@ -124,7 +166,7 @@ export function HeroCarousel({
         {items.map((item) => (
           <Pressable
             key={item.id}
-            style={{ width: CARD_WIDTH, height: 210 }}
+            style={{ width: cardWidth, height: cardHeight }}
             disabled={!item.pressable}
             onPress={() => onPressItem?.(item.id)}
             accessibilityRole={item.pressable ? 'button' : undefined}

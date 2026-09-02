@@ -31,13 +31,24 @@
  *
  * `masshtab > 1` bo'lsa fayl cho'ziladi va donador chiqadi.
  *
- * Aynan shu joyda xato qilish oson. Masalan afisha kartochkada bor-yo'g'i
- * 396×594 px (132dp), va shunga qarab 600×900 tavsiya qilish mantiqiy
- * ko'rinadi. Lekin YOPIQ kontent ekranida o'sha afisha butun ekran
- * kengligida, 1194×672 bo'lib chiziladi (`WatchDetail.LockedPoster`) —
- * 600×900 u yerda ikki barobar cho'ziladi. Shuning uchun ramkalar ro'yxati
- * bu yerda saqlanadi va test ularni har safar qayta hisoblaydi
- * (`__tests__/mediaSpec.test.jsx`).
+ * Aynan shu joyda xato qilish oson. Masalan afisha qatorda bor-yo'g'i
+ * 354×531 px, va shunga qarab 400×600 tavsiya qilish mantiqiy ko'rinadi.
+ * Lekin YOPIQ kontent ekranida o'sha afisha 837×1257 bo'lib chiziladi
+ * (`WatchDetail.LockedPoster`) — 400×600 u yerda ikki barobar cho'ziladi.
+ * Shuning uchun ramkalar ro'yxati bu yerda saqlanadi va test ularni har
+ * safar qayta hisoblaydi (`__tests__/mediaSpec.test.jsx`).
+ *
+ * <h2>⚠️ Bitta maydon — BITTA fayl</h2>
+ * Bu yerda har bir maydonga FAQAT BITTA o'lcham yoziladi. Ilova o'zi
+ * moslashadi: afisha hamma joyda 2:3 (`railLayout.CARD_RATIO`), banner
+ * hamma telefonda 16:9 (`HeroCarousel.BANNER_RATIO`) — ya'ni bitta fayl
+ * barcha ekranlarga to'g'ri keladi.
+ *
+ * ⚠️ Ilgari bu yerda «vertikal kontent uchun 720×1280» degan IKKINCHI
+ * o'lcham ham bor edi. Endi u YO'Q va qaytarilmasligi kerak: kartochka
+ * shakli kontent formatiga bog'liq emas, va 9:16 fayl 2:3 ramkada
+ * qirqilardi. Admin ikkita o'lchamdan qaysi birini tanlashni bilmasligi
+ * kerak — tanlash uning ishi emas.
  *
  * Ilovadagi ramka o'zgarsa, shu yerdagi `frames` ham o'zgarishi kerak — aks
  * holda panel yolg'on maslahat berib turaveradi.
@@ -73,22 +84,27 @@ export const MEDIA_SPECS = {
   /**
    * Kontent afishasi.
    *
-   * ⚠️ IKKI xil ramkada ko'rsatiladi va ikkalasi ham qirqadi:
-   *   - kartochka — 2:3 (`orientation.cardRatio`), eng kattasi 132dp × 198dp;
-   *   - yopiq kontent ekrani — 16:9 (`WatchDetail.LockedPoster` `frameRatio` oladi).
-   * Shuning uchun asosiy tasvir MARKAZDA turishi kerak.
+   * Ilovadagi HAMMA joyda bitta shakl — 2:3 (`railLayout.CARD_RATIO`):
+   *   - qator va setka (`PosterCard`) — kengligi ekrandan hisoblanadi,
+   *     eng kattasi 118dp × 177dp;
+   *   - yopiq kontent ekrani (`WatchDetail.LockedPoster`) — o'sha 2:3,
+   *     balandligi ekranning 45% i bilan cheklangan.
+   *
+   * ⚠️ Ilgari yopiq ekran afishani 16:9 ga qirqardi (`frameRatio`), va tik
+   * afishadan o'rtadagi tasma qolardi. Endi qirqilmaydi — shuning uchun bu
+   * maydonga IKKINCHI o'lcham kerak emas.
    */
   poster: {
     size: '1200×1800',
     ratio: '2:3',
     formats: IMG,
     maxMb: 2,
-    where: 'PosterCard 132dp × 198dp (@3x = 396×594); LockedPoster 398dp × 224dp (@3x = 1194×672)',
-    frames: [[396, 594], [1194, 672]],
+    where: 'PosterCard / ContentGrid ≤118dp × 177dp (@3x = 354×531); LockedPoster ≤279dp × 419dp (@3x = 837×1257)',
+    frames: [[354, 531], [837, 1257]],
     note: {
-      uz: "Vertikal (Reels) kontent uchun 720×1280 (9:16). ⚠️ Yopiq kontent ekranida afisha BUTUN EKRAN kengligida, 16:9 ga qirqilib chiziladi — shuning uchun fayl katta bo'lishi shart, aks holda u yerda donador chiqadi. Yuz va asosiy tasvirni markazda saqlang.",
-      ru: 'Для вертикального (Reels) контента — 720×1280 (9:16). ⚠️ На экране закрытого контента афиша рисуется во ВСЮ ширину экрана с обрезкой до 16:9 — поэтому файл должен быть крупным, иначе там он будет зернистым. Держите лицо и главное в центре.',
-      en: 'For vertical (Reels) content use 720×1280 (9:16). ⚠️ On the locked-content screen the poster is drawn at FULL screen width, cropped to 16:9 — so the file must be large or it looks grainy there. Keep the subject centred.',
+      uz: "BITTA fayl butun ilova uchun: qator, katalog va yopiq kontent ekranida afisha bir xil 2:3 ramkada chiziladi, ya'ni hech qayerda qirqilmaydi. Vertikal (Reels) kontentga ham SHU o'lcham — kartochka shakli kontent formatiga bog'liq emas. Yuz va asosiy tasvirni markazda saqlang.",
+      ru: 'ОДИН файл на всё приложение: в ряду, каталоге и на экране закрытого контента афиша рисуется в одной и той же рамке 2:3 и нигде не обрезается. Для вертикального (Reels) контента — ТОТ ЖЕ размер: форма карточки не зависит от формата контента. Держите лицо и главное в центре.',
+      en: 'ONE file for the whole app: in rails, catalogue and on the locked-content screen the poster is drawn in the same 2:3 frame and is never cropped. Vertical (Reels) content uses the SAME size — the card shape does not depend on the content format. Keep the subject centred.',
     },
   },
 
@@ -156,12 +172,12 @@ export const MEDIA_SPECS = {
     ratio: '2:3',
     formats: IMG,
     maxMb: 2,
-    where: 'kontent afishasi bilan bir xil ramka',
-    frames: [[396, 594]],
+    where: 'kontent afishasi bilan bir xil ramka (@3x = 354×531)',
+    frames: [[354, 531]],
     note: {
-      uz: "Kontent afishasi bilan bir xil o'lcham. Vertikal kontent uchun 720×1280 (9:16).",
-      ru: 'Та же пропорция, что у афиши контента. Для вертикального — 720×1280 (9:16).',
-      en: 'Same ratio as the content poster. For vertical content use 720×1280 (9:16).',
+      uz: "Kontent afishasi bilan BIR XIL o'lcham — vertikal kontent uchun ham shu fayl.",
+      ru: 'ТОТ ЖЕ размер, что у афиши контента, — включая вертикальный контент.',
+      en: 'The SAME size as the content poster, vertical content included.',
     },
   },
 
@@ -178,11 +194,11 @@ export const MEDIA_SPECS = {
     formats: IMG,
     maxMb: 1,
     where: 'EpisodeList 96dp × 64dp (@3x = 288×192); vertikalda 54dp × 96dp (@3x = 162×288)',
-    frames: [[288, 192]],
+    frames: [[288, 192], [162, 288]],
     note: {
-      uz: "⚠️ Ramka 3:2, 16:9 emas — keng kadrning chap va o'ng cheti qirqiladi. Vertikal kontentda ramka 9:16 bo'ladi: 720×1280 yuklang.",
-      ru: '⚠️ Рамка 3:2, а не 16:9 — у широкого кадра обрежутся левый и правый края. У вертикального контента рамка 9:16: загружайте 720×1280.',
-      en: '⚠️ The frame is 3:2, not 16:9 — a wide frame loses its left and right edges. For vertical content the frame is 9:16: upload 720×1280.',
+      uz: "⚠️ Ramka 3:2, 16:9 emas — keng kadrning chap va o'ng cheti qirqiladi. Vertikal kontentda SHU fayl 9:16 ga qirqiladi, ya'ni faqat o'rtasi ko'rinadi — asosiy tasvirni markazda saqlang.",
+      ru: '⚠️ Рамка 3:2, а не 16:9 — у широкого кадра обрежутся левый и правый края. У вертикального контента ЭТОТ ЖЕ файл обрезается до 9:16, то есть видна только середина — держите главное в центре.',
+      en: '⚠️ The frame is 3:2, not 16:9 — a wide frame loses its left and right edges. For vertical content the SAME file is cropped to 9:16, so only the middle shows — keep the subject centred.',
     },
   },
 
@@ -199,23 +215,27 @@ export const MEDIA_SPECS = {
   /**
    * Reklama banneri — bosh sahifadagi karusel.
    *
-   * ⚠️ Nisbat TELEFONGA QARAB o'zgaradi: `HeroCarousel` da balandlik qat'iy
-   * 210dp, kenglik esa ekran kengligidan 32dp kam. Ya'ni 360dp ekranda
-   * 1.56:1, 430dp ekranda 1.89:1. Hech bir fayl ikkalasiga ham aniq to'g'ri
-   * kelmaydi — shuning uchun 16:9 (o'rtasi) tavsiya etiladi va muhim narsa
-   * markazda saqlanadi.
+   * ⚠️ Ilgari nisbat TELEFONGA QARAB o'zgarardi: `HeroCarousel` da balandlik
+   * qat'iy 210dp edi, kenglik esa ekrandan 32dp kam — ya'ni 360dp ekranda
+   * 1.56:1, 430dp ekranda 1.89:1. Bitta fayl ikkalasiga ham to'g'ri
+   * kelmasdi.
+   *
+   * Endi balandlik kenglikdan hisoblanadi (`HeroCarousel.BANNER_RATIO`),
+   * ya'ni kadr hamma joyda 16:9 va yuklangan fayl to'liq ko'rinadi.
+   * Istisno — 312dp dan tor eski telefonlar: u yerda matn sig'ishi uchun
+   * minimal balandlik ishlaydi va kadr yon tomondan bir oz qirqiladi.
    */
   banner: {
     size: '1280×720',
     ratio: '16:9',
     formats: IMG,
     maxMb: 2,
-    where: 'HeroCarousel (ekran − 32dp) × 210dp; eng kattasi 398dp × 210dp (@3x = 1194×630)',
-    frames: [[1194, 630]],
+    where: 'HeroCarousel (ekran − 32dp), balandligi 16:9 dan; eng kattasi 398dp × 224dp (@3x = 1194×672)',
+    frames: [[1194, 672]],
     note: {
-      uz: "Nisbat telefon kengligiga qarab 1.6:1 dan 1.9:1 gacha o'zgaradi — matn va logotipni MARKAZDA saqlang. Pastki chap burchakni sarlavha, tavsif va tugma yopadi: u yerga yozuv qo'ymang.",
-      ru: 'Пропорция плавает от 1.6:1 до 1.9:1 в зависимости от ширины телефона — держите текст и логотип В ЦЕНТРЕ. Левый нижний угол закрывают заголовок, описание и кнопка: не размещайте там надписи.',
-      en: 'The ratio floats between 1.6:1 and 1.9:1 depending on phone width — keep text and logo CENTRED. The bottom-left corner is covered by the title, subtitle and button: put no text there.',
+      uz: "Kadr 16:9 — 1280×720 fayl deyarli barcha telefonda to'liq ko'rinadi (juda tor eski ekranlarda yon tomondan ozgina qirqiladi). Pastki chap burchakni sarlavha, tavsif va tugma yopadi: u yerga yozuv qo'ymang.",
+      ru: 'Кадр 16:9 — файл 1280×720 виден целиком почти на любом телефоне (на очень узких старых экранах немного обрежется по бокам). Левый нижний угол закрывают заголовок, описание и кнопка: не размещайте там надписи.',
+      en: 'The frame is 16:9 — a 1280×720 file is shown in full on virtually every phone (very narrow old screens crop it slightly at the sides). The bottom-left corner is covered by the title, subtitle and button: put no text there.',
     },
   },
 
@@ -251,11 +271,11 @@ export const MEDIA_SPECS = {
     ratio: '2:3',
     formats: IMG,
     maxMb: 2,
-    where: 'PremiereRail → PosterCard 132dp × 198dp (@3x = 396×594)',
+    where: 'PremiereRail → PosterCard ≤118dp × 177dp (@3x = 354×531)',
     /* ⚠️ Kontent afishasidan FARQLI: premyera rasmi yopiq kontent
        ekraniga tushmaydi, u faqat qatorda turadi. Shuning uchun 600×900
        yetarli va uni 1200×1800 ga ko'tarish faqat trafikni oshirardi. */
-    frames: [[396, 594]],
+    frames: [[354, 531]],
     note: {
       uz: "⚠️ Premyera reklama banneridan FARQ QILADI: u tik afisha (2:3) sifatida ko'rsatiladi, keng banner emas. Keng rasm yuklansa chap va o'ng cheti qirqiladi.",
       ru: '⚠️ Премьера ОТЛИЧАЕТСЯ от рекламного баннера: она показывается вертикальной афишей (2:3), а не широким баннером. У широкой картинки обрежутся края.',
