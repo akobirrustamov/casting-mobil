@@ -56,23 +56,51 @@ npx eas whoami          # → bukakish (authenticated using EXPO_TOKEN)
 npx eas credentials -p android          # Keystore → SHA-1 Fingerprint
 ```
 
-### 1.3. Установленный EAS CLI
-
-В проекте его нет:
+### 1.3. EAS CLI — ставится ГЛОБАЛЬНО, не в проект
 
 ```bash
-npm i -D eas-cli        # либо npx eas-cli@latest, если не хотим в зависимости
+npm i -g eas-cli
 ```
 
-Дальше сборка идёт одной командой и без вопросов:
+⚠️ **В `devDependencies` его класть нельзя**, хотя соблазн есть. Первая же
+попытка так сделать (02.09.2026) уронила сборку на фазе «Install
+dependencies»:
+
+```
+npm ci can only install packages when your package.json and
+package-lock.json are in sync.
+Missing: typescript@5.9.3 from lock file
+```
+
+У `eas-cli` своя ветка зависимостей с другой версией TypeScript. Локально
+`npm install` её разложил, а в `package-lock.json` запись не попала — и
+`npm ci` на сервере, который в отличие от `npm install` не имеет права
+чинить расхождения, честно отказался. Плюс это лишние мегабайты и нативная
+сборка `dtrace-provider` на КАЖДОМ билде: EAS ставит и devDependencies.
+
+Сборка:
 
 ```bash
-EXPO_TOKEN=... npx eas build --platform android --profile preview --non-interactive
+export EXPO_TOKEN=$(grep '^EXPO_TOKEN=' .env.local | cut -d= -f2)
+eas build --platform android --profile preview --non-interactive
 ```
 
-⚠️ Сборка на серверах Expo расходует квоту аккаунта: на бесплатном тарифе
-очередь общая и может занять десятки минут. Это ещё один довод не гонять
-сборку ради правки текста — см. §2.
+⚠️ Сборка расходует квоту аккаунта: на бесплатном тарифе очередь общая и
+может занять десятки минут. Ещё один довод не гонять сборку ради правки
+текста — см. §2.
+
+### 1.4. Как читать логи упавшей сборки
+
+Веб-страница сборки требует логина, поэтому логи достаются через API. Файл
+приходит сжатым **brotli** — `gzip` его не откроет:
+
+```bash
+URL=$(curl -s https://api.expo.dev/graphql -H "Authorization: Bearer $EXPO_TOKEN"   -H "Content-Type: application/json"   -d '{"query":"query{builds{byId(buildId:\"<BUILD_ID>\"){logFiles}}}"}'   | python -c "import sys,json;print(json.load(sys.stdin)['data']['builds']['byId']['logFiles'][0])")
+curl -s "$URL" -o build.log
+node -e "console.log(require('zlib').brotliDecompressSync(require('fs').readFileSync('build.log')).toString())"
+```
+
+Каждая строка — JSON с полями `phase` и `msg`.
 
 ---
 
