@@ -144,8 +144,23 @@ npx eas update --channel preview --message "что поменялось"
 
 Пока не задан, `POST /api/v1/auth/google` отвечает `503`
 (проверено 02.09.2026). Человек дойдёт до выбора аккаунта Google, приложение
-получит `id_token`, а обмен упадёт. Строка и способ проверки —
-[GOOGLE_AUTH.md §6](./GOOGLE_AUTH.md). Делает тот, у кого доступ к серверу.
+получит `id_token`, а обмен упадёт. Полный разбор —
+[GOOGLE_AUTH.md §6](./GOOGLE_AUTH.md).
+
+На сервере (`/opt/uzcasting/application.properties`, туда же смотрит
+`deploy/uzcasting.service`):
+
+```sh
+echo 'app.google.client-ids=497193534365-urqt7p6tufge2qpqhdns5qv8nvshjsqe.apps.googleusercontent.com,497193534365-03mh4geit6f6n13enrf2bqcs8dhcp1cb.apps.googleusercontent.com'   >> /opt/uzcasting/application.properties
+systemctl restart uzcasting
+```
+
+Проверка снаружи — должно стать `401` вместо `503`:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}
+" -X POST https://uzcasting.com/api/v1/auth/google   -H "Content-Type: application/json" -d '{"idToken":"probe"}'
+```
 
 ### 3.3. SHA-1 ключа сборки в Android-клиенте ❌
 
@@ -159,9 +174,21 @@ npx eas update --channel preview --message "что поменялось"
 Вход по телефону работает так же — `verifyOtp` создаёт пользователя при
 первом входе. Отдельной «регистрации» нет ни там, ни там.
 
+SMS на сервере настроен: `POST /api/v1/app/auth/otp/send` с заведомо
+несуществующим номером отвечает `SMS_SEND_FAILED`, а не `SMS_NOT_CONFIGURED`
+(проверено 02.09.2026) — то есть ключи Eskiz на месте и запрос дошёл до него.
+Живы ли сами ключи, покажет только настоящий номер.
+
 ⚠️ Проверить стоит одно: боевой сервер должен ходить в **PostgreSQL**, а не в
 H2 из локального профиля. `deploy/uzcasting.service` запускается после
 `postgresql.service`, то есть так и задумано, но сам конфиг лежит только на
 сервере (`/opt/uzcasting/application.properties`) и в репозитории его нет.
 Если там окажется H2 в памяти, все зарегистрированные исчезнут при первом же
 рестарте — и заметят это не сразу.
+
+```sh
+grep -E 'datasource|jpa.hibernate.ddl-auto' /opt/uzcasting/application.properties
+```
+
+Ждём `jdbc:postgresql://...`. Строка вида `jdbc:h2:mem:` означает, что база
+живёт до первого рестарта.
