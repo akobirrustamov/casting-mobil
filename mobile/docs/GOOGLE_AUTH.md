@@ -35,7 +35,7 @@
 | Android package | `uz.uzcasting.app` |
 | iOS bundle ID | `uz.uzcasting.app` |
 | URL-схема | `uzcasting` |
-| API мобилки | `http://uzcasting.com` (куплен 31.08.2026, пока без TLS) |
+| API мобилки | `https://uzcasting.com` (сертификат GlobalSign до 17.03.2027) |
 | Сайт | `https://uzcasting.site` |
 
 ---
@@ -173,7 +173,7 @@ iOS-клиент добавится сюда же на 2-м этапе.
 | 1 | **Android client ID** — клиент с package `uz.uzcasting.app` и SHA-1 выше | ✅ создан, ID в `.env` и `eas.json` |
 | 2 | **Test users** в Google Auth Platform → Audience. Пока проект в статусе `Testing`, войти могут только перечисленные аккаунты. Симптом при пропуске — «доступ запрещён» без внятной причины | ✅ добавлен `lazizkhamrakulov@gmail.com` (14.08.2026) |
 | 3 | **Dev build.** В Expo Go Google-вход не работает: Google не принимает redirect на схему Expo Go | ✅ EAS-профиль `development` настроен |
-| 4 | **Деплой бэкенда.** Код с Google-логином на сервере | ✅ `http://uzcasting.com` отвечает `503`, а не `405` (31.08.2026) |
+| 4 | **Деплой бэкенда.** Код с Google-логином на сервере | ✅ отвечает `503`, а не `405` (проверено 02.09.2026) |
 | 5 | **`app.google.client-ids` на сервере** — иначе эндпоинт отвечает `503` | ❌ **блокирует вход**, делает тот, кто деплоит (см. §6) |
 | 6 | **Keystore сборки** — старый потерян, SHA-1 в Android-клиенте больше ничему не соответствует (§4) | ❌ **блокирует и сборку, и вход** |
 | 7 | **SHA-1 релизного ключа** — когда решим, кто подписывает продакшен (наш keystore или Play App Signing) | ⏳ к этапу публикации |
@@ -184,7 +184,7 @@ iOS-клиент добавится сюда же на 2-м этапе.
 ### Как проверить деплой одной командой
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}\n" -X POST http://uzcasting.com/api/v1/auth/google \
+curl -s -o /dev/null -w "%{http_code}\n" -X POST https://uzcasting.com/api/v1/auth/google \
   -H "Content-Type: application/json" -d '{"idToken":"probe"}'
 ```
 

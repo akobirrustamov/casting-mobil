@@ -5,10 +5,12 @@
   },
   "build": {
     "development": {
+      "channel": "development",
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://uzcasting.com",
+        "EXPO_PUBLIC_API_URL": "https://uzcasting.com",
+        "ALLOW_CLEARTEXT": "true",
         "EXPO_PUBLIC_READ_ONLY": "false",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "497193534365-urqt7p6tufge2qpqhdns5qv8nvshjsqe.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "497193534365-03mh4geit6f6n13enrf2bqcs8dhcp1cb.apps.googleusercontent.com"
@@ -19,9 +21,10 @@
       }
     },
     "preview": {
+      "channel": "preview",
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://uzcasting.com",
+        "EXPO_PUBLIC_API_URL": "https://uzcasting.com",
         "EXPO_PUBLIC_READ_ONLY": "false",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "497193534365-urqt7p6tufge2qpqhdns5qv8nvshjsqe.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "497193534365-03mh4geit6f6n13enrf2bqcs8dhcp1cb.apps.googleusercontent.com"
@@ -32,12 +35,13 @@
       }
     },
     "production": {
+      "channel": "production",
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://uzcasting.com",
+        "EXPO_PUBLIC_API_URL": "https://uzcasting.com",
         "EXPO_PUBLIC_READ_ONLY": "false",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "497193534365-urqt7p6tufge2qpqhdns5qv8nvshjsqe.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "497193534365-03mh4geit6f6n13enrf2bqcs8dhcp1cb.apps.googleusercontent.com"

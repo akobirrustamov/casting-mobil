@@ -1,7 +1,8 @@
 # API — что уже есть
 
 > Разбор боевого бэкенда по коду сайта (`frontend/src`) и живым запросам.
-> База: `http://uzcasting.com` — боевой домен приложения (31.08.2026).
+> База: `https://uzcasting.com` — боевой домен приложения (TLS с 30.08.2026;
+> на `http://` nginx отвечает `301`, а это ломает POST — см. LOCAL_BACKEND.md §9).
 > Раньше был `https://uzcasting.site`; старый кастинговый модуль отвечает на
 > обоих. Адрес задаётся через `EXPO_PUBLIC_API_URL`, разбор — в
 > [LOCAL_BACKEND.md §9](./LOCAL_BACKEND.md).

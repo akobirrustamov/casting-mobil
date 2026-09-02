@@ -10,21 +10,17 @@
       "uz.uzcasting.app"
     ],
     "userInterfaceStyle": "dark",
+    "updates": {
+      "url": "https://u.expo.dev/0ce6ce6a-5243-426b-9a5f-adff85882fec"
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
     "backgroundColor": "#05050A",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "uz.uzcasting.app",
-      "infoPlist": {
-        "NSAppTransportSecurity": {
-          "NSExceptionDomains": {
-            "uzcasting.com": {
-              "NSExceptionAllowsInsecureHTTPLoads": true,
-              "NSIncludesSubdomains": true
-            }
-          }
-        }
-      }
+      "bundleIdentifier": "uz.uzcasting.app"
     },
     "android": {
       "package": "uz.uzcasting.app",
@@ -55,15 +51,7 @@
       "expo-video",
       "expo-web-browser",
       "expo-localization",
-      "expo-font",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "usesCleartextTraffic": true
-          }
-        }
-      ]
+      "expo-font"
     ],
     "extra": {
       "router": {},

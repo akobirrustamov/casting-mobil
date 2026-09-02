@@ -196,18 +196,19 @@ Spring MVC patterns»*. Консоль выключена.
 |---|---|
 | локальный стенд | `mobile/.env` → `EXPO_PUBLIC_API_URL=http://<IP>:8099` |
 | сборки EAS (APK) | `eas.json`, поле `env` нужного профиля |
-| ничего не задано | `DEFAULT_API_URL` в `src/lib/api.ts` — `http://uzcasting.com` |
+| ничего не задано | `DEFAULT_API_URL` в `src/lib/api.ts` — `https://uzcasting.com` |
 
-Боевой бэкенд развёрнут на **`http://uzcasting.com`** (31.08.2026:
-`/api/v1/app/home` отвечает `200`, `/app/me` и `/app/favorites` — `401`,
-то есть на месте).
+Боевой бэкенд развёрнут на **`https://uzcasting.com`** (02.09.2026:
+`/api/v1/app/home` отвечает `200` и уже с содержимым, `/app/me` и
+`/app/favorites` — `401`, картинки `/app/media/{id}/raw` — `200`).
 
-⚠️ **Домен без TLS.** Токен сессии, refresh-токен, номер и код из SMS идут
-открытым текстом. Ради этого в сборку добавлены послабления:
-`usesCleartextTraffic` для Android (`expo-build-properties`) и исключение
-для домена в `NSAppTransportSecurity` для iOS. Как только появится
-сертификат — меняется `https` в трёх местах (`api.ts`, `eas.json`,
-`app.json`), а послабления **надо убрать**.
+⚠️ **Только `https`.** 30.08.2026 домену выпустили сертификат (GlobalSign,
+до 17.03.2027), и nginx отвечает на `http://` редиректом `301`. Это не
+«просто небезопасно»: GET редирект переживает, а POST — нет, клиент
+повторяет его как GET и без тела. На `http://` вход перестаёт работать
+молча. Прежние послабления (`usesCleartextTraffic`, исключение в
+`NSAppTransportSecurity`) из релизных сборок убраны — открытый http
+остался только у профиля `development`, для стенда по LAN (`app.config.js`).
 
 ⚠️ **Локальность определяется по адресу**, не по `__DEV__`: dev-клиент
 подключают и к боевому домену. От этого зависит метка в адресе картинок —
