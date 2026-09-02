@@ -86,7 +86,10 @@
     "otpLocked": "Too many attempts, request a new code",
     "otpCooldown": "Code already sent, please wait",
     "smsUnavailable": "SMS sign-in is not configured yet",
-    "phoneSubtitle": "Enter your number to sign in or sign up"
+    "phoneSubtitle": "Enter your number to sign in or sign up",
+    "googleServerNotReady": "Google sign-in is not enabled on the server yet",
+    "googleRejected": "Google account was rejected, please try again",
+    "googleFailed": "Sign-in failed, please try again"
   },
   "home": {
     "todayPremieres": "Today's premieres",

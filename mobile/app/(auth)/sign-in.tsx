@@ -18,7 +18,7 @@ import { Wordmark } from '@/components/ui/Wordmark';
 import { exchangeGoogleToken, sendOtp } from '@/features/auth/api';
 import type { DevLoginResult } from '@/features/auth/devLogin';
 import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton';
-import { otpErrorKey } from '@/features/auth/otpErrors';
+import { googleErrorKey, otpErrorKey } from '@/features/auth/otpErrors';
 import { useAuthStore } from '@/features/auth/store';
 import { colors } from '@/theme/tokens';
 
@@ -88,7 +88,7 @@ export default function SignInScreen() {
       // Бэкенд по-прежнему шлёт phone_required, но это подсказка, не запрет.
       router.replace('/(tabs)');
     } catch (e) {
-      setGoogleError(e instanceof Error ? e.message : 'Не удалось войти через Google');
+      setGoogleError(t(googleErrorKey(e)));
     }
   };
 
