@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { adminApi, mediaUrl } from '../api/client';
 import { usePanelI18n } from '../i18n';
 import MediaPicker from './MediaPicker';
+import MediaSpec from './MediaSpec';
 
 /**
  * Bitta rasm maydoni: oldindan ko'rish + tanlash/almashtirish/olib tashlash.
@@ -143,6 +144,15 @@ export default function MediaField({ label, value, onChange, hint, spec, type = 
           {transcoding.error ? ` — ${transcoding.error}` : ''}
         </p>
       )}
+      {/* Tavsiya etilgan o'lcham — MAYDONNING O'ZIDA.
+          ⚠️ Ilgari u faqat fayl tanlash oynasida bor edi, ya'ni admin
+          uni «Yuklash» tugmasini bosgandan KEYIN ko'rardi. Rasmni esa
+          u bosishdan oldin, boshqa dasturda tayyorlaydi — o'lcham
+          kechikkanda kerak bo'lgan fayl allaqachon noto'g'ri edi.
+          `GalleryField` da bu yozuv bor edi, bitta rasm maydonida
+          yo'q: aynan shuning uchun farq ko'zga tashlanmasdi. */}
+      {spec && <MediaSpec name={spec} />}
+
       {hint && <p className="uz-muted mt-1" style={{ fontSize: 11 }}>{hint}</p>}
 
       <MediaPicker
