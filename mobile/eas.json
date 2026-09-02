@@ -16,8 +16,7 @@
         "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "497193534365-03mh4geit6f6n13enrf2bqcs8dhcp1cb.apps.googleusercontent.com"
       },
       "android": {
-        "buildType": "apk",
-        "credentialsSource": "local"
+        "buildType": "apk"
       }
     },
     "preview": {
@@ -30,8 +29,7 @@
         "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "497193534365-03mh4geit6f6n13enrf2bqcs8dhcp1cb.apps.googleusercontent.com"
       },
       "android": {
-        "buildType": "apk",
-        "credentialsSource": "local"
+        "buildType": "apk"
       }
     },
     "production": {
