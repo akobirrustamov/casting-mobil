@@ -35,8 +35,23 @@
 | Android package | `uz.uzcasting.app` |
 | iOS bundle ID | `uz.uzcasting.app` |
 | URL-схема | `uzcasting` |
+| Номер проекта Google Cloud | `497193534365` (префикс обоих client ID) |
+| Аккаунт | `lazizkhamrakulov@gmail.com` |
 | API мобилки | `https://uzcasting.com` (сертификат GlobalSign до 17.03.2027) |
 | Сайт | `https://uzcasting.site` |
+
+Куда идти в консоли (имя проекта нигде не записано, поэтому по номеру):
+
+- Android-клиент и SHA-1 —
+  https://console.cloud.google.com/apis/credentials?project=497193534365
+- Статус `Testing` и список test users —
+  https://console.cloud.google.com/auth/audience?project=497193534365
+
+Если по номеру не открывается, консоль иногда требует строковый project ID —
+тогда через выбор проекта:
+https://console.cloud.google.com/projectselector2/apis/credentials
+
+⚠️ Не путать с аккаунтом Expo (`bukakish`): это разные сервисы и разные входы.
 
 ---
 
