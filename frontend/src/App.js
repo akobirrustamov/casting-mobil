@@ -5,14 +5,11 @@ import ApiCall from "./config/index"
 // my pages
 import Home from "./pages/home/Home"
 import PageNotFound from "./pages/404/404";
-import AdminHome from "./admin/admin/AdminHome";
-import AdminNews from "./admin/admin/AdminNews";
 import DataForm from "./pages/dataForm/DataForm";
 import History from "./pages/history/History";
 import Appeal from "./pages/appeal/Appeal";
 import CastingUser from "./admin/admin/CastingUser";
 import CastingUserDetail from "./admin/admin/CastingUserDetail";
-import CastingUserAccepted from "./admin/admin/CastingUserAccepted";
 import Models from "./pages/models/Models";
 import LoginPage from "./admin/LoginAdmin"
 import BotHome from "./pages/HomeBot/BotHome"

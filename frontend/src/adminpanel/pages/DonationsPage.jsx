@@ -4,7 +4,6 @@ import { useApi } from '../api/useApi';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, TableWrap } from '../components/Ui';
 import TrendChart from '../components/TrendChart';
-import BarChart from '../components/charts/BarChart';
 import { usePanelI18n } from '../i18n';
 import { count } from '../utils/format';
 

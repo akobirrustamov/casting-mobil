@@ -9,23 +9,8 @@ import {
     FaCheck,
     FaTimes,
     FaDollarSign,
-    FaTrash,
     FaUser,
-    FaRulerVertical,
-    FaPalette,
-    FaEye,
-    FaTshirt,  // Using FaTshirt instead of FaShirt
-    FaShoePrints,
-    FaMapMarkerAlt,
-    FaGlobe,
-    FaBirthdayCake,
-    FaPhone,
-    FaEnvelope,
-    FaPaperPlane,
-    FaFacebook,
-    FaInstagram,
     FaImages,
-    FaMoneyBillWave,
     FaClock
 } from 'react-icons/fa';
 
