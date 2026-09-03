@@ -119,7 +119,8 @@
     "googleRejected": "Google account was rejected, please try again",
     "googleFailed": "Sign-in failed, please try again",
     "googleNoPlayServices": "Google Play services are unavailable",
-    "googleConfigMismatch": "Google configuration mismatch: SHA-1 or client ID"
+    "googleConfigMismatch": "Google configuration mismatch: SHA-1 or client ID",
+    "googleNoToken": "Google returned no token — configuration needs a check"
   },
   "home": {
     "todayPremieres": "Today's premieres",

@@ -119,7 +119,8 @@
     "googleRejected": "Google hisobi qabul qilinmadi, qaytadan urinib ko'ring",
     "googleFailed": "Kirish amalga oshmadi, qaytadan urinib ko'ring",
     "googleNoPlayServices": "Google Play xizmatlari mavjud emas",
-    "googleConfigMismatch": "Google sozlamalari mos kelmadi: SHA-1 yoki client ID"
+    "googleConfigMismatch": "Google sozlamalari mos kelmadi: SHA-1 yoki client ID",
+    "googleNoToken": "Google token bermadi — sozlama tekshirilishi kerak"
   },
   "home": {
     "todayPremieres": "Bugungi premyeralar",

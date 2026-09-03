@@ -119,7 +119,8 @@
     "googleRejected": "Google-аккаунт не принят, попробуйте ещё раз",
     "googleFailed": "Не удалось войти, попробуйте ещё раз",
     "googleNoPlayServices": "Сервисы Google Play недоступны",
-    "googleConfigMismatch": "Настройки Google не совпадают: SHA-1 или client ID"
+    "googleConfigMismatch": "Настройки Google не совпадают: SHA-1 или client ID",
+    "googleNoToken": "Google не вернул токен — нужна проверка настройки"
   },
   "home": {
     "todayPremieres": "Сегодняшние премьеры",

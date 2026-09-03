@@ -31,9 +31,14 @@ describe('toSignInResult', () => {
     });
   });
 
-  it('успех без токена — всё-таки ошибка', () => {
+  /**
+   * ⚠️ Своё сообщение, а не общее: «вошёл, но токена нет» означает, что
+   * `webClientId` не тот или не из этого проекта. Свалив это в общий текст,
+   * мы бы отправили человека проверять интернет.
+   */
+  it('успех без токена — отдельная причина', () => {
     const r = toSignInResult({ type: 'success', data: { idToken: null } } as never);
-    expect(r).toEqual({ status: 'error', messageKey: 'auth.googleFailed' });
+    expect(r).toEqual({ status: 'error', messageKey: 'auth.googleNoToken' });
   });
 });
 

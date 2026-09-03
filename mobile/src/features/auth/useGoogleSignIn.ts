@@ -64,11 +64,13 @@ export function toSignInResult(response: SignInResponse): GoogleSignInResult {
 
   const idToken = response.data?.idToken;
 
-  // Токена может не быть при успешном входе: так бывает, когда в консоли
-  // не задан веб-клиент. Молча уйти в «успех» нельзя — обменивать нечего.
+  // ⚠️ Вход прошёл, а токена нет — отдельный случай, и он НЕ про связь.
+  // Так бывает, когда `webClientId` не тот или не из этого проекта: аккаунт
+  // Google выбран, но подписывать токен нечем. В общем «не удалось войти»
+  // это неотличимо от обрыва сети, а чинится совсем в другом месте.
   return idToken
     ? { status: 'success', idToken }
-    : { status: 'error', messageKey: 'auth.googleFailed' };
+    : { status: 'error', messageKey: 'auth.googleNoToken' };
 }
 
 /**
