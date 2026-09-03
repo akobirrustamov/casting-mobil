@@ -150,6 +150,30 @@ it('После перемотки назад сохранение на серв�
  */
 it('Пауза отправляет позицию сразу', async () => {
   await mount(fakePlayer());
+  await tick(300);          // ушло на сервер
+  await tick(305);          // меньше интервала — на сервер НЕ ушло
+  saveMock.mockClear();
+
+  await act(async () => {
+    mockHandlers.get('playingChange')?.({ isPlaying: false });
+  });
+
+  // ⚠️ Именно 305: пауза досылает то, что интервал ещё не отправил.
+  // В этом весь смысл — человек может закрыть приложение через
+  // секунду, и следующего тика не будет.
+  expect(saveMock).toHaveBeenCalledWith('CONTENT', 5, 305, 7200, 'auto');
+});
+
+/**
+ * ⚠️ Открыть и закрыть, ничего не посмотрев, НЕ должно обновлять
+ * запись.
+ *
+ * Значение то же, но `updatedAt` обновился бы — и видео всплыло бы в
+ * начало списка «Продолжить просмотр». То есть список сортировался бы
+ * по тому, что ОТКРЫВАЛИ, а не по тому, что смотрели.
+ */
+it('Пауза без движения ничего не отправляет', async () => {
+  await mount(fakePlayer());
   await tick(300);
   saveMock.mockClear();
 
@@ -157,7 +181,7 @@ it('Пауза отправляет позицию сразу', async () => {
     mockHandlers.get('playingChange')?.({ isPlaying: false });
   });
 
-  expect(saveMock).toHaveBeenCalledWith('CONTENT', 5, 300, 7200, 'auto');
+  expect(saveMock).not.toHaveBeenCalled();
 });
 
 it('Возобновляет с сохранённой секунды', async () => {
@@ -189,6 +213,53 @@ it('Без сохранённой позиции не перематывает',
  */
 it('Закрытие экрана отправляет последнюю позицию', async () => {
   const tree = await mount(fakePlayer());
+  await tick(1800);         // ушло на сервер
+  await tick(1805);         // меньше интервала — не ушло
+  saveMock.mockClear();
+
+  await act(async () => {
+    tree.unmount();
+  });
+
+  expect(saveMock).toHaveBeenCalledWith('CONTENT', 5, 1805, 7200, 'auto');
+});
+
+/**
+ * ⚠️ САМЫЙ ВАЖНЫЙ случай — ровно он и был замечен в браузере.
+ *
+ * Человек открывает видео, плеер перематывает на сохранённую секунду,
+ * человек закрывает экран, ничего не посмотрев. Записывать нечего:
+ * позиция та же, что и была.
+ *
+ * Без этой проверки удалённая позиция появлялась заново просто от
+ * открытия страницы — и видео поднималось в начало «Продолжить
+ * просмотр».
+ */
+it('Открыть с сохранённой позицией и закрыть — ничего не отправляет', async () => {
+  await writeLocal('CONTENT', 5, { position: 5565, duration: 7200, quality: 'auto' });
+
+  const player = fakePlayer();
+  const tree = await mount(player);
+
+  expect(player.currentTime).toBe(5565);
+  saveMock.mockClear();
+
+  await act(async () => {
+    tree.unmount();
+  });
+
+  expect(saveMock).not.toHaveBeenCalled();
+});
+
+/**
+ * ⚠️ И при закрытии — то же правило: неизменившаяся позиция не
+ * переписывается.
+ *
+ * Проверено в браузере на веб-плеере: удалённая позиция появлялась
+ * заново просто от открытия страницы.
+ */
+it('Закрытие без движения ничего не отправляет', async () => {
+  const tree = await mount(fakePlayer());
   await tick(1800);
   saveMock.mockClear();
 
@@ -196,7 +267,7 @@ it('Закрытие экрана отправляет последнюю поз
     tree.unmount();
   });
 
-  expect(saveMock).toHaveBeenCalledWith('CONTENT', 5, 1800, 7200, 'auto');
+  expect(saveMock).not.toHaveBeenCalled();
 });
 
 /**

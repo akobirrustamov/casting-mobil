@@ -3,6 +3,7 @@ import { adminApi, mediaUrl } from '../api/client';
 import { usePanelI18n } from '../i18n';
 import MediaPicker from './MediaPicker';
 import MediaSpec from './MediaSpec';
+import VideoPreview from './VideoPreview';
 
 /**
  * Bitta rasm maydoni: oldindan ko'rish + tanlash/almashtirish/olib tashlash.
@@ -161,6 +162,21 @@ export default function MediaField({ label, value, onChange, hint, spec, type = 
         spec={spec}
         onClose={() => setPickerOpen(false)}
         onSelect={onChange}
+      />
+
+      {/* ⚠️ BU BLOK IKKI MARTA YO'QOLGAN — commitlar ustidan yozgan.
+          «Ko'rish» tugmasi va `previewOpen` holati qolib, pleyerning
+          o'zi yo'qolardi: tugma bosiladi, hech narsa ochilmaydi va
+          xato ham chiqmaydi.
+
+          `mediaFieldPreview.test.jsx` shuni qo'riqlaydi — ikkinchi
+          yo'qolishni ham o'sha ushladi. */}
+      <VideoPreview
+        open={previewOpen}
+        mediaId={value}
+        title={label}
+        onClose={() => setPreviewOpen(false)}
+        t={t}
       />
     </div>
   );
