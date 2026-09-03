@@ -1,4 +1,6 @@
 import * as Updates from 'expo-updates';
+
+import { BASE_URL } from '@/lib/api';
 import { Text } from 'react-native';
 
 /**
@@ -14,6 +16,13 @@ import { Text } from 'react-native';
  * `embedded` — работает бандл из APK, обновление ещё не применилось.
  * Иначе — первые 8 символов идентификатора обновления.
  *
+ * <h2>И адрес бэкенда</h2>
+ * ⚠️ 03.09.2026 всё упиралось в `ERR_NETWORK`, и причина оказалась именно
+ * здесь: `eas update` собирает бандл НА МАШИНЕ РАЗРАБОТЧИКА и подхватывает
+ * локальный `.env`, где адрес — стенд в домашней сети. Телефон честно
+ * стучался в `192.168.*` и не мог дойти. По экрану это было неотличимо от
+ * поломки сервера, поэтому адрес теперь видно.
+ *
  * ⚠️ Временно, только на время разбора входа. Убрать вместе с приписками
  * кодов ошибок.
  */
@@ -21,6 +30,8 @@ export function BuildMarker() {
   const id = Updates.isEmbeddedLaunch ? 'embedded' : (Updates.updateId ?? '—').slice(0, 8);
 
   return (
-    <Text className="text-center text-caption text-text-muted opacity-50">{id}</Text>
+    <Text className="text-center text-caption text-text-muted opacity-50">
+      {id} · {BASE_URL}
+    </Text>
   );
 }
