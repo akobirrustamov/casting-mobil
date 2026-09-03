@@ -25,6 +25,7 @@ import {
 } from '@/features/auth/api';
 import { authErrorKey, googleErrorKey, technicalDetail } from '@/features/auth/authErrors';
 import { BuildMarker } from '@/features/auth/BuildMarker';
+import { NetworkProbe } from '@/features/auth/NetworkProbe';
 import type { DevLoginResult } from '@/features/auth/devLogin';
 import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton';
 import { useAuthStore } from '@/features/auth/store';
@@ -273,6 +274,7 @@ export default function SignInScreen() {
           ) : null}
 
           <BuildMarker />
+          <NetworkProbe />
 
           <Text className="text-center text-caption text-text-muted">
             <Text className="text-cyan underline">{t('auth.termsLink')}</Text>
