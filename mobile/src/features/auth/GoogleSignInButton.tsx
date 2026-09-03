@@ -119,6 +119,7 @@ function GoogleButtonLive({ onSuccess }: { onSuccess?: (idToken: string) => void
       {result.status === 'error' ? (
         <Text className="text-center text-caption text-danger">
           {t(result.messageKey)}
+          {result.detail ? ` (${result.detail})` : ''}
         </Text>
       ) : null}
       {result.status === 'cancelled' ? (

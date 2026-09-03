@@ -118,7 +118,8 @@
     "googleServerNotReady": "Google orqali kirish serverda hali yoqilmagan",
     "googleRejected": "Google hisobi qabul qilinmadi, qaytadan urinib ko'ring",
     "googleFailed": "Kirish amalga oshmadi, qaytadan urinib ko'ring",
-    "googleNoPlayServices": "Google Play xizmatlari mavjud emas"
+    "googleNoPlayServices": "Google Play xizmatlari mavjud emas",
+    "googleConfigMismatch": "Google sozlamalari mos kelmadi: SHA-1 yoki client ID"
   },
   "home": {
     "todayPremieres": "Bugungi premyeralar",

@@ -118,7 +118,8 @@
     "googleServerNotReady": "Вход через Google на сервере ещё не настроен",
     "googleRejected": "Google-аккаунт не принят, попробуйте ещё раз",
     "googleFailed": "Не удалось войти, попробуйте ещё раз",
-    "googleNoPlayServices": "Сервисы Google Play недоступны"
+    "googleNoPlayServices": "Сервисы Google Play недоступны",
+    "googleConfigMismatch": "Настройки Google не совпадают: SHA-1 или client ID"
   },
   "home": {
     "todayPremieres": "Сегодняшние премьеры",

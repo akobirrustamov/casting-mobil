@@ -55,14 +55,36 @@ describe('toSignInError', () => {
     });
   });
 
-  it('незнакомое и не-объект — общий текст', () => {
+  /**
+   * ⚠️ `DEVELOPER_ERROR` (`'10'`) — самая частая и самая обидная ошибка: Google
+   * не узнал приложение, потому что расходятся SHA-1, package или client ID.
+   * В общем тексте «не удалось войти» она неотличима от обрыва связи, и
+   * человек ищет причину в телефоне, хотя чинится это в Google Cloud Console.
+   */
+  it('DEVELOPER_ERROR — про настройку, а не про связь', () => {
+    expect(toSignInError({ code: '10' })).toEqual({
+      status: 'error',
+      messageKey: 'auth.googleConfigMismatch',
+    });
+  });
+
+  /**
+   * Незнакомый код прикладываем к тексту. Иначе диагностировать нечем:
+   * все разные причины выглядят одной строкой.
+   */
+  it('незнакомый код виден в тексте', () => {
     expect(toSignInError({ code: 'WHATEVER' })).toEqual({
       status: 'error',
       messageKey: 'auth.googleFailed',
+      detail: 'WHATEVER',
     });
+  });
+
+  it('не-объект — общий текст без приписки', () => {
     expect(toSignInError(null)).toEqual({
       status: 'error',
       messageKey: 'auth.googleFailed',
+      detail: undefined,
     });
   });
 });

@@ -118,7 +118,8 @@
     "googleServerNotReady": "Google sign-in is not enabled on the server yet",
     "googleRejected": "Google account was rejected, please try again",
     "googleFailed": "Sign-in failed, please try again",
-    "googleNoPlayServices": "Google Play services are unavailable"
+    "googleNoPlayServices": "Google Play services are unavailable",
+    "googleConfigMismatch": "Google configuration mismatch: SHA-1 or client ID"
   },
   "home": {
     "todayPremieres": "Today's premieres",

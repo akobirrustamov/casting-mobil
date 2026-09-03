@@ -11,7 +11,8 @@ export type GoogleSignInResult =
   | { status: 'idle' }
   | { status: 'pending' }
   | { status: 'cancelled' }
-  | { status: 'error'; messageKey: string }
+  /** `detail` — техническая приписка к тексту: код, по которому видно причину. */
+  | { status: 'error'; messageKey: string; detail?: string }
   | { status: 'success'; idToken: string };
 
 /**
@@ -70,17 +71,46 @@ export function toSignInResult(response: SignInResponse): GoogleSignInResult {
     : { status: 'error', messageKey: 'auth.googleFailed' };
 }
 
-/** Брошенное исключение → сообщение. Отмену пользователем за ошибку не считаем. */
+/**
+ * Код ошибки Google Play services «настройки не сходятся».
+ *
+ * Библиотека отдаёт его строкой `'10'` — это `CommonStatusCodes.DEVELOPER_ERROR`,
+ * см. `RNGoogleSigninModule.java`. В `statusCodes` его нет, поэтому константа
+ * своя.
+ */
+const DEVELOPER_ERROR = '10';
+
+/**
+ * Брошенное исключение → сообщение. Отмену пользователем за ошибку не считаем.
+ *
+ * ⚠️ Незнакомый код прикладывается к тексту. Без этого любая проблема
+ * выглядела как «Кирish amalga oshmadi» — одинаково и для сбитой настройки,
+ * и для обрыва связи, и искать причину было не по чему.
+ */
 export function toSignInError(error: unknown): GoogleSignInResult {
   const code = (error as { code?: string } | null)?.code;
 
   if (code === statusCodes.SIGN_IN_CANCELLED) {
     return { status: 'cancelled' };
   }
+  if (code === statusCodes.IN_PROGRESS) {
+    // Окно уже открыто — второе нажатие, а не ошибка.
+    return { status: 'pending' };
+  }
   if (code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
     return { status: 'error', messageKey: 'auth.googleNoPlayServices' };
   }
-  return { status: 'error', messageKey: 'auth.googleFailed' };
+  if (code === DEVELOPER_ERROR) {
+    // Google не узнал приложение: расходится SHA-1, package или client ID.
+    // Телефон тут ни при чём, чинится в Google Cloud Console.
+    return { status: 'error', messageKey: 'auth.googleConfigMismatch' };
+  }
+
+  return {
+    status: 'error',
+    messageKey: 'auth.googleFailed',
+    detail: code ? String(code) : undefined,
+  };
 }
 
 export function useGoogleSignIn(onSuccess?: (idToken: string) => void) {
