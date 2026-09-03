@@ -85,6 +85,28 @@ describe('toSignInError', () => {
     });
   });
 
+  /**
+   * ⚠️ Ошибка БЕЗ кода — сама по себе улика: у всего, что приходит от сервисов
+   * Google Play, код есть. Значит источник другой, и опознать его можно только
+   * по тексту. Без него на экране оставалась бы одна и та же строка, по которой
+   * следующий шаг выбрать нечем.
+   */
+  it('без кода показываем текст ошибки', () => {
+    expect(toSignInError(new Error('RNGoogleSignin native module is not available'))).toEqual({
+      status: 'error',
+      messageKey: 'auth.googleFailed',
+      detail: 'RNGoogleSignin native module is not available',
+    });
+  });
+
+  it('код и текст вместе', () => {
+    expect(toSignInError({ code: '12500', message: 'Sign in failed' })).toEqual({
+      status: 'error',
+      messageKey: 'auth.googleFailed',
+      detail: '12500 · Sign in failed',
+    });
+  });
+
   it('не-объект — общий текст без приписки', () => {
     expect(toSignInError(null)).toEqual({
       status: 'error',

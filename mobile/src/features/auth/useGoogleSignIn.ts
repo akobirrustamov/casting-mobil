@@ -90,7 +90,8 @@ const DEVELOPER_ERROR = '10';
  * и для обрыва связи, и искать причину было не по чему.
  */
 export function toSignInError(error: unknown): GoogleSignInResult {
-  const code = (error as { code?: string } | null)?.code;
+  const err = error as { code?: string; message?: string } | null;
+  const code = err?.code;
 
   if (code === statusCodes.SIGN_IN_CANCELLED) {
     return { status: 'cancelled' };
@@ -108,11 +109,13 @@ export function toSignInError(error: unknown): GoogleSignInResult {
     return { status: 'error', messageKey: 'auth.googleConfigMismatch' };
   }
 
-  return {
-    status: 'error',
-    messageKey: 'auth.googleFailed',
-    detail: code ? String(code) : undefined,
-  };
+  // ⚠️ Показываем и код, и текст. Ошибка БЕЗ кода — отдельная улика: у всего,
+  // что приходит от сервисов Google Play, код есть. Значит это что-то другое,
+  // и без текста опознать его нечем.
+  const detail =
+    [code, err?.message].filter(Boolean).join(' · ').slice(0, 160) || undefined;
+
+  return { status: 'error', messageKey: 'auth.googleFailed', detail };
 }
 
 export function useGoogleSignIn(onSuccess?: (idToken: string) => void) {
