@@ -127,10 +127,38 @@ node -e "console.log(require('zlib').brotliDecompressSync(require('fs').readFile
 Публикация обновления:
 
 ```bash
-npx eas update --channel preview --message "что поменялось"
+eas update --channel preview --environment preview --message "что поменялось"
 ```
 
-Телефон подхватит его при следующем запуске приложения.
+Телефон подхватит его при следующем запуске приложения (первый запуск качает,
+второй применяет).
+
+### ⚠️ `eas update` НЕ читает `env` из `eas.json`
+
+Наступили 03.09.2026, и наступили больно: обновление уехало **без переменных
+окружения**, а `EXPO_PUBLIC_*` вшиваются в бандл в момент сборки. В результате
+на телефоне:
+
+- `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` пропал → кнопка Google стала неактивной
+  с подписью «Google kiritish hozircha sozlanmagan»;
+- `EXPO_PUBLIC_READ_ONLY` пропал → **включилась защита от записи по умолчанию**,
+  и отправка SMS начала отвечать «Amal bajarilmadi». Отладить это по симптому
+  почти невозможно: выглядит как поломка сервера.
+
+Поле `env` в `eas.json` действует **только на сборки**. Обновления берут
+переменные из **окружений EAS** — это отдельное хранилище на стороне Expo:
+
+```bash
+eas env:set --name EXPO_PUBLIC_READ_ONLY --value false   --environment preview --environment production   --visibility plaintext --scope project --non-interactive
+eas env:list --environment preview
+```
+
+Заведены (03.09.2026): `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_READ_ONLY`,
+`EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`, `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID`.
+
+⚠️ **Проверять по логу публикации.** Строка «Environment variables … loaded
+from the "preview" environment on EAS: …» должна перечислять все нужные имена.
+Если её нет — переменные не доехали, и это увидят только на телефоне.
 
 ### Что уезжает по воздуху, а что нет
 
