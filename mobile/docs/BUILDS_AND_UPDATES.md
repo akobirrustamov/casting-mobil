@@ -182,17 +182,20 @@ npx eas update --channel preview --message "что поменялось"
 Добавлено 02.09.2026: `POST /api/v1/auth/google` отвечает `401` вместо `503`,
 то есть проверка подписи работает и токен-пустышку сервер честно отклоняет.
 
-Как это выглядело, пока не было: `503`. Человек дойдёт до выбора аккаунта Google, приложение
-получит `id_token`, а обмен упадёт. Полный разбор —
+Пока строки не было, эндпоинт отвечал `503`: человек доходил до выбора
+аккаунта, приложение получало `id_token`, а обмен падал. Полный разбор —
 [GOOGLE_AUTH.md §6](./GOOGLE_AUTH.md).
 
-На сервере (`/opt/uzcasting/application.properties`, туда же смотрит
-`deploy/uzcasting.service`):
+Как это делается на сервере (`/opt/uzcasting/application.properties`):
 
 ```sh
 echo 'app.google.client-ids=497193534365-urqt7p6tufge2qpqhdns5qv8nvshjsqe.apps.googleusercontent.com,497193534365-03mh4geit6f6n13enrf2bqcs8dhcp1cb.apps.googleusercontent.com'   >> /opt/uzcasting/application.properties
-systemctl restart uzcasting
+sudo supervisorctl restart uzcasting
 ```
+
+⚠️ Именно `supervisorctl`, а не `systemctl` — см. §3.4. И ⚠️ `printf` с
+ведущим переводом строки, а не `echo`: если последняя строка файла не
+заканчивается переносом, `echo` приклеит настройку к ней и испортит обе.
 
 Проверка снаружи — должно стать `401` вместо `503`:
 
@@ -270,3 +273,22 @@ grep -E 'datasource|jpa.hibernate.ddl-auto' /opt/uzcasting/application.propertie
 ⚠️ Чего в этой сборке ждать НЕ надо: вход через Google. Он упрётся сначала в
 `503` от сервера (§3.2), а потом в несовпадение SHA-1 (§1.2). Вход по номеру
 телефона должен работать — SMS на сервере настроен.
+
+## 5. Вторая сборка — 02.09.2026, нативный вход Google
+
+| | |
+|---|---|
+| Сборка | `226343fe-8492-4554-b13f-376cf6771949` |
+| Установка | https://expo.dev/accounts/bukakish/projects/uzcasting/builds/226343fe-8492-4554-b13f-376cf6771949 |
+| Размер | 116 МБ |
+
+Проверено внутри APK:
+
+- в dex есть `RNGoogleSignin` и `com.google.android.gms.auth.api.signin` —
+  нативный модуль на месте, а это единственное, чего нельзя доставить
+  обновлением;
+- в бандле нет `oauthredirect` — браузерного флоу больше не осталось;
+- адрес `https://uzcasting.com` на месте.
+
+⚠️ Собрана ДО слияния с веткой коллеги, поэтому регистрации по паролю в ней
+нет. Следующая сборка — уже со всем вместе.
