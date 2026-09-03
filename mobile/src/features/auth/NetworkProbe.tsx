@@ -37,7 +37,7 @@ export function NetworkProbe() {
       } catch (e) {
         // Текст сетевой ошибки в RN короткий и по делу
         // («Network request failed», «SSL handshake aborted…»).
-        return (e instanceof Error ? e.message : 'ERR').slice(0, 60);
+        return (e instanceof Error ? e.message : 'ERR').slice(0, 220);
       }
     };
 

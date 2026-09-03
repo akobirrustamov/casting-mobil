@@ -37,7 +37,13 @@ const hasClientIds = Boolean(GOOGLE_CLIENT_IDS.web);
  */
 export const isExpoGo = Constants.appOwnership === AppOwnership.Expo;
 
-export type GoogleUnavailableReason = 'notConfigured' | 'expoGo';
+/**
+ * ⚠️ `needsRebuild` определяется НЕ здесь, а в `GoogleSignInButton`: чтобы
+ * узнать, есть ли нативная часть, надо попробовать её загрузить, а
+ * загрузчик (`googleModule.ts`) сам зависит от client ID отсюда. Тип
+ * общий, вычисление — там, где нет кольца в зависимостях.
+ */
+export type GoogleUnavailableReason = 'notConfigured' | 'expoGo' | 'needsRebuild';
 
 /**
  * Почему кнопка Google неактивна, либо `null` — если активна.

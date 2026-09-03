@@ -88,6 +88,22 @@ export default function ViewerPlayer({ type, targetId, source, title, orientatio
    * odam yarmini ko'rib, boshiga qaytarilardi.
    */
   const latest = useRef({ position: 0, duration: null });
+  /**
+   * Serverda ALLAQACHON turgan soniya.
+   *
+   * ⚠️ Ikki vazifasi bor:
+   * <ul>
+   *   <li>15 soniyalik oraliqni hisoblash;</li>
+   *   <li>O'ZGARMAGAN pozitsiyani qayta yozmaslik.</li>
+   * </ul>
+   *
+   * Ikkinchisi kerak bo'lib qoldi: odam videoni ochib, hech narsa
+   * ko'rmasdan yopsa ham, tiklangan pozitsiya sahifadan chiqishda
+   * qaytadan yozilardi. Qiymat o'zgarmaydi, lekin `updatedAt`
+   * yangilanadi — va video «Ko'rishda davom eting» ro'yxatining
+   * BOSHIGA chiqadi. Ya'ni ro'yxat ko'rilgan tartibda emas,
+   * OCHILGAN tartibda saralanardi.
+   */
   const lastSaved = useRef(0);
 
   const quality = selected === -1 ? 'auto' : (levels[selected]?.label ?? 'auto');
@@ -98,6 +114,16 @@ export default function ViewerPlayer({ type, targetId, source, title, orientatio
   const persist = useCallback(
     (position, duration) => {
       if (!targetId || position <= 0) return;
+
+      // ⚠️ O'zgarmagan pozitsiya YUBORILMAYDI.
+      //
+      // Pauza va sahifadan chiqish so'rovni shartsiz yuborardi, ya'ni
+      // videoni ochib darhol yopgan odam ham yozuvni yangilardi.
+      // Soniya aniqligida solishtiriladi — server ham butun soniya
+      // saqlaydi, kasr farqi esa o'zgarish emas.
+      if (Math.round(position) === Math.round(lastSaved.current)) return;
+
+      lastSaved.current = position;
       saveProgress(type, targetId, position, duration, qualityRef.current).catch(() => {
         // Tarmoq yo'q yoki mehmon — video davom etaveradi.
       });
@@ -200,6 +226,10 @@ export default function ViewerPlayer({ type, targetId, source, title, orientatio
 
         seekTo(position);
         latest.current = { ...latest.current, position };
+
+        // ⚠️ Serverda AYNAN shu turibdi — qayta yozish shart emas.
+        lastSaved.current = position;
+
         setResumedAt(position);
       })
       .catch(() => {
@@ -226,8 +256,11 @@ export default function ViewerPlayer({ type, targetId, source, title, orientatio
       // ⚠️ MODUL bo'yicha: odam orqaga surgan bo'lishi mumkin va
       // farq manfiy chiqadi. Modulsiz saqlash u eski joyga
       // yetguncha to'xtab qolardi.
+      // ⚠️ `lastSaved` ni BU YERDA o'rnatmaymiz — uni `persist`
+      // boshqaradi. Ikki joyda yozilsa, pauza hech qachon
+      // saqlanmasdi: qiymat oldindan qo'yilib, `persist` uni
+      // «o'zgarmagan» deb o'tkazib yuborardi.
       if (Math.abs(video.currentTime - lastSaved.current) >= SAVE_EVERY_SECONDS) {
-        lastSaved.current = video.currentTime;
         persist(video.currentTime, duration);
       }
     };
@@ -236,7 +269,6 @@ export default function ViewerPlayer({ type, targetId, source, title, orientatio
     // Keyingi tikni kutib bo'lmaydi: odam bir soniyada yopishi mumkin.
     const onPause = () => {
       const { position, duration } = latest.current;
-      lastSaved.current = position;
       persist(position, duration);
     };
 

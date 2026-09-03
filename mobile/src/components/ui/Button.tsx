@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Pressable,
   Text,
+  View,
   type PressableProps,
 } from 'react-native';
 
@@ -98,19 +99,72 @@ export function Button({
       accessibilityRole="button"
       accessibilityState={{ disabled: isInactive, busy: loading }}
       disabled={isInactive}
-      style={{ minHeight: TOUCH_TARGET, borderRadius: corner, overflow: 'hidden' }}
-      className={`flex-row items-center justify-center gap-2 px-6 ${FLAT_BG[variant]} ${
+      style={{
+        minHeight: TOUCH_TARGET,
+        borderRadius: corner,
+        overflow: 'hidden',
+        // ⚠️ Отступы живут ЗДЕСЬ, а не у вызывающего экрана. Пока каждый
+        // экран дописывал свои `py-*`, одна и та же кнопка была разной
+        // высоты в разных местах — на входе тоньше, в состояниях экрана
+        // толще. Теперь высота одна: 44 минимум, и 12 сверху и снизу,
+        // если подпись перенеслась на две строки.
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+      }}
+      className={`flex-row items-center justify-center ${FLAT_BG[variant]} ${
         isInactive ? 'opacity-40' : 'active:opacity-80'
       } ${className}`}
       {...rest}
     >
+      {/*
+        ⚠️ Ожидание НЕ трогает раскладку кнопки.
+
+        Раньше кружок вставал в тот же ряд вместо `leading`, и на кнопке
+        без него ряд становился шире на кружок с отступом — подпись
+        уезжала вбок ровно в момент нажатия. Кнопка «дёргалась» на каждый
+        вход и на каждую регистрацию.
+
+        Теперь ряд остаётся на месте и только гаснет, а кружок ложится
+        поверх: размер кнопки и положение подписи не меняются никогда.
+      */}
+      <View
+        className="flex-row items-center justify-center gap-2"
+        style={{ opacity: loading ? 0 : 1, flexShrink: 1 }}
+      >
+        {leading}
+
+        {/*
+          ⚠️ Подпись УМЕЕТ сжиматься.
+
+          У кнопки `overflow: hidden` — и пока подпись не сжималась, на
+          узкой кнопке её просто срезало по краю: «Ariza topshirish»
+          превращалось в «Ariza topshi». Узких кнопок в приложении полно:
+          две в ряд на кастинге, `self-start` на баннерах, кнопка в
+          карточке эпизода.
+
+          Теперь длинная подпись переносится на вторую строку, а кнопка
+          становится выше — текст виден целиком в любом языке. На узбекском
+          и русском подписи длиннее английских, и обрезало именно их.
+        */}
+        <Text
+          className={`text-body font-semibold ${FG[variant]}`}
+          style={{ flexShrink: 1, textAlign: 'center' }}
+        >
+          {children}
+        </Text>
+
+        {trailing}
+      </View>
+
       {loading ? (
-        <ActivityIndicator size="small" color={colors.white} />
-      ) : (
-        leading
-      )}
-      <Text className={`text-body font-semibold ${FG[variant]}`}>{children}</Text>
-      {trailing}
+        <View
+          style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }}
+          className="items-center justify-center"
+          pointerEvents="none"
+        >
+          <ActivityIndicator size="small" color={colors.white} />
+        </View>
+      ) : null}
     </Pressable>
   );
 }

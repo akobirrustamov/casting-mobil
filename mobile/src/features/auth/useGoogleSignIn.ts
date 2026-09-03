@@ -1,11 +1,11 @@
-import {
-  GoogleSignin,
-  statusCodes,
-  type SignInResponse,
-} from '@react-native-google-signin/google-signin';
+// ⚠️ ТОЛЬКО тип: `import type` стирается при сборке и нативный модуль
+// не трогает. Значения берём через `googleModule.ts` — обычный `import`
+// значений отсюда ронял весь экран входа, см. пояснение там.
+import type { SignInResponse } from '@react-native-google-signin/google-signin';
 import { useCallback, useState } from 'react';
 
-import { GOOGLE_CLIENT_IDS, isGoogleConfigured } from './config';
+import { isGoogleConfigured } from './config';
+import { googleSignin, googleStatusCodes } from './googleModule';
 
 export type GoogleSignInResult =
   | { status: 'idle' }
@@ -37,19 +37,10 @@ export type GoogleSignInResult =
  * который нарисован в макетах.
  *
  * ⚠️ Нативный модуль: в Expo Go не работает и **по воздуху (`eas update`)
- * не доставляется** — нужна новая сборка.
- *
- * <h2>Про client ID</h2>
- * В `configure` уходит ТОЛЬКО веб-клиент: именно его id окажется в `aud`
- * выданного токена, и по нему бэкенд токен проверяет. Android-клиент
- * в коде не упоминается, но в консоли он обязан существовать — Google
- * узнаёт приложение по паре «package + SHA-1» из него. Без совпадения
- * SHA-1 вход не состоится, а по симптомам это неотличимо от поломки.
+ * не доставляется** — нужна новая сборка. Сам модуль подгружается
+ * лениво (`googleModule.ts`), поэтому его отсутствие гасит одну кнопку,
+ * а не весь экран входа.
  */
-GoogleSignin.configure({
-  webClientId: GOOGLE_CLIENT_IDS.web,
-  iosClientId: GOOGLE_CLIENT_IDS.ios,
-});
 
 /**
  * Ответ библиотеки → состояние экрана.
@@ -93,16 +84,24 @@ export function toSignInError(error: unknown): GoogleSignInResult {
   const err = error as { code?: string; message?: string } | null;
   const code = err?.code;
 
-  if (code === statusCodes.SIGN_IN_CANCELLED) {
-    return { status: 'cancelled' };
+  // ⚠️ Коды берём через `googleModule`: их отдаёт нативная часть, и без неё
+  // сравнивать было бы не с чем. `null` — значит модуля в сборке нет, и
+  // ошибка пришла откуда-то ещё; тогда сразу идём к общей ветке с приметами.
+  const statusCodes = googleStatusCodes();
+
+  if (statusCodes) {
+    if (code === statusCodes.SIGN_IN_CANCELLED) {
+      return { status: 'cancelled' };
+    }
+    if (code === statusCodes.IN_PROGRESS) {
+      // Окно уже открыто — второе нажатие, а не ошибка.
+      return { status: 'pending' };
+    }
+    if (code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+      return { status: 'error', messageKey: 'auth.googleNoPlayServices' };
+    }
   }
-  if (code === statusCodes.IN_PROGRESS) {
-    // Окно уже открыто — второе нажатие, а не ошибка.
-    return { status: 'pending' };
-  }
-  if (code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-    return { status: 'error', messageKey: 'auth.googleNoPlayServices' };
-  }
+
   if (code === DEVELOPER_ERROR) {
     // Google не узнал приложение: расходится SHA-1, package или client ID.
     // Телефон тут ни при чём, чинится в Google Cloud Console.
@@ -128,7 +127,9 @@ export function useGoogleSignIn(onSuccess?: (idToken: string) => void) {
   const [result, setResult] = useState<GoogleSignInResult>({ status: 'idle' });
 
   const signIn = useCallback(async () => {
-    if (!isGoogleConfigured) {
+    const google = isGoogleConfigured ? googleSignin() : null;
+
+    if (!google) {
       setResult({ status: 'error', messageKey: 'auth.googleUnavailable' });
       return;
     }
@@ -138,9 +139,9 @@ export function useGoogleSignIn(onSuccess?: (idToken: string) => void) {
     try {
       // Проверка до показа окна: без сервисов Google Play вход невозможен,
       // и сказать об этом лучше сразу, а не пустым экраном.
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      await google.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
-      const next = toSignInResult(await GoogleSignin.signIn());
+      const next = toSignInResult(await google.signIn());
       setResult(next);
       if (next.status === 'success') {
         onSuccess?.(next.idToken);

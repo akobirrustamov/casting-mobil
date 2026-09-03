@@ -115,6 +115,7 @@
     "namePlaceholder": "Full name",
     "nameInvalid": "Enter your full name",
     "googleNeedsDevBuild": "Google sign-in doesn't work in Expo Go — a dev build is required",
+    "googleNeedsRebuild": "Google sign-in needs a new app build",
     "googleServerNotReady": "Google sign-in is not enabled on the server yet",
     "googleRejected": "Google account was rejected, please try again",
     "googleFailed": "Sign-in failed, please try again",
