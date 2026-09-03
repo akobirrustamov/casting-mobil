@@ -107,8 +107,23 @@ describe('toSignInError', () => {
     });
   });
 
-  it('не-объект — общий текст без приписки', () => {
+  /** Брошенная строка — тоже улика, показываем её. */
+  it('брошена строка — она и есть приписка', () => {
+    expect(toSignInError('boom')).toEqual({
+      status: 'error',
+      messageKey: 'auth.googleFailed',
+      detail: 'boom',
+    });
+  });
+
+  /** А вот «null» или «[object Object]» на экране хуже, чем ничего. */
+  it('пустышки не показываем', () => {
     expect(toSignInError(null)).toEqual({
+      status: 'error',
+      messageKey: 'auth.googleFailed',
+      detail: undefined,
+    });
+    expect(toSignInError({})).toEqual({
       status: 'error',
       messageKey: 'auth.googleFailed',
       detail: undefined,

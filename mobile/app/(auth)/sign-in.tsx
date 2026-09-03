@@ -24,6 +24,7 @@ import {
   signInWithPassword,
 } from '@/features/auth/api';
 import { authErrorKey, googleErrorKey } from '@/features/auth/authErrors';
+import { BuildMarker } from '@/features/auth/BuildMarker';
 import type { DevLoginResult } from '@/features/auth/devLogin';
 import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton';
 import { useAuthStore } from '@/features/auth/store';
@@ -265,6 +266,8 @@ export default function SignInScreen() {
           {googleError ? (
             <Text className="text-center text-caption text-danger">{googleError}</Text>
           ) : null}
+
+          <BuildMarker />
 
           <Text className="text-center text-caption text-text-muted">
             <Text className="text-cyan underline">{t('auth.termsLink')}</Text>

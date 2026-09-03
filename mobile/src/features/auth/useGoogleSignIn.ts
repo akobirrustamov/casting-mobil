@@ -112,8 +112,14 @@ export function toSignInError(error: unknown): GoogleSignInResult {
   // ⚠️ Показываем и код, и текст. Ошибка БЕЗ кода — отдельная улика: у всего,
   // что приходит от сервисов Google Play, код есть. Значит это что-то другое,
   // и без текста опознать его нечем.
-  const detail =
-    [code, err?.message].filter(Boolean).join(' · ').slice(0, 160) || undefined;
+  // `String(error)` в конце — на случай, когда брошен не Error и не объект
+  // с полями: иначе приписка окажется пустой и мы снова останемся без улик.
+  const raw = [code, err?.message].filter(Boolean).join(' · ') || String(error);
+
+  // Строки-пустышки не показываем: «null» на экране хуже, чем ничего.
+  const detail = /^(null|undefined|\[object Object\])$/.test(raw)
+    ? undefined
+    : raw.slice(0, 160);
 
   return { status: 'error', messageKey: 'auth.googleFailed', detail };
 }
