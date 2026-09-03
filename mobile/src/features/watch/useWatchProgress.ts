@@ -20,6 +20,16 @@ import type { WatchTarget } from './progressApi';
 const TICK_SECONDS = 5;
 
 /**
+ * Изменилась ли позиция настолько, чтобы её стоило записывать.
+ *
+ * ⚠️ Сравнение в ЦЕЛЫХ секундах: сервер хранит целые, а разница в
+ * долях — это не просмотр, а дрожание таймера плеера.
+ */
+function unchanged(position: number, saved: number): boolean {
+  return Math.round(position) === Math.round(saved);
+}
+
+/**
  * Запоминает, где человек остановился, и возвращает его туда же.
  *
  * <h2>Что делает</h2>
@@ -64,7 +74,21 @@ export function useWatchProgress({
    */
   const latest = useRef({ position: 0, duration: null as number | null });
 
-  /** Когда последний раз ушло на сервер, в секундах видео. */
+  /**
+   * Позиция, которая УЖЕ лежит на сервере.
+   *
+   * ⚠️ Две задачи:
+   * <ul>
+   *   <li>считать пятнадцатисекундный интервал;</li>
+   *   <li>не переписывать НЕИЗМЕНИВШУЮСЯ позицию.</li>
+   * </ul>
+   *
+   * Второе понадобилось потому, что при закрытии экрана
+   * восстановленная позиция записывалась заново. Значение то же, но
+   * `updatedAt` обновляется — и видео всплывает в НАЧАЛО списка
+   * «Продолжить просмотр». То есть список сортировался бы по тому,
+   * что ОТКРЫВАЛИ, а не по тому, что смотрели.
+   */
   const lastServerSave = useRef(0);
 
   // ⚠️ Без этого `timeUpdate` не придёт ни разу: значение по
@@ -86,6 +110,9 @@ export function useWatchProgress({
       if (cancelled || position === null) return;
       player.currentTime = position;
       latest.current = { ...latest.current, position };
+
+      // ⚠️ На сервере лежит РОВНО это — переписывать нечего.
+      lastServerSave.current = position;
     });
 
     return () => {
@@ -122,7 +149,7 @@ export function useWatchProgress({
   useEventListener(player, 'playingChange', ({ isPlaying }) => {
     if (isPlaying || targetId === null) return;
     const { position, duration } = latest.current;
-    if (position <= 0) return;
+    if (position <= 0 || unchanged(position, lastServerSave.current)) return;
 
     lastServerSave.current = position;
     void persist(type, targetId, position, duration, quality, true);
@@ -138,7 +165,10 @@ export function useWatchProgress({
       // закрыть, не начав смотреть. Запись затёрла бы настоящую
       // позицию с прошлого раза нулём — и «продолжить» отправляло бы
       // человека в начало.
-      if (position <= 0) return;
+      //
+      // ⚠️ И НЕИЗМЕНИВШАЯСЯ тоже: открыть и закрыть, ничего не
+      // посмотрев, не должно поднимать видео в начало списка.
+      if (position <= 0 || unchanged(position, lastServerSave.current)) return;
 
       void persist(type, targetId, position, duration, quality, true);
     };

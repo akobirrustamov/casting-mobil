@@ -327,6 +327,62 @@ describe('Pleyer', () => {
     expect(container.querySelector('video').className).not.toContain('vertical');
   });
 
+  /**
+   * ⚠️ Videoni ochib, hech narsa ko'rmasdan yopish yozuvni
+   * YANGILAMASLIGI kerak.
+   *
+   * Ilgari sahifadan chiqishda tiklangan pozitsiya qaytadan
+   * yozilardi. Qiymat o'zgarmaydi, lekin `updatedAt` yangilanadi —
+   * va video «Ko'rishda davom eting» ro'yxatining boshiga chiqadi.
+   * Ya'ni ro'yxat ko'rilgan tartibda emas, OCHILGAN tartibda
+   * saralanardi.
+   *
+   * Brauzerda aynan shunday ko'rindi: pozitsiya o'chirilgandan keyin
+   * ham sahifani ochish uni qayta yaratardi.
+   */
+  it('Ochib-yopish o‘zgarmagan pozitsiyani qayta yozmaydi', async () => {
+    fetchProgress.mockResolvedValue({ position: 100, duration: 165, completed: false });
+
+    const { unmount, container } = render(
+      <ViewerPlayer type="content" targetId="13" source={source} />
+    );
+    const video = container.querySelector('video');
+    Object.defineProperty(video, 'readyState', { value: 4, configurable: true });
+
+    await waitFor(() => expect(video.currentTime).toBe(100));
+
+    fireEvent.pause(video);
+    unmount();
+
+    expect(saveProgress).not.toHaveBeenCalled();
+  });
+
+  /**
+   * ⚠️ Lekin HAQIQIY o'zgarish saqlanadi — aks holda tuzatish
+   * davom ettirishning o'zini o'chirib qo'yardi.
+   */
+  it('Pozitsiya o‘zgarsa saqlanadi', async () => {
+    fetchProgress.mockResolvedValue({ position: 100, duration: 165, completed: false });
+
+    const { container } = render(
+      <ViewerPlayer type="content" targetId="13" source={source} />
+    );
+    const video = container.querySelector('video');
+    Object.defineProperty(video, 'readyState', { value: 4, configurable: true });
+    Object.defineProperty(video, 'duration', { value: 165, configurable: true });
+
+    await waitFor(() => expect(video.currentTime).toBe(100));
+
+    // Odam ko'rdi va to'xtatdi.
+    video.currentTime = 130;
+    fireEvent.timeUpdate(video);
+    fireEvent.pause(video);
+
+    await waitFor(() =>
+      expect(saveProgress).toHaveBeenCalledWith('content', '13', 130, 165, 'auto')
+    );
+  });
+
   /** Saqlash manzili yo'q — so'rov ham yubormaydi. */
   it('targetId bo‘lmasa pozitsiya so‘ralmaydi', async () => {
     render(<ViewerPlayer type="content" targetId={null} source={source} />);
