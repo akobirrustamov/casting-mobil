@@ -115,6 +115,7 @@
     "namePlaceholder": "Ism familiya",
     "nameInvalid": "Ismni to'liq kiriting",
     "googleNeedsDevBuild": "Google orqali kirish Expo Go'da ishlamaydi — dev build kerak",
+    "googleNeedsRebuild": "Google orqali kirish uchun ilovani qayta yig'ish kerak",
     "googleServerNotReady": "Google orqali kirish serverda hali yoqilmagan",
     "googleRejected": "Google hisobi qabul qilinmadi, qaytadan urinib ko'ring",
     "googleFailed": "Kirish amalga oshmadi, qaytadan urinib ko'ring",

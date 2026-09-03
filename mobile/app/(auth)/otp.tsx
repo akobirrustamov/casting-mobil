@@ -2,21 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
-import { Button } from '@/components/ui/Button';
-import { GlowBackdrop } from '@/components/ui/GlowBackdrop';
-import { Wordmark } from '@/components/ui/Wordmark';
 import { registerConfirm, registerStart } from '@/features/auth/api';
+import { AuthScaffold } from '@/features/auth/AuthScaffold';
 import { authErrorKey } from '@/features/auth/authErrors';
 import { colors } from '@/theme/tokens';
 
@@ -34,9 +23,11 @@ import { colors } from '@/theme/tokens';
  *
  * <h2>Раскладка — как на экране входа</h2>
  * Заказчик (01.09.2026): «sms kod sahifasini ham dizayni login
- * pagenikidek qil». Те же три яруса: знак ВВЕРХУ, поле в карточке с
- * квадратным знаком слева — в середине, кнопка ВНИЗУ. Шаг регистрации
- * не должен выглядеть экраном из другого приложения.
+ * pagenikidek qil», и (03.09.2026) — чтобы поле стояло ТАМ ЖЕ, где поле
+ * номера, и не шевелилось. Отсюда общий каркас `AuthScaffold`: он держит
+ * знак, шапку в слоте постоянной высоты, поля и кнопку внизу. Шаг
+ * регистрации не должен выглядеть экраном из другого приложения — и не
+ * должен заставлять искать поле глазами заново.
  */
 const CODE_LENGTH = 4;
 
@@ -49,7 +40,6 @@ const RESEND_COOLDOWN_SECONDS = 120;
 
 export default function OtpScreen() {
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
   const { phone } = useLocalSearchParams<{ phone?: string }>();
 
   const [code, setCode] = useState('');
@@ -100,115 +90,77 @@ export default function OtpScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      className="flex-1 bg-ink"
-      style={{ paddingTop: insets.top }}
-    >
-      <GlowBackdrop intensity="hero" decor />
-
-      {/* Ярусы те же, что на входе: знак вверху, кнопка внизу, между
-          ними — единственная прокручиваемая часть. */}
-      <Pressable
-        onPress={() => router.back()}
-        hitSlop={12}
-        className="ml-6 w-10 py-2"
-        accessibilityRole="button"
-      >
-        <Ionicons name="arrow-back" size={24} color={colors.white} />
-      </Pressable>
-
-      <View className="items-center pb-1">
-        <Wordmark variant="stacked" markSize={92} showTagline={false} />
-      </View>
-
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <View className="gap-4 px-6 py-2">
-          <View className="gap-2">
-            <Text className="text-center text-h2 text-text">{t('auth.otpTitle')}</Text>
-            {phone ? (
-              <Text className="text-center text-caption text-text-muted">
-                {t('auth.otpSubtitle', { phone })}
-              </Text>
-            ) : null}
-          </View>
-
-          {/* Карточка поля — та же, что у номера и пароля на входе:
-              квадрат со знаком, разделитель, ввод. Отличается только
-              сам ввод: цифры крупные и разрежены, чтобы код читался
-              как код, а не как обычная строка. */}
-          <View
-            className="flex-row items-center gap-3 rounded-card-lg border bg-surface p-2.5"
-            style={{ borderColor: isValid ? colors.blue : colors.border }}
-          >
-            <View
-              className="items-center justify-center rounded-card"
-              style={{ width: 44, height: 44, backgroundColor: `${colors.purple}26` }}
-            >
-              <Ionicons name="chatbox-ellipses" size={20} color={colors.magenta} />
-            </View>
-
-            <View className="h-7 w-px" style={{ backgroundColor: colors.border }} />
-
-            <TextInput
-              value={code}
-              onChangeText={(raw) => {
-                setCode(raw.replace(/\D/g, '').slice(0, CODE_LENGTH));
-                setError(null);
-              }}
-              keyboardType="number-pad"
-              inputMode="numeric"
-              maxLength={CODE_LENGTH}
-              autoFocus
-              editable={!verifying}
-              className="flex-1 text-h1"
-              style={{ color: colors.white, letterSpacing: 10 }}
-            />
-          </View>
-
-          {/* Повторная отправка открывается только после паузы на бэкенде */}
-          <Pressable onPress={onResend} disabled={!canResend} hitSlop={8}>
+    <AuthScaffold
+      onBack={() => router.back()}
+      header={
+        <View className="gap-2">
+          <Text className="text-center text-h2 text-text">{t('auth.otpTitle')}</Text>
+          {phone ? (
             <Text
-              className="text-center text-caption"
-              style={{ color: canResend ? colors.cyan : colors.textMuted }}
+              numberOfLines={2}
+              className="text-center text-caption text-text-muted"
             >
-              {secondsLeft > 0
-                ? t('auth.resendIn', { seconds: secondsLeft })
-                : t('auth.resend')}
+              {t('auth.otpSubtitle', { phone })}
             </Text>
-          </Pressable>
+          ) : null}
         </View>
-      </ScrollView>
-
-      <View className="gap-3 px-6 pt-3" style={{ paddingBottom: insets.bottom + 12 }}>
-        {error ? (
-          <Text className="text-center text-caption text-danger">{error}</Text>
-        ) : null}
-
-        <Button
-          variant="primary"
-          shape="card"
-          loading={verifying}
-          disabled={!isValid || verifying}
-          onPress={onVerify}
-          className="py-1"
-          trailing={
-            <Ionicons
-              name="arrow-forward"
-              size={20}
-              color={colors.white}
-              style={{ marginLeft: 6 }}
-            />
-          }
+      }
+      message={error}
+      action={{
+        label: t('auth.continue'),
+        onPress: onVerify,
+        loading: verifying,
+        disabled: !isValid || verifying,
+      }}
+    >
+      {/* Карточка поля — та же, что у номера и пароля на входе:
+          квадрат со знаком, разделитель, ввод. Отличается только
+          сам ввод: цифры крупные и разрежены, чтобы код читался
+          как код, а не как обычная строка. */}
+      <View
+        className="flex-row items-center gap-3 rounded-card-lg border bg-surface p-2.5"
+        style={{ borderColor: isValid ? colors.blue : colors.border }}
+      >
+        <View
+          className="items-center justify-center rounded-card"
+          style={{ width: 44, height: 44, backgroundColor: `${colors.purple}26` }}
         >
-          {t('auth.continue')}
-        </Button>
+          <Ionicons name="chatbox-ellipses" size={20} color={colors.magenta} />
+        </View>
+
+        <View className="h-7 w-px" style={{ backgroundColor: colors.border }} />
+
+        <TextInput
+          value={code}
+          onChangeText={(raw) => {
+            setCode(raw.replace(/\D/g, '').slice(0, CODE_LENGTH));
+            setError(null);
+          }}
+          keyboardType="number-pad"
+          inputMode="numeric"
+          maxLength={CODE_LENGTH}
+          autoFocus
+          editable={!verifying}
+          className="flex-1 text-h1"
+          style={{ color: colors.white, letterSpacing: 10 }}
+        />
       </View>
-    </KeyboardAvoidingView>
+
+      {/* Повторная отправка открывается только после паузы на бэкенде.
+
+          ⚠️ Строка одна и та же по высоте и со счётчиком, и без него —
+          поле кода над ней не шевелится, пока идёт обратный отсчёт. */}
+      <Pressable onPress={onResend} disabled={!canResend} hitSlop={8}>
+        <Text
+          numberOfLines={1}
+          className="text-center text-caption"
+          style={{ color: canResend ? colors.cyan : colors.textMuted }}
+        >
+          {secondsLeft > 0
+            ? t('auth.resendIn', { seconds: secondsLeft })
+            : t('auth.resend')}
+        </Text>
+      </Pressable>
+    </AuthScaffold>
   );
 }

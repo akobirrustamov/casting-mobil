@@ -150,12 +150,31 @@ export default function HomeScreen() {
             style={{ width: 240 }}
             className="gap-2 rounded-card bg-surface p-3"
           >
-            <Text numberOfLines={2} className="text-body text-text">
-              {c.title}
-            </Text>
-            <Text className="text-caption text-text-muted">
-              {c.location} • {t('casting.deadline')}: {c.deadline}
-            </Text>
+            {/*
+              ⚠️ Текст стоит в слотах ПОСТОЯННОЙ высоты: две строки под
+              заголовок (2 × 21) и две под строку с городом и сроком
+              (2 × 18).
+
+              Карточки лежат в ряд, и без брони кнопка каждой вставала на
+              своей высоте: у объявления с коротким названием — выше, у
+              соседнего с переносом — ниже. Ряд одинаковых кнопок «Ariza
+              berish» шёл лесенкой, и глазу не за что было зацепиться.
+
+              Теперь высота карточек одинаковая, а кнопки стоят на одной
+              линии — независимо от длины названия и города.
+            */}
+            <View style={{ height: 42 }}>
+              <Text numberOfLines={2} className="text-body text-text">
+                {c.title}
+              </Text>
+            </View>
+
+            <View style={{ height: 36 }}>
+              <Text numberOfLines={2} className="text-caption text-text-muted">
+                {c.location} • {t('casting.deadline')}: {c.deadline}
+              </Text>
+            </View>
+
             <Button variant="primary" className="mt-1">
               {t('common.apply')}
             </Button>

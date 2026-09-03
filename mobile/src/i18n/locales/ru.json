@@ -115,6 +115,7 @@
     "namePlaceholder": "Имя и фамилия",
     "nameInvalid": "Укажите имя полностью",
     "googleNeedsDevBuild": "Вход через Google не работает в Expo Go — нужен dev build",
+    "googleNeedsRebuild": "Для входа через Google нужна новая сборка приложения",
     "googleServerNotReady": "Вход через Google на сервере ещё не настроен",
     "googleRejected": "Google-аккаунт не принят, попробуйте ещё раз",
     "googleFailed": "Не удалось войти, попробуйте ещё раз",

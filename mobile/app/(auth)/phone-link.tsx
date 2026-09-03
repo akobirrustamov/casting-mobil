@@ -3,10 +3,8 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/ui/Button';
-import { GlowBackdrop } from '@/components/ui/GlowBackdrop';
+import { AuthScaffold } from '@/features/auth/AuthScaffold';
 import { colors } from '@/theme/tokens';
 
 /**
@@ -28,23 +26,49 @@ const PHONE_DIGITS = 9;
 
 export default function PhoneLinkScreen() {
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
 
   const [phone, setPhone] = useState('');
   const digits = phone.replace(/\D/g, '');
+  const isPhoneValid = digits.length === PHONE_DIGITS;
 
   return (
-    <View
-      className="flex-1 justify-center gap-8 bg-ink px-6"
-      style={{ paddingTop: insets.top, paddingBottom: insets.bottom + 16 }}
+    <AuthScaffold
+      onBack={() => router.replace('/(tabs)')}
+      header={
+        <Text className="text-center text-h2 text-text">{t('auth.phoneTitle')}</Text>
+      }
+      action={{
+        // TODO: отправить OTP и привязать телефон, когда появится эндпоинт
+        label: t('auth.continue'),
+        onPress: () => router.replace('/(tabs)'),
+        disabled: !isPhoneValid,
+      }}
+      footer={
+        // Экран не должен быть тупиком: уйти можно без номера
+        <Pressable onPress={() => router.replace('/(tabs)')} hitSlop={8}>
+          <Text className="text-center text-caption text-text-muted">
+            {t('auth.skip')}
+          </Text>
+        </Pressable>
+      }
     >
-      <GlowBackdrop intensity="hero" />
+      {/* Поле — ровно то же, что на входе и на экране кода: квадрат со
+          знаком, разделитель, ввод. Свой стиль здесь делал экран чужим
+          в собственном же разделе. */}
+      <View
+        className="flex-row items-center gap-3 rounded-card-lg border bg-surface p-2.5"
+        style={{ borderColor: isPhoneValid ? colors.blue : colors.border }}
+      >
+        <View
+          className="items-center justify-center rounded-card"
+          style={{ width: 44, height: 44, backgroundColor: `${colors.purple}26` }}
+        >
+          <Ionicons name="call" size={20} color={colors.magenta} />
+        </View>
 
-      <Text className="text-center text-h2 text-text">{t('auth.phoneTitle')}</Text>
+        <Text className="text-h2 text-text">+998</Text>
+        <View className="h-7 w-px" style={{ backgroundColor: colors.border }} />
 
-      <View className="flex-row items-center gap-3 rounded-card bg-surface px-4">
-        <Ionicons name="call-outline" size={20} color={colors.textMuted} />
-        <Text className="text-body text-text">+998</Text>
         <TextInput
           value={phone}
           onChangeText={(raw) => setPhone(raw.replace(/\D/g, '').slice(0, PHONE_DIGITS))}
@@ -53,27 +77,10 @@ export default function PhoneLinkScreen() {
           keyboardType="phone-pad"
           inputMode="tel"
           autoFocus
-          className="flex-1 py-4 text-body"
+          className="flex-1 text-h2"
           style={{ color: colors.white }}
         />
       </View>
-
-      <Button
-        variant="primary"
-        shape="card"
-        disabled={digits.length !== PHONE_DIGITS}
-        // TODO: отправить OTP и привязать телефон, когда появится эндпоинт
-        onPress={() => router.replace('/(tabs)')}
-      >
-        {t('auth.continue')}
-      </Button>
-
-      {/* Экран не должен быть тупиком: уйти можно без номера */}
-      <Pressable onPress={() => router.replace('/(tabs)')} hitSlop={8}>
-        <Text className="text-center text-caption text-text-muted">
-          {t('auth.skip')}
-        </Text>
-      </Pressable>
-    </View>
+    </AuthScaffold>
   );
 }
