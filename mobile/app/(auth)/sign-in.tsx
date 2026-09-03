@@ -23,7 +23,7 @@ import {
   registerStart,
   signInWithPassword,
 } from '@/features/auth/api';
-import { authErrorKey, googleErrorKey } from '@/features/auth/authErrors';
+import { authErrorKey, googleErrorKey, technicalDetail } from '@/features/auth/authErrors';
 import { BuildMarker } from '@/features/auth/BuildMarker';
 import type { DevLoginResult } from '@/features/auth/devLogin';
 import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton';
@@ -68,6 +68,8 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [googleError, setGoogleError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Техническая причина — временно, на время разбора входа. */
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const digits = phone.replace(/\D/g, '');
@@ -100,6 +102,7 @@ export default function SignInScreen() {
       router.replace('/(tabs)');
     } catch (e) {
       setError(t(authErrorKey(e)));
+      setErrorDetail(technicalDetail(e) ?? null);
     } finally {
       setBusy(false);
     }
@@ -125,6 +128,7 @@ export default function SignInScreen() {
         setMode('signIn');
       }
       setError(message);
+      setErrorDetail(technicalDetail(e) ?? null);
     } finally {
       setBusy(false);
     }
@@ -152,6 +156,7 @@ export default function SignInScreen() {
       router.replace('/(tabs)');
     } catch (e) {
       setGoogleError(t(googleErrorKey(e)));
+      setErrorDetail(technicalDetail(e) ?? null);
     }
   };
 
@@ -285,6 +290,11 @@ export default function SignInScreen() {
       >
         {error ? (
           <Text className="text-center text-caption text-danger">{error}</Text>
+        ) : null}
+        {errorDetail ? (
+          <Text className="text-center text-caption text-text-muted opacity-60">
+            {errorDetail}
+          </Text>
         ) : null}
 
         <Button
