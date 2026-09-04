@@ -18,12 +18,34 @@ WorkingDirectory=/opt/uzcasting
 # Bitta fayl, bitta joy — na muhit o'zgaruvchisi, na qo'shimcha
 # bayroq. Sirlar esa jar ichida emas, o'sha faylda (600 huquqi bilan).
 
-# ⚠️ -Xmx4g — 16 GB serverda.
+# ⚠️ -Xmx2g — 8 GB serverda (4 CPU · 8 GB · 80 GB NVMe).
 #
-# Qolgani PostgreSQL (2–4 GB) va uchta parallel FFmpeg (~4.5 GB)
-# uchun kerak. Ko'proq berilsa transcoding paytida OS almashtirishga
-# tushadi va butun sayt sekinlashadi.
-ExecStart=/usr/bin/java -Xmx4g -jar /opt/uzcasting/backend.jar
+# Ilgari bu yerda `-Xmx4g` turardi va izohda «16 GB serverda» deb
+# yozilgandi. Server esa 8 GB — ya'ni sozlama BOSHQA mashina uchun
+# hisoblangan edi.
+#
+# 8 GB da hisob quyidagicha:
+#
+#     JVM heap                    2.0 GB
+#     JVM qo'shimchasi            0.5 GB   (metaspace, stek, buferlar)
+#     PostgreSQL                  1.5 GB
+#     FFmpeg (bitta ish)          1.5 GB
+#     OS + nginx                  1.0 GB
+#     ────────────────────────────────────
+#                                 6.5 GB / 8 GB
+#
+# `-Xmx4g` va uchta parallel FFmpeg bilan bu 11–13 GB bo'lardi. Server
+# almashtirishga tushib, butun sayt sekinlashardi — yoki OOM killer
+# jarayonni o'ldirardi. Ikkalasi ham AYNAN video yuklanayotganda
+# sodir bo'lardi: ya'ni eng ko'p yuk tushgan lahzada.
+#
+# ⚠️ FFmpeg soni ALOHIDA cheklanadi — `application.properties` dagi
+# `app.video.max-concurrent-jobs=1`. Bu yerdagi `-Xmx` unga ta'sir
+# qilmaydi: FFmpeg alohida jarayon va JVM heap'idan tashqarida
+# ishlaydi.
+#
+# Server kengaytirilganda ikkalasini birga oshiring.
+ExecStart=/usr/bin/java -Xmx2g -jar /opt/uzcasting/backend.jar
 
 Restart=on-failure
 RestartSec=10

@@ -27,6 +27,91 @@ Chiqish: `exit`
 
 ---
 
+## 0. [MAC] Jar'ni yig'ish
+
+⚠️ **Bu qadam avval yozilmagan edi va aynan shundan xato chiqdi:**
+1-sentyabrda yig'ilgan jar uch kun davomida `yuklash/` da yotdi va
+serverda eski kod ishlab turdi. Frontend ham, backend ham eskirgan
+edi — lekin buni faqat serverdagi bundle'ni ochib ko'rgandagina
+bilish mumkin edi.
+
+Har safar yuklashdan OLDIN shu uch qadam bajariladi.
+
+### 0.1 Frontend'ni yig'ish
+
+```bash
+cd ~/Desktop/casting-mobil/frontend
+npm run build
+```
+
+⚠️ `.env.production` fayli `REACT_APP_API_URL=` (bo'sh) bo'lishi
+kerak. Bo'sh qiymat manzillarni NISBIY qiladi — ya'ni brauzer
+so'rovlarni o'sha domenning o'ziga yuboradi. Bu yerga
+`http://localhost:8080` tushib qolsa, serverdagi sayt o'z
+kompyuteringizga urinardi va hech narsa ishlamasdi.
+
+**TEKSHIRUV:**
+
+```bash
+grep -c "localhost:8080" build/static/js/main.*.js
+```
+
+`1` chiqishi normal — bu ishlatilmaydigan zaxira qiymat. Kompilyatsiya
+qilingan kod `null !== "" ? "" : "http://localhost:8080"` ko'rinishida
+bo'ladi, ya'ni doim bo'sh satr tanlanadi.
+
+### 0.2 Frontend'ni jar ichiga qo'yish
+
+Spring `classpath:/static/` dan sayt beradi — ya'ni React build jar
+ICHIGA kirishi kerak.
+
+```bash
+cd ~/Desktop/casting-mobil
+
+rm -rf backend/src/main/resources/static
+cp -r frontend/build backend/src/main/resources/static
+```
+
+⚠️ `rm -rf` SHART. Fayl nomlarida hash bor
+(`main.94172d08.js`), ya'ni har build yangi nom beradi. O'chirmasdan
+ustiga ko'chirsangiz eski bundle'lar yig'ilib qoladi: jar shishadi va
+`git` da keraksiz fayllar to'planadi.
+
+**TEKSHIRUV:**
+
+```bash
+ls backend/src/main/resources/static/static/js/main.*.js
+```
+
+BITTA fayl bo'lishi kerak.
+
+### 0.3 Jar'ni yig'ish
+
+```bash
+cd ~/Desktop/casting-mobil/backend
+./mvnw clean package
+```
+
+Testlar ham ishga tushadi (~3 daqiqa). Bittasi yiqilsa jar
+YIG'ILMAYDI — bu ataylab: sinovdan o'tmagan kod serverga chiqmaydi.
+
+Natija: `backend/target/backend-0.0.1-SNAPSHOT.jar`
+
+```bash
+cp target/backend-0.0.1-SNAPSHOT.jar ../yuklash/backend.jar
+```
+
+**TEKSHIRUV — jar HAQIQATAN yangimi:**
+
+```bash
+cd ~/Desktop/casting-mobil
+ls -l yuklash/backend.jar
+```
+
+Sana BUGUNGI bo'lishi kerak. Eski sana — 0.3 bajarilmagan degani.
+
+---
+
 ## 1. [MAC] Fayllarni serverga yuborish
 
 Yangi terminal oching (`Cmd+N`) va:
@@ -289,6 +374,14 @@ sudo systemctl restart uzcasting
 
 Faqat jar almashadi, sozlamaga tegilmaydi.
 
+⚠️ **Avval 0-qadamni bajaring** — jar'ni qaytadan yig'ing. Bu
+o'tkazib yuborilsa `scp` eski jar'ni yuboradi va serverda hech narsa
+o'zgarmaydi. Xato jimgina: buyruqlar muvaffaqiyatli tugaydi, xizmat
+qayta ishga tushadi, log toza — faqat kod eskiligicha qoladi.
+
+Frontend o'zgarmagan bo'lsa ham 0.2 ni o'tkazib yubormang: jar
+ichidagi sayt oxirgi `cp` dan qolgan holatda turadi.
+
 **[MAC]**
 
 ```bash
@@ -305,6 +398,29 @@ sudo chown uzcasting:uzcasting /opt/uzcasting/backend.jar
 sudo systemctl start uzcasting
 sudo journalctl -u uzcasting -f
 ```
+
+**TEKSHIRUV [MAC] — yangi kod HAQIQATAN chiqdimi:**
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" \
+  -X OPTIONS https://uzcasting.com/api/v1/app/watch-progress/continue
+```
+
+`200` — yangi backend. `404` — eski jar hali ishlayapti.
+
+Frontend uchun:
+
+```bash
+JS=$(curl -s https://uzcasting.com/ | grep -o '/static/js/main\.[a-z0-9]*\.js' | head -1)
+curl -s "https://uzcasting.com$JS" | grep -c "tomosha/:type/:id"
+```
+
+`1` — yangi frontend. `0` — eski build.
+
+⚠️ Sahifa ochilgani yetarli DALIL EMAS: `/kirish` va `/tomosha/...`
+manzillari eski build'da ham `200` qaytaradi, chunki Spring noma'lum
+yo'llarni `index.html` ga yo'naltiradi. Sahifa ochiladi, lekin bo'sh
+bo'ladi.
 
 ---
 
