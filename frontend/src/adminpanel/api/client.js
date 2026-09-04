@@ -722,6 +722,12 @@ export const adminApi = {
   createTariff: (body) => api.post('/api/v1/app/admin/tariffs', body),
   updateTariff: (id, body) => api.put(`/api/v1/app/admin/tariffs/${id}`, body),
 
+  // Promokodlar — bepul Premium kunlar. O'chirish yo'q: kod to'xtatiladi.
+  promocodes: () => api.get('/api/v1/app/admin/promocodes'),
+  createPromocode: (body) => api.post('/api/v1/app/admin/promocodes', body),
+  updatePromocode: (id, body) => api.put(`/api/v1/app/admin/promocodes/${id}`, body),
+  promocodeRedemptions: (id) => api.get(`/api/v1/app/admin/promocodes/${id}/redemptions`),
+
   currencyPackages: () => api.get('/api/v1/app/admin/currency-packages'),
   savePackage: (id, body) => (id
     ? api.put(`/api/v1/app/admin/currency-packages/${id}`, body)

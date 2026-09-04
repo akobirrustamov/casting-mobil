@@ -20,6 +20,7 @@ import {
   useMe,
 } from '@/features/profile/api';
 import { LANGUAGE_LABELS, isSupportedLanguage, type Language } from '@/i18n';
+import { formatSum } from '@/lib/money';
 import { colors, gradients, radius } from '@/theme/tokens';
 
 /**
@@ -33,7 +34,8 @@ import { colors, gradients, radius } from '@/theme/tokens';
  * было, но DTO его не отдавал, и я ошибочно решил, что его нет в модели.
  *
  * <h2>Пункты без экранов не притворяются рабочими</h2>
- * Из списка на макете сегодня существуют «Sevimlilarim», язык и выход.
+ * Из списка на макете сегодня существуют «Sevimlilarim», «Faol qurilmalar»,
+ * язык и выход.
  * У остальных вместо шеврона стоит метка «Tez orada», и они не нажимаются:
  * ряд, который выглядит кликабельным и молчит, читается как поломка.
  *
@@ -112,13 +114,24 @@ export default function ProfileScreen() {
       label: t('profile.mySubscription'),
       hint: subscriptionHint,
       icon: 'ribbon-outline',
-      // Ряд информационный: статус и срок — это и есть всё, что можно
-      // сказать о подписке, пока нет экрана управления ею.
       value: subscriptionValue,
+      onPress: () => router.push('/subscription'),
     },
     { key: 'topUp', label: t('profile.topUp'), hint: t('profile.topUpHint'), icon: 'card-outline' },
-    { key: 'promocodes', label: t('profile.promocodes'), hint: t('profile.promocodesHint'), icon: 'pricetag-outline' },
-    { key: 'paymentHistory', label: t('profile.paymentHistory'), hint: t('profile.paymentHistoryHint'), icon: 'time-outline' },
+    {
+      key: 'promocodes',
+      label: t('profile.promocodes'),
+      hint: t('profile.promocodesHint'),
+      icon: 'pricetag-outline',
+      onPress: () => router.push('/promocode'),
+    },
+    {
+      key: 'paymentHistory',
+      label: t('profile.paymentHistory'),
+      hint: t('profile.paymentHistoryHint'),
+      icon: 'time-outline',
+      onPress: () => router.push('/subscription/history'),
+    },
     {
       key: 'favorites',
       label: t('profile.favorites'),
@@ -126,14 +139,39 @@ export default function ProfileScreen() {
       icon: 'heart-outline',
       onPress: () => router.push('/favorites'),
     },
-    { key: 'devices', label: t('profile.devices'), hint: t('profile.devicesHint'), icon: 'phone-portrait-outline' },
-    { key: 'tariffs', label: t('profile.tariffs'), hint: t('profile.tariffsHint'), icon: 'play-circle-outline' },
+    {
+      key: 'devices',
+      label: t('profile.devices'),
+      hint: t('profile.devicesHint'),
+      icon: 'phone-portrait-outline',
+      onPress: () => router.push('/devices'),
+    },
+    {
+      key: 'tariffs',
+      label: t('profile.tariffs'),
+      hint: t('profile.tariffsHint'),
+      icon: 'play-circle-outline',
+      onPress: () => router.push('/subscription/tariffs'),
+    },
   ];
 
   const settings: Row[] = [
-    { key: 'editProfile', label: t('profile.editProfile'), icon: 'person-outline' },
-    { key: 'security', label: t('profile.security'), icon: 'shield-checkmark-outline' },
-    { key: 'notifications', label: t('profile.notifications'), icon: 'notifications-outline' },
+    {
+      key: 'editProfile',
+      label: t('profile.editProfile'),
+      icon: 'person-outline',
+      onPress: () => router.push('/settings/profile'),
+    },
+    // ⚠️ Ряд «Xavfsizlik» убран. После отказа от пароля (04.09.2026) под
+    // ним оставались только активные устройства — а они уже есть
+    // отдельным пунктом выше. Два ряда в одно место читаются как
+    // недоделка: человек жмёт оба и попадает туда же.
+    {
+      key: 'notifications',
+      label: t('profile.notifications'),
+      icon: 'notifications-outline',
+      onPress: () => router.push('/messages'),
+    },
     {
       key: 'language',
       label: t('profile.language'),
@@ -202,11 +240,6 @@ export default function ProfileScreen() {
   );
 }
 
-/** Разряды пробелами: 56000 → «56 000». Считает сервер, мы только читаем. */
-function groupDigits(amount: number): string {
-  return String(Math.round(amount)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-}
-
 /** Шапка аккаунта: аватар, имя, метки, три числа. */
 function ProfileCard() {
   const { t } = useTranslation();
@@ -264,7 +297,7 @@ function ProfileCard() {
               icon="cash-outline"
               tint={colors.lime}
               label={t('profile.balance')}
-              value={balance.data ? groupDigits(balance.data.money) : null}
+              value={balance.data ? formatSum(balance.data.money) : null}
             />
             <Divider />
             <Stat
@@ -382,12 +415,15 @@ function PremiumBanner() {
           <Ionicons name="diamond" size={34} color={colors.gold} />
         </View>
 
-        <View className="flex-row items-center gap-3">
-          <Button variant="gold" disabled className="self-start">
-            {t('profile.premiumBannerCta')}
-          </Button>
-          <Text className="text-micro text-white/70">{t('profile.soon')}</Text>
-        </View>
+        {/* Ведёт на тарифы. Покупки там пока нет (провайдер не подключён),
+            но цены и состав — уже настоящие, и посмотреть их можно. */}
+        <Button
+          variant="gold"
+          className="self-start"
+          onPress={() => router.push('/subscription/tariffs')}
+        >
+          {t('profile.premiumBannerCta')}
+        </Button>
       </LinearGradient>
     </View>
   );

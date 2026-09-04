@@ -6,6 +6,8 @@ import com.example.backend.Cms.Enums.Locale;
 import com.example.backend.Cms.Enums.UserStatus;
 import com.example.backend.Cms.Repository.UserAccountRepo;
 import com.example.backend.Cms.Service.AccessService;
+import com.example.backend.Cms.Service.PersonName;
+import com.example.backend.Repository.UserRepo;
 import com.example.backend.Entity.Role;
 import com.example.backend.Entity.User;
 import lombok.Builder;
@@ -14,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -57,6 +61,7 @@ import java.util.List;
 public class AppProfileController {
 
     private final UserAccountRepo accountRepo;
+    private final UserRepo userRepo;
 
     /**
      * ⚠️ Premium holati SHU YERDAN so'raladi.
@@ -95,7 +100,49 @@ public class AppProfileController {
                 .status(account == null ? UserStatus.ACTIVE : account.getStatus())
                 .blockedReason(account == null ? null : account.getBlockedReason())
                 .premium(premiumOf(user))
+                .casting(castingOf(user))
                 .build());
+    }
+
+    /**
+     * Profilni tahrirlash.
+     *
+     * <h2>⚠️ Nima uchun bu kerak bo'ldi</h2>
+     * Ism faqat KIRISH oqimida yozilardi ({@code AppAccountService}) va
+     * undan keyin o'zgartirishning yo'li yo'q edi: profildagi «Profil»
+     * qatori bosilmasdi. Google orqali kirgan odamda esa ism umuman
+     * Google'niki bo'lib qolardi.
+     *
+     * <h2>⚠️ Til ham SHU YERDA yoziladi</h2>
+     * Ilova tilni faqat telefonda saqlardi va
+     * {@code cms_user_account.language} hech qachon o'zgarmasdi. Push
+     * xabar esa aynan o'sha maydondan til oladi — ya'ni ruscha tanlagan
+     * odam o'zbekcha xabar olardi va buni hech kim sezmasdi, chunki
+     * FCM hali ulanmagan.
+     *
+     * <h2>Bo'sh maydon — «tegma»</h2>
+     * {@code null} kelgan maydon o'zgartirilmaydi. Ilova faqat
+     * o'zgarganini yuboradi va tilni almashtirish ismni qayta
+     * yozishni talab qilmaydi.
+     */
+    @PutMapping
+    @Transactional
+    public ResponseEntity<MeResponse> update(@RequestBody(required = false) UpdateRequest body) {
+        User user = CurrentUser.get();
+
+        if (body != null && body.getName() != null) {
+            user.setName(PersonName.validate(body.getName()));
+            userRepo.save(user);
+        }
+
+        if (body != null && body.getLanguage() != null) {
+            UserAccount account = accountRepo.findByUserId(user.getId())
+                    .orElseGet(() -> UserAccount.builder().user(user).build());
+            account.setLanguage(body.getLanguage());
+            accountRepo.save(account);
+        }
+
+        return me();
     }
 
     /**
@@ -127,6 +174,25 @@ public class AppProfileController {
                 .build();
     }
 
+    /**
+     * Casting bo'limi ochiqmi.
+     *
+     * ⚠️ Bu Premiumning nusxasi EMAS. Premium casting'ni ham ochadi,
+     * lekin teskarisi yo'q: {@code CASTING_DAYS} promokodi faqat shu
+     * bo'limni ochadi va film ochilmaydi. Ilova ikki holatni farqlay
+     * olishi kerak, aks holda casting kodini ishlatgan odam Premium
+     * kutib qolardi.
+     *
+     * Qaror {@code AccessService} da — bitta joyda (ТЗ §37).
+     */
+    private CastingDto castingOf(User user) {
+        AccessService.CastingStatus status = accessService.castingStatus(user);
+        return CastingDto.builder()
+                .active(status.active())
+                .until(status.until())
+                .build();
+    }
+
     // ------------------------------------------------------------------- DTO
 
     @Data
@@ -151,12 +217,49 @@ public class AppProfileController {
         private String blockedReason;
 
         private PremiumDto premium;
+
+        /**
+         * Casting bo'limiga kirish.
+         *
+         * Premium bo'lsa u ham ochiq bo'ladi va {@code until} ikkalasidan
+         * KECHROQ tugaydiganini ko'rsatadi — odam uchun savol «casting
+         * qachongacha ochiq», «qaysi huquq ochgan» emas.
+         */
+        private CastingDto casting;
+    }
+
+    /**
+     * O'zgartirish so'rovi.
+     *
+     * ⚠️ Avatar bu yerda YO'Q. Uni yuklash uchun foydalanuvchiga ochiq
+     * fayl endpointi kerak, va uni ehtiyotsiz ochish istalgan kishiga
+     * serverga fayl yozish huquqini berardi. Eski
+     * {@code /api/v1/file/upload} esa MUZLATILGAN modulniki
+     * ({@code OldCastingFrozenTest}) va unga yangi vazifa yuklanmaydi.
+     * Avatar alohida qadam sifatida qoladi.
+     */
+    @Data
+    public static class UpdateRequest {
+        /** {@code null} — tegilmaydi. */
+        private String name;
+
+        /** {@code null} — tegilmaydi. */
+        private Locale language;
     }
 
     @Data
     @Builder
     public static class RoleDto {
         private String name;
+    }
+
+    @Data
+    @Builder
+    public static class CastingDto {
+        private boolean active;
+
+        /** {@code null} — hech qachon berilmagan. */
+        private LocalDateTime until;
     }
 
     @Data

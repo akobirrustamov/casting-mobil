@@ -1,5 +1,8 @@
 package com.example.backend.Services.AuthService;
 
+import com.example.backend.Cms.Entity.UserDevice;
+import com.example.backend.Cms.Repository.UserDeviceRepo;
+import com.example.backend.Cms.Service.DeviceService;
 import com.example.backend.Entity.RefreshToken;
 import com.example.backend.Entity.User;
 import com.example.backend.Repository.RefreshTokenRepo;
@@ -42,6 +45,16 @@ public class RefreshTokenService {
     private final RefreshTokenRepo repo;
     private final JwtService jwtService;
 
+    /**
+     * ⚠️ {@code DeviceService} EMAS, to'g'ridan-to'g'ri repozitoriy.
+     *
+     * {@code DeviceService} qurilmani chiqarganda tokenlarni bekor
+     * qilish uchun SHU xizmatga murojaat qiladi. Teskari yo'nalishda
+     * ham xizmat olinsa, Spring aylanma bog'liqlikka duch kelib
+     * ko'tarilmasdi. Bu yerda kerak bo'lgani — bitta o'qish.
+     */
+    private final UserDeviceRepo deviceRepo;
+
     @Value("${app.jwt.refresh-token-ms:86400000}")
     private long refreshTokenMs;
 
@@ -58,6 +71,9 @@ public class RefreshTokenService {
                 .expiresAt(now.plusNanos(refreshTokenMs * 1_000_000))
                 .userAgent(trim(header(request, "User-Agent"), 512))
                 .ip(trim(clientIp(request), 64))
+                // Qaysi qurilmaga berilgani — o'sha qurilma chiqarilganda
+                // aynan shu tokenlarni topib bekor qilish uchun.
+                .deviceId(DeviceService.deviceIdOf(request))
                 .build());
 
         return jwtService.generateJwtRefreshToken(user, jti);
@@ -113,10 +129,48 @@ public class RefreshTokenService {
         if (!row.getExpiresAt().isAfter(now)) {
             throw unauthorized("Refresh token muddati o'tgan");
         }
+        ensureDeviceActive(row);
 
         row.setRevokedAt(now);
         repo.save(row);
         return row.getUserId();
+    }
+
+    /**
+     * Qurilma hali hisobga bog'liqmi.
+     *
+     * <h2>⚠️ Nima uchun bekor qilishning o'zi yetarli emas</h2>
+     * {@code DeviceService.revoke} qurilma tokenlarini bekor qiladi va
+     * odatda shu kifoya. Lekin ikki holat qoladi:
+     *
+     * <ul>
+     *   <li>token V32 migratsiyasidan OLDIN berilgan — unda qurilma
+     *       yozilmagan, ya'ni ommaviy bekor qilish uni topmaydi;</li>
+     *   <li>qurilma yozuvi boshqa yo'l bilan nofaol qilingan —
+     *       masalan admin paneldan yoki kelajakdagi kod orqali.</li>
+     * </ul>
+     *
+     * Shuning uchun tekshiruv YANGILASH paytida ham takrorlanadi:
+     * chiqarilgan qurilma keyingi yangilashda albatta to'xtaydi.
+     * Eng yomon holatda u access token muddatini (15 daqiqa) ishlatadi,
+     * cheksiz emas.
+     *
+     * ⚠️ Qurilmasi noma'lum tokenlar (eski klientlar, brauzer) rad
+     * ETILMAYDI: aks holda migratsiya paytida hamma tizimdan chiqib
+     * ketardi.
+     */
+    private void ensureDeviceActive(RefreshToken row) {
+        String deviceId = row.getDeviceId();
+        if (deviceId == null || deviceId.isBlank()) {
+            return;
+        }
+        Optional<UserDevice> device = deviceRepo.findByUserIdAndDeviceId(row.getUserId(), deviceId);
+        if (device.isPresent() && !Boolean.TRUE.equals(device.get().getActive())) {
+            log.info("Chiqarilgan qurilmadan yangilash urinishi: userId={}", row.getUserId());
+            throw new BusinessException("DEVICE_REVOKED",
+                    "Bu qurilma hisobdan chiqarilgan - qaytadan kiring",
+                    HttpStatus.UNAUTHORIZED);
+        }
     }
 
     /** Rotatsiyada yangi tokenni eskisiga bog'laydi. */
@@ -158,6 +212,21 @@ public class RefreshTokenService {
     @Transactional
     public int revokeAll(UUID userId) {
         return repo.revokeAllForUser(userId, LocalDateTime.now());
+    }
+
+    /**
+     * Bitta qurilmaning sessiyalarini yopadi.
+     *
+     * {@code DeviceService} qurilmani chiqarganda chaqiradi. Boshqa
+     * qurilmalarga TEGILMAYDI — odam eski telefonini o'chirganda
+     * qo'lidagisidan chiqib qolmasin.
+     */
+    @Transactional
+    public int revokeForDevice(UUID userId, String deviceId) {
+        if (deviceId == null || deviceId.isBlank()) {
+            return 0;
+        }
+        return repo.revokeAllForDevice(userId, deviceId, LocalDateTime.now());
     }
 
     /**

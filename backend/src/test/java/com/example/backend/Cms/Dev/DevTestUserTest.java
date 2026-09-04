@@ -1,19 +1,16 @@
 package com.example.backend.Cms.Dev;
 
 import com.example.backend.Cms.Repository.UserAccountRepo;
-import com.example.backend.Cms.Service.AppAccountService;
+import com.example.backend.DTO.UserDTO;
 import com.example.backend.Enums.UserRoles;
 import com.example.backend.Repository.UserRepo;
-import com.example.backend.exceptions.BusinessException;
+import com.example.backend.Services.AuthService.AuthService;
+import com.example.backend.exceptions.InvalidCredentialsException;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
@@ -26,22 +23,23 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Sozlamada ko'rsatilgan sinov hisobi HAQIQATAN kira olsinmi.
  *
  * <h2>Nima uchun bu test kirishni to'liq bosib ko'radi</h2>
- * «Foydalanuvchi bazada bor» degan tekshiruv bu yerda YETMAYDI —
- * aynan shu narsa ishlab turgan holda ham kirish ishlamasligi mumkin,
- * va ikkala sababning ham ko'rinadigan belgisi yo'q:
+ * «Foydalanuvchi bazada bor» degan tekshiruv bu yerda YETMAYDI: qator
+ * bazada TURGAN holda ham kirish ishlamasligi mumkin, va buning
+ * ko'rinadigan belgisi yo'q.
  *
- * <ol>
- *   <li>{@code AppAccountService.login()} raqamni normalizatsiya qiladi
- *       ({@code +998...} -> {@code 998...}). Seeder plyus bilan saqlasa,
- *       qator bazada TURADI, lekin kirish uni topa olmaydi va
- *       «bu raqam ro'yxatdan o'tmagan» deydi — ya'ni xato hisob YO'Q
- *       degan yolg'on javob bo'lib chiqadi.</li>
- *   <li>{@code passwordSet} bayrog'i qo'yilmasa, parol xato kiritilganda
- *       ilova «parol o'rnatilmagan» deb odamni ro'yxatdan o'tishga
- *       yuboradi.</li>
- * </ol>
+ * Sabab — raqam SHAKLI. Dev-kirish ({@code mobile/.../devLogin.ts})
+ * eski {@code POST /api/v1/auth/login} ga boradi, u esa raqamni
+ * normalizatsiya QILMAYDI: bazada nima yozilgan bo'lsa, so'rovda ham
+ * aynan o'sha bo'lishi kerak. Seeder raqamni plyus bilan saqlab
+ * qo'ysa, kirish uni topa olmaydi va «login yoki parol xato» deydi —
+ * ya'ni xato hisob YO'Q degan yolg'on javob bo'lib chiqadi.
  *
- * Ikkalasi ham «hisob yaratildimi» degan testdan o'tib ketardi.
+ * <h2>⚠️ Nega bu yerda AppAccountService yo'q</h2>
+ * Ilovaning o'z kirishi 04.09.2026 dan buyon FAQAT SMS-kod bilan
+ * ({@code AppOtpAuthTest}), parolli {@code login()} olib tashlandi.
+ * Dev-hisob esa parol bilan qoladi: uning butun ma'nosi Eskiz yo'q
+ * mahalliy konturda ilovaga kira olishda, ya'ni u ataylab boshqa,
+ * eski eshikdan kiradi.
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -59,7 +57,7 @@ class DevTestUserTest {
 
     @Autowired private UserRepo userRepo;
     @Autowired private UserAccountRepo userAccountRepo;
-    @Autowired private AppAccountService appAccountService;
+    @Autowired private AuthService authService;
 
     @Nested
     @DisplayName("Hisob yaratilishi")
@@ -93,59 +91,46 @@ class DevTestUserTest {
     }
 
     /**
-     * ⚠️ Tartib MUHIM: xato parol testi muvaffaqiyatli kirishdan OLDIN
-     * ishlashi kerak. Muvaffaqiyatli kirish {@code passwordSet}
-     * bayrog'ini tuzatadi va keyin xato parol boshqa yo'ldan ketadi.
+     * Dev-hisob HAQIQATAN kira oladimi — o'sha eshikdan, qaysinisidan
+     * ilova kirsa.
      */
     @Nested
     @DisplayName("Kirish")
-    @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
     class Kirish {
 
         @Test
-        @Order(2)
         @DisplayName("Telefon + parol bilan kiradi va token oladi")
         void logsIn() {
-            Map<String, Object> session =
-                    appAccountService.login(NORMALIZED, PASSWORD, new MockHttpServletRequest());
+            Map<String, Object> session = (Map<String, Object>)
+                    authService.login(new UserDTO(NORMALIZED, PASSWORD, false)).getBody();
 
-            assertThat(session).containsKeys("access_token", "refresh_token");
+            assertThat(session).isNotNull();
+            assertThat(session).containsKey("access_token");
             assertThat((String) session.get("access_token")).isNotBlank();
         }
 
-        @Test
-        @Order(3)
-        @DisplayName("Plyus bilan yozilgan raqam ham qabul qilinadi")
-        void logsInWithPlusPrefix() {
-            Map<String, Object> session =
-                    appAccountService.login("+998945434230", PASSWORD, new MockHttpServletRequest());
-
-            assertThat(session).containsKey("access_token");
-        }
-
         /**
-         * ⚠️ Eng birinchi ishlashi shart: muvaffaqiyatli kirish bayroqni
-         * o'zi tuzatadi, ya'ni undan keyin bu tekshiruv seeder bayroqni
-         * qo'ygan-qo'ymaganini umuman sezmay qoladi.
+         * ⚠️ Bu test SEEDER uchun: u raqamni plyussiz saqlashi SHART.
+         *
+         * Eski endpoint raqamni o'zi to'g'irlamaydi — plyusli qator
+         * bazada yotgani bilan kirish uni topa olmaydi. Ya'ni bu yerdagi
+         * «xato» aslida to'g'ri xatti-harakat, va u seederning
+         * normalizatsiyasi buzilsa darhol ko'rinadigan bo'lib qoladi.
          */
         @Test
-        @Order(0)
-        @DisplayName("passwordSet=true — hali hech kim kirmagan holatda")
-        void passwordFlagIsSetAtCreation() {
-            var user = userRepo.findByPhone(NORMALIZED).orElseThrow();
-            assertThat(user.isPasswordSet())
-                    .as("bayroqsiz hisobda xato parol «parol o'rnatilmagan» xatosini beradi")
-                    .isTrue();
+        @DisplayName("Plyusli raqam bilan kira olmaydi — shuning uchun seeder plyussiz saqlaydi")
+        void plusPrefixIsNotFound() {
+            assertThatThrownBy(() ->
+                    authService.login(new UserDTO("+998945434230", PASSWORD, false)))
+                    .isInstanceOf(InvalidCredentialsException.class);
         }
 
         @Test
-        @Order(1)
-        @DisplayName("Xato parolda «parol noto'g'ri» deydi, «parol o'rnatilmagan» emas")
-        void wrongPasswordSaysWrongPassword() {
+        @DisplayName("Xato parol kirgizmaydi")
+        void wrongPasswordRejected() {
             assertThatThrownBy(() ->
-                    appAccountService.login(NORMALIZED, "notogri-parol", new MockHttpServletRequest()))
-                    .isInstanceOf(BusinessException.class)
-                    .hasFieldOrPropertyWithValue("code", "INVALID_CREDENTIALS");
+                    authService.login(new UserDTO(NORMALIZED, "notogri-parol", false)))
+                    .isInstanceOf(InvalidCredentialsException.class);
         }
     }
 }

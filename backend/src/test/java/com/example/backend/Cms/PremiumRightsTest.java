@@ -60,7 +60,13 @@ class PremiumRightsTest {
             "Admin/Dto/AppUserDto.java",
             // Premiumni UZAYTIRADI (yozish). «Mavjud obuna ustiga qo'shilsin»
             // degan savol — kirish qarori emas.
-            "Cms/Service/UserAdminService.java",
+            //
+            // ⚠️ 04.09.2026: qoida `UserAdminService` dan SHU YERGA ko'chdi.
+            // Promokod chiqqanda o'sha arifmetika ikkinchi marta kerak
+            // bo'ldi; nusxalash o'rniga bitta joyga yig'ildi va admin
+            // sovg'asi ham shu yerdan o'tadi. Ro'yxatdagi ruxsat ham kod
+            // bilan birga ko'chdi — u yerda endi bu chaqiruv yo'q.
+            "Cms/Service/PremiumGrantService.java",
             // Dev ma'lumotlari; ishlab chiqarishda umuman yuklanmaydi.
             "Cms/Dev/DevDataSeeder.java");
 

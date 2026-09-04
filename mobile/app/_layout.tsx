@@ -15,6 +15,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SplashOverlay } from '@/components/SplashOverlay';
 import { OfflineBanner } from '@/components/states/OfflineBanner';
 import { useAuthStore } from '@/features/auth/store';
+import { useDeviceStore } from '@/features/devices/store';
 import { useFavoritesStore } from '@/features/favorites/store';
 import { isOnboardingSeen } from '@/features/onboarding/store';
 import i18nInstance from '@/i18n';
@@ -39,6 +40,7 @@ export default function RootLayout() {
   );
 
   const showSplash = useBootstrap();
+  useDeviceGuard(showSplash);
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.ink }}>
@@ -56,6 +58,7 @@ export default function RootLayout() {
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="onboarding" />
               <Stack.Screen name="(auth)" />
+              <Stack.Screen name="devices" />
             </Stack>
 
             {/* Поверх навигатора, но под splash — на splash сеть ещё не нужна */}
@@ -142,4 +145,30 @@ function useBootstrap(): boolean {
   }, [target, isNavigatorReady, done]);
 
   return !done;
+}
+
+/**
+ * Устройство не влезло в лимит — показать выбор.
+ *
+ * <h2>Почему это здесь, а не на экране входа</h2>
+ * В лимит можно упереться двумя путями: сразу после входа и на запуске
+ * приложения, которое вошло раньше. Второй путь экран входа не видит
+ * вовсе — человек туда просто не заходит.
+ *
+ * <h2>⚠️ Почему `replace`, а не `push`</h2>
+ * Возвращаться кнопкой «назад» некуда: приложением пользоваться ещё
+ * нельзя, и экран под ним показывал бы контент, к которому нет доступа.
+ *
+ * @param splashVisible пока splash сверху, переход не виден и только
+ *                      сбил бы стартовый маршрут
+ */
+function useDeviceGuard(splashVisible: boolean): void {
+  const status = useDeviceStore((s) => s.status);
+  const navigationState = useRootNavigationState();
+  const isNavigatorReady = Boolean(navigationState?.key);
+
+  useEffect(() => {
+    if (status !== 'limit' || splashVisible || !isNavigatorReady) return;
+    router.replace('/devices');
+  }, [status, splashVisible, isNavigatorReady]);
 }

@@ -39,6 +39,8 @@ public class UserAdminService {
     private final TariffRepo tariffRepo;
     private final SettingsService settingsService;
     private final AuditService auditService;
+    private final DeviceService deviceService;
+    private final PremiumGrantService premiumGrantService;
 
     /**
      * Ilova foydalanuvchilari ro'yxati (ТЗ §35).
@@ -104,11 +106,9 @@ public class UserAdminService {
     }
 
     public UserAccount accountOf(UUID userId) {
-        return accountRepo.findByUserId(userId).orElseGet(() -> {
-            User user = userRepo.findById(userId)
-                    .orElseThrow(() -> BusinessException.notFound("User", userId));
-            return accountRepo.save(UserAccount.builder().user(user).build());
-        });
+        // «Bo'lmasa yarat» qoidasi PremiumGrantService da — promokod ham
+        // shu yo'ldan o'tadi va ikki nusxa bo'lmasin.
+        return premiumGrantService.accountOf(userId);
     }
 
     @Transactional
@@ -170,25 +170,18 @@ public class UserAdminService {
 
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> BusinessException.notFound("User", userId));
-        UserAccount account = accountOf(userId);
 
-        // Mavjud obuna ustiga qo'shiladi, boshidan boshlanmaydi
-        LocalDateTime from = account.hasActivePremium()
-                ? account.getPremiumUntil() : LocalDateTime.now();
-        LocalDateTime until = from.plusMonths(effectiveMonths);
+        // ⚠️ «Mavjud obuna ustiga qo'shiladi» qoidasi endi
+        // PremiumGrantService da — promokod bilan bitta arifmetika.
+        // Ilgari u shu yerda edi; promokod chiqqanda nusxalash o'rniga
+        // ko'chirildi, aks holda ikki manba bir kun boshqacha sanardi.
+        PremiumGrantService.Grant grant = premiumGrantService.extend(
+                user, java.time.Period.ofMonths(effectiveMonths),
+                SubscriptionSource.ADMIN_GIFT, tariff,
+                actor == null ? null : actor.getId());
 
-        subscriptionRepo.save(Subscription.builder()
-                .user(user)
-                .tariff(tariff)
-                .startAt(LocalDateTime.now())
-                .endAt(until)
-                .source(SubscriptionSource.ADMIN_GIFT)
-                .paidAmount(null)
-                .grantedBy(actor == null ? null : actor.getId())
-                .build());
-
-        account.setPremiumUntil(until);
-        UserAccount saved = accountRepo.save(account);
+        LocalDateTime until = grant.until();
+        UserAccount saved = grant.account();
 
         auditService.log(actor, AuditAction.PREMIUM_GRANTED, "User", userId, null,
                 Map.of("months", effectiveMonths,
@@ -221,66 +214,43 @@ public class UserAdminService {
     }
 
     // -------------------------------------------------------------- qurilma
+    //
+    // ⚠️ Qoidalar bu yerda EMAS, `DeviceService` da.
+    //
+    // Ilgari `registerDevice()` shu sinfda turardi va izohida «bu metod
+    // mobil ilova uchun» deb yozilgan edi. Amalda uni hech kim
+    // chaqirmasdi, ya'ni limit ishlamasdi. Metod `DeviceService` ga
+    // ko'chirildi — qurilmani ro'yxatga oladigan tomon mobil ilova,
+    // admin emas.
+    //
+    // Bu yerda qolgani — adminga xos qism: audit yozuvi.
 
     @Transactional(readOnly = true)
     public List<UserDevice> devices(UUID userId) {
-        return deviceRepo.findAllByUserIdOrderByLastActiveAtDesc(userId);
+        // Admin chiqarilganlarini ham ko'radi: «nima uchun bu odam
+        // kira olmayapti» degan savolga javob o'sha tarixda.
+        return deviceService.all(userId);
     }
 
     /**
-     * Qurilmani chiqarib yuborish.
+     * Qurilmani chiqarib yuborish — admin tomonidan.
      *
-     * O'chirilmaydi, {@code active = false} qilinadi: tarix saqlanadi va
-     * o'sha qurilma qayta kirsa tanib olinadi.
+     * <h2>⚠️ Nima o'zgardi</h2>
+     * Ilgari bu metod faqat `active = false` qilardi va o'sha
+     * qurilmadagi refresh token tegilmasdi — ya'ni admin tugmani
+     * bosardi, panelda qurilma «chiqarilgan» bo'lib ko'rinardi, odam
+     * esa tomosha qilishda davom etardi.
+     *
+     * Endi sessiyani yopish `DeviceService` ichida, foydalanuvchining
+     * o'zi chiqargandagi bilan BIR XIL yo'lda bajariladi. Ikki xil
+     * «chiqarish» bo'lishi mumkin emas.
      */
     @Transactional
     public void revokeDevice(User actor, UUID userId, Long deviceRowId) {
-        UserDevice device = deviceRepo.findById(deviceRowId)
-                .orElseThrow(() -> BusinessException.notFound("Device", deviceRowId));
-        if (!device.getUser().getId().equals(userId)) {
-            throw BusinessException.validation("Bu qurilma boshqa foydalanuvchiga tegishli");
-        }
-        device.setActive(false);
-        deviceRepo.save(device);
+        UserDevice device = deviceService.revoke(userId, deviceRowId, null);
 
         auditService.log(actor, AuditAction.DEVICE_REVOKED, "UserDevice", deviceRowId, null,
                 Map.of("userId", userId.toString(), "deviceId", device.getDeviceId()));
-    }
-
-    /**
-     * Yangi qurilmani ro'yxatga olish — limit tekshiriladi.
-     *
-     * Buyurtmachi: bitta hisobdan 2 tadan ortiq qurilma bo'lmasin. Limit
-     * sozlamada, kodda emas.
-     *
-     * Bu metod mobil ilova uchun; admin panel uni chaqirmaydi, lekin qoida
-     * shu yerda turishi kerak — aks holda u klientda takrorlanardi.
-     */
-    @Transactional
-    public UserDevice registerDevice(UUID userId, String deviceId, String name, String platform) {
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> BusinessException.notFound("User", userId));
-
-        Optional<UserDevice> known = deviceRepo.findByUserIdAndDeviceId(userId, deviceId);
-        if (known.isPresent()) {
-            UserDevice d = known.get();
-            d.setActive(true);
-            d.setLastActiveAt(LocalDateTime.now());
-            return deviceRepo.save(d);
-        }
-
-        int limit = settingsService.getInt(SettingKeys.DEVICE_LIMIT, 2);
-        List<UserDevice> active = deviceRepo.findAllByUserIdAndActiveTrueOrderByLastActiveAtAsc(userId);
-        if (active.size() >= limit) {
-            throw new BusinessException("DEVICE_LIMIT_REACHED",
-                    "Bitta hisobdan " + limit + " tadan ortiq qurilmaga kirish mumkin emas. "
-                            + "Sozlamalardan eski qurilmani chiqaring.",
-                    HttpStatus.CONFLICT);
-        }
-
-        return deviceRepo.save(UserDevice.builder()
-                .user(user).deviceId(deviceId).deviceName(name).platform(platform)
-                .build());
     }
 
     private static boolean contains(String value, String needle) {

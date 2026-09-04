@@ -62,6 +62,7 @@ export const PERMISSION_GROUPS = [
     key: 'money',
     permissions: [
       'TARIFF_VIEW', 'TARIFF_EDIT', 'SUBSCRIPTION_VIEW',
+      'PROMOCODE_VIEW', 'PROMOCODE_EDIT',
       'DONATION_VIEW', 'DONATION_PACKAGE_EDIT',
     ],
   },

@@ -17,9 +17,11 @@ public interface AuthService {
 
     User password(UUID adminId, String password);
 
-    /** SMS-kod yuboradi. Foydalanuvchi topilmasa ham ruxsat — bu ro'yxatdan o'tish oqimi. */
-    HttpEntity<?> sendOtp(String phone);
-
-    /** Kodni tekshiradi, kerak bo'lsa hisob yaratadi va JWT qaytaradi. */
-    HttpEntity<?> verifyOtp(String phone, String code);
+    // ⚠️ sendOtp/verifyOtp BU YERDAN olib tashlandi (04.09.2026).
+    //
+    // Telefon orqali kirishning butun oqimi endi `AppAccountService` da:
+    // u bitta joyda kodni ham tekshiradi, ismni ham so'raydi va hisobni
+    // ham yaratadi. Bu yerda qolgan nusxa ikkinchi, ismsiz hisob
+    // yaratadigan yo'l bo'lib turardi — undan foydalanadigan endpoint
+    // esa yo'q edi.
 }

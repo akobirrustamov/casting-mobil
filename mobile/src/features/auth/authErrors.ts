@@ -18,25 +18,16 @@ const MESSAGE_KEY: Record<string, string> = {
   SMS_NOT_CONFIGURED: 'auth.smsUnavailable',
   SMS_SEND_FAILED: 'auth.otpSendFailed',
 
-  // --- Регистрация ---
-  /** Номер занят — экран уводит на вкладку входа, текст только поясняет. */
-  PHONE_ALREADY_REGISTERED: 'auth.phoneAlreadyRegistered',
-  /** Подтверждение просрочено: пароль придумывали дольше 15 минут. */
+  // --- Имя (только у новых) ---
+  /** Подтверждение просрочено: имя набирали дольше 15 минут. */
   PHONE_NOT_VERIFIED: 'auth.verificationExpired',
-  PASSWORD_TOO_SHORT: 'auth.passwordTooShort',
-  PASSWORD_TOO_LONG: 'auth.passwordTooLong',
-  PASSWORD_MISMATCH: 'auth.passwordMismatch',
   NAME_INVALID: 'auth.nameInvalid',
 
-  // --- Вход ---
-  PHONE_NOT_REGISTERED: 'auth.phoneNotRegistered',
-  INVALID_CREDENTIALS: 'auth.invalidCredentials',
-  /**
-   * Аккаунт создан через SMS или Google — пароля у него никогда не было.
-   * «Неверный пароль» здесь был бы неправдой: подобрать его нельзя.
-   */
-  PASSWORD_NOT_SET: 'auth.passwordNotSet',
-  ACCOUNT_LOCKED: 'auth.accountLocked',
+  // ⚠️ Коды пароля (PASSWORD_TOO_SHORT, PASSWORD_MISMATCH,
+  // PASSWORD_NOT_SET, INVALID_CREDENTIALS, ACCOUNT_LOCKED) и
+  // PHONE_ALREADY_REGISTERED / PHONE_NOT_REGISTERED убраны 04.09.2026
+  // вместе с самим паролем: бэкенд их больше не шлёт. Занятый номер
+  // теперь не ошибка, а обычный вход.
 };
 
 /** Незнакомый код или обрыв связи — общий «не получилось». */

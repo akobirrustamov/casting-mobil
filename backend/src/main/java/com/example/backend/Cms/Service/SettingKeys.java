@@ -23,8 +23,26 @@ public final class SettingKeys {
     /** 1 COIN necha so'm. Kurs aytilmagan. */
     public static final String COIN_RATE = "currency.coin.rate";
 
-    /** Bitta hisobdan nechta qurilma. Buyurtmachi: 2. */
+    /**
+     * Bitta hisobdan nechta MOBIL qurilma. Buyurtmachi: 2.
+     *
+     * ⚠️ Brauzer bu hisobga KIRMAYDI — {@link #DEVICE_LIMIT_WEB} ga qarang.
+     */
     public static final String DEVICE_LIMIT = "account.device.limit";
+
+    /**
+     * Bitta hisobdan nechta BRAUZER.
+     *
+     * <h2>Nima uchun alohida</h2>
+     * Buyurtmachi qarori: veb alohida sanalsin. Aks holda kompyuterda
+     * saytni ochish telefonni chiqarib yuborardi — odam esa hech qanday
+     * «qurilma» qo'shmagandek his qilardi: u shunchaki brauzerga kirdi.
+     *
+     * Telefon — odam olib yuradigan narsa; brauzer esa ish stolida,
+     * uyda, do'stinikida bo'lishi mumkin. Ularni bitta hisobga qo'shish
+     * ikki xil narsani bitta o'lchov bilan o'lchash bo'lardi.
+     */
+    public static final String DEVICE_LIMIT_WEB = "account.device.limit.web";
 
     /** Ijodkorga tushadigan ulush foizi. ТЗ: 50. */
     public static final String REVENUE_SHARE_PERCENT = "revenue.creator.percent";
@@ -50,7 +68,8 @@ public final class SettingKeys {
                 {PREMIERE_PRICE, "15000", "Butun premyera narxi (so'm)"},
                 {STAR_RATE, "0", "1 STAR necha so'm. 0 = kurs hali belgilanmagan"},
                 {COIN_RATE, "0", "1 COIN necha so'm. 0 = kurs hali belgilanmagan"},
-                {DEVICE_LIMIT, "2", "Bitta hisobdan maksimum qurilma soni"},
+                {DEVICE_LIMIT, "2", "Bitta hisobdan maksimum MOBIL qurilma soni"},
+                {DEVICE_LIMIT_WEB, "2", "Bitta hisobdan maksimum brauzer soni"},
                 {REVENUE_SHARE_PERCENT, "50", "Ijodkorga tushadigan ulush (%)"},
                 {CREATOR_RANKING, "MANUAL",
                         "Mashhur ijodkorlar tartibi: MANUAL (admin tanlaydi) yoki STARS"},
@@ -98,7 +117,7 @@ public final class SettingKeys {
         }
         return switch (key) {
             case EPISODE_PRICE, PREMIERE_PRICE, STAR_RATE, COIN_RATE -> ValueType.MONEY;
-            case DEVICE_LIMIT, REVENUE_SHARE_PERCENT -> ValueType.INTEGER;
+            case DEVICE_LIMIT, DEVICE_LIMIT_WEB, REVENUE_SHARE_PERCENT -> ValueType.INTEGER;
             case CREATOR_RANKING -> ValueType.ENUM;
             default -> ValueType.TEXT;
         };

@@ -11,6 +11,7 @@ import { isVertical } from '@/features/content/orientation';
 import { useContentCard } from '@/features/home/api';
 import { mediaUrl } from '@/lib/api';
 import { useIsOffline } from '@/lib/network';
+import { formatSum } from '@/lib/money';
 
 import { ContentNotFoundError, WatchUnavailableError } from './api';
 import { episodesOfSeason, type EpisodeCard, type useEpisodes } from './episodes';
@@ -145,10 +146,6 @@ function stateBadge(episode: EpisodeCard): { tone: BadgeTone; key: string } | nu
 }
 
 /** Разряды пробелами: 5000 → «5 000». */
-function groupDigits(amount: number): string {
-  return String(Math.round(amount)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-}
-
 function EpisodeRow({
   episode,
   vertical,
@@ -208,7 +205,7 @@ function EpisodeRow({
           ) : null}
           {!episode.allowed && episode.episodePrice !== null ? (
             <Text className="text-micro text-text-muted">
-              {t('common.price', { amount: groupDigits(episode.episodePrice) })}
+              {t('common.price', { amount: formatSum(episode.episodePrice) })}
             </Text>
           ) : null}
         </View>

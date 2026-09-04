@@ -67,6 +67,8 @@ export default function AdminLayout() {
       items: [
         { to: '/app/panel/users', icon: '👤', label: t('nav.users'), show: can('USER_VIEW') },
         { to: '/app/panel/tariffs', icon: '👑', label: t('nav.tariffs'), show: can('TARIFF_VIEW') },
+        { to: '/app/panel/promocodes', icon: '🏷️', label: t('nav.promocodes'),
+          show: can('PROMOCODE_VIEW') },
         { to: '/app/panel/subscriptions', icon: '🎟️', label: t('nav.subscriptions'),
           show: can('SUBSCRIPTION_VIEW') },
         { to: '/app/panel/donations', icon: '✨', label: t('nav.donations'), show: can('DONATION_VIEW') },

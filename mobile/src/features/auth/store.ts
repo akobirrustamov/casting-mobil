@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { useDeviceStore } from '@/features/devices/store';
 import { setAuthToken, setTokenRefresher } from '@/lib/api';
 import { getItem, removeItem, setItem } from '@/lib/storage';
 
@@ -121,6 +122,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (token) {
       // Намеренно без await — фоновое уточнение.
       void get().syncProfile();
+
+      /**
+       * ⚠️ Устройство сообщает о себе НА КАЖДОМ запуске, а не только
+       * после входа.
+       *
+       * Два повода. Первый: обновить «последнюю активность», иначе в
+       * списке устройство выглядело бы заброшенным и человек выгнал бы
+       * то, которым пользуется. Второй: вход мог не дойти до этого
+       * шага — приложение закрыли между выдачей токена и регистрацией,
+       * — и без повтора лимит для него не применился бы никогда.
+       *
+       * Повтор безопасен: знакомое устройство места не занимает.
+       */
+      void useDeviceStore.getState().ensureRegistered();
     }
   },
 
@@ -158,6 +173,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       refreshToken ? setItem(REFRESH_KEY, refreshToken) : removeItem(REFRESH_KEY),
     ]);
     set({ token, refreshToken, user, isAuthorized: true });
+
+    // Без await: экран входа уже уводит человека дальше. Если мест нет,
+    // `app/_layout` увидит статус `limit` и покажет выбор устройства.
+    void useDeviceStore.getState().ensureRegistered();
   },
 
   signOut: async () => {
@@ -167,6 +186,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       removeItem(USER_KEY),
     ]);
     set({ token: null, refreshToken: null, user: null, isAuthorized: false });
+
+    // Иначе следующий вошедший на этом телефоне увидел бы чужой
+    // «лимит устройств» — статус остался бы от предыдущего аккаунта.
+    useDeviceStore.getState().reset();
   },
 
   /**

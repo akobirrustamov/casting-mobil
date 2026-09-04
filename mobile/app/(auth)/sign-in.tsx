@@ -2,16 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 
 import { FormMessage } from '@/components/ui/FormMessage';
-import { PasswordField } from '@/components/ui/PasswordField';
-import {
-  AuthError,
-  exchangeGoogleToken,
-  registerStart,
-  signInWithPassword,
-} from '@/features/auth/api';
+import { exchangeGoogleToken, sendOtp } from '@/features/auth/api';
 import { AuthScaffold } from '@/features/auth/AuthScaffold';
 import { authErrorKey, googleErrorKey } from '@/features/auth/authErrors';
 import type { DevLoginResult } from '@/features/auth/devLogin';
@@ -20,101 +14,64 @@ import { useAuthStore } from '@/features/auth/store';
 import { colors } from '@/theme/tokens';
 
 /**
- * S03 — вход и регистрация. Два раздела на одном экране (заказчик,
- * 01.09.2026): «Kirish» — номер и пароль, «Ro'yxatdan o'tish» — номер,
- * SMS-код, имя и пароль с повтором.
+ * S03 — вход, шаг 1 из 2 (из 3 для новых): номер телефона.
  *
- * <h2>Почему один экран с переключателем, а не два</h2>
- * Поле номера одно и то же, логотип один и тот же. Два отдельных экрана
- * означали бы прыжок с перерисовкой всего ради одного лишнего поля —
- * и человек терял бы уже набранный номер на переходе. Здесь номер
- * ПЕРЕЖИВАЕТ переключение: если регистрация ответила «номер занят»,
- * он же остаётся во вкладке входа.
+ * <h2>Один поток вместо двух разделов</h2>
+ * Заказчик (04.09.2026): номер → SMS-код, а имя — только если человек
+ * новый. Переключателя «Kirish / Ro'yxatdan o'tish» больше НЕТ, и
+ * пароля тоже: номер всё равно подтверждался кодом, то есть пароль был
+ * не вторым замком, а вторым шагом, который забывают.
+ *
+ * Заодно исчез самый неприятный тупик прежней схемы: человек выбирал
+ * «регистрацию», получал «этот номер занят» и должен был сам понять,
+ * что ему нужен соседний раздел. Теперь вопрос «ты новый или старый»
+ * просто не задаётся — на него отвечает сервер, и только после кода.
  *
  * <h2>Раскладка</h2>
  * Ярусы задаёт общий каркас `AuthScaffold` — он же на экране кода и на
- * экране имени с паролем. Колонка полей стоит на одной высоте на всех
- * трёх, и ни поля, ни кнопки не двигаются: ни при переключении разделов,
- * ни когда приходит ошибка.
+ * экране имени. Знак, высота шапки и место кнопки одинаковы на всех
+ * трёх, поэтому поле не приходится искать глазами заново на каждом
+ * шаге.
  *
- * <h2>Куда ведут кнопки</h2>
- * Вход — сразу `/(tabs)`. Регистрация — `otp.tsx` (код) → `password.tsx`
- * (имя, пароль и повтор) → `/(tabs)`. Сессия выдаётся на последнем шаге,
- * второй раз входить не нужно.
- *
- * ⚠️ «Забыли пароль» намеренно неактивна: эндпоинта восстановления на
- * бэкенде нет. Живая ссылка в никуда хуже честно погашенной.
+ * <h2>Куда ведёт кнопка</h2>
+ * `otp.tsx` (код) → либо сразу `/(tabs)`, либо `name.tsx` (имя) →
+ * `/(tabs)`. Сессия выдаётся на последнем пройденном шаге, второй раз
+ * входить не нужно.
  */
 const PHONE_DIGITS = 9; // после +998
-
-type Mode = 'signIn' | 'signUp';
 
 export default function SignInScreen() {
   const { t } = useTranslation();
   const signIn = useAuthStore((s) => s.signIn);
 
-  const [mode, setMode] = useState<Mode>('signIn');
   const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
   const [googleError, setGoogleError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const digits = phone.replace(/\D/g, '');
   const isPhoneValid = digits.length === PHONE_DIGITS;
-  const canSubmit = mode === 'signIn' ? isPhoneValid && password.length > 0 : isPhoneValid;
-
-  const switchMode = (next: Mode) => {
-    if (next === mode) return;
-    setMode(next);
-    setError(null);
-  };
 
   const onChangePhone = (raw: string) => {
     setPhone(formatPhone(raw.replace(/\D/g, '').slice(0, PHONE_DIGITS)));
     setError(null);
   };
 
-  const onChangePassword = (value: string) => {
-    setPassword(value);
-    setError(null);
-  };
-
-  /** Вход: номер и пароль, без SMS. */
-  const onSignIn = async () => {
-    setError(null);
-    setBusy(true);
-    try {
-      const session = await signInWithPassword(`+998${digits}`, password);
-      await signIn(session.token, session.user, session.refreshToken);
-      router.replace('/(tabs)');
-    } catch (e) {
-      setError(t(authErrorKey(e)));
-    } finally {
-      setBusy(false);
-    }
-  };
-
   /**
-   * Регистрация: просим код.
+   * Просим код.
    *
-   * ⚠️ Занятый номер бэкенд отбивает ДО отправки SMS
-   * (`PHONE_ALREADY_REGISTERED`). Тогда экран сам переключается на вход
-   * с уже набранным номером — человеку остаётся только пароль.
+   * ⚠️ Ответа «этот номер занят» здесь БОЛЬШЕ НЕТ: занятый номер — это
+   * просто входящий человек, и код уходит ему так же.
    */
-  const onSignUp = async () => {
+  const onContinue = async () => {
     const fullPhone = `+998${digits}`;
     setError(null);
     setBusy(true);
     try {
-      await registerStart(fullPhone);
+      await sendOtp(fullPhone);
       router.push({ pathname: '/(auth)/otp', params: { phone: fullPhone } });
     } catch (e) {
-      const message = t(authErrorKey(e));
-      if (e instanceof AuthError && e.code === 'PHONE_ALREADY_REGISTERED') {
-        setMode('signIn');
-      }
-      setError(message);
+      setError(t(authErrorKey(e)));
     } finally {
       setBusy(false);
     }
@@ -148,27 +105,19 @@ export default function SignInScreen() {
   return (
     <AuthScaffold
       header={
-        <View className="gap-4">
-          <ModeSwitch mode={mode} onChange={switchMode} disabled={busy} />
-
-          {/* Заголовок убран намеренно: раздел уже назван в переключателе
-              прямо над ним, и второй такой же заголовок только удлинял
-              экран. Осталась строка, которая говорит, ЧТО делать.
-
-              Место под неё отведено на две строки: подписи у разделов
-              разной длины, и на узком экране одна из них переносится. */}
-          <FormMessage
-            message={mode === 'signIn' ? t('auth.signInSubtitle') : t('auth.signUpSubtitle')}
-            tone="muted"
-          />
+        <View className="gap-2">
+          <Text className="text-center text-h2 text-text">{t('auth.phoneTitle')}</Text>
+          {/* Место под подпись отведено на две строки: на узком экране
+              она переносится, и без брони поле номера уезжало бы вниз. */}
+          <FormMessage message={t('auth.phoneSubtitle')} tone="muted" />
         </View>
       }
       message={error}
       action={{
-        label: mode === 'signIn' ? t('auth.signInAction') : t('auth.continue'),
-        onPress: mode === 'signIn' ? onSignIn : onSignUp,
+        label: t('auth.continue'),
+        onPress: onContinue,
         loading: busy,
-        disabled: !canSubmit || busy,
+        disabled: !isPhoneValid || busy,
       }}
       footer={
         <>
@@ -227,103 +176,12 @@ export default function SignInScreen() {
           inputMode="tel"
           maxLength={12}
           editable={!busy}
+          onSubmitEditing={isPhoneValid && !busy ? onContinue : undefined}
           className="flex-1 text-h2"
           style={{ color: colors.white }}
         />
       </View>
-
-      {/* Пароль — только во входе. На регистрации его задают после
-          SMS: до подтверждения номера аккаунта ещё нет.
-
-          ⚠️ Поля НАД ним не двигаются от его появления: колонка прижата
-          вверх, а разницу забирает пустая распорка под ней. */}
-      {mode === 'signIn' ? (
-        <View className="gap-2">
-          <PasswordField
-            value={password}
-            onChangeText={onChangePassword}
-            placeholder={t('auth.passwordPlaceholder')}
-            valid={password.length > 0}
-            editable={!busy}
-            onSubmitEditing={canSubmit && !busy ? onSignIn : undefined}
-          />
-
-          {/* ⚠️ Отключена: восстановления пароля на бэкенде пока нет. */}
-          <Pressable disabled hitSlop={8} className="self-end">
-            <Text className="text-caption" style={{ color: colors.textDisabled }}>
-              {t('auth.forgotPassword')} · {t('auth.soon')}
-            </Text>
-          </Pressable>
-        </View>
-      ) : null}
     </AuthScaffold>
-  );
-}
-
-/**
- * Переключатель разделов.
- *
- * Активный лежит на фирменном градиенте — том же, что у главной кнопки:
- * на экране должно быть видно, ЧТО именно сделает нижняя кнопка.
- */
-function ModeSwitch({
-  mode,
-  onChange,
-  disabled,
-}: {
-  mode: Mode;
-  onChange: (mode: Mode) => void;
-  disabled: boolean;
-}) {
-  const { t } = useTranslation();
-
-  const tabs: { key: Mode; label: string }[] = [
-    { key: 'signIn', label: t('auth.tabSignIn') },
-    { key: 'signUp', label: t('auth.tabSignUp') },
-  ];
-
-  return (
-    <View
-      className="flex-row rounded-card-lg border p-1"
-      style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-    >
-      {tabs.map((tab) => {
-        const active = tab.key === mode;
-        return (
-          <Pressable
-            key={tab.key}
-            onPress={() => onChange(tab.key)}
-            disabled={disabled}
-            className="flex-1 overflow-hidden rounded-card"
-            style={{ minHeight: 44 }}
-          >
-            {/* Активная вкладка — сплошной фиолетовый, как у кнопок
-                (заказчик 01.09.2026). Раньше здесь был фирменный градиент,
-                и переключатель на экране входа оказывался единственным
-                местом с ним. */}
-            {active ? (
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  bottom: 0,
-                  left: 0,
-                  backgroundColor: colors.purple,
-                }}
-              />
-            ) : null}
-
-            <Text
-              className="py-3 text-center text-caption"
-              style={{ color: active ? colors.white : colors.textMuted }}
-            >
-              {tab.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
   );
 }
 

@@ -16,6 +16,7 @@ import type { ContentCard } from '@/features/home/types';
 import { mediaUrl } from '@/lib/api';
 import { colors } from '@/theme/tokens';
 import { useIsOffline } from '@/lib/network';
+import { formatSum } from '@/lib/money';
 
 import {
   ContentNotFoundError,
@@ -341,10 +342,6 @@ function Facts({ info, card }: { info: WatchInfo; card: ContentCard | undefined 
 }
 
 /** Разряды пробелами: 5000 → «5 000». Цену считает сервер, мы только читаем. */
-function groupDigits(amount: number): string {
-  return String(Math.round(amount)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-}
-
 /** Что делать — по требуемому действию. */
 const LOCKED_BODY: Record<string, string> = {
   SIGN_IN: 'content.needSignIn',
@@ -414,7 +411,7 @@ function LockedPanel({ info }: { info: WatchInfo }) {
         >
           {price === null
             ? t('common.buy')
-            : t('common.price', { amount: groupDigits(price) })}
+            : t('common.price', { amount: formatSum(price) })}
         </Button>
       ) : null}
 
