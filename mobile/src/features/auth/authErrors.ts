@@ -63,34 +63,3 @@ export function googleErrorKey(error: unknown): string {
   }
   return 'auth.googleFailed';
 }
-
-/**
- * Техническая приписка к сообщению об ошибке — ТОЛЬКО на время разбора.
- *
- * <h2>Зачем</h2>
- * И `authErrorKey`, и `googleErrorKey` при незнакомой ошибке возвращают
- * общий текст. Это правильно для человека, но при разборе беспощадно:
- * «не получилось» одинаково выглядит и когда сервер ответил `500`, и
- * когда до сервера вообще не дошли. Разные причины — разные люди и
- * разные действия, а на экране одна строка.
- *
- * Здесь достаётся то, что отличает эти случаи: код ответа, код axios
- * (`ERR_NETWORK`, `ECONNABORTED`) и текст.
- *
- * ⚠️ Убрать вместе с `BuildMarker`, когда вход заработает.
- */
-export function technicalDetail(error: unknown): string | undefined {
-  if (axios.isAxiosError(error)) {
-    const status = error.response?.status;
-    const body = error.response?.data as { code?: string; message?: string } | undefined;
-
-    return [status, error.code, body?.code ?? body?.message, error.message]
-      .filter(Boolean)
-      .join(' · ')
-      .slice(0, 160);
-  }
-
-  if (error instanceof Error) return error.message.slice(0, 160);
-
-  return undefined;
-}

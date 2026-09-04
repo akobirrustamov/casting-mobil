@@ -7,9 +7,7 @@ import { Text, TextInput, View } from 'react-native';
 import { FormMessage } from '@/components/ui/FormMessage';
 import { exchangeGoogleToken, sendOtp } from '@/features/auth/api';
 import { AuthScaffold } from '@/features/auth/AuthScaffold';
-import { authErrorKey, googleErrorKey, technicalDetail } from '@/features/auth/authErrors';
-import { BuildMarker } from '@/features/auth/BuildMarker';
-import { NetworkProbe } from '@/features/auth/NetworkProbe';
+import { authErrorKey, googleErrorKey } from '@/features/auth/authErrors';
 import type { DevLoginResult } from '@/features/auth/devLogin';
 import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton';
 import { useAuthStore } from '@/features/auth/store';
@@ -35,14 +33,6 @@ import { colors } from '@/theme/tokens';
  * трёх, поэтому поле не приходится искать глазами заново на каждом
  * шаге.
  *
- * <h2>⚠️ Слияние 04.09.2026</h2>
- * В `main` этот экран оставался на пароле, и туда же добавили показ
- * технической причины отказа (`technicalDetail`, `BuildMarker`,
- * `NetworkProbe`) — чтобы разобрать, почему вход не работал на
- * устройстве. Пароль отменён заказчиком и не возвращается, а вот
- * диагностика перенесена сюда: она отвечает на другой вопрос и в
- * OTP-потоке нужна ровно так же.
- *
  * <h2>Куда ведёт кнопка</h2>
  * `otp.tsx` (код) → либо сразу `/(tabs)`, либо `name.tsx` (имя) →
  * `/(tabs)`. Сессия выдаётся на последнем пройденном шаге, второй раз
@@ -57,15 +47,6 @@ export default function SignInScreen() {
   const [phone, setPhone] = useState('');
   const [googleError, setGoogleError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  /**
-   * Техническая причина второй строкой под сообщением.
-   *
-   * ⚠️ Временно, на время разбора входа: без неё «Amal bajarilmadi»
-   * одинаково выглядит и когда сервер отказал, и когда до него не
-   * дошли. Убрать вместе с `BuildMarker` и `NetworkProbe`.
-   */
-  const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const digits = phone.replace(/\D/g, '');
@@ -74,7 +55,6 @@ export default function SignInScreen() {
   const onChangePhone = (raw: string) => {
     setPhone(formatPhone(raw.replace(/\D/g, '').slice(0, PHONE_DIGITS)));
     setError(null);
-    setErrorDetail(null);
   };
 
   /**
@@ -86,14 +66,12 @@ export default function SignInScreen() {
   const onContinue = async () => {
     const fullPhone = `+998${digits}`;
     setError(null);
-    setErrorDetail(null);
     setBusy(true);
     try {
       await sendOtp(fullPhone);
       router.push({ pathname: '/(auth)/otp', params: { phone: fullPhone } });
     } catch (e) {
       setError(t(authErrorKey(e)));
-      setErrorDetail(technicalDetail(e) ?? null);
     } finally {
       setBusy(false);
     }
@@ -134,7 +112,7 @@ export default function SignInScreen() {
           <FormMessage message={t('auth.phoneSubtitle')} tone="muted" />
         </View>
       }
-      message={error && errorDetail ? `${error}\n${errorDetail}` : error}
+      message={error}
       action={{
         label: t('auth.continue'),
         onPress: onContinue,
@@ -159,12 +137,6 @@ export default function SignInScreen() {
             onDevSession={onDevSession}
             error={googleError}
           />
-
-          {/* ⚠️ Временные: какая сборка JS запущена и доходит ли
-              телефон до бэкенда. Убрать вместе с `errorDetail`,
-              когда вход перестанет вызывать вопросы. */}
-          <BuildMarker />
-          <NetworkProbe />
 
           <Text className="text-center text-caption text-text-muted">
             <Text className="text-cyan underline">{t('auth.termsLink')}</Text>

@@ -31,6 +31,27 @@
         <lombok.version>1.18.44</lombok.version>
 
         <!--
+            ⚠️ Mockito va ByteBuddy — Spring Boot bergan versiyadan YANGIROQ.
+
+            Loyiha Java 17 uchun build qilinadi, lekin ishlab chiquvchilar
+            mashinasidagi JDK undan yangi bo'lishi mumkin (masalan 25).
+            Testlarni O'SHA JDK ishga tushiradi, va Spring Boot 3.1.2 bilan
+            keladigan `byte-buddy 1.14.5` yangi bayt-kod versiyasini
+            tushunmaydi.
+
+            Natija juda chalg'ituvchi edi: 29 ta test
+            «Mockito cannot mock this class» deb yiqilardi — go'yo kodda
+            xato bordek. Aslida kod butunlay to'g'ri, shunchaki mock
+            yasovchi kutubxona JDK dan orqada qolgan.
+
+            Bu qiymatlar Spring Boot ni yangilamasdan muammoni yopadi.
+            Boot yangilanganda ularni olib tashlash mumkin — o'shanda
+            versiyalarni parent o'zi beradi.
+        -->
+        <byte-buddy.version>1.17.5</byte-buddy.version>
+        <mockito.version>5.18.0</mockito.version>
+
+        <!--
             AWS SDK for Java 2.x - Timeweb S3 uchun.
 
             Timeweb Object Storage Amazon S3 bilan MOS, shuning uchun

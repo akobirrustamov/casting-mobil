@@ -11,8 +11,7 @@ export type GoogleSignInResult =
   | { status: 'idle' }
   | { status: 'pending' }
   | { status: 'cancelled' }
-  /** `detail` — техническая приписка к тексту: код, по которому видно причину. */
-  | { status: 'error'; messageKey: string; detail?: string }
+  | { status: 'error'; messageKey: string }
   | { status: 'success'; idToken: string };
 
 /**
@@ -108,19 +107,11 @@ export function toSignInError(error: unknown): GoogleSignInResult {
     return { status: 'error', messageKey: 'auth.googleConfigMismatch' };
   }
 
-  // ⚠️ Показываем и код, и текст. Ошибка БЕЗ кода — отдельная улика: у всего,
-  // что приходит от сервисов Google Play, код есть. Значит это что-то другое,
-  // и без текста опознать его нечем.
-  // `String(error)` в конце — на случай, когда брошен не Error и не объект
-  // с полями: иначе приписка окажется пустой и мы снова останемся без улик.
-  const raw = [code, err?.message].filter(Boolean).join(' · ') || String(error);
-
-  // Строки-пустышки не показываем: «null» на экране хуже, чем ничего.
-  const detail = /^(null|undefined|\[object Object\])$/.test(raw)
-    ? undefined
-    : raw.slice(0, 160);
-
-  return { status: 'error', messageKey: 'auth.googleFailed', detail };
+  // ⚠️ Код сюда больше не приписывается. Разбор входа 03–04.09.2026
+  // закончился (причина была в цепочке сертификатов), и техническая
+  // строка вида `DEVELOPER_ERROR · ...` обычному человеку не говорит
+  // ничего. При следующем разборе её вернут из истории git.
+  return { status: 'error', messageKey: 'auth.googleFailed' };
 }
 
 export function useGoogleSignIn(onSuccess?: (idToken: string) => void) {
