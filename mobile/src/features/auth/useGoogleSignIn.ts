@@ -11,7 +11,8 @@ export type GoogleSignInResult =
   | { status: 'idle' }
   | { status: 'pending' }
   | { status: 'cancelled' }
-  | { status: 'error'; messageKey: string }
+  /** `detail` — техническая приписка к тексту: код, по которому видно причину. */
+  | { status: 'error'; messageKey: string; detail?: string }
   | { status: 'success'; idToken: string };
 
 /**
@@ -54,28 +55,72 @@ export function toSignInResult(response: SignInResponse): GoogleSignInResult {
 
   const idToken = response.data?.idToken;
 
-  // Токена может не быть при успешном входе: так бывает, когда в консоли
-  // не задан веб-клиент. Молча уйти в «успех» нельзя — обменивать нечего.
+  // ⚠️ Вход прошёл, а токена нет — отдельный случай, и он НЕ про связь.
+  // Так бывает, когда `webClientId` не тот или не из этого проекта: аккаунт
+  // Google выбран, но подписывать токен нечем. В общем «не удалось войти»
+  // это неотличимо от обрыва сети, а чинится совсем в другом месте.
   return idToken
     ? { status: 'success', idToken }
-    : { status: 'error', messageKey: 'auth.googleFailed' };
+    : { status: 'error', messageKey: 'auth.googleNoToken' };
 }
 
-/** Брошенное исключение → сообщение. Отмену пользователем за ошибку не считаем. */
+/**
+ * Код ошибки Google Play services «настройки не сходятся».
+ *
+ * Библиотека отдаёт его строкой `'10'` — это `CommonStatusCodes.DEVELOPER_ERROR`,
+ * см. `RNGoogleSigninModule.java`. В `statusCodes` его нет, поэтому константа
+ * своя.
+ */
+const DEVELOPER_ERROR = '10';
+
+/**
+ * Брошенное исключение → сообщение. Отмену пользователем за ошибку не считаем.
+ *
+ * ⚠️ Незнакомый код прикладывается к тексту. Без этого любая проблема
+ * выглядела как «Кирish amalga oshmadi» — одинаково и для сбитой настройки,
+ * и для обрыва связи, и искать причину было не по чему.
+ */
 export function toSignInError(error: unknown): GoogleSignInResult {
-  const code = (error as { code?: string } | null)?.code;
+  const err = error as { code?: string; message?: string } | null;
+  const code = err?.code;
+
+  // ⚠️ Коды берём через `googleModule`: их отдаёт нативная часть, и без неё
+  // сравнивать было бы не с чем. `null` — значит модуля в сборке нет, и
+  // ошибка пришла откуда-то ещё; тогда сразу идём к общей ветке с приметами.
   const statusCodes = googleStatusCodes();
 
   if (statusCodes) {
     if (code === statusCodes.SIGN_IN_CANCELLED) {
       return { status: 'cancelled' };
     }
+    if (code === statusCodes.IN_PROGRESS) {
+      // Окно уже открыто — второе нажатие, а не ошибка.
+      return { status: 'pending' };
+    }
     if (code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
       return { status: 'error', messageKey: 'auth.googleNoPlayServices' };
     }
   }
 
-  return { status: 'error', messageKey: 'auth.googleFailed' };
+  if (code === DEVELOPER_ERROR) {
+    // Google не узнал приложение: расходится SHA-1, package или client ID.
+    // Телефон тут ни при чём, чинится в Google Cloud Console.
+    return { status: 'error', messageKey: 'auth.googleConfigMismatch' };
+  }
+
+  // ⚠️ Показываем и код, и текст. Ошибка БЕЗ кода — отдельная улика: у всего,
+  // что приходит от сервисов Google Play, код есть. Значит это что-то другое,
+  // и без текста опознать его нечем.
+  // `String(error)` в конце — на случай, когда брошен не Error и не объект
+  // с полями: иначе приписка окажется пустой и мы снова останемся без улик.
+  const raw = [code, err?.message].filter(Boolean).join(' · ') || String(error);
+
+  // Строки-пустышки не показываем: «null» на экране хуже, чем ничего.
+  const detail = /^(null|undefined|\[object Object\])$/.test(raw)
+    ? undefined
+    : raw.slice(0, 160);
+
+  return { status: 'error', messageKey: 'auth.googleFailed', detail };
 }
 
 export function useGoogleSignIn(onSuccess?: (idToken: string) => void) {

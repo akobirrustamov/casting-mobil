@@ -101,7 +101,9 @@
     "googleFailed": "Kirish amalga oshmadi, qaytadan urinib ko'ring",
     "googleNoPlayServices": "Google Play xizmatlari mavjud emas",
     "nameTitle": "Ismingizni kiriting",
-    "nameSubtitle": "Bu ism profilingizda va izohlar ostida ko'rinadi"
+    "nameSubtitle": "Bu ism profilingizda va izohlar ostida ko'rinadi",
+    "googleConfigMismatch": "Google sozlamalari mos kelmadi: SHA-1 yoki client ID",
+    "googleNoToken": "Google token bermadi — sozlama tekshirilishi kerak"
   },
   "home": {
     "todayPremieres": "Bugungi premyeralar",

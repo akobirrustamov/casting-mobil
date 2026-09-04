@@ -101,7 +101,9 @@
     "googleFailed": "Sign-in failed, please try again",
     "googleNoPlayServices": "Google Play services are unavailable",
     "nameTitle": "What's your name?",
-    "nameSubtitle": "This name appears on your profile and under comments"
+    "nameSubtitle": "This name appears on your profile and under comments",
+    "googleConfigMismatch": "Google configuration mismatch: SHA-1 or client ID",
+    "googleNoToken": "Google returned no token — configuration needs a check"
   },
   "home": {
     "todayPremieres": "Today's premieres",

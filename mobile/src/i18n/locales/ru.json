@@ -101,7 +101,9 @@
     "googleFailed": "Не удалось войти, попробуйте ещё раз",
     "googleNoPlayServices": "Сервисы Google Play недоступны",
     "nameTitle": "Как вас зовут?",
-    "nameSubtitle": "Это имя увидят в профиле и под комментариями"
+    "nameSubtitle": "Это имя увидят в профиле и под комментариями",
+    "googleConfigMismatch": "Настройки Google не совпадают: SHA-1 или client ID",
+    "googleNoToken": "Google не вернул токен — нужна проверка настройки"
   },
   "home": {
     "todayPremieres": "Сегодняшние премьеры",

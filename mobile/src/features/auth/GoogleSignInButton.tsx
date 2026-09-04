@@ -146,7 +146,12 @@ function GoogleButtonLive({
   // чем общая ошибка обмена токена на экране.
   const status: { message: string; tone: 'danger' | 'muted' } | null =
     result.status === 'error'
-      ? { message: t(result.messageKey), tone: 'danger' }
+      ? {
+          // ⚠️ Приписка с кодом — временно, на время разбора входа: без неё
+          // все причины выглядят одной строкой. Убрать вместе с `BuildMarker`.
+          message: t(result.messageKey) + (result.detail ? ` (${result.detail})` : ''),
+          tone: 'danger',
+        }
       : result.status === 'cancelled'
         ? { message: t('auth.cancelled'), tone: 'muted' }
         : externalError
