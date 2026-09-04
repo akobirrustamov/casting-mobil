@@ -447,9 +447,26 @@ public class DevDataSeeder implements CommandLineRunner {
         List<Category> out = new ArrayList<>();
         int order = 0;
         for (String[] row : data) {
+            order++;
+            // ⚠️ Slug bazada bo'lishi MUMKIN: `TaxonomyBootstrap` katalogda
+            // "uzbek", "foreign", "kids" kabi bo'limlarni allaqachon
+            // yaratgan. Ilgari bu yerda shartsiz `save()` turardi va
+            // dev seeder UNIQUE(slug) da yiqilardi — ya'ni lokal stend
+            // umuman ko'tarilmasdi.
+            Category existing = categoryRepo.findBySlug(row[0]).orElse(null);
+            if (existing != null) {
+                // Demo uchun ikona kerak, lekin admin qo'ygan ikona
+                // almashtirilmaydi.
+                if (existing.getIcon() == null) {
+                    existing.setIcon(media.avatar(row[3], order));
+                    existing = categoryRepo.save(existing);
+                }
+                out.add(existing);
+                continue;
+            }
             Category c = Category.builder()
                     .slug(row[0])
-                    .sortOrder(order++)
+                    .sortOrder(order - 1)
                     .active(true)
                     .icon(media.avatar(row[3], order))
                     .build();
@@ -481,6 +498,13 @@ public class DevDataSeeder implements CommandLineRunner {
         List<Genre> out = new ArrayList<>();
         int order = 0;
         for (String[] row : data) {
+            // Kategoriyadagi kabi: katalog janrlari allaqachon bazada.
+            Genre found = genreRepo.findBySlug(row[0]).orElse(null);
+            if (found != null) {
+                order++;
+                out.add(found);
+                continue;
+            }
             Genre g = Genre.builder().slug(row[0]).sortOrder(order++).active(true).build();
             g.addTranslation(GenreTranslation.builder().locale(Locale.UZ).name(row[1]).build());
             g.addTranslation(GenreTranslation.builder().locale(Locale.RU).name(row[2]).build());

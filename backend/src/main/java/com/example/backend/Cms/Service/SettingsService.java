@@ -29,6 +29,17 @@ public class SettingsService {
     private final PlatformSettingRepo repo;
     private final AuditService auditService;
 
+    /**
+     * ⚠️ Ichki texnik satrlar shu prefiks bilan yoziladi.
+     *
+     * Jadval faqat admin sozlamalari uchun emas: unda ishga tushirish
+     * belgilari ham saqlanadi (masalan taksonomiya katalogining
+     * versiyasi). Ular sozlamalar sahifasida chiqsa, admin ularni
+     * sozlanadigan qiymat deb o'ylab o'zgartirib qo'yardi — natijasi
+     * esa umuman boshqa joyda ko'rinardi.
+     */
+    static final String INTERNAL_PREFIX = "internal.";
+
     /** Barcha sozlamalar. Yetishmayotganlari default bilan to'ldiriladi. */
     @Transactional
     public List<PlatformSetting> all() {
@@ -38,7 +49,9 @@ public class SettingsService {
                         .key(d[0]).value(d[1]).description(d[2]).build());
             }
         }
-        return repo.findAll();
+        return repo.findAll().stream()
+                .filter(s -> !s.getKey().startsWith(INTERNAL_PREFIX))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -142,6 +155,13 @@ public class SettingsService {
     public PlatformSetting update(User actor, String key, String value) {
         if (value == null || value.isBlank()) {
             throw BusinessException.validation("Qiymat bo'sh bo'lishi mumkin emas");
+        }
+        // ⚠️ Ichki satrni yashirish YETARLI EMAS: kalit ro'yxatda
+        // ko'rinmasa ham, uni to'g'ridan-to'g'ri yozib bo'lardi va satr
+        // bazada BOR bo'lgani uchun pastdagi «noma'lum kalit» tekshiruvi
+        // ham to'xtatmasdi.
+        if (key != null && key.startsWith(INTERNAL_PREFIX)) {
+            throw BusinessException.notFound("Setting", key);
         }
         // ⚠️ Tekshiruv AYNAN SHU YERDA — yozish paytida.
         //
