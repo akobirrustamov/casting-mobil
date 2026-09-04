@@ -1,23 +1,18 @@
 package com.example.backend.Cms.Controller;
 
-import com.example.backend.Cms.Dto.AppLoginRequest;
-import com.example.backend.Cms.Dto.RegisterCompleteRequest;
-import com.example.backend.Cms.Dto.RegisterConfirmRequest;
-import com.example.backend.Cms.Dto.RegisterStartRequest;
+import com.example.backend.Cms.Dto.OtpCompleteRequest;
+import com.example.backend.Cms.Dto.OtpSendRequest;
+import com.example.backend.Cms.Dto.OtpVerifyRequest;
 import com.example.backend.Cms.Service.AppAccountService;
-import com.example.backend.DTO.OtpSendDTO;
-import com.example.backend.DTO.OtpVerifyDTO;
 import com.example.backend.DTO.RefreshRequestDTO;
 import com.example.backend.Entity.User;
 import com.example.backend.Repository.UserRepo;
 import com.example.backend.Security.JwtService;
-import com.example.backend.Services.AuthService.AuthService;
 import com.example.backend.Services.AuthService.RefreshTokenService;
 import com.example.backend.exceptions.BusinessException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,125 +24,94 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Mobil ilovaning kirish va ro'yxatdan o'tish endpointlari.
+ * Mobil ilovaning kirish endpointlari: telefon raqam va SMS-kod.
  *
- * <h2>Ikki bo'lim, ikki yo'l</h2>
- * <ul>
- *   <li><b>Ro'yxatdan o'tish</b> — {@code /register/start} (raqam va SMS),
- *       {@code /register/confirm} (kod), {@code /register/complete}
- *       (parol va uning takrori). SMS bu yerda faqat raqam
- *       EGASINI tasdiqlaydi.</li>
- *   <li><b>Kirish</b> — {@code /login}: telefon + parol, SMSsiz.</li>
- * </ul>
+ * <h2>Bitta yo'l</h2>
+ * <ol>
+ *   <li>{@code /otp/send} — raqamga kod (hisob bor-yo'qligidan qat'i
+ *       nazar);</li>
+ *   <li>{@code /otp/verify} — kod. Hisobi bori shu yerda kiradi,
+ *       yangisiga {@code name_required=true} qaytadi;</li>
+ *   <li>{@code /otp/complete} — ism. Hisob shu yerda yaratiladi va
+ *       sessiya beriladi.</li>
+ * </ol>
  *
- * Eski {@code /otp/send} va {@code /otp/verify} (kod bilan bir qadamda
- * kirish) o'z joyida qoldi — ular sindirilmaydi.
+ * <h2>⚠️ Parolli endpointlar O'CHIRILDI</h2>
+ * {@code /register/start}, {@code /register/confirm},
+ * {@code /register/complete} va {@code /login} bu yerda edi
+ * (buyurtmachi 01.09.2026 so'ragan ikki bo'lim). 04.09.2026 da
+ * buyurtmachi parolni butunlay bekor qildi — ular olib tashlandi.
  *
- * <h2>⚠️ Nega ESKI kontrollerdan ko'chirildi</h2>
- * Bu ikki endpoint dastlab {@code /api/v1/auth/otp/**} da,
- * ya'ni ESKI casting modulining kontrollerida yozilgan edi.
+ * Ularni ishlatadigan boshqa mijoz yo'q edi: bu makon
+ * ({@code /api/v1/app/**}) faqat mobil ilovaniki, eski mijozlar esa
+ * MUZLATILGAN {@code /api/v1/auth/**} da qoladi
+ * ({@code OldCastingFrozenTest} shuni qo'riqlaydi). Admin panelning
+ * paroli boshqa yerda — {@code /api/v1/app/admin/auth/login}.
  *
- * O'sha makon MUZLATILGAN: uni Telegram bot, eski admin sayti va
- * boshqa mijozlar ishlatadi va u yerdagi har o'zgarish ularga tegadi.
- * {@code OldCastingFrozenTest} shuni qo'riqlaydi — va u aynan shu
- * qo'shilishni ushladi.
- *
- * Yangi funksiya yangi makonga ({@code /api/v1/app/**}) tushadi.
- * Bu yerda eski mijozlar yo'q, ya'ni endpoint erkin o'zgarishi
- * mumkin.
- *
- * <h2>Xatti-harakat O'ZGARMADI</h2>
- * Ayni {@link AuthService} metodlari chaqiriladi, ayni DTO'lar,
- * ayni javob shakli. Faqat manzil boshqa.
+ * <h2>⚠️ Nega ESKI kontrollerdan ko'chirilgan edi</h2>
+ * OTP endpointlari dastlab {@code /api/v1/auth/otp/**} da, ya'ni eski
+ * casting modulining kontrollerida yozilgan edi. O'sha makon
+ * MUZLATILGAN: uni Telegram bot, eski admin sayti va boshqa mijozlar
+ * ishlatadi. Yangi funksiya yangi makonga tushadi — bu yerda endpoint
+ * erkin o'zgarishi mumkin, va aynan shuning uchun bugungi o'zgarish
+ * hech kimni sindirmaydi.
  */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/app/auth")
 public class AppAuthController {
 
-    private final AuthService service;
     private final AppAccountService accountService;
     private final RefreshTokenService refreshTokenService;
     private final JwtService jwtService;
     private final UserRepo userRepo;
 
     /**
-     * Telefonga SMS-kod so'raydi (Eskiz orqali).
+     * 1-qadam: telefonga SMS-kod (Eskiz orqali).
      *
-     * Ro'yxatdan o'tish ham shu bilan boshlanadi — alohida
-     * «registratsiya» endpointi yo'q.
+     * Kirish ham, ro'yxatdan o'tish ham shu bilan boshlanadi — ular
+     * ajratilmagan.
      */
     @PostMapping(value = "/otp/send", consumes = "application/json")
-    public HttpEntity<?> sendOtp(@RequestBody OtpSendDTO dto) {
-        return service.sendOtp(dto.getPhone());
-    }
-
-    /**
-     * Kodni tasdiqlaydi: hisob yo'q bo'lsa yaratadi, bor bo'lsa
-     * kirgizadi.
-     *
-     * Javob {@code /auth/login} va {@code /auth/google} bilan BIR XIL
-     * shaklda — klient uchta oqim uchun bitta ishlov yozadi.
-     */
-    @PostMapping(value = "/otp/verify", consumes = "application/json")
-    public HttpEntity<?> verifyOtp(@RequestBody OtpVerifyDTO dto) {
-        return service.verifyOtp(dto.getPhone(), dto.getCode());
-    }
-
-    /**
-     * Ro'yxatdan o'tish, 1-qadam: raqamga SMS kod.
-     *
-     * <h2>⚠️ Nega bu {@code /otp/send} dan alohida</h2>
-     * {@code /otp/send} har qanday raqamga kod yuboradi — u kirish ham,
-     * ro'yxatdan o'tish ham bo'lgan oqim uchun yozilgan. Endi bo'limlar
-     * ikkita: band raqamga «ro'yxatdan o'tish» yo'lida SMS yuborish
-     * noto'g'ri bo'lardi, chunki javob baribir «bu raqam bor» bo'ladi —
-     * ilova odamni «kirish» bo'limiga qaytaradi.
-     *
-     * Xato: {@code 409 PHONE_ALREADY_REGISTERED}.
-     */
-    @PostMapping(value = "/register/start", consumes = "application/json")
-    public ResponseEntity<Map<String, Object>> registerStart(@Valid @RequestBody RegisterStartRequest dto) {
-        int expiresIn = accountService.startRegistration(dto.getPhone());
+    public ResponseEntity<Map<String, Object>> sendOtp(@Valid @RequestBody OtpSendRequest dto) {
+        int expiresIn = accountService.startLogin(dto.getPhone());
         return ResponseEntity.ok(Map.of("sent", true, "expiresInSeconds", expiresIn));
     }
 
     /**
-     * Ro'yxatdan o'tish, 2-qadam: kodni tekshirish.
+     * 2-qadam: kodni tekshiradi.
      *
-     * ⚠️ Token BERILMAYDI va hisob YARATILMAYDI — odam hali parol
-     * qo'ymagan. Javobdagi muddat ichida 3-qadamga o'tish kerak.
+     * <p>Javob ikki xil bo'ladi:
+     * <ul>
+     *   <li>ismli hisobi bor odam — to'liq sessiya va
+     *       {@code name_required=false};</li>
+     *   <li>yangi (yoki ismsiz) odam — faqat {@code name_required=true}
+     *       va {@code expiresInSeconds}. Token BERILMAYDI.</li>
+     * </ul>
+     *
+     * ⚠️ Klient aynan {@code name_required} ga qarab yo'l tanlaydi,
+     * {@code access_token} bor-yo'qligiga emas: bayroq aniq, tokenning
+     * yo'qligi esa tasodifga o'xshaydi.
      */
-    @PostMapping(value = "/register/confirm", consumes = "application/json")
-    public ResponseEntity<Map<String, Object>> registerConfirm(@Valid @RequestBody RegisterConfirmRequest dto) {
-        int expiresIn = accountService.confirmRegistration(dto.getPhone(), dto.getCode());
-        return ResponseEntity.ok(Map.of("verified", true, "expiresInSeconds", expiresIn));
+    @PostMapping(value = "/otp/verify", consumes = "application/json")
+    public ResponseEntity<Map<String, Object>> verifyOtp(@Valid @RequestBody OtpVerifyRequest dto,
+                                                         HttpServletRequest request) {
+        return ResponseEntity.ok(accountService.verifyLogin(dto.getPhone(), dto.getCode(), request));
     }
 
     /**
-     * Ro'yxatdan o'tish, 3-qadam: ism, parol va uning takrori.
+     * 3-qadam: yangi foydalanuvchining ismi.
      *
      * Muvaffaqiyatda hisob yaratiladi va sessiya beriladi — odam
      * qaytadan kirmaydi, to'g'ri bosh sahifaga o'tadi.
-     */
-    @PostMapping(value = "/register/complete", consumes = "application/json")
-    public ResponseEntity<Map<String, Object>> registerComplete(@Valid @RequestBody RegisterCompleteRequest dto,
-                                                                HttpServletRequest request) {
-        return ResponseEntity.ok(accountService.completeRegistration(
-                dto.getPhone(), dto.getName(), dto.getPassword(), dto.getPasswordConfirm(), request));
-    }
-
-    /**
-     * Kirish: telefon + parol.
      *
-     * Eski {@code /api/v1/auth/login} ishlatilmaydi: u MUZLATILGAN
-     * makonda, refresh tokenni faqat {@code rememberMe} bilan beradi va
-     * javob shakli boshqacha.
+     * ⚠️ Faqat 2-qadamdan o'tgan raqam uchun ishlaydi. Tasdiqlash
+     * muddati o'tgan bo'lsa — {@code PHONE_NOT_VERIFIED}.
      */
-    @PostMapping(value = "/login", consumes = "application/json")
-    public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody AppLoginRequest dto,
-                                                     HttpServletRequest request) {
-        return ResponseEntity.ok(accountService.login(dto.getPhone(), dto.getPassword(), request));
+    @PostMapping(value = "/otp/complete", consumes = "application/json")
+    public ResponseEntity<Map<String, Object>> completeOtp(@Valid @RequestBody OtpCompleteRequest dto,
+                                                           HttpServletRequest request) {
+        return ResponseEntity.ok(accountService.completeLogin(dto.getPhone(), dto.getName(), request));
     }
 
     /**

@@ -78,6 +78,16 @@ public enum Permission {
      */
     SUBSCRIPTION_VIEW,
 
+    /**
+     * Promokodlar — ko'rish va yaratish alohida.
+     *
+     * Kim nima ko'rishi bilan kim nima o'zgartirishi boshqa savollar:
+     * qo'llab-quvvatlash xodimi «bu odam qaysi kodni ishlatgan» ni ko'rishi
+     * kerak, lekin yangi kod chiqarishi shart emas.
+     */
+    PROMOCODE_VIEW,
+    PROMOCODE_EDIT,
+
     DONATION_VIEW,
     DONATION_PACKAGE_EDIT,
 

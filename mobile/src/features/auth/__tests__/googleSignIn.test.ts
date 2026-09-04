@@ -74,59 +74,33 @@ describe('toSignInError', () => {
   });
 
   /**
-   * Незнакомый код прикладываем к тексту. Иначе диагностировать нечем:
-   * все разные причины выглядят одной строкой.
+   * ⚠️ Notanish xato — UMUMIY matn.
+   *
+   * Ilgari bu yerda `detail` maydoni tekshirilardi: xato kodi ekranga
+   * ikkinchi satr bo'lib chiqardi. U 03–04.09.2026 dagi kirish razbori
+   * uchun vaqtincha qo'shilgan edi (`BuildMarker`, `NetworkProbe` bilan
+   * birga) va razbor tugagach olib tashlandi: `DEVELOPER_ERROR · ...`
+   * kabi satr oddiy odamga hech narsa aytmaydi.
+   *
+   * Qolgani muhim va shuning uchun test saqlanib qoldi: xato qaysi
+   * shaklda kelmasin — kod bilan, kodsiz, satr, `null`, bo'sh obyekt —
+   * u yiqilmasdan bitta tushunarli matnga aylanishi kerak.
    */
-  it('незнакомый код виден в тексте', () => {
-    expect(toSignInError({ code: 'WHATEVER' })).toEqual({
-      status: 'error',
-      messageKey: 'auth.googleFailed',
-      detail: 'WHATEVER',
-    });
-  });
+  it('notanish xato umumiy matnga tushadi', () => {
+    const cases: unknown[] = [
+      { code: 'WHATEVER' },
+      new Error('RNGoogleSignin native module is not available'),
+      { code: '12500', message: 'Sign in failed' },
+      'boom',
+      null,
+      {},
+    ];
 
-  /**
-   * ⚠️ Ошибка БЕЗ кода — сама по себе улика: у всего, что приходит от сервисов
-   * Google Play, код есть. Значит источник другой, и опознать его можно только
-   * по тексту. Без него на экране оставалась бы одна и та же строка, по которой
-   * следующий шаг выбрать нечем.
-   */
-  it('без кода показываем текст ошибки', () => {
-    expect(toSignInError(new Error('RNGoogleSignin native module is not available'))).toEqual({
-      status: 'error',
-      messageKey: 'auth.googleFailed',
-      detail: 'RNGoogleSignin native module is not available',
-    });
-  });
-
-  it('код и текст вместе', () => {
-    expect(toSignInError({ code: '12500', message: 'Sign in failed' })).toEqual({
-      status: 'error',
-      messageKey: 'auth.googleFailed',
-      detail: '12500 · Sign in failed',
-    });
-  });
-
-  /** Брошенная строка — тоже улика, показываем её. */
-  it('брошена строка — она и есть приписка', () => {
-    expect(toSignInError('boom')).toEqual({
-      status: 'error',
-      messageKey: 'auth.googleFailed',
-      detail: 'boom',
-    });
-  });
-
-  /** А вот «null» или «[object Object]» на экране хуже, чем ничего. */
-  it('пустышки не показываем', () => {
-    expect(toSignInError(null)).toEqual({
-      status: 'error',
-      messageKey: 'auth.googleFailed',
-      detail: undefined,
-    });
-    expect(toSignInError({})).toEqual({
-      status: 'error',
-      messageKey: 'auth.googleFailed',
-      detail: undefined,
-    });
+    for (const input of cases) {
+      expect(toSignInError(input)).toEqual({
+        status: 'error',
+        messageKey: 'auth.googleFailed',
+      });
+    }
   });
 });

@@ -3,6 +3,8 @@ package com.example.backend.Cms.Service.Video;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.unit.DataSize;
@@ -110,6 +112,19 @@ class VideoSystemHealthTest {
         return health(ffmpeg, ffmpeg, tempDir, DataSize.ofBytes(1));
     }
 
+    /**
+     * ⚠️ Faqat POSIX tizimlarda.
+     *
+     * `fakeFfmpeg` soxta vositani `#!/bin/sh` skripti sifatida yozadi va
+     * uni ishga tushiradi. Windows shebangni tushunmaydi — ya'ni bu
+     * testlar u yerda kodning holatidan QAT'I NAZAR yiqiladi.
+     *
+     * Ilgari ular shunchaki qizil turardi va ishlab chiquvchi har safar
+     * «bu meningmi yoki doimiymi» deb tekshirishga majbur edi. Doimo
+     * qizil test hech narsani qo'riqlamaydi: unga qarashni to'xtatishadi.
+     * Endi u ochiq sabab bilan o'tkazib yuboriladi.
+     */
+    @EnabledOnOs({OS.LINUX, OS.MAC})
     @Nested
     @DisplayName("FFmpeg mavjudligi")
     class Tools {
@@ -259,6 +274,19 @@ class VideoSystemHealthTest {
         }
     }
 
+    /**
+     * ⚠️ Faqat POSIX tizimlarda.
+     *
+     * `fakeFfmpeg` soxta vositani `#!/bin/sh` skripti sifatida yozadi va
+     * uni ishga tushiradi. Windows shebangni tushunmaydi — ya'ni bu
+     * testlar u yerda kodning holatidan QAT'I NAZAR yiqiladi.
+     *
+     * Ilgari ular shunchaki qizil turardi va ishlab chiquvchi har safar
+     * «bu meningmi yoki doimiymi» deb tekshirishga majbur edi. Doimo
+     * qizil test hech narsani qo'riqlamaydi: unga qarashni to'xtatishadi.
+     * Endi u ochiq sabab bilan o'tkazib yuboriladi.
+     */
+    @EnabledOnOs({OS.LINUX, OS.MAC})
     @Nested
     @DisplayName("Disk joyi")
     class Disk {

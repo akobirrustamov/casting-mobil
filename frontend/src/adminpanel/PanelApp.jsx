@@ -31,6 +31,7 @@ import DonationsPage from './pages/DonationsPage';
 import CastingPage from './pages/CastingPage';
 import SubscriptionsPage from './pages/SubscriptionsPage';
 import TariffsPage from './pages/TariffsPage';
+import PromocodesPage from './pages/PromocodesPage';
 import SettingsPage from './pages/SettingsPage';
 import ReportsPage from './pages/ReportsPage';
 import AuditPage from './pages/AuditPage';
@@ -208,6 +209,14 @@ export default function PanelApp() {
               element={
                 <RequirePermission permission="TARIFF_VIEW">
                   <TariffsPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="promocodes"
+              element={
+                <RequirePermission permission="PROMOCODE_VIEW">
+                  <PromocodesPage />
                 </RequirePermission>
               }
             />

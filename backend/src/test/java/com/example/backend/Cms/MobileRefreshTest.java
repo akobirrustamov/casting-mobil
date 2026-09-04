@@ -481,11 +481,11 @@ class MobileRefreshTest {
          * Uzatilmasa `signIn` uni `null` deb yozardi va natija
          * tuzatishdan oldingi holat bilan bir xil bo'lardi.
          *
-         * ⚠️ Ekranlar ro'yxati 01.09.2026 da o'zgardi: kirish parolga
-         * o'tdi va sessiya beradigan ekranlar boshqa bo'ldi —
-         * {@code sign-in.tsx} (parol va Google) hamda
-         * {@code password.tsx} (ro'yxatdan o'tishning oxirgi qadami).
-         * {@code otp.tsx} endi sessiya bermaydi.
+         * ⚠️ Ekranlar ro'yxati 04.09.2026 da yana o'zgardi: parol
+         * butunlay olib tashlandi va oqim bitta bo'ldi. Sessiya
+         * beradigan uchta joy qoldi — {@code sign-in.tsx} (Google),
+         * {@code otp.tsx} (hisobi bor odam kodni kiritgach) va
+         * {@code name.tsx} (yangi odam ismini kiritgach).
          */
         @Test
         @DisplayName("Sessiya beradigan har bir oqim tokenni uzatadi")
@@ -504,7 +504,8 @@ class MobileRefreshTest {
                     java.util.regex.Pattern.compile("signIn\\([^)]*refreshToken\\)");
 
             for (String screen : List.of("../mobile/app/(auth)/sign-in.tsx",
-                    "../mobile/app/(auth)/password.tsx")) {
+                    "../mobile/app/(auth)/otp.tsx",
+                    "../mobile/app/(auth)/name.tsx")) {
                 assertThat(passesToken.matcher(read(java.nio.file.Path.of(screen))).find())
                         .as("%s refresh tokenni `signIn` ga bermayapti", screen)
                         .isTrue();
@@ -512,22 +513,33 @@ class MobileRefreshTest {
         }
 
         /**
-         * ⚠️ Kod tasdiqlangani bilan hisob ochilmaydi.
+         * ⚠️ Kod ekrani YANGI odamni kirgizib yubormasligi kerak.
          *
-         * SMS ekrani sessiya bersa, parolsiz hisob paydo bo'lardi — va
-         * odam keyin unga kira olmasdi: kirish endi parol so'raydi,
-         * «parolni unutdim» esa hali yo'q.
+         * 04.09.2026 dan buyon bu ekran hisobi bor odamni kirgizadi —
+         * ya'ni {@code signIn(} o'zi endi xato emas. Xato bo'ladigan
+         * narsa — uni SHARTSIZ chaqirish: yangi odamda javobda sessiya
+         * umuman yo'q ({@code name_required=true}), hisob esa hali
+         * yaratilmagan. Shartsiz chaqiruv ismsiz «kirish» yasab,
+         * odamni bo'sh profil bilan ichkariga qo'yib yuborardi.
+         *
+         * Shuning uchun manba matnida bayroq bo'yicha ayri bo'lishi
+         * TEKSHIRILADI: `signIn` dan oldin `nameRequired` ko'rilsin.
          */
         @Test
-        @DisplayName("SMS ekrani sessiya BERMAYDI")
-        void otpScreenDoesNotSignIn() throws Exception {
+        @DisplayName("Kod ekrani `nameRequired` bo'yicha ayriladi")
+        void otpScreenBranchesOnNameRequired() throws Exception {
             if (mobileMissing()) {
                 return;
             }
-            assertThat(read(java.nio.file.Path.of("../mobile/app/(auth)/otp.tsx")))
-                    .as("kod ekrani kirgizib yuboryapti — parol qadami "
-                            + "chetlab o'tilardi")
-                    .doesNotContain("signIn(");
+            String source = read(java.nio.file.Path.of("../mobile/app/(auth)/otp.tsx"));
+
+            assertThat(source)
+                    .as("bayroq umuman o'qilmayapti — yangi odam ismsiz kirib ketardi")
+                    .contains("nameRequired");
+
+            assertThat(source.indexOf("nameRequired"))
+                    .as("`signIn` bayroqdan OLDIN chaqirilyapti — ayri ishlamaydi")
+                    .isLessThan(source.indexOf("signIn("));
         }
 
         /**

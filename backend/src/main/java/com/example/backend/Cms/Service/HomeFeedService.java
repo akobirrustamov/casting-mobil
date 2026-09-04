@@ -468,19 +468,19 @@ public class HomeFeedService {
         return row == null ? null : valueOf.apply(row);
     }
 
+    /**
+     * ⚠️ Qoida bu yerdan {@link TranslationPicker} ga ko'chirildi.
+     *
+     * Tariflar ilovaga ochilganda aynan shu tanlov ikkinchi marta kerak
+     * bo'ldi. Nusxalash o'rniga qoida bitta joyga chiqarildi — ikki nusxa
+     * bir kun ajralib ketardi, va bu xatoga o'xshamasdi: shunchaki bir
+     * sahifada nom bor, boshqasida yo'q.
+     *
+     * Metod qisqartma sifatida qoldi — chaqiruvchilari ko'p.
+     */
     private <T> T pickRow(List<T> rows, Locale lang,
                           java.util.function.Function<T, Locale> localeOf) {
-        T base = null;
-        for (T row : rows) {
-            Locale l = localeOf.apply(row);
-            if (l == lang) {
-                return row;
-            }
-            if (l == Locale.UZ) {
-                base = row;
-            }
-        }
-        return base == null && !rows.isEmpty() ? rows.get(0) : base;
+        return TranslationPicker.pick(rows, lang, localeOf);
     }
 
     /** Ijodkor ismi — tarjima qatoridan. */

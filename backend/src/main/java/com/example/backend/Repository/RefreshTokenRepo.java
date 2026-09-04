@@ -39,6 +39,31 @@ public interface RefreshTokenRepo extends JpaRepository<RefreshToken, UUID> {
     int revokeAllForUser(@Param("userId") UUID userId, @Param("now") LocalDateTime now);
 
     /**
+     * Bitta QURILMANING faol tokenlarini bekor qiladi.
+     *
+     * <h2>⚠️ Nima uchun alohida so'rov</h2>
+     * {@code revokeAllForUser} bu yerda yaramaydi: odam o'zining eski
+     * telefonini chiqarganda hozir turgan qurilmasidan ham chiqib
+     * ketardi. Ya'ni «eskisini o'chiraman» degan harakat o'zini
+     * jazolash bo'lib chiqardi.
+     *
+     * ⚠️ {@code deviceId} bo'yicha tenglik — {@code null} tokenlarga
+     * TEGMAYDI. V32 dan oldin berilgan tokenlarda qurilma noma'lum va
+     * ularni bu yerda yopib bo'lmaydi; ular {@code rotate} paytida
+     * tekshiriladi.
+     *
+     * {@code clearAutomatically} — {@code revokeAllForUser} dagi bilan
+     * bir xil sabab: ommaviy {@code update} birinchi darajali keshni
+     * chetlab o'tadi.
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("update RefreshToken t set t.revokedAt = :now "
+            + "where t.userId = :userId and t.deviceId = :deviceId and t.revokedAt is null")
+    int revokeAllForDevice(@Param("userId") UUID userId,
+                           @Param("deviceId") String deviceId,
+                           @Param("now") LocalDateTime now);
+
+    /**
      * Muddati o'tganlarni tozalash — jadval cheksiz o'smasin.
      *
      * ⚠️ {@code clearAutomatically} — {@code revokeAllForUser} dagi

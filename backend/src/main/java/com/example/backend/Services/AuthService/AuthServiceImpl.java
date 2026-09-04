@@ -8,7 +8,6 @@ import com.example.backend.Repository.RoleRepo;
 import com.example.backend.Repository.UserRepo;
 import com.example.backend.Security.GoogleTokenVerifier;
 import com.example.backend.Security.JwtService;
-import com.example.backend.Sms.OtpService;
 import com.example.backend.exceptions.InvalidCredentialsException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,7 +38,6 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
     private final GoogleTokenVerifier googleTokenVerifier;
-    private final OtpService otpService;
 
     /**
      * Refresh tokenlarni ro'yxatga oladi (§61).
@@ -190,51 +188,14 @@ public class AuthServiceImpl implements AuthService {
         return userRepo.save(user);
     }
 
-    /** SMS-kod so'raladi. Telefon hali ro'yxatda bo'lmasligi mumkin — bu ro'yxatdan o'tish oqimi ham. */
-    @Override
-    public HttpEntity<?> sendOtp(String phone) {
-        int ttlSeconds = otpService.send(phone);
-        return ResponseEntity.ok(Map.of("sent", true, "expiresInSeconds", ttlSeconds));
-    }
-
-    /**
-     * Kod tekshiriladi va hisob find-or-create qilinadi — xuddi
-     * {@link #googleLogin(String)} kabi, faqat Google sub o'rniga telefon
-     * kalit bo'ladi. Ro'yxatdan o'tish va kirish shu bitta endpoint.
-     */
-    @Override
-    @Transactional
-    public HttpEntity<?> verifyOtp(String phone, String code) {
-        otpService.verify(phone, code);
-        String normalizedPhone = OtpService.normalize(phone);
-
-        User user = userRepo.findByPhone(normalizedPhone)
-                .orElseGet(() -> createPhoneUser(normalizedPhone));
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("access_token", jwtService.generateJwtToken(user));
-        response.put("refresh_token", issueRefreshToken(user));
-        response.put("roles", user.getRoles());
-        response.put("user", Map.of(
-                "id", user.getId().toString(),
-                "name", user.getName() == null ? "" : user.getName(),
-                "phone", user.getPhone() == null ? "" : user.getPhone()
-        ));
-        return ResponseEntity.ok(response);
-    }
-
-    /** Google orqali kirgan yangi foydalanuvchi kabi - parol yo'q, tasodifiy hash. */
-    private User createPhoneUser(String phone) {
-        Role userRole = roleRepo.findByName(UserRoles.ROLE_USER);
-
-        User user = User.builder()
-                .phone(phone)
-                .password(passwordEncoder.encode(UUID.randomUUID().toString()))
-                .roles(userRole == null ? List.of() : List.of(userRole))
-                .build();
-
-        return userRepo.save(user);
-    }
+    // ⚠️ sendOtp/verifyOtp va createPhoneUser BU YERDAN olib tashlandi
+    // (04.09.2026). Telefon orqali kirish butunlay `AppAccountService`
+    // ga ko'chdi: u yerda kod tekshiriladi, yangi odamdan ismi
+    // so'raladi va hisob ISM BILAN birga yaratiladi.
+    //
+    // Bu yerdagi eski `createPhoneUser` esa ismsiz hisob yasardi —
+    // profilda va izohlar ostida bo'shliq. Endi bunday satr paydo
+    // bo'ladigan yo'l qolmadi.
 
     @Override
     public HttpEntity<?> refreshToken(String refreshToken) {

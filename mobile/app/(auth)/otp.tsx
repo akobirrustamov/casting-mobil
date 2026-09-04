@@ -4,30 +4,35 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
-import { registerConfirm, registerStart } from '@/features/auth/api';
+import { sendOtp, verifyOtp } from '@/features/auth/api';
 import { AuthScaffold } from '@/features/auth/AuthScaffold';
 import { authErrorKey } from '@/features/auth/authErrors';
+import { useAuthStore } from '@/features/auth/store';
 import { colors } from '@/theme/tokens';
 
 /**
- * Регистрация, шаг 2 из 3: код из SMS (Eskiz),
- * `POST /api/v1/app/auth/register/confirm` — см. docs/API.md §5.
+ * Вход, шаг 2: код из SMS (Eskiz),
+ * `POST /api/v1/app/auth/otp/verify` — см. docs/API.md §5.
  *
- * <h2>⚠️ Здесь НЕ входят</h2>
- * Раньше этот экран звал `otp/verify` и сразу выдавал сессию: код был
- * и подтверждением, и входом одновременно. Теперь SMS подтверждает
- * ТОЛЬКО владение номером — аккаунта ещё нет, пароля тоже. Отсюда
- * дорога одна: `password.tsx`.
+ * <h2>Отсюда две дороги</h2>
+ * У кого уже есть аккаунт с именем — сессия приходит прямо в ответе, и
+ * человек уходит на главную. У нового (или безымянного) токена в ответе
+ * НЕТ: аккаунта ещё не существует, он родится вместе с именем на
+ * `name.tsx`.
  *
- * Вход по паролю сюда вообще не заходит.
+ * ⚠️ Развилку решает флаг `name_required` с бэкенда, а не наличие
+ * токена в ответе: флаг сказан прямо, пустое поле выглядело бы
+ * случайностью. Разбор — в `verifyOtp`, экран получает уже размеченный
+ * результат.
  *
- * <h2>Раскладка — как на экране входа</h2>
+ * <h2>Раскладка — как на экране номера</h2>
  * Заказчик (01.09.2026): «sms kod sahifasini ham dizayni login
- * pagenikidek qil», и (03.09.2026) — чтобы поле стояло ТАМ ЖЕ, где поле
- * номера, и не шевелилось. Отсюда общий каркас `AuthScaffold`: он держит
- * знак, шапку в слоте постоянной высоты, поля и кнопку внизу. Шаг
- * регистрации не должен выглядеть экраном из другого приложения — и не
- * должен заставлять искать поле глазами заново.
+ * pagenikidek qil», (03.09.2026) — чтобы поле стояло ТАМ ЖЕ, где поле
+ * номера, и не шевелилось, и (04.09.2026) — чтобы знак и порядок
+ * экранов не ломались от шага к шагу. Отсюда общий каркас
+ * `AuthScaffold`: он держит знак, шапку в слоте постоянной высоты, поля
+ * и кнопку внизу. Шаг входа не должен выглядеть экраном из другого
+ * приложения — и не должен заставлять искать поле глазами заново.
  */
 const CODE_LENGTH = 4;
 
@@ -41,6 +46,7 @@ const RESEND_COOLDOWN_SECONDS = 120;
 export default function OtpScreen() {
   const { t } = useTranslation();
   const { phone } = useLocalSearchParams<{ phone?: string }>();
+  const signIn = useAuthStore((s) => s.signIn);
 
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -62,10 +68,18 @@ export default function OtpScreen() {
     setError(null);
     setVerifying(true);
     try {
-      await registerConfirm(phone, code);
-      // Замена, а не push: назад к уже использованному коду возвращаться
-      // некуда — он одноразовый.
-      router.replace({ pathname: '/(auth)/password', params: { phone } });
+      const result = await verifyOtp(phone, code);
+
+      if (result.nameRequired) {
+        // Замена, а не push: назад к уже использованному коду
+        // возвращаться некуда — он одноразовый.
+        router.replace({ pathname: '/(auth)/name', params: { phone } });
+        return;
+      }
+
+      const { token, user, refreshToken } = result.session;
+      await signIn(token, user, refreshToken);
+      router.replace('/(tabs)');
     } catch (e) {
       setError(t(authErrorKey(e)));
       setCode('');
@@ -79,7 +93,7 @@ export default function OtpScreen() {
     setError(null);
     setResending(true);
     try {
-      await registerStart(phone);
+      await sendOtp(phone);
       setCode('');
       setSecondsLeft(RESEND_COOLDOWN_SECONDS);
     } catch (e) {
@@ -113,10 +127,10 @@ export default function OtpScreen() {
         disabled: !isValid || verifying,
       }}
     >
-      {/* Карточка поля — та же, что у номера и пароля на входе:
-          квадрат со знаком, разделитель, ввод. Отличается только
-          сам ввод: цифры крупные и разрежены, чтобы код читался
-          как код, а не как обычная строка. */}
+      {/* Карточка поля — та же, что у номера и у имени: квадрат со
+          знаком, разделитель, ввод. Отличается только сам ввод: цифры
+          крупные и разрежены, чтобы код читался как код, а не как
+          обычная строка. */}
       <View
         className="flex-row items-center gap-3 rounded-card-lg border bg-surface p-2.5"
         style={{ borderColor: isValid ? colors.blue : colors.border }}

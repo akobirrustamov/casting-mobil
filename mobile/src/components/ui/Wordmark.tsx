@@ -1,5 +1,6 @@
+import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import {
   Animated,
   Easing,
@@ -53,7 +54,7 @@ const SIZES = {
 const COMPACT = { mark: 36, font: 22 } as const;
 
 /** Сколько блик идёт от края до края. */
-const SHINE_SWEEP_MS = 1_100;
+const SHINE_SWEEP_MS = 1_500;
 
 /**
  * Пауза между бликами.
@@ -62,7 +63,39 @@ const SHINE_SWEEP_MS = 1_100;
  * мерцает под каждым экраном и тянет взгляд на себя. Раз в несколько
  * секунд его замечают, но он не мешает читать.
  */
-const SHINE_DELAY_MS = 3_400;
+const SHINE_DELAY_MS = 5_000;
+
+/**
+ * Ширина световой полосы: доля ширины локапа и нижняя граница в точках.
+ *
+ * Узкая полоса на коротком слове успевает мигнуть между букв и читается
+ * как артефакт. Примерно треть локапа — блик накрывает сразу несколько
+ * букв, и глаз видит именно движение света.
+ */
+const SHINE_BAND_RATIO = 0.28;
+const SHINE_BAND_MIN = 40;
+
+/** Наклон полосы. Вертикальная читается как шов, а не как отблеск. */
+const SHINE_TILT_DEG = 18;
+
+/**
+ * Цвет полосы.
+ *
+ * Белое ядро — ради знака: он фиолетовый, и по нему нужен именно белый
+ * отблеск. Фиолетовое и маджентовое крылья — ради слова: оно белое, и
+ * белым по белому не видно ничего, а фирменная волна по белым буквам
+ * читается сразу.
+ */
+const SHINE_COLORS: readonly [string, string, string, string, string] = [
+  'rgba(168,85,247,0)',
+  'rgba(168,85,247,0.55)',
+  'rgba(255,255,255,0.92)',
+  'rgba(236,72,153,0.55)',
+  'rgba(236,72,153,0)',
+];
+const SHINE_LOCATIONS: readonly [number, number, number, number, number] = [
+  0, 0.3, 0.5, 0.7, 1,
+];
 
 /**
  * Доля кегля, которую занимает высота прописной буквы.
@@ -148,6 +181,22 @@ function CompactWordmark({ shine }: { shine: boolean }) {
     setFrame({ width, height });
   };
 
+  const word = {
+    fontSize: COMPACT.font,
+    fontWeight: '700' as const,
+    color: colors.white,
+  };
+
+  // Локап целиком. Тот же самый узел уходит в маску блика: две копии
+  // обязаны совпасть пиксель в пиксель, иначе свет поедет относительно
+  // букв. Поэтому — одна константа, а не два одинаковых куска разметки.
+  const lockup = (
+    <>
+      <Logo size={COMPACT.mark} />
+      <Text style={word}>UzCasting</Text>
+    </>
+  );
+
   return (
     <View
       // Высота фиксирована и равна `TOUCH_TARGET` (44): справа в шапке
@@ -156,40 +205,58 @@ function CompactWordmark({ shine }: { shine: boolean }) {
       // цифра делает соседние кнопки нажимаемыми без отдельного `hitSlop`.
       className="h-11 flex-row items-center gap-2"
       onLayout={shine ? onFrame : undefined}
-      style={shine ? { overflow: 'hidden' } : undefined}
     >
-      <Logo size={COMPACT.mark} />
+      {lockup}
 
-      <Text
-        style={{
-          fontSize: COMPACT.font,
-          fontWeight: '700',
-          color: colors.white,
-        }}
-      >
-        UzCasting
-      </Text>
-
-      {shine && frame ? <Shine width={frame.width} height={frame.height} /> : null}
+      {shine && frame ? (
+        <ShineSweep
+          width={frame.width}
+          height={frame.height}
+          mask={
+            <View
+              className="h-11 flex-row items-center gap-2"
+              style={{ width: frame.width, height: frame.height }}
+            >
+              {lockup}
+            </View>
+          }
+        />
+      ) : null}
     </View>
   );
 }
 
 /**
- * Блик: короткая световая полоса наискось, слева направо.
+ * Блик: световая полоса наискось, слева направо — по самим буквам и знаку.
  *
- * <h2>Почему полоса, а не анимация градиента</h2>
- * Градиент самого слова нарисован в SVG, а его `Stop` нельзя двигать через
- * нативный драйвер — анимация шла бы по JS-потоку и дёргалась бы каждый
- * раз, когда экран что-то грузит. Полоса же двигается через `translateX`,
- * то есть целиком в нативном потоке.
+ * <h2>Почему через маску, а не просто полосой сверху</h2>
+ * Раньше полоса ехала поверх строки прямоугольником. По знаку её было
+ * видно, а по слову — нет: слово белое, и белая полоса на белом не
+ * читается вообще. Теперь полоса обрезана по форме локапа (`MaskedView`,
+ * маска — та же разметка знака и слова), а её цвет — фирменная шкала:
+ * по белому слову проходит фиолетово-маджентовая волна, по знаку — белый
+ * отблеск. Видно и там, и там, и свет идёт ровно по контуру знака и по
+ * штрихам букв, а не по прямоугольнику вокруг них.
+ *
+ * <h2>Почему translateX, а не анимация градиента</h2>
+ * `Stop` в SVG нельзя двигать через нативный драйвер — анимация шла бы по
+ * JS-потоку и дёргалась бы каждый раз, когда экран что-то грузит. Полоса
+ * же уезжает целиком в нативном потоке.
  *
  * Размеры приходят снаружи: блик обязан начинаться ЗА левым краем и
  * заканчиваться ЗА правым, иначе видно, как он появляется из ниоткуда.
  */
-function Shine({ width, height }: { width: number; height: number }) {
+function ShineSweep({
+  width,
+  height,
+  mask,
+}: {
+  width: number;
+  height: number;
+  mask: ReactElement;
+}) {
   const progress = useRef(new Animated.Value(0)).current;
-  const band = Math.max(26, Math.round(width * 0.16));
+  const band = Math.max(SHINE_BAND_MIN, Math.round(width * SHINE_BAND_RATIO));
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -215,30 +282,34 @@ function Shine({ width, height }: { width: number; height: number }) {
   });
 
   return (
-    <Animated.View
+    <MaskedView
       pointerEvents="none"
-      style={{
-        position: 'absolute',
-        left: 0,
-        // Полоса наклонена, поэтому она выше строки: без запаса сверху и
-        // снизу её углы обрезались бы прямо посреди знака.
-        top: -height,
-        width: band,
-        height: height * 3,
-        transform: [{ translateX }, { rotate: '18deg' }],
-      }}
+      // Маска ровно по измеренному локапу — тогда её копия ложится на
+      // оригинал без сдвига, и полосе некуда выехать за строку.
+      style={{ position: 'absolute', left: 0, top: 0, width, height }}
+      maskElement={mask}
     >
-      <ExpoLinearGradient
-        colors={[
-          'rgba(255,255,255,0)',
-          'rgba(255,255,255,0.45)',
-          'rgba(255,255,255,0)',
-        ]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={StyleSheet.absoluteFill}
-      />
-    </Animated.View>
+      <Animated.View
+        style={{
+          position: 'absolute',
+          left: 0,
+          // Полоса наклонена, поэтому она выше строки: без запаса сверху и
+          // снизу её углы обрезались бы прямо посреди знака.
+          top: -height,
+          width: band,
+          height: height * 3,
+          transform: [{ translateX }, { rotate: `${SHINE_TILT_DEG}deg` }],
+        }}
+      >
+        <ExpoLinearGradient
+          colors={SHINE_COLORS}
+          locations={SHINE_LOCATIONS}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </Animated.View>
+    </MaskedView>
   );
 }
 
@@ -412,13 +483,7 @@ function InlineWordmark({
   };
 
   return (
-    <View
-      className="flex-row items-center gap-2"
-      onLayout={shine ? onFrame : undefined}
-      // Блик обрезается по строке — иначе он выезжал бы на соседние
-      // элементы шапки.
-      style={shine ? { overflow: 'hidden' } : undefined}
-    >
+    <View className="flex-row items-center gap-2" onLayout={shine ? onFrame : undefined}>
       <Logo size={s.mark} />
 
       <View>
@@ -458,7 +523,25 @@ function InlineWordmark({
         ) : null}
       </View>
 
-      {shine && frame ? <Shine width={frame.width} height={frame.height} /> : null}
+      {shine && frame ? (
+        <ShineSweep
+          width={frame.width}
+          height={frame.height}
+          // Маска берёт обычный `<Text>`, а не SVG-копию слова: маске нужна
+          // только альфа, то есть форма букв, а градиентная заливка на неё
+          // не влияет. Геометрия совпадает — SVG и так нарисован поверх
+          // этого же измеренного текста.
+          mask={
+            <View
+              className="flex-row items-center gap-2"
+              style={{ width: frame.width, height: frame.height }}
+            >
+              <Logo size={s.mark} />
+              <Text style={{ ...typography, color: colors.white }}>UZCASTING</Text>
+            </View>
+          }
+        />
+      ) : null}
     </View>
   );
 }

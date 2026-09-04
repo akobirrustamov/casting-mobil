@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { ProfileUnavailableError, fetchMe } from '@/features/auth/api';
 import { useAuthStore } from '@/features/auth/store';
+import type { Language } from '@/i18n';
+import { setLanguageSync } from '@/i18n/storage';
 import { api } from '@/lib/api';
 
 /**
@@ -129,3 +131,66 @@ export function formatDate(iso: string | null): string | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
   return m ? `${m[3]}.${m[2]}.${m[1]}` : null;
 }
+
+// -------------------------------------------------- редактирование
+
+/** Язык интерфейса → значение бэкенда (`cms_user_account.language`). */
+const BACKEND_LOCALE: Record<Language, 'UZ' | 'RU' | 'EN'> = {
+  uz: 'UZ',
+  ru: 'RU',
+  en: 'EN',
+};
+
+export type ProfilePatch = { name?: string; language?: Language };
+
+/**
+ * Изменить профиль — `PUT /api/v1/app/me`.
+ *
+ * <h2>Что это чинит</h2>
+ * Имя записывалось ТОЛЬКО во время входа и потом не менялось: пункт
+ * «Profil» не нажимался. У вошедших через Google имя навсегда оставалось
+ * гугловским.
+ *
+ * ⚠️ Не переданное поле не трогается. Смена языка не должна требовать
+ * повторной отправки имени.
+ */
+export async function updateProfile(patch: ProfilePatch): Promise<void> {
+  await api.put('/api/v1/app/me', {
+    name: patch.name,
+    language: patch.language ? BACKEND_LOCALE[patch.language] : undefined,
+  });
+}
+
+export function useUpdateProfile() {
+  const client = useQueryClient();
+  const syncProfile = useAuthStore((s) => s.syncProfile);
+
+  return useMutation({
+    mutationFn: updateProfile,
+    onSuccess: () => {
+      // Стор держит профиль на диске и рисует шапку аккаунта — без этого
+      // имя в карточке осталось бы прежним до перезапуска.
+      void syncProfile();
+      void client.invalidateQueries({ queryKey: ['me'] });
+    },
+  });
+}
+
+/**
+ * ⚠️ Язык уезжает на сервер САМ, без экрана настроек.
+ *
+ * Push-уведомление берёт язык из `cms_user_account.language`, а
+ * приложение хранило выбор только на телефоне. Переключатель языка стоит
+ * и в профиле, и в онбординге — вешать отправку на каждый из них значило
+ * бы однажды забыть про один.
+ *
+ * Регистрируем здесь, а не в `i18n`: направление зависимостей —
+ * `features` знает про `i18n`, но не наоборот.
+ */
+setLanguageSync((language) => {
+  if (!useAuthStore.getState().isAuthorized) return;
+  void updateProfile({ language }).catch(() => {
+    // Сеть отвалилась — язык интерфейса всё равно переключился, а на
+    // сервере он поправится при следующем выборе.
+  });
+});

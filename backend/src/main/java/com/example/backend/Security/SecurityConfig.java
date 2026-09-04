@@ -78,19 +78,20 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/google").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh").permitAll()
-                        // Telefon orqali ro'yxatdan o'tish/kirish (Eskiz SMS-kod).
-                        // Ikkalasi ham anonim: send bosqichida hisob hali yo'q bo'lishi mumkin.
+                        // Telefon orqali kirish (Eskiz SMS-kod) - uchala qadam ham
+                        // anonim: token aynan shu yerda tug'iladi, hisob esa
+                        // oxirgi qadamda paydo bo'ladi.
+                        //
+                        // Qo'pol kuchdan himoya endpointning o'zida emas:
+                        // urinishlar chegarasi OtpService da, IP darajasidagi
+                        // flud esa RateLimitFilter da to'xtatiladi.
+                        //
+                        // ⚠️ Parolli endpointlar (register/start|confirm|complete
+                        // va /app/auth/login) 04.09.2026 da o'chirildi - mobil
+                        // ilovada parol qolmadi.
                         .requestMatchers(HttpMethod.POST, "/api/v1/app/auth/otp/send").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/app/auth/otp/verify").permitAll()
-                        // Parolli ro'yxatdan o'tish (raqam -> SMS kod -> parol) va
-                        // parol bilan kirish. Hammasi anonim: token aynan shu
-                        // yerda tug'iladi. Qo'pol kuchdan himoya controller
-                        // ostidagi servisda - LoginAttemptService va OTP
-                        // urinishlar chegarasi.
-                        .requestMatchers(HttpMethod.POST, "/api/v1/app/auth/register/start").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/app/auth/register/confirm").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/app/auth/register/complete").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/app/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/app/auth/otp/complete").permitAll()
                         // Admin panelga kirish. Faqat LOGIN ochiq - /auth/me token talab qiladi.
                         // Rol tekshiruvi controller ichida: USER admin panelga kira olmaydi.
                         .requestMatchers(HttpMethod.POST, "/api/v1/app/admin/auth/login").permitAll()
@@ -163,6 +164,19 @@ public class SecurityConfig {
                         // Token yuborilsa hisobga olinadi: undan foydalanuvchi
                         // tanlagan til olinadi.
                         .requestMatchers(HttpMethod.GET, "/api/v1/app/catalog/**").permitAll()
+                        // Premium tariflari va narxlari.
+                        //
+                        // ⚠️ Narx — hisobga kirishdan OLDIN ko'riladigan narsa.
+                        // Yopilsa, mehmon «Premium'ga o'tish» tugmasini bosganda
+                        // avval ro'yxatdan o'tishi, keyingina nimaga pul
+                        // to'lashini bilishi kerak bo'lardi.
+                        //
+                        // Bu yerda maxfiy hech narsa yo'q: narxlar sayt va
+                        // reklama orqali baribir ommaviy.
+                        //
+                        // Token yuborilsa hisobga olinadi: undan foydalanuvchi
+                        // tanlagan til olinadi.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/app/tariffs").permitAll()
                         // ⚠️ Bot foydalanuvchisi anketa rasmini kirmasdan yuklaydi.
                         // Yopilsa Telegram bot oqimi ishlamay qoladi.
                         .requestMatchers(HttpMethod.POST, "/api/v1/file/upload").permitAll()

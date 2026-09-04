@@ -15,8 +15,8 @@ import { colors } from '@/theme/tokens';
  * внутри уже отведённой высоты, а соседи не двигаются.
  *
  * Высота считается в строках: `lines` — сколько строк текста слот держит.
- * Двух хватает на самые длинные сообщения (`auth.passwordNotSet`,
- * `auth.phoneAlreadyRegistered`) на узком экране.
+ * Двух хватает на самые длинные сообщения (`auth.verificationExpired`,
+ * `auth.otpLocked`, `auth.phoneSubtitle`) на узком экране.
  */
 type Tone = 'danger' | 'muted';
 

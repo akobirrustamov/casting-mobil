@@ -139,10 +139,10 @@ public class OtpService {
     /**
      * «Bu raqamning egasi kodni kiritdi» degan belgi.
      *
-     * Ro'yxatdan o'tish IKKI qadamdan iborat: avval kod, keyin parol.
-     * Kodni {@link #verify} o'chirib yuboradi (bir kod — bir marta),
-     * shuning uchun parol qadami uchun kodni qayta so'rash mumkin emas
-     * va kerak ham emas.
+     * Yangi foydalanuvchi uchun kirish IKKI qadamdan iborat: avval
+     * kod, keyin ism. Kodni {@link #verify} o'chirib yuboradi (bir kod
+     * — bir marta), shuning uchun ism qadami uchun kodni qayta so'rash
+     * mumkin emas va kerak ham emas.
      *
      * @return belgi necha soniya amal qilishi — klient sanog'i uchun
      */
@@ -159,8 +159,8 @@ public class OtpService {
     }
 
     /**
-     * Belgini TEKSHIRADI VA O'CHIRADI — bitta tasdiqlash bitta parol
-     * o'rnatishga yetadi.
+     * Belgini TEKSHIRADI VA O'CHIRADI — bitta tasdiqlash bitta hisob
+     * yaratishga yetadi.
      *
      * @throws BusinessException raqam tasdiqlanmagan yoki muhlat o'tgan bo'lsa
      */

@@ -319,8 +319,19 @@ public class AccessService {
     /**
      * Casting loyihasiga kirish huquqi.
      *
-     * <b>Buyurtmachi talabi:</b> bir martalik xarid bu huquqni BERMAYDI,
-     * faqat faol Premium obuna beradi.
+     * <b>Buyurtmachi talabi:</b> bir martalik xarid bu huquqni BERMAYDI.
+     *
+     * <h2>Ikki yo'l</h2>
+     * <ul>
+     *   <li>faol Premium — u hamma narsani ochadi, casting ham;</li>
+     *   <li>casting muddati — {@code CASTING_DAYS} promokodi bergan
+     *       alohida huquq. U FAQAT shu bo'limni ochadi.</li>
+     * </ul>
+     *
+     * ⚠️ Tartib muhim emas, lekin ikkalasi ham SHU YERDA qaraladi:
+     * casting huquqini biror kontroller o'zi hisoblasa, qoidaning
+     * ikkinchi nusxasi paydo bo'lardi va bir kuni ular ajralib ketardi
+     * ({@code PremiumRightsTest} shuni qo'riqlaydi).
      */
     @Transactional(readOnly = true)
     public boolean canAccessCasting(User user) {
@@ -332,7 +343,46 @@ public class AccessService {
             return false;
         }
         // Ataylab: xaridlar tekshirilmaydi — ular casting huquqini bermaydi.
-        return account.hasActivePremium();
+        return account.hasActivePremium() || account.hasActiveCastingAccess();
+    }
+
+    /**
+     * Casting huquqi qachongacha — KO'RSATISH uchun ({@code /app/me}).
+     *
+     * Premium bergan huquqda muddat Premiumniki bo'ladi: odam uchun
+     * «casting qachongacha ochiq» degan savolning javobi shu.
+     */
+    @Transactional(readOnly = true)
+    public CastingStatus castingStatus(User user) {
+        if (user == null) {
+            return new CastingStatus(false, null);
+        }
+        UserAccount account = accountRepo.findByUserId(user.getId()).orElse(null);
+        if (account == null || account.getStatus() == UserStatus.BLOCKED) {
+            return new CastingStatus(false, null);
+        }
+
+        java.time.LocalDateTime premium = account.getPremiumUntil();
+        java.time.LocalDateTime casting = account.getCastingUntil();
+
+        // Kechroq tugaydigani — haqiqiy muddat.
+        java.time.LocalDateTime until;
+        if (premium == null) {
+            until = casting;
+        } else if (casting == null) {
+            until = premium;
+        } else {
+            until = premium.isAfter(casting) ? premium : casting;
+        }
+
+        return new CastingStatus(canAccessCasting(user), until);
+    }
+
+    /**
+     * @param active hozir ochiqmi
+     * @param until  qachongacha; {@code null} — hech qachon berilmagan
+     */
+    public record CastingStatus(boolean active, java.time.LocalDateTime until) {
     }
 
     /**

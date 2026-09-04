@@ -259,6 +259,22 @@ class ApiConventionTest {
                 Map.entry("replaceSectionItems", "Tartiblash amalining natijasi."),
                 Map.entry("homepageCreators", "Tanlangan ijodkorlar - chegarasi so'rovda."),
                 Map.entry("tariffs", "Sozlama ro'yxati: bir necha tarif."),
+                Map.entry("list",
+                        "Promokodlar ro'yxati (`PromocodeAdminController`). Aksiya "
+                                + "kodlari — o'nlab, yuzlab emas: har biri qo'lda "
+                                + "yaratiladi va admin ularni bir ko'zda ko'rishi "
+                                + "kerak. O'chirish yo'q, lekin muddati o'tganlari "
+                                + "holat bilan belgilanadi va ro'yxat cheksiz "
+                                + "o'smaydi."),
+                Map.entry("redemptions",
+                        "BITTA promokodni kimlar ishlatgani. Soni kodning "
+                                + "`maxRedemptions` chegarasi bilan cheklangan — "
+                                + "cheksiz kodlar kam va ular uchun sahifalash "
+                                + "keyinroq qo'shiladi."),
+                Map.entry("mine",
+                        "Foydalanuvchining O'ZI ishlatgan promokodlari. Bitta "
+                                + "odam uchun bu bir nechta qator: bitta kodni ikki "
+                                + "marta ishlatib bo'lmaydi (`uk_promocode_user`)."),
                 Map.entry("packages", "Sozlama ro'yxati: bir necha valyuta paketi."),
                 Map.entry("seasons", "BITTA kontent fasllari - o'sha kontent hajmi bilan chegaralangan."),
                 Map.entry("episodes", "BITTA kontent qismlari - o'sha kontent hajmi bilan chegaralangan."),

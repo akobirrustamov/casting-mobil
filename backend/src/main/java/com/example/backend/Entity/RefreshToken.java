@@ -73,6 +73,20 @@ public class RefreshToken {
     @Column(length = 64)
     private String ip;
 
+    /**
+     * Token qaysi qurilmadan berilgani — {@code cms_user_device.device_id}.
+     *
+     * ⚠️ Bu maydonsiz qurilmani «chiqarib yuborish» YARIM chora edi:
+     * yozuv nofaol bo'lardi, lekin o'sha telefondagi refresh token
+     * o'z muddatigacha ishlayverardi. Endi qurilma chiqarilganda uning
+     * tokenlari ham bekor qilinadi.
+     *
+     * {@code null} — V32 migratsiyasidan oldin berilgan tokenlar va
+     * qurilma sarlavhasini yubormaydigan klientlar (masalan brauzer).
+     */
+    @Column(name = "device_id", length = 128)
+    private String deviceId;
+
     public boolean isActive(LocalDateTime now) {
         return revokedAt == null && expiresAt.isAfter(now);
     }

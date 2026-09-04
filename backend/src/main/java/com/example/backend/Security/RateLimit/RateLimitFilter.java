@@ -50,6 +50,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
             // alohida cheklanadi - bu yerdagi qoida faqat IP darajasida.
             new Rule("/api/v1/app/auth/otp/send", 5, 60),
             new Rule("/api/v1/app/auth/otp/verify", 15, 60),
+            // Oxirgi qadam (ism). Cheklov bu yerda ham kerak: tasdiqlangan
+            // raqamga ism yozish urinishini cheksiz takrorlab bo'lmasin.
+            new Rule("/api/v1/app/auth/otp/complete", 15, 60),
+            // Promokodni terib ko'rishga qarshi: 8 belgili kodni skript
+            // bilan qidirish daqiqasiga 10 urinishda amalda mumkin emas.
+            new Rule("/api/v1/app/promocodes/redeem", 10, 60),
             // Yangilash ham cheklanadi: aks holda o'g'irlangan cookie bilan
             // cheksiz token yasash mumkin bo'lardi (§61).
             new Rule("/api/v1/app/admin/auth/refresh", 30, 60),

@@ -55,28 +55,25 @@ export async function exchangeGoogleToken(idToken: string): Promise<GoogleLoginR
 }
 
 /**
- * Телефон + пароль. Два раздела, как просил заказчик.
+ * Вход по номеру и SMS-коду. Пароля нет.
  *
- * <h2>Регистрация — три шага</h2>
- * `register/start` (номер → SMS) → `register/confirm` (код) →
- * `register/complete` (имя, пароль и его повтор). Аккаунт создаётся
- * только на последнем шаге и сразу выдаёт сессию: повторный вход не
- * нужен.
+ * <h2>⚠️ 04.09.2026: заказчик отменил пароль</h2>
+ * Раньше здесь были два раздела — вход (номер + пароль) и регистрация
+ * в три шага (`register/start` → `confirm` → `complete`). Заказчик их
+ * отменил: номер всё равно подтверждался SMS, то есть пароль был не
+ * вторым замком, а вторым шагом, который забывают. Бэкенд эти
+ * эндпоинты удалил (`AppAccountService`), приложение — вслед за ним.
  *
- * SMS здесь подтверждает ТОЛЬКО владение номером. Повседневный вход —
- * `login`, номер и пароль, без SMS.
+ * <h2>Один поток, не два</h2>
+ * «Кто вы — новый или старый?» больше не спрашивается: человек вводит
+ * номер, вводит код — и всё. Разница появляется только в ОТВЕТЕ на код:
+ * у кого есть аккаунт с именем — готовая сессия, у кого нет — просьба
+ * назвать имя (`name_required`).
  *
- * <h2>⚠️ Почему шага три, а не один</h2>
- * Код живёт 3 минуты. Если бы пароль отправлялся вместе с кодом,
- * человек придумывал бы его внутри этих трёх минут — и упирался в
- * `OTP_EXPIRED` на ровном месте. После `confirm` номер помечен
- * подтверждённым на 15 минут.
- *
- * <h2>Старые `otp/send` / `otp/verify`</h2>
- * На сервере остались (ими может пользоваться кто-то ещё), но
- * приложение их больше НЕ зовёт: вход одним кодом и вход по паролю
- * рядом — это два разных ответа на вопрос «кто ты», и держать оба
- * значит держать две двери в один дом.
+ * <h2>⚠️ Ветка выбирается по `name_required`, не по наличию токена</h2>
+ * Так записано в контракте бэкенда: флаг однозначен, а отсутствие
+ * токена похоже на случайность. Код здесь читает флаг и отдаёт экрану
+ * уже размеченный результат — экран не знает про форму ответа.
  */
 type SessionResponse = {
   access_token: string;
@@ -131,15 +128,15 @@ function toSession(data: SessionResponse): SessionResult {
 /**
  * Шаг 1: SMS на номер.
  *
- * ⚠️ Занятый номер получает `PHONE_ALREADY_REGISTERED` и НИ ОДНОЙ SMS —
- * экран переключает человека на вкладку входа.
+ * ⚠️ Ошибки «номер занят» больше нет: занятый номер — это просто
+ * входящий человек, и ему уходит тот же код.
  *
  * @returns сколько секунд живёт код
  */
-export async function registerStart(phone: string): Promise<number> {
+export async function sendOtp(phone: string): Promise<number> {
   try {
     const { data } = await api.post<{ sent: boolean; expiresInSeconds: number }>(
-      '/api/v1/app/auth/register/start',
+      '/api/v1/app/auth/otp/send',
       { phone },
     );
     return data.expiresInSeconds;
@@ -149,59 +146,51 @@ export async function registerStart(phone: string): Promise<number> {
 }
 
 /**
- * Шаг 2: проверка кода.
+ * Результат проверки кода — одна из двух дорог.
  *
- * Токена здесь нет намеренно — аккаунта ещё нет, пароль не задан.
- *
- * @returns сколько секунд номер считается подтверждённым
+ * `nameRequired: true` — аккаунта нет (или он без имени): токена в
+ * ответе НЕТ, номер помечен подтверждённым на `expiresIn` секунд, и
+ * дальше — экран имени.
  */
-export async function registerConfirm(phone: string, code: string): Promise<number> {
+export type OtpVerifyResult =
+  | { nameRequired: false; session: SessionResult }
+  | { nameRequired: true; expiresIn: number };
+
+type OtpVerifyResponse = Partial<SessionResponse> & {
+  name_required: boolean;
+  expiresInSeconds?: number;
+};
+
+/** Шаг 2: проверка кода. */
+export async function verifyOtp(phone: string, code: string): Promise<OtpVerifyResult> {
   try {
-    const { data } = await api.post<{ verified: boolean; expiresInSeconds: number }>(
-      '/api/v1/app/auth/register/confirm',
-      { phone, code },
-    );
-    return data.expiresInSeconds;
+    const { data } = await api.post<OtpVerifyResponse>('/api/v1/app/auth/otp/verify', {
+      phone,
+      code,
+    });
+
+    if (data.name_required) {
+      return { nameRequired: true, expiresIn: data.expiresInSeconds ?? 0 };
+    }
+    return { nameRequired: false, session: toSession(data as SessionResponse) };
   } catch (error) {
     return toAuthError(error);
   }
 }
 
 /**
- * Шаг 3: имя, пароль и его повтор.
+ * Шаг 3 (только для новых): имя. Аккаунт создаётся здесь и сразу выдаёт
+ * сессию — второй раз входить не нужно.
  *
- * Повтор уходит на сервер намеренно: ошибка клиента задала бы человеку
- * пароль, которого он не знает, а «забыли пароль» пока отключён.
- *
- * Имя спрашиваем здесь, а не раньше: до SMS каждое лишнее поле удлиняет
- * путь до кода, а на этом шаге человек и так заполняет форму.
+ * ⚠️ Номер подтверждён 15 минут (`app.otp.verified-ttl-seconds`). Если
+ * человек ушёл надолго, бэкенд ответит `PHONE_NOT_VERIFIED` — экран
+ * возвращает к вводу номера.
  */
-export async function registerComplete(
-  phone: string,
-  name: string,
-  password: string,
-  passwordConfirm: string,
-): Promise<SessionResult> {
+export async function completeOtp(phone: string, name: string): Promise<SessionResult> {
   try {
-    const { data } = await api.post<SessionResponse>(
-      '/api/v1/app/auth/register/complete',
-      { phone, name, password, passwordConfirm },
-    );
-    return toSession(data);
-  } catch (error) {
-    return toAuthError(error);
-  }
-}
-
-/** Вход: номер и пароль, без SMS. */
-export async function signInWithPassword(
-  phone: string,
-  password: string,
-): Promise<SessionResult> {
-  try {
-    const { data } = await api.post<SessionResponse>('/api/v1/app/auth/login', {
+    const { data } = await api.post<SessionResponse>('/api/v1/app/auth/otp/complete', {
       phone,
-      password,
+      name,
     });
     return toSession(data);
   } catch (error) {

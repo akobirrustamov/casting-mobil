@@ -56,6 +56,22 @@ public class UserAccount {
     private LocalDateTime premiumUntil;
 
     /**
+     * Casting bo'limiga kirish qachongacha. {@code null} — berilmagan.
+     *
+     * <h2>⚠️ Nima uchun Premiumdan alohida</h2>
+     * Ilgari casting huquqi «faol Premium» degan ma'noni anglatardi va
+     * uni Premiumsiz berishning yo'li yo'q edi. Buyurtmachi esa aynan
+     * shunday promokod so'radi: «casting bo'limiga bepul kirish
+     * kunlari». Endi ikki muddat alohida yashaydi.
+     *
+     * Premium bu maydonni ORTIQCHA qilmaydi: {@code canAccessCasting}
+     * ikkalasini ham qaraydi, ya'ni Premium kodi casting kodini qamrab
+     * oladi, teskarisi esa yo'q.
+     */
+    @Column(name = "casting_until")
+    private LocalDateTime castingUntil;
+
+    /**
      * Foydalanuvchi tanlagan til (§32, §61 qo'shimchasi).
      *
      * <h2>Nega kerak</h2>
@@ -90,6 +106,17 @@ public class UserAccount {
     /** Hozir faol Premium bormi. */
     public boolean hasActivePremium() {
         return premiumUntil != null && premiumUntil.isAfter(LocalDateTime.now());
+    }
+
+    /**
+     * Casting bo'limi ochiqmi — Premiumdan qat'i nazar.
+     *
+     * ⚠️ Bu «casting huquqi bormi» degan savolning TO'LIQ javobi EMAS:
+     * Premium ham casting ochadi. To'liq qaror {@code AccessService} da,
+     * bitta joyda (ТЗ §37).
+     */
+    public boolean hasActiveCastingAccess() {
+        return castingUntil != null && castingUntil.isAfter(LocalDateTime.now());
     }
 
     public UUID userId() {

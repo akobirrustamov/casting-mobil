@@ -186,6 +186,34 @@ export function setAuthToken(token: string | null): void {
 }
 
 /**
+ * Идентификатор устройства для заголовка `X-Device-Id`.
+ *
+ * <h2>Почему в каждом запросе, а не только при регистрации устройства</h2>
+ * Бэкенд записывает его в выданный refresh-токен
+ * (`RefreshTokenService.issue`). Без заголовка на входе токен остался бы
+ * ничей — и «выйти с этого устройства» не закрыло бы его сессию.
+ *
+ * Он же помечает в списке устройств строку «это устройство»: решение
+ * принимает сервер, потому что человек, ошибившись строкой, отрезал бы
+ * от аккаунта сам себя.
+ *
+ * <h2>Почему через `set`, а не `await` в интерцепторе</h2>
+ * Интерцептор синхронный, а чтение из SecureStore — нет. Значение
+ * проталкивается сюда один раз при старте, тем же способом, что и токен.
+ * До этого момента заголовка просто нет: запросы работают, устройство
+ * зарегистрируется чуть позже.
+ */
+let deviceId: string | null = null;
+
+export function setDeviceId(id: string | null): void {
+  deviceId = id;
+}
+
+export function getDeviceId(): string | null {
+  return deviceId;
+}
+
+/**
  * Обновление истёкшего токена.
  *
  * Возвращает новый access-токен либо `null`, если сессию продлить
@@ -287,6 +315,10 @@ api.interceptors.request.use((config) => {
 
   if (authToken) {
     config.headers.set('Authorization', `Bearer ${authToken}`);
+  }
+
+  if (deviceId) {
+    config.headers.set('X-Device-Id', deviceId);
   }
 
   return config;

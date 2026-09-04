@@ -155,8 +155,9 @@ curl -X POST https://notify.eskiz.uz/api/auth/login -d "email=..." -d "password=
 ============================================================
 ```
 
-Этот код вводим на экране OTP. Отдельной «регистрации» нет: `POST /otp/verify`
-находит владельца номера или создаёт нового — один эндпоинт на оба сценария.
+Этот код вводим на экране OTP. Отдельной «регистрации» нет: у номера с
+аккаунтом `POST /otp/verify` сразу отдаёт сессию, у нового — просит имя
+(`name_required: true`), и аккаунт создаётся уже на `POST /otp/complete`.
 
 Кулдаун повторной отправки в профиле снижен со 120 до **5 секунд** — код всё
 равно в логе, ждать две минуты незачем. Время жизни кода — 10 минут.
@@ -183,7 +184,15 @@ curl -s -X POST $B/api/v1/app/auth/otp/send   -H "Content-Type: application/json
 
 ```bash
 curl -s -X POST $B/api/v1/app/auth/otp/verify   -H "Content-Type: application/json" -d '{"phone":"+998901234567","code":"4821"}'
-# {"access_token":"...","refresh_token":"...","roles":[{"name":"ROLE_USER"}],...}
+# аккаунт уже есть:  {"name_required":false,"access_token":"...","refresh_token":"...","roles":[{"name":"ROLE_USER"}],...}
+# номер новый:       {"name_required":true,"expiresInSeconds":900}
+```
+
+Если пришло `name_required: true` — номер новый, добавляем имя:
+
+```bash
+curl -s -X POST $B/api/v1/app/auth/otp/complete   -H "Content-Type: application/json" -d '{"phone":"+998901234567","name":"Aziz Karimov"}'
+# {"name_required":false,"access_token":"...","refresh_token":"...","roles":[{"name":"ROLE_USER"}],...}
 ```
 
 ⚠️ В ответе должно быть `"roles":[{"name":"ROLE_USER"}]`. Пустой `roles` означал бы,

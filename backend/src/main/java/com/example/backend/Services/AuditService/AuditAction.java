@@ -98,6 +98,12 @@ public final class AuditAction {
 
     public static final String SETTING_CHANGED = "SETTING_CHANGED";
 
+    // Promokod pul beradi (bepul Premium) — kim chiqargani va kim
+    // ishlatgani iz qoldirishi shart.
+    public static final String PROMOCODE_CREATED = "PROMOCODE_CREATED";
+    public static final String PROMOCODE_UPDATED = "PROMOCODE_UPDATED";
+    public static final String PROMOCODE_REDEEMED = "PROMOCODE_REDEEMED";
+
     /**
      * Ombordagi yetim fayl o'chirildi.
      *

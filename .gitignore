@@ -235,3 +235,6 @@ backend/data/
 #  ⚠️ Haqiqiy qiymatli fayl HECH QACHON repozitoriyga tushmasin.
 #  Namunasi (`.example`) esa tushadi — u yerda faqat bo'sh joylar bor.
 yuklash/application.properties
+
+# Graphify — bilim grafi chiqishi. Yaratiladigan fayl, repozitoriyda kerak emas.
+graphify-out/
