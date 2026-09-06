@@ -43,6 +43,14 @@ import static org.assertj.core.api.Assertions.assertThatCode;
         "app.storage.s3.bucket=sinov",
         "app.storage.s3.access-key=sinov",
         "app.storage.s3.secret-key=sinov",
+        // ⚠️ Endpoint HAM shart. `S3Config` to'liq bo'lmagan sozlamada
+        // bin yaratishdan bosh tortadi va butun kontekst ko'tarilmaydi —
+        // to'rttala test ham «xato» bo'lib yiqilardi, ya'ni bu klass
+        // uzoq vaqt hech nimani tekshirmay qizil turgan.
+        //
+        // Manzil soxta va ATAYLAB shunday: haqiqiy S3 chaqiruvi bo'lmaydi,
+        // tekshiruv o'chirishgacha, baza darajasida yiqiladi.
+        "app.storage.s3.endpoint=https://s3.sinov.invalid",
 })
 class OrphanDeleteSafetyTest {
 
