@@ -108,7 +108,130 @@ class ApiConventionTest {
         }
     }
 
+    // ------------------------------------------------- so'rov cheklovi (§61)
+
+    /**
+     * Har bir kirish endpointi cheklangan bo'lsin.
+     *
+     * <h2>⚠️ Nega bu test yozildi</h2>
+     * {@code /api/v1/app/auth/refresh} — mobil ilova va sayt tomoshabini
+     * ishlatadigan yangilash yo'li — uzoq vaqt cheklovsiz turdi. Admin
+     * uchun bir xil vazifadagi yo'l ({@code /app/admin/auth/refresh})
+     * cheklangan edi, izohida esa NEGA kerakligi yozilgandi. Ya'ni
+     * sabab bilingan, qoida esa faqat yarmiga qo'llangan.
+     *
+     * Bu xatoni hech narsa ushlamasdi: {@code RULES} oddiy ro'yxat, uni
+     * hech kim qo'riqlamasdi. Yangi endpoint qo'shgan odam ro'yxatga
+     * qo'shishni unutsa, na kompilyator, na test, na ishlab turgan
+     * server bir og'iz gapirmasdi — endpoint shunchaki ochiq qolardi.
+     *
+     * Endi ushlaydi: kirishga oid yangi POST qo'shilsa, u yo ro'yxatga
+     * tushishi, yo quyida ATAYLAB istisno qilinishi kerak. Ikkalasi ham
+     * ongli qaror — unutish esa endi mumkin emas.
+     */
+    @Nested
+    @DisplayName("So'rov cheklovi")
+    class RateLimiting {
+
+        /**
+         * Ataylab cheklanmaydigan kirish yo'llari.
+         *
+         * ⚠️ Bu ro'yxatga qo'shishdan oldin o'ylang: har bir satr «bu
+         * endpointni cheksiz chaqirsa bo'ladi» degani.
+         */
+        private static final Map<String, String> EXEMPT = Map.of(
+                "/api/v1/app/admin/auth/logout",
+                "Token talab qiladi va faqat o'z sessiyasini bekor qiladi. "
+                        + "Begona odam chaqira olmaydi, o'zi esa bir marta chaqiradi.");
+
+        @Test
+        @DisplayName("Kirish endpointlari cheklangan")
+        void authEndpointsAreLimited() throws IOException {
+            String rules = Files.readString(Path.of(
+                    "src/main/java/com/example/backend/Security/RateLimit/RateLimitFilter.java"));
+
+            List<String> unguarded = new ArrayList<>();
+            for (String p : postPaths()) {
+                if (!p.contains("/auth/")) {
+                    continue;
+                }
+                boolean listed = rules.contains("new Rule(\"" + p + "\"");
+                if (!listed && !EXEMPT.containsKey(p)) {
+                    unguarded.add(p);
+                }
+            }
+
+            assertThat(unguarded)
+                    .as("cheklovsiz kirish yo'li: uni cheksiz chaqirib "
+                            + "parol yoki tokenni terib ko'rish mumkin")
+                    .isEmpty();
+        }
+
+        /**
+         * ⚠️ Istisno ro'yxati o'sib ketmasin.
+         *
+         * Cheklovni chetlab o'tishning eng oson yo'li — yo'lni shu
+         * ro'yxatga yozib qo'yish. Shuning uchun ro'yxat qisqa, va har
+         * bir satrida NEGA istisno qilingani yozilgan bo'lishi shart.
+         */
+        @Test
+        @DisplayName("Har bir istisno izohlangan")
+        void exemptionsAreExplained() {
+            assertThat(EXEMPT).hasSizeLessThan(4);
+            assertThat(EXEMPT.values())
+                    .allSatisfy(reason -> assertThat(reason).hasSizeGreaterThan(40));
+        }
+
+        /**
+         * ⚠️ Test o'zi ishlayotganiga ishonch.
+         *
+         * Agar {@code postPaths()} bo'sh qaytsa yoki hech bir yo'lda
+         * `/auth/` bo'lmasa, yuqoridagi test HAR DOIM yashil bo'lardi —
+         * hech narsa tekshirmay turib.
+         */
+        @Test
+        @DisplayName("Qoida haqiqatan yiqila oladi")
+        void ruleCanFail() throws IOException {
+            List<String> authPaths = postPaths().stream()
+                    .filter(p -> p.contains("/auth/"))
+                    .toList();
+
+            assertThat(authPaths).hasSizeGreaterThan(5);
+            assertThat(authPaths).contains("/api/v1/app/auth/refresh");
+        }
+    }
+
     // ------------------------------------------------------------ yordamchi
+
+    /**
+     * Barcha POST yo'llari — sinf prefiksi bilan birga.
+     *
+     * ⚠️ {@code paths()} dan farqi shunda: u metod ustidagi to'liq
+     * yo'lni oladi, bu esa sinfdagi {@code @RequestMapping} bilan
+     * BIRLASHTIRADI. Kirish kontrollerlarida yo'l aynan shunday
+     * yozilgan: sinfda {@code "/api/v1/app/auth"}, metodda
+     * {@code "/refresh"}. Birlashtirmasak, tekshirish uchun yo'lning
+     * yarmi qo'limizda qolardi.
+     */
+    private Set<String> postPaths() throws IOException {
+        Pattern post = Pattern.compile(
+                "@PostMapping\\(\\s*(?:value\\s*=\\s*)?\"([^\"]*)\"");
+
+        Set<String> all = new LinkedHashSet<>();
+        for (Path f : sources()) {
+            String src = Files.readString(f);
+
+            Matcher c = CLASS_MAPPING.matcher(src);
+            String base = c.find() ? c.group(1) : "";
+
+            Matcher m = post.matcher(src);
+            while (m.find()) {
+                String suffix = m.group(1);
+                all.add(suffix.startsWith("/api/") ? suffix : base + suffix);
+            }
+        }
+        return all;
+    }
 
     private Set<String> paths() throws IOException {
         Set<String> all = new LinkedHashSet<>();

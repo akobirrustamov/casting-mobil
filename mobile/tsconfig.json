@@ -2,16 +2,14 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "types": ["jest"],
+    // "node" — ради теста, который сверяет сгенерированный src/components/ui/
+    // logoPaths.ts с самим assets/brand/logo.svg: он читает SVG через fs.
+    // На приложение не влияет — таймеры в коде типизированы через
+    // ReturnType<typeof setTimeout>, а не number.
+    "types": ["jest", "node"],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "nativewind-env.d.ts"
-  ]
+  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts"]
 }

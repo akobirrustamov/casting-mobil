@@ -1,6 +1,7 @@
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { BrandLoader } from '@/components/ui/BrandLoader';
 import { Button } from '@/components/ui/Button';
 import { colors } from '@/theme/tokens';
 
@@ -54,8 +55,9 @@ export function ScreenState({
 
   if (kind === 'loading') {
     return (
-      <View className="flex-1 items-center justify-center gap-4 bg-ink">
-        <ActivityIndicator size="large" color={colors.purple} />
+      // Отступ маленький: у загрузчика уже есть собственное поле под ореол.
+      <View className="flex-1 items-center justify-center gap-1 bg-ink">
+        <BrandLoader />
         <Text className="text-caption text-text-muted">{t('states.loading')}</Text>
       </View>
     );
