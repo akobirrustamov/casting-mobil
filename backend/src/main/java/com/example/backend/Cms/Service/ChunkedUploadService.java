@@ -63,11 +63,29 @@ import java.util.stream.Stream;
 @Service
 public class ChunkedUploadService {
 
-    /** Bo'lak o'lchami. Kichik bo'lsa so'rov ko'p, katta bo'lsa qayta yuborish qimmat. */
-    private static final int CHUNK_SIZE = 5 * 1024 * 1024;
+    /**
+     * Bo'lak o'lchami. Kichik bo'lsa so'rov ko'p, katta bo'lsa qayta
+     * yuborish qimmat.
+     *
+     * ⚠️ SOZLANADI, chunki bu server EMAS, PROXY masalasi. Server
+     * oldida turgan nginx yoki Apache tana hajmini cheklaydi
+     * (`client_max_body_size` sukut bo'yicha 1 MB, `LimitRequestBody`)
+     * va bo'lak undan katta bo'lsa so'rov backendga YETIB BORMAYDI —
+     * panel «Xatolik (413)» ko'rsatadi, log'da esa hech narsa
+     * bo'lmaydi, chunki so'rov ilovaga tushmagan.
+     *
+     * Proxy'ni tuzatish to'g'ri yechim, lekin u har doim ham qo'lda
+     * emas (umumiy hosting, boshqa jamoa). Shunday holatda bo'lakni
+     * kichraytirish yuklashni ISHLATADI: qayta build qilish shart emas.
+     */
+    @Value("${app.upload.chunk-size-bytes:5242880}")
+    private int chunkSize = 5 * 1024 * 1024;
 
     /** Bitta bo'lak uchun qattiq chegara - suiiste'molga qarshi. */
     private static final long MAX_CHUNK_BYTES = 8L * 1024 * 1024;
+
+    /** Undan kichik bo'lak mantiqsiz: 1 GB fayl 4000 ta so'rovga bo'linardi. */
+    private static final int MIN_CHUNK_BYTES = 256 * 1024;
 
     private static final String PENDING = "PENDING";
     private static final String COMPLETED = "COMPLETED";
@@ -166,9 +184,10 @@ public class ChunkedUploadService {
                     .chunkSize(s3.partSize())
                     .totalChunks(s3.partCount(sizeBytes));
         } else {
+            int size = effectiveChunkSize();
             session.uploadMode(UploadMode.CHUNKED)
-                    .chunkSize(CHUNK_SIZE)
-                    .totalChunks((int) ((sizeBytes + CHUNK_SIZE - 1) / CHUNK_SIZE));
+                    .chunkSize(size)
+                    .totalChunks((int) ((sizeBytes + size - 1) / size));
         }
 
         return sessionRepo.save(session.build());
@@ -430,6 +449,29 @@ public class ChunkedUploadService {
     }
 
     // ------------------------------------------------------------- ichki qism
+
+    /**
+     * Sozlangan bo'lak o'lchami — chegaralar ichida.
+     *
+     * ⚠️ Noto'g'ri sozlama ilovani YIQITMAYDI, balki xavfsiz qiymatga
+     * qaytariladi: bo'lak o'lchami — ishlash masalasi, ish
+     * to'xtatadigan xato emas. Yuqori chegara {@code MAX_CHUNK_BYTES}
+     * bilan bir xil, aks holda server o'zi qabul qila olmaydigan
+     * bo'lakni so'rardi.
+     */
+    private int effectiveChunkSize() {
+        if (chunkSize < MIN_CHUNK_BYTES) {
+            log.warn("app.upload.chunk-size-bytes juda kichik ({}), {} ishlatiladi",
+                    chunkSize, MIN_CHUNK_BYTES);
+            return MIN_CHUNK_BYTES;
+        }
+        if (chunkSize > MAX_CHUNK_BYTES) {
+            log.warn("app.upload.chunk-size-bytes chegaradan katta ({}), {} ishlatiladi",
+                    chunkSize, MAX_CHUNK_BYTES);
+            return (int) MAX_CHUNK_BYTES;
+        }
+        return chunkSize;
+    }
 
     private Path sessionDir(String sessionId) {
         // Id server tomonida UUID sifatida yasaladi, lekin tekshiruv baribir

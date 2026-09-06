@@ -9,7 +9,7 @@ import TextTab from './editor/TextTab';
 import { adminApi } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
-import Modal from '../components/Modal';
+import { PageHeader } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
 import EpisodesTab from './EpisodesTab';
 import { buildMediaLinks, pickMedia, passthroughMedia } from './editor/contentMedia';
@@ -51,6 +51,14 @@ const emptyForm = () => ({
  *
  * Bitta ulkan forma emas - alti bo'limga ajratilgan (§22, §53).
  * Uch til bir vaqtda tahrirlanadi; to'ldirilmagan til tab'da belgilanadi.
+ *
+ * ⚠️ Bu MODAL emas, sahifa. Ichidagi media tanlash (`MediaPicker`),
+ * ijodkor qo'shish (`CreatorQuickCreate`) va video ko'rish o'z modalini
+ * ochadi — muharrirning o'zi ham modal bo'lganda oyna ustida oyna
+ * chiqardi. Marshrut qobig'i — `ContentEditorPage`.
+ *
+ * `open` proplari saqlanib qoldi: sahifa uni doim `true` beradi,
+ * testlar esa muharrirni marshrutsiz chizadi.
  */
 export default function ContentEditor({ open, contentId, onClose, onSaved }) {
   const { t } = usePanelI18n();
@@ -90,7 +98,7 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
     setDirty(true);
   };
 
-  // Ma'lumotnomalar - modal ochilganda bir marta
+  // Ma'lumotnomalar - muharrir ochilganda bir marta
   useEffect(() => {
     if (!open) return;
     setTab('basic');
@@ -264,87 +272,97 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
     }
   }, [hasParts, tab]);
 
+
+  if (!open) return null;
+
   return (
-    <Modal
-      open={open}
-      title={isEdit ? t('editor.edit') : t('editor.new')}
-      onClose={requestClose}
-      width={820}
-      footer={
-        <>
-          {error && tab !== 'episodes' && (
+    <>
+      <PageHeader
+        title={isEdit ? t('editor.edit') : t('editor.new')}
+        subtitle={form.slug || undefined}
+        right={
+          <button type="button" className="uz-btn uz-btn-ghost" onClick={requestClose}>
+            {t('editor.back')}
+          </button>
+        }
+      />
+
+      <div className="uz-card" style={{ padding: 20 }}>
+        <div className="uz-tabs" role="tablist">
+          {TABS.map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={tab === key}
+              className={`uz-tab ${tab === key ? 'active' : ''}`}
+              onClick={() => setTab(key)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* -------------------------------------------------------- ASOSIY */}
+        {tab === 'basic' && (
+          <BasicTab form={form} set={set} t={t} locale={locale}
+                    categories={categories} genres={genres}
+                    categoryError={fields.errorOf('categoryId')} />
+        )}
+
+        {tab === 'text' && (
+          <TextTab form={form} t={t} locale={locale} setLocale={setLocale}
+                   setTranslation={setTranslation}
+                   uzTitleMissing={uzTitleMissing} titleError={titleError} />
+        )}
+
+        {tab === 'media' && (
+          <MediaTab form={form} set={set} t={t} locale={locale} isSingle={!hasParts} />
+        )}
+
+        {tab === 'creators' && (
+          <CreditsTab form={form} set={set} t={t} locale={locale} creators={creators}
+                      onCreatorCreated={(c) => setCreators((prev) => [c, ...prev])} />
+        )}
+
+        {tab === 'episodes' && (
+          <EpisodesTab
+            contentId={contentId}
+            structureType={form.structureType}
+            contentAccessPolicy={form.accessPolicy}
+          />
+        )}
+
+        {/* -------------------------------------------------- MONETIZATSIYA */}
+
+        {tab === 'access' && (
+          <AccessTab form={form} set={set} t={t} />
+        )}
+
+        {tab === 'publish' && (
+          <PublishTab form={form} set={set} t={t} can={can} />
+        )}
+      </div>
+
+      {/* ⚠️ Fasl va qismlar O'Z saqlash tugmasiga ega — ikkita «Saqlash»
+          chalkashtiradi, shuning uchun u bo'limda panel ko'rsatilmaydi. */}
+      {tab !== 'episodes' && (
+        <div className="uz-editor-actions">
+          {error && (
             <span style={{ color: 'var(--p-danger)', fontSize: 13, marginRight: 'auto' }} role="alert">
               {error.message}
             </span>
           )}
           <button type="button" className="uz-btn uz-btn-ghost" onClick={requestClose}>
-            {tab === 'episodes' ? t('common.close') : t('common.cancel')}
+            {t('common.cancel')}
           </button>
-          {/* Fasl va qismlar o'z saqlash tugmasiga ega - ikkita Saqlash chalkashtiradi */}
-          {tab !== 'episodes' && (
-            <button type="button" className="uz-btn uz-btn-primary" onClick={handleSave} disabled={saving}>
-              {saving ? t('common.saving') : t('common.save')}
-            </button>
-          )}
-        </>
-      }
-    >
-      <div className="uz-tabs" role="tablist">
-        {TABS.map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            aria-selected={tab === key}
-            className={`uz-tab ${tab === key ? 'active' : ''}`}
-            onClick={() => setTab(key)}
-          >
-            {label}
+          <button type="button" className="uz-btn uz-btn-primary" onClick={handleSave} disabled={saving}>
+            {saving ? t('common.saving') : t('common.save')}
           </button>
-        ))}
-      </div>
-
-      {/* ---------------------------------------------------------- ASOSIY */}
-      {tab === 'basic' && (
-        <BasicTab form={form} set={set} t={t} locale={locale}
-                  categories={categories} genres={genres}
-                  categoryError={fields.errorOf('categoryId')} />
-      )}
-
-      {tab === 'text' && (
-        <TextTab form={form} t={t} locale={locale} setLocale={setLocale}
-                 setTranslation={setTranslation}
-                 uzTitleMissing={uzTitleMissing} titleError={titleError} />
-      )}
-
-      {tab === 'media' && (
-        <MediaTab form={form} set={set} t={t} locale={locale} isSingle={!hasParts} />
-      )}
-
-      {tab === 'creators' && (
-        <CreditsTab form={form} set={set} t={t} locale={locale} creators={creators}
-                    onCreatorCreated={(c) => setCreators((prev) => [c, ...prev])} />
-      )}
-
-      {tab === 'episodes' && (
-        <EpisodesTab
-          contentId={contentId}
-          structureType={form.structureType}
-          contentAccessPolicy={form.accessPolicy}
-        />
-      )}
-
-      {/* ---------------------------------------------------- MONETIZATSIYA */}
-
-      {tab === 'access' && (
-        <AccessTab form={form} set={set} t={t} />
-      )}
-
-      {tab === 'publish' && (
-        <PublishTab form={form} set={set} t={t} can={can} />
+        </div>
       )}
 
       <ConfirmDialog {...confirmer.props} />
-    </Modal>
+    </>
   );
 }

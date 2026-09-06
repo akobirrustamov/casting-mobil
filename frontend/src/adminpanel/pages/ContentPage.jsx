@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { adminApi, mediaUrl } from '../api/client';
 import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
 import { useApi } from '../api/useApi';
@@ -7,7 +8,6 @@ import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { Badge, PageHeader, Pagination, SearchInput, StatusBadge, TableWrap } from '../components/Ui';
 import { toBackendLocale, usePanelI18n } from '../i18n';
 import { count, money } from '../utils/format';
-import ContentEditor from './ContentEditor';
 import ContentStatsModal from './reports/ContentStatsModal';
 import Select from '../components/Select';
 
@@ -17,12 +17,31 @@ const TYPES = ['MOVIE', 'SERIES', 'MINI_SERIES', 'SHORT_FILM', 'PODCAST', 'SHOW'
 export default function ContentPage() {
   const { t, locale } = usePanelI18n();
   const { can } = useAuth();
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [page, setPage] = useState(0);
-  const [status, setStatus] = useState('');
-  const [type, setType] = useState('');
-  const [q, setQ] = useState('');
+  const navigate = useNavigate();
+
+  // ⚠️ Filtr va sahifa raqami MANZILDA turadi — komponent holatida emas.
+  // Muharrir endi alohida sahifa (modal emas), ya'ni ro'yxat undan
+  // qaytganda qaytadan chiziladi. Holatda tursa, qidiruv, filtr va
+  // sahifa raqami har saqlashdan keyin nolga qaytardi va admin
+  // 7-sahifadagi kontentni tuzatgach yana boshidan izlardi.
+  const [params, setParams] = useSearchParams();
+  const page = Number(params.get('page') || 0);
+  const status = params.get('status') || '';
+  const type = params.get('type') || '';
+  const q = params.get('q') || '';
+
+  /** Bitta filtrni almashtiradi; bo'sh qiymat manzildan olib tashlanadi. */
+  const setParam = (patch) => {
+    const next = new URLSearchParams(params);
+    Object.entries(patch).forEach(([key, value]) => {
+      if (value === '' || value === null || value === undefined || value === 0) next.delete(key);
+      else next.set(key, String(value));
+    });
+    // Tarixni to'ldirmaymiz: «orqaga» tugmasi har bir harfni emas,
+    // oldingi SAHIFANI qaytarishi kerak.
+    setParams(next, { replace: true });
+  };
+
   // Bitta kontent bo'yicha tomosha voronkasi (ТЗ §46).
   const [statsFor, setStatsFor] = useState(null);
 
@@ -32,6 +51,13 @@ export default function ContentPage() {
     () => adminApi.content({ page, size: 20, status: status || undefined, type: type || undefined, q: q || undefined }),
     [page, status, type, q]
   );
+
+  /** Muharrirga o'tamiz va joriy filtrlarni qaytish uchun beramiz. */
+  const openEditor = (id) => {
+    navigate(`/app/panel/content/${id ?? 'new'}`, {
+      state: { from: params.toString() ? `?${params.toString()}` : '' },
+    });
+  };
 
   const backendLocale = toBackendLocale(locale);
 
@@ -56,11 +82,11 @@ export default function ContentPage() {
         subtitle={t('content.subtitle')}
         right={
           <>
-            <SearchInput value={q} onChange={(v) => { setQ(v); setPage(0); }} placeholder={t('content.search')} />
+            <SearchInput value={q} onChange={(v) => setParam({ q: v, page: 0 })} placeholder={t('content.search')} />
             <Select
               className="uz-select" style={{ width: 'auto' }} value={status}
               aria-label={t('content.col.status')}
-              onChange={(e) => { setStatus(e.target.value); setPage(0); }}
+              onChange={(e) => setParam({ status: e.target.value, page: 0 })}
             >
               <option value="">{t('content.allStatuses')}</option>
               {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -68,7 +94,7 @@ export default function ContentPage() {
             <Select
               className="uz-select" style={{ width: 'auto' }} value={type}
               aria-label={t('content.col.type')}
-              onChange={(e) => { setType(e.target.value); setPage(0); }}
+              onChange={(e) => setParam({ type: e.target.value, page: 0 })}
             >
               <option value="">{t('content.allTypes')}</option>
               {TYPES.map((s) => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
@@ -77,7 +103,7 @@ export default function ContentPage() {
               <button
                 type="button"
                 className="uz-btn uz-btn-primary"
-                onClick={() => { setEditingId(null); setEditorOpen(true); }}
+                onClick={() => openEditor(null)}
               >
                 + {t('editor.new')}
               </button>
@@ -182,7 +208,7 @@ export default function ContentPage() {
                             type="button"
                             className="uz-btn uz-btn-ghost"
                             style={{ minHeight: 34, padding: '0 12px', fontSize: 13 }}
-                            onClick={() => { setEditingId(item.id); setEditorOpen(true); }}
+                            onClick={() => openEditor(item.id)}
                           >
                             {t('common.edit')}
                           </button>
@@ -207,7 +233,7 @@ export default function ContentPage() {
                 </tbody>
               </table>
             </TableWrap>
-            <Pagination page={data.page} totalPages={data.totalPages} onPage={setPage} />
+            <Pagination page={data.page} totalPages={data.totalPages} onPage={(p) => setParam({ page: p })} />
           </>
         )}
       </div>
@@ -216,12 +242,6 @@ export default function ContentPage() {
         <p className="uz-muted mt-3 text-sm">{t('common.total', { n: data.totalItems })}</p>
       )}
 
-      <ContentEditor
-        open={editorOpen}
-        contentId={editingId}
-        onClose={() => setEditorOpen(false)}
-        onSaved={reload}
-      />
       {statsFor && (
         <ContentStatsModal
           content={statsFor}
