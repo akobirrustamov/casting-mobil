@@ -289,7 +289,61 @@ function Stage({
     );
   }
 
-  return <LockedPoster card={card} />;
+  return <LockedStage info={info} card={card} />;
+}
+
+/**
+ * Верх закрытого экрана.
+ *
+ * <h2>Зачем здесь вообще видео</h2>
+ * Раньше человек до покупки не мог посмотреть НИЧЕГО: афиша и замок. При
+ * этом главный сценарий ТЗ — «первая серия бесплатно, продолжение за
+ * 5 000» — упирается ровно в этот экран. Трейлер и есть то единственное,
+ * что можно показать, не отдав фильм.
+ *
+ * <h2>⚠️ Ролик подписан бейджем — и это не украшение</h2>
+ * Без подписи 90 секунд в рамке плеера читаются как «фильм уже открыт»:
+ * человек досматривает ролик, видит конец и уходит, решив, что купил
+ * пустоту. Бейдж — единственное, что отличает одно от другого.
+ *
+ * <h2>Сбой трейлера — не ошибка экрана</h2>
+ * Ролик необязателен, поэтому на сбой возвращаемся к афише молча. Кнопка
+ * «попробовать ещё раз» здесь была бы враньём: человеку нужен не трейлер,
+ * а фильм, и повтор ничего для него не изменит.
+ */
+function LockedStage({ info, card }: { info: WatchInfo; card: ContentCard | undefined }) {
+  const { t } = useTranslation();
+  const [failed, setFailed] = useState(false);
+
+  const trailer = info.trailer;
+  if (trailer === null || failed) {
+    return <LockedPoster card={card} />;
+  }
+
+  return (
+    <View className="gap-2">
+      {/*
+        ⚠️ `contentId` и `episodeId` — `null` НАМЕРЕННО.
+
+        Плеер по ним делает две вещи: пишет позицию просмотра и считает
+        запуск контента. Ни то, ни другое к ролику не относится: позиция
+        трейлера затёрла бы место, на котором человек бросил сам фильм, а
+        счётчик просмотров раздулся бы теми, кто ничего не купил.
+      */}
+      <Player
+        key={`trailer-${trailer.mediaId}-${trailer.hlsUrl ? 'hls' : 'raw'}`}
+        source={trailer}
+        orientation={info.orientation}
+        contentId={null}
+        episodeId={null}
+        onError={() => setFailed(true)}
+      />
+
+      <View className="flex-row justify-center">
+        <Badge tone="info">{t('content.trailer')}</Badge>
+      </View>
+    </View>
+  );
 }
 
 /**

@@ -93,6 +93,9 @@ function mapWatch(raw: unknown): WatchInfo {
     episodePrice: num(r.episodePrice),
     premierePrice: num(r.premierePrice),
     showAds: r.showAds === true,
+    // ⚠️ Старая сборка бэкенда поля не отдаёт — тогда `null`, и экран
+    // остаётся прежним: афиша под замком. Обе версии работают рядом.
+    trailer: mapSource(r.trailer),
     sources: Array.isArray(r.sources)
       ? r.sources.map(mapSource).filter((s): s is VideoSource => s !== null)
       : [],

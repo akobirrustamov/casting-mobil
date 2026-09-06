@@ -313,6 +313,7 @@
     "multiPartTitle": "This content has episodes",
     "multiPartBody": "The app cannot list episodes yet — that needs a separate backend endpoint.",
     "noVideo": "The video is not uploaded yet",
+    "trailer": "Trailer",
     "playbackFailedTitle": "The video did not open",
     "playbackFailedBody": "The link may have expired. Try again — playback resumes from the same spot.",
     "part": "Part {{number}}",
