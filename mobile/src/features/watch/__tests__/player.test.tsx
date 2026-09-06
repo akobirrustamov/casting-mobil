@@ -43,6 +43,16 @@ jest.mock('@/lib/api', () => ({
   authHeaders: () => ({ Authorization: 'Bearer t0ken' }),
 }));
 
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+  initReactI18next: { type: '3rdParty', init: () => undefined },
+}));
+
+jest.mock('@/lib/storage', () => ({
+  getItem: jest.fn().mockResolvedValue(null),
+  setItem: jest.fn().mockResolvedValue(undefined),
+}));
+
 import { act, create } from 'react-test-renderer';
 
 import { Player, playbackSource } from '../Player';
@@ -101,6 +111,33 @@ describe('playbackSource — какой из двух путей открыт', 
     );
 
     expect('headers' in s).toBe(false);
+  });
+
+  /**
+   * ⚠️ Выбранная ступень подменяет мастер — но только его.
+   *
+   * Адрес ступени плеер уже разрешил сам, он абсолютный. Склеить его с
+   * `BASE_URL` значило бы получить тот же `https://…https://…`.
+   */
+  it('Выбранная ступень играет вместо мастера', () => {
+    const variant = 'https://uzcasting.com/api/v1/app/media/7/hls/480p/index.m3u8?t=abc';
+    const s = playbackSource(
+      source({ hlsUrl: '/api/v1/app/media/7/hls/master.m3u8?t=abc' }),
+      variant
+    );
+
+    expect(s.uri).toBe(variant);
+  });
+
+  /**
+   * ⚠️ Без `contentType` iOS не разбирает HLS, когда после «.m3u8» стоит
+   * запрос — а у нас там билет. Список ступеней тогда приходит пустым, и
+   * меню качества просто не появляется. Молча.
+   */
+  it('HLS помечен явно', () => {
+    const s = playbackSource(source({ hlsUrl: '/api/v1/app/media/7/hls/master.m3u8?t=abc' }));
+
+    expect(s).toMatchObject({ contentType: 'hls' });
   });
 
   /** А на старом пути он обязателен: право проверяет сервер по нему. */
