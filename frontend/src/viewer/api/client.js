@@ -162,10 +162,81 @@ async function request(method, url, { data, params, retried } = {}) {
 
 // ------------------------------------------------------------------ so'rovlar
 
-/** Telefon + parol. Javob — sessiya, u darhol saqlanadi. */
-export async function signIn(phone, password) {
-  const data = await request('post', '/api/v1/app/auth/login', {
-    data: { phone, password },
+/**
+ * Kirish — SMS kod orqali, uch qadamda.
+ *
+ * <h2>⚠️ Nega parol emas</h2>
+ * Ilgari bu yerda {@code POST /api/v1/app/auth/login} turardi va u
+ * telefon bilan parol yuborardi. O'sha endpoint backenddan OLIB
+ * TASHLANGAN — butun ro'yxatdan o'tish OTP ga o'tkazilgan, sayt
+ * tomoni esa yangilanmagan. Natijada saytdagi kirish umuman
+ * ishlamasdi va nosozlik jimgina edi: server 401 qaytarardi, ya'ni
+ * «parol xato» bo'lib ko'rinardi.
+ *
+ * ⚠️ Ilova foydalanuvchisi parol O'RNATA olmaydi: bunday oqim
+ * umuman yo'q. Ya'ni parol bilan kirishni tiklash bitta ekilgan
+ * sinov hisobiga xizmat qilardi, xolos.
+ *
+ * <h2>Qadamlar</h2>
+ * <pre>
+ *   1. sendCode(phone)          → SMS ketadi
+ *   2. verifyCode(phone, code)  → sessiya YOKI «ism kerak»
+ *   3. completeSignUp(phone, name) → sessiya
+ * </pre>
+ *
+ * Uchinchi qadam faqat yangi odam uchun. Eski foydalanuvchi ikkinchi
+ * qadamdayoq kiradi.
+ */
+
+/**
+ * 1-qadam: raqamga kod yuborish.
+ *
+ * @returns {Promise<{expiresInSeconds: number}>} kod qancha yashaydi
+ */
+export async function sendCode(phone) {
+  const data = await request('post', '/api/v1/app/auth/otp/send', {
+    data: { phone },
+  });
+  return { expiresInSeconds: data?.expiresInSeconds ?? 0 };
+}
+
+/**
+ * 2-qadam: kodni tekshirish.
+ *
+ * ⚠️ Ikki xil javob keladi va ularni ARALASHTIRIB bo'lmaydi:
+ * <ul>
+ *   <li>{@code name_required: false} — sessiya bor, saqlaymiz;</li>
+ *   <li>{@code name_required: true} — token YO'Q, ism so'raladi.</li>
+ * </ul>
+ *
+ * Ikkinchi holatda {@code store()} chaqirilsa saqlanadigan token
+ * {@code undefined} bo'lardi va keyingi har bir so'rov 401 berardi —
+ * odam esa «kirdim» deb o'ylab turardi.
+ *
+ * @returns {Promise<{nameRequired: boolean, expiresInSeconds: number}>}
+ */
+export async function verifyCode(phone, code) {
+  const data = await request('post', '/api/v1/app/auth/otp/verify', {
+    data: { phone, code },
+  });
+
+  if (data?.name_required) {
+    return { nameRequired: true, expiresInSeconds: data?.expiresInSeconds ?? 0 };
+  }
+
+  store(data);
+  return { nameRequired: false, expiresInSeconds: 0 };
+}
+
+/**
+ * 3-qadam: yangi foydalanuvchining ismi.
+ *
+ * ⚠️ Bu qadam ikkinchi SMS SO'RAMAYDI: server raqamni 15 daqiqaga
+ * «tasdiqlangan» deb belgilab qo'yadi.
+ */
+export async function completeSignUp(phone, name) {
+  const data = await request('post', '/api/v1/app/auth/otp/complete', {
+    data: { phone, name },
   });
   store(data);
   return data;
