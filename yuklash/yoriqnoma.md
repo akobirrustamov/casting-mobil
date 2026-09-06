@@ -424,6 +424,84 @@ bo'ladi.
 
 ---
 
+## 10. Videoni himoyalash (sotuvdan oldin)
+
+⚠️ **Hozir video HIMOYALANMAGAN.** Manzilni bilgan har kim pullik
+filmni imzosiz ko'chirib oladi:
+
+```bash
+curl -o /dev/null -w "%{http_code}\n" \
+  https://cdn.uzcasting.com/videos/146/hls/master.m3u8
+# hozir: 200 — imzosiz ochiq
+```
+
+Kod tomoni **tayyor**. Qolgani — to'rtta qadam, va **tartibi muhim**.
+
+### 10.1 Panelda tokenni yoqish
+
+`https://timeweb.cloud/my/cdn/31973/management` → `Безопасность` →
+`Secure token` → yoqiladi. Panel maxfiy kalit beradi — uni nusxalab
+oling.
+
+### 10.2 Kalitni sozlamaga yozish
+
+```bash
+nano /opt/uzcasting/application.properties
+```
+
+Quyidagi qatorni toping va izohdan chiqarib, kalitni qo'ying:
+
+```properties
+app.video.cdn.secure-token.secret=PANELDAN_OLINGAN_KALIT
+```
+
+⚠️ Bo'sh qoldirmang. Kod bo'sh kalitni «o'chiq» deb qabul qiladi —
+ya'ni yarim yoqilgan holat bo'lmaydi, lekin himoya ham ishlamaydi.
+
+### 10.3 Qayta yig'ib yuklash va TEKSHIRISH
+
+0-bo'limdan boshlab odatdagidek yuklang, so'ng:
+
+```bash
+sudo systemctl restart uzcasting
+```
+
+Brauzerda film oching va **ko'rilishiga ishonch hosil qiling**.
+
+⚠️ **Ochilmasa** — kalitni izohga qaytaring va qayta ishga tushiring:
+
+```bash
+nano /opt/uzcasting/application.properties   # qator oldiga # qo'ying
+sudo systemctl restart uzcasting
+```
+
+Tizim darhol eski holatga qaytadi. Bucket hali ochiq bo'lgani uchun
+bu bosqichda hech narsa yo'qolmaydi — aynan shuning uchun bucket
+ENG OXIRIDA yopiladi.
+
+### 10.4 Bucketni yopish
+
+Faqat 10.3 muvaffaqiyatli bo'lgandan keyin. Timeweb panelida S3 →
+`Публичный` → `Приватный`.
+
+Tekshirish — ikkalasi ham **403** qaytarishi shart:
+
+```bash
+curl -o /dev/null -w "CDN imzosiz: %{http_code}\n" \
+  https://cdn.uzcasting.com/videos/146/hls/master.m3u8
+
+curl -o /dev/null -w "S3 to'g'ridan: %{http_code}\n" \
+  https://s3.twcstorage.ru/00847558-22cb-4af0-bdbf-d750dfbdac8a/videos/146/hls/master.m3u8
+```
+
+Va brauzerda film **hamon ochilishi** kerak — pleyer endi imzolangan
+havolalar bilan ishlaydi.
+
+⚠️ Agar bu bosqichda video ochilmay qolsa, bucketni vaqtincha
+`Публичный` ga qaytaring: bu darhol tiklaydi.
+
+---
+
 ## Muammolar
 
 ### `JWT KALITI BERILMAGAN`

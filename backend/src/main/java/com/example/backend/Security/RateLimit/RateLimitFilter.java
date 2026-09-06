@@ -45,6 +45,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
             // Login: brute-force'ga qarshi qattiq cheklov
             new Rule("/api/v1/auth/login", 10, 60),
             new Rule("/api/v1/app/admin/auth/login", 10, 60),
+            // Google orqali kirish ham login - bir xil cheklov. Bu yerda
+            // qo'shimcha sabab bor: har bir so'rov Google serveriga
+            // tashqi murojaat qiladi. Cheklovsiz begona odam bizning
+            // nomimizdan Google'ga flud yuborardi va Google javob
+            // berishni to'xtatardi - ya'ni kirish HAMMA uchun buzilardi.
+            new Rule("/api/v1/auth/google", 10, 60),
             // OTP: bitta IP'dan turli raqamlarga SMS-flud'ni to'xtatadi.
             // Bitta raqamga qayta yuborish OtpService cooldown'i bilan
             // alohida cheklanadi - bu yerdagi qoida faqat IP darajasida.
@@ -59,6 +65,28 @@ public class RateLimitFilter extends OncePerRequestFilter {
             // Yangilash ham cheklanadi: aks holda o'g'irlangan cookie bilan
             // cheksiz token yasash mumkin bo'lardi (§61).
             new Rule("/api/v1/app/admin/auth/refresh", 30, 60),
+            // ⚠️ Mobil va sayt tomoshabini uchun YANGILASH. Uzoq vaqt
+            // ro'yxatda yo'q edi: admin yo'li yozilgan, mobil yo'li esa
+            // unutilgan. Moslash `uri.equals()` orqali - prefiks bo'yicha
+            // TUSHMAYDI, ya'ni admin qoidasi buni qoplamasdi.
+            //
+            // Chegara admin'dagidan ikki barobar keng va buning sababi bor:
+            // uyali operator yuzlab abonentni BITTA tashqi manzil ortiga
+            // qo'yadi (CGNAT). Har bir odam 15 daqiqada bir marta
+            // yangilaydi, ya'ni bitta manzildan soatiga mingga yaqin
+            // qonuniy so'rov kelishi normal. Tor chegara hujumchini emas,
+            // o'sha operatordagi barcha odamlarni to'sardi.
+            //
+            // Refresh tokenni terib topib bo'lmaydi (u tasodifiy va uzun),
+            // shuning uchun bu qoida brute-force'dan emas - bazani
+            // ortiqcha yukdan va klientdagi cheksiz halqadan himoya qiladi.
+            new Rule("/api/v1/app/auth/refresh", 60, 60),
+            // Eski yangilash yo'li. Uni hozir hech bir klient
+            // ishlatmaydi (mobil ataylab yangisiga o'tgan), lekin
+            // endpoint ochiq turibdi va rotatsiya qilmaydi - ya'ni
+            // bitta o'g'irlangan token muddati tugaguncha ishlaydi.
+            // Ochiq turgan ekan, hech bo'lmasa cheklangan tursin.
+            new Rule("/api/v1/auth/refresh", 30, 60),
             // Bot anketasi va rasm yuklash - anonim yozish
             new Rule("/api/v1/casting-user", 20, 60),
             new Rule("/api/v1/file/upload", 30, 60)

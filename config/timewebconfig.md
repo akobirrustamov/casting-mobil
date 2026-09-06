@@ -101,6 +101,14 @@ Bu CDN muammosi emas, lekin CDN ulangandan keyin ham shunday qoladi.
 ishga tushirish, parametrlar sinov uchun. Lekin **haqiqiy sotuvdan
 oldin** yopilishi shart. Yo'li quyida, «Keyingi bosqich» da.
 
+> **2026-09-06 yangilanishi.** Kod tomoni **tayyor**:
+> `SecureTokenUrlProvider` yozildi va sinovdan o'tdi. Qolgani —
+> panelda Secure token'ni yoqib, kalitni serverga qo'yish. Batafsil:
+> «Keyingi bosqich» bo'limi.
+>
+> ⚠️ Yana bir marta tekshirildi (2026-09-06): bucket **hali ham
+> ochiq**. Ham S3 dan, ham CDN dan imzosiz 200 keladi.
+
 ---
 
 ## Kodda nima o'zgarishi kerak
@@ -196,9 +204,9 @@ Gzip video uchun kerak emas (segment allaqachon siqilgan).
 ### 4. Безопасность
 
 - **Редирект с HTTP на HTTPS** — yoqilsin
-- **Secure token** — hozircha TEGILMAYDI. Uni yoqish kodda token
-  generatsiyasini talab qiladi; hozirgi imzo sxemasi bilan birga
-  ishlamaydi.
+- **Secure token** — kod TAYYOR (2026-09-06), panelda hali
+  yoqilmagan. Yoqish tartibi «Keyingi bosqich» bo'limida; tartib
+  buzilsa barcha video birdan ochilmay qoladi.
 
 ### 5. Ограничение исходящего трафика
 
@@ -235,14 +243,63 @@ so'rovlari `cdn.uzcasting.com` ga ketayotgani ko'rilsin.
 
 Haqiqiy sotuvdan oldin bajariladi.
 
-1. Bucket «Приватный» qilinadi
-2. CDN dagi **AWS-авторизация** (allaqachon yoqilgan) CDN ga origin'dan
-   o'qish imkonini beradi
-3. Tomoshabin uchun himoya **Secure token** bilan beriladi
-4. Kodda: imzo o'rniga CDN tokeni yasaladi
+### Kod tomoni — TAYYOR ✅
 
-⚠️ Bu bitta qadamda qilinmaydi — avval sinov muhitida tekshiriladi,
-chunki noto'g'ri qadamda **hamma video birdan ochilmay qoladi**.
+`SecureTokenUrlProvider` (`Cms/Service/Video/`) yozildi. U Timeweb
+hujjatidagi algoritmni bajaradi:
+
+```
+raw    = SECRET + PATH + IP + EXPIRES
+token  = base64(md5_xom_baytlar(raw)),  + → -,  / → _,  = olib tashlanadi
+manzil = {CDN}/md5({token},{EXPIRES}){PATH}
+```
+
+⚠️ Uchta nozik joy — uchalasi ham test bilan qulflangan
+(`SecureTokenUrlProviderTest`, 12 ta test):
+
+| Nozik joy | Xato qilinsa |
+|---|---|
+| MD5 dan **xom baytlar** olinadi, o'n oltilik satr emas | CDN har bir segmentga 403 |
+| `EXPIRES` **oynaga tekislanadi** | Har tomoshabin boshqa manzil oladi, kesh butunlay ishlamaydi |
+| IP imzoga **kirmaydi** | Telefon Wi-Fi'dan uyali tarmoqqa o'tganda film o'rtasida to'xtaydi |
+
+Kutilgan token qiymatlari hujjatdagi Python namunasi bilan
+hisoblangan va testga yozib qo'yilgan. Ya'ni algoritm noto'g'ri
+bo'lsa test yiqiladi — serverda emas.
+
+**Yoqilishi:** faqat `app.video.cdn.secure-token.secret` berilganda.
+Kalit yo'q ekan, bean umuman yaratilmaydi va tizim eskicha ishlaydi.
+Shuning uchun yangi kodni yuklash **hech narsani o'zgartirmaydi**.
+
+### Qolgan qadamlar — panelda
+
+⚠️ **Tartib muhim.** Buzilsa hamma video birdan ochilmay qoladi.
+
+1. **Panel** → CDN → Secure token yoqiladi, kalit olinadi
+2. Kalit serverdagi `application.properties` ga yoziladi
+   (`app.video.cdn.secure-token.secret=`, izoh olib tashlanadi)
+3. Jar qayta yig'iladi va yuklanadi — yo'riqnomaning **0-bo'limi**
+4. **Video ochilishi tekshiriladi.** Ochilmasa: kalitni izohga
+   qaytaring va qayta yuklang — tizim darhol eski holatga qaytadi
+5. Ochilsa — **shundagina** bucket «Приватный» qilinadi
+6. Yana tekshiriladi:
+
+```bash
+# imzosiz — endi 403 bo'lishi SHART
+curl -o /dev/null -w "%{http_code}\n" \
+  https://cdn.uzcasting.com/videos/146/hls/master.m3u8
+
+# to'g'ridan-to'g'ri S3 — bu ham 403
+curl -o /dev/null -w "%{http_code}\n" \
+  https://s3.twcstorage.ru/00847558-…/videos/146/hls/master.m3u8
+```
+
+⚠️ 5-qadam eng oxirida turishi shart. Bucket avval yopilsa, hali
+imzosiz ishlayotgan havolalar **o'sha zahoti** ishlamay qoladi.
+
+⚠️ 4-qadamdagi qaytish yo'li — butun rejaning xavfsizligi shunda.
+Har bir qadamdan keyin orqaga qaytish mumkin bo'lgani uchun bu
+o'zgarish xavfsiz.
 
 ---
 
@@ -262,12 +319,41 @@ variant, barcha segmentlar, init fayllar — S3 da **abadiy qoladi**.
 CDN ulangandan keyin bu ikki barobar sezilarli: keshda ham, omborda ham
 keraksiz ma'lumot.
 
-### SMS yuborish cheklovsiz
+### ~~SMS yuborish cheklovsiz~~ — TUZATILDI ✅
 
-`/api/v1/app/auth/register/start` haqiqiy SMS yuboradi (Eskiz, pul) va
-IP bo'yicha cheklanmagan. Yonidagi `/otp/send` daqiqasiga 5 ta bilan
-cheklangan — ro'yxat `RateLimitFilter.RULES` da, yangi endpointlar unga
-qo'shilmagan.
+`/api/v1/app/auth/register/start` haqiqiy SMS yuborardi (Eskiz — pul
+ketadi) va IP bo'yicha cheklanmagan edi. Endpoint butunlay olib
+tashlangan, qolgan uchta OTP yo'li cheklangan.
+
+**Lekin kasallik chuqurroq edi.** 2026-09-06 dagi qayta tekshiruvda
+`RateLimitFilter.RULES` shunchaki ro'yxat ekani va uni **hech kim
+qo'riqlamayotgani** ma'lum bo'ldi. Shu sababli yana uchta yo'l
+cheklovsiz qolgan edi:
+
+| Yo'l | Kim ishlatadi | Qo'shilgan cheklov |
+|---|---|---|
+| `/api/v1/app/auth/refresh` | mobil ilova + sayt tomoshabini | **60/60** |
+| `/api/v1/auth/google` | mobil ilova (Google orqali kirish) | **10/60** |
+| `/api/v1/auth/refresh` | hech kim (eski yo'l, ochiq turibdi) | **30/60** |
+
+⚠️ Moslash `uri.equals()` orqali — **prefiks bo'yicha tushmaydi**.
+Shuning uchun `/app/admin/auth/refresh` uchun yozilgan qoida
+`/app/auth/refresh` ni qoplamasdi. Izohida esa nega kerakligi
+yozilgan edi — ya'ni sabab bilingan, qoida esa yarmiga qo'llangan.
+
+⚠️ `google` uchun qo'shimcha sabab: har bir so'rov Google serveriga
+tashqi murojaat qiladi. Cheklovsiz begona odam bizning nomimizdan
+Google'ga flud yuborardi va Google javob berishni to'xtatardi — ya'ni
+kirish **hamma uchun** buzilardi.
+
+⚠️ `refresh` chegarasi ataylab kengroq (60, admin'da 30): uyali
+operator yuzlab abonentni bitta tashqi manzil ortiga qo'yadi (CGNAT).
+Tor chegara hujumchini emas, o'sha operatordagi barcha odamlarni
+to'sardi.
+
+**Endi qo'riqlanadi:** `ApiConventionTest.RateLimiting` — kirishga oid
+har bir yangi POST yo ro'yxatga tushishi, yo izohi bilan ataylab
+istisno qilinishi shart. Unutish mumkin emas.
 
 ---
 
@@ -279,15 +365,21 @@ qo'shilmagan.
 | `app.storage.s3.endpoint` | `https://s3.twcstorage.ru` | Yuklash uchun. **O'zgarmaydi** |
 | `app.storage.s3.bucket` | `00847558-…` | |
 | `app.video.cdn.base-url` | `https://cdn.uzcasting.com` | Kod o'zgarishidan keyin ishlaydi |
+| `app.video.cdn.secure-token.secret` | **bo'sh** | Berilsa CDN tokeniga o'tadi. Qarang: «Keyingi bosqich» |
 | `app.video.signed-url-ttl` | `4h` | Imzo qancha yashaydi |
 | `app.video.signed-url-window` | `1h` | Kesh oynasi — CDN samaradorligi shunga bog'liq |
 | `app.video.ticket-ttl` | `6h` | Playlist chiptasi. CDN ga aloqasi yo'q |
-| `app.video.max-concurrent-jobs` | `3` | 4 CPU uchun me'yorda |
+| `app.video.max-concurrent-jobs` | `1` | ⚠️ 8 GB xotira uchun. Ilgari `3` edi — FFmpeg bilan birga OOM berardi |
 | `app.video.min-free-disk` | `10GB` | 80 GB diskda me'yorda |
 
-⚠️ Amaldagi imzo muddati ≈ **3 soat** (`ttl` minus `window`). Bitta
+⚠️ **S3 imzosida** amaldagi muddat ≈ **3 soat** (`ttl` minus `window`):
+imzo yasalgan paytdan boshlanadi, oyna esa uni eskirtiradi. Bitta
 sahifa seansi shundan uzoq davom etsa, video o'rtasida 403 chiqadi.
-Filmlar uchun yetarli.
+
+⚠️ **CDN tokenida** bu boshqacha va yaxshiroq: muddat oynaning
+OXIRIDAN + `ttl` hisoblanadi, ya'ni amaldagi umr **4–5 soat**. Sabab —
+tokenda vaqt oldindan qo'yiladi, S3 imzosida esa imzolash vaqti
+qatnashadi.
 
 ---
 
@@ -440,51 +532,6 @@ CORS            : uzcasting.com uchun ishlaydi
 
 ---
 
-## Yo'l-yo'lakay topilgan ikkita kamchilik
-
-Bevosita CDN ga aloqasi yo'q, lekin ombor bilan bog'liq.
-
-### HLS papkasi o'chirilmaydi
-
-Media o'chirilganda faqat asl fayl o'chadi. `videos/{id}/hls/**` — uchala
-variant, barcha segmentlar, init fayllar — S3 da **abadiy qoladi**.
-2:44 lik sinov videosi uchun bu ~90 ta obyekt.
-
-`MediaController.delete()` da `storageService.delete(storageKey)` bor,
-`hlsMasterKey` ga tegilmaydi.
-
-CDN ulangandan keyin bu ikki barobar sezilarli: keshda ham, omborda ham
-keraksiz ma'lumot.
-
-### SMS yuborish cheklovsiz
-
-`/api/v1/app/auth/register/start` haqiqiy SMS yuboradi (Eskiz, pul) va
-IP bo'yicha cheklanmagan. Yonidagi `/otp/send` daqiqasiga 5 ta bilan
-cheklangan — ro'yxat `RateLimitFilter.RULES` da, yangi endpointlar unga
-qo'shilmagan.
-
----
-
-## Sozlama kalitlari
-
-| Kalit | Hozir | Izoh |
-|---|---|---|
-| `app.storage.provider` | `s3` | Imzolash yo'lini yoqadi |
-| `app.storage.s3.endpoint` | `https://s3.twcstorage.ru` | Yuklash uchun. **O'zgarmaydi** |
-| `app.storage.s3.bucket` | `00847558-…` | |
-| `app.video.cdn.base-url` | `https://cdn.uzcasting.com` | Kod o'zgarishidan keyin ishlaydi |
-| `app.video.signed-url-ttl` | `4h` | Imzo qancha yashaydi |
-| `app.video.signed-url-window` | `1h` | Kesh oynasi — CDN samaradorligi shunga bog'liq |
-| `app.video.ticket-ttl` | `6h` | Playlist chiptasi. CDN ga aloqasi yo'q |
-| `app.video.max-concurrent-jobs` | `3` | 4 CPU uchun me'yorda |
-| `app.video.min-free-disk` | `10GB` | 80 GB diskda me'yorda |
-
-⚠️ Amaldagi imzo muddati ≈ **3 soat** (`ttl` minus `window`). Bitta
-sahifa seansi shundan uzoq davom etsa, video o'rtasida 403 chiqadi.
-Filmlar uchun yetarli.
-
----
-
 ## ⚠️ To'siq 3 — panel «Применяются настройки» da qotib qolgan
 
 Sertifikat chiqarilgandan keyin qolgan sozlama bo'limlari
@@ -553,8 +600,11 @@ curl -s -o /dev/null -w "%{http_code}\n" \
 | CORS (`uzcasting.com`) | ✅ ishlaydi |
 | Kesh kaliti (`query_args: all`) | ✅ |
 | Kod: segment manzili CDN ga | ✅ testlar bilan |
-| Lokal `cdn.base-url` ni izohga olish | ⬜ **sizda** |
-| Bucketni yopish (sotuvdan oldin) | ⬜ keyingi bosqich |
+| Lokal `cdn.base-url` ni izohga olish | ✅ bajarilgan |
+| **Kod: CDN secure token** | ✅ **yozildi, 12 ta test** |
+| Panelda Secure token'ni yoqish | ⬜ **sizda** |
+| Kalitni serverga qo'yish | ⬜ **sizda** (2-qadam) |
+| Bucketni «Приватный» qilish | ⬜ **sizda** (eng oxirida) |
 
 ⚠️ Resurs holati API da hamon `processing` — lekin barcha sozlamalar
 amalda qo'llangan va tekshirilgan. Bu Timeweb tomonidagi ko'rsatkich
