@@ -156,10 +156,66 @@ Ixtiyoriy:
 | `app.video.min-free-disk` | `10GB` | Disk kichik bo'lsa oshiring |
 | `app.storage.provider` | `local` | S3 olingach `s3` |
 | `app.auth.refresh-cleanup-cron` | `0 15 3 * * *` | Boshqa vaqt kerak bo'lsa |
+| `app.taxonomy.bootstrap` | `true` | Janr/kategoriya katalogi qo'lda kiritilsa `false` |
+| `app.upload.chunk-size-bytes` | `5242880` (5 MB) | Proxy chegarasini oshirib bo'lmasa kichraytiring |
+
+Katalog haqida: birinchi ishga tushishda kategoriya va janr ro'yxati
+avtomatik bazaga yoziladi (`TaxonomyCatalog` — 13 kategoriya, 56 janr,
+uch tilda). Usiz toza bazada janr ro'yxati bo'sh bo'lardi va admin har
+bir janrni qo'lda, UZ/RU/EN da yozib chiqishi kerak bo'lardi.
+
+⚠️ Bir marta ko'chirilgan versiya QAYTA ko'chirilmaydi: admin panelda
+o'chirgan janr serverni qayta ishga tushirgach tiklanmaydi, mavjud
+satrlarning nomi va tartibi esa hech qachon ustidan yozilmaydi.
 
 ⚠️ S3 va CDN **hali sozlanmaydi** — Object Storage sotib olinmagan.
 Sozlanmaguncha HLS himoyasi (§4.10) kutib turadi va video eski yo'lda
 beriladi. Bu regressiya emas: hozir ham shunday.
+
+### 5.1. ⚠️ PROXY — video yuklash uchun MAJBURIY
+
+8 MB dan katta fayl panelga **bo'laklab** yuklanadi: har bo'lak
+`PUT /api/v1/app/admin/uploads/{id}/chunks/{n}` bilan xom tanada
+ketadi, hajmi — 5 MB.
+
+Server oldidagi nginx yoki Apache tana hajmini chegaralaydi va bo'lak
+undan katta bo'lsa so'rov **ilovaga yetib bormaydi**: panel
+«Xatolik (413)» ko'rsatadi, server log'ida esa hech narsa
+bo'lmaydi — aynan shu narsa sababni topishni qiyinlashtiradi.
+Rasm (odatda 8 MB dan kichik) bitta so'rov bilan ketadi va
+ishlayveradi, ya'ni «rasm bo'ladi, video bo'lmaydi» degan chalg'ituvchi
+manzara chiqadi.
+
+nginx:
+
+```nginx
+location /api/ {
+    client_max_body_size 64m;   # sukut — 1m, bo'lak esa 5m
+    proxy_read_timeout 600s;    # katta faylni yig'ish uzoq davom etadi
+    proxy_request_buffering off;
+    proxy_pass http://127.0.0.1:8080;
+}
+```
+
+Apache:
+
+```apache
+LimitRequestBody 67108864
+ProxyTimeout 600
+```
+
+Tekshirish (401 kutiladi — ya'ni so'rov ilovaga yetdi; 413 bo'lsa
+proxy hali ham to'sib turibdi):
+
+```bash
+head -c 5242880 /dev/urandom > chunk.bin
+curl -s -o /dev/null -w "%{http_code}
+" -X PUT --data-binary @chunk.bin   -H "Content-Type: application/octet-stream"   https://uzcasting.site/api/v1/app/admin/uploads/fake/chunks/0
+```
+
+Proxy sozlamasiga tegib bo'lmasa: `app.upload.chunk-size-bytes` ni
+chegaradan kichik qilib qo'ying (masalan `1048576`) va ilovani qayta
+ishga tushiring — qayta build qilish shart emas.
 
 ---
 

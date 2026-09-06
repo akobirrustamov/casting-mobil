@@ -518,6 +518,27 @@ public class AccessService {
             return canWatch(user, contentVideo.getContent()).isAllowed();
         }
 
+        // 3. Reklama roligi — treyler yoki tizer.
+        //
+        // ⚠️ Bu yerda entitlement TEKSHIRILMAYDI, va bu ataylab. Treyler
+        // aynan SOTIB OLMAGAN odam uchun yuklanadi: xarid huquqi talab
+        // qilinsa, uni faqat allaqachon to'lagan odam ko'rardi — ya'ni
+        // rolik butunlay ma'nosini yo'qotardi.
+        //
+        // Bu chegirma emas, chegara: yuqoridagi ikki shox (qism videosi va
+        // kontentning ASOSIY videosi) o'z kuchida qoladi, bu yerga faqat
+        // TRAILER/TEASER roli bilan biriktirilgan fayl tushadi. Bitta fayl
+        // ikkala rolda tursa, birinchi shox undan oldin javob beradi.
+        //
+        // ⚠️ Bitta shart baribir bor: kontent KO'RINADIGAN bo'lsin. Aks
+        // holda hali nashr qilinmagan filmning treyleri id ni terib topilardi
+        // — va chiqish sanasidan oldin tarqab ketardi.
+        ContentMedia promo = contentMediaRepo.findFirstByMediaIdAndRoleIn(
+                asset.getId(), List.of(MediaRole.TRAILER, MediaRole.TEASER)).orElse(null);
+        if (promo != null && promo.getContent() != null) {
+            return isVisible(user, promo.getContent());
+        }
+
         // Biriktirilmagan video - ommaga tegishli emas.
         return false;
     }

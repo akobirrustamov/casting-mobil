@@ -1,12 +1,30 @@
 import { useEventListener } from 'expo';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import { useRef, useState } from 'react';
-import { View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  Pressable,
+  Text,
+  View,
+  useWindowDimensions,
+  type LayoutChangeEvent,
+} from 'react-native';
 
 import { trackContentComplete, trackContentPlay } from '@/features/analytics/api';
 import { type Orientation, frameRatio, isVertical } from '@/features/content/orientation';
 import { BASE_URL, authHeaders } from '@/lib/api';
+import { getItem, setItem } from '@/lib/storage';
 
+import {
+  type Quality,
+  type Rung,
+  effective,
+  parseQuality,
+  qualityTag,
+  rungLabel,
+  rungs,
+  variantUrl,
+} from './quality';
 import { useWatchProgress } from './useWatchProgress';
 
 import type { VideoSource } from './types';
@@ -22,10 +40,14 @@ import type { VideoSource } from './types';
  * Выбор — в `playbackSource()`; там же объяснено, почему токен уходит
  * только на второй путь.
  *
- * <h2>ABR не программируется вручную</h2>
- * `expo-video` использует AVPlayer на iOS и ExoPlayer на Android —
- * оба переключают качество сами, по фактической скорости сети. Своя
- * логика замера видит меньше, чем плеер, и решала бы хуже.
+ * <h2>ABR не программируется вручную, но его можно отключить</h2>
+ * `expo-video` использует AVPlayer на iOS и ExoPlayer на Android — оба
+ * переключают качество сами, по фактической скорости сети. Своя логика
+ * замера видит меньше, чем плеер, и решала бы хуже.
+ *
+ * Но плеер меряет скорость, а не цену: на хорошем 4G он честно возьмёт
+ * 1080p (≈5,5 Мбит/с). Поэтому под кадром есть выбор ступени — см.
+ * `features/watch/quality`, там же объяснено, чем за него платят.
  *
  * <h2>Два формата вместо одного</h2>
  * Рамка была жёстко 220 px высотой, то есть всегда горизонтальной.
@@ -36,6 +58,12 @@ import type { VideoSource } from './types';
  * Полноэкранный режим тоже разный: рилс разворачивается в портрет, обычное
  * видео — в ландшафт. Без этого на телефоне с включённым замком поворота
  * фильм оставался бы вертикальной ленточкой даже «на весь экран».
+ *
+ * <h2>Сбой — ожидаемое состояние, а не редкость</h2>
+ * Каждая ссылка на этом пути живёт ограниченное время: билет плейлиста —
+ * 6 часов, подпись S3 — около трёх, токен CDN — четыре-пять. Фильм,
+ * поставленный на паузу вечером и продолженный утром, упирается ровно в
+ * это. Поэтому плеер сообщает о сбое наружу — см. `onError`.
  */
 
 /**
@@ -73,15 +101,21 @@ import type { VideoSource } from './types';
  * Право доступа на этом пути проверяется по билету внутри самой
  * ссылки — его выдаёт сервер вместе с `hlsUrl`.
  */
-export function playbackSource(source: VideoSource) {
+export function playbackSource(source: VideoSource, variant?: string | null) {
   if (source.hlsUrl !== null) {
-    const uri = source.hlsUrl.startsWith('/')
+    const master = source.hlsUrl.startsWith('/')
       ? `${BASE_URL}${source.hlsUrl}`
       : source.hlsUrl;
-    return { uri };
+    // `contentType` — не украшение: без него iOS не разбирает HLS, если в
+    // адресе после «.m3u8» стоит запрос (а у нас там билет), и список
+    // ступеней приходит пустым.
+    return { uri: variant ?? master, contentType: 'hls' as const };
   }
   return { uri: `${BASE_URL}${source.url}`, headers: authHeaders() };
 }
+
+/** Где лежит выбранная ступень. Выбор общий для всех видео, не для одного. */
+const QUALITY_KEY = 'watch.quality';
 
 /**
  * Доля высоты окна, которую может занять вертикальный кадр.
@@ -97,19 +131,74 @@ export function Player({
   orientation,
   contentId,
   episodeId,
+  onError,
 }: {
   source: VideoSource;
   orientation: Orientation | null;
   /** Для аналитики: просмотры и досмотры считаются по контенту. */
   contentId: number | null;
   episodeId: number | null;
+
+  /**
+   * Видео не открылось или оборвалось.
+   *
+   * ⚠️ Плеер НЕ решает, что показать вместо себя: рамка кадра, афиша и
+   * кнопка повтора — забота экрана. Здесь только факт.
+   *
+   * `message` — текст платформы (ExoPlayer или AVPlayer). Человеку он не
+   * показывается: там бывает «Source error» и коды HTTP.
+   */
+  onError?: (message: string | null) => void;
 }) {
+  const { t } = useTranslation();
   const vertical = isVertical(orientation);
   const { height: windowHeight } = useWindowDimensions();
 
-  const player = useVideoPlayer(playbackSource(source), (p) => {
+  /**
+   * Лестница качества этого видео.
+   *
+   * Приходит от плеера — он уже разобрал плейлист и знает, какие кодеки
+   * тянет устройство. Разбирать текст плейлиста самим значило бы делать
+   * ту же работу хуже и лишним запросом.
+   */
+  const [ladder, setLadder] = useState<Rung[]>([]);
+  const [quality, setQuality] = useState<Quality>('auto');
+
+  // Выбор общий для всех видео: человек один раз сказал «беречь трафик».
+  useEffect(() => {
+    let cancelled = false;
+    void getItem(QUALITY_KEY).then((raw) => {
+      if (!cancelled) setQuality(parseQuality(raw));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Выбранной ступени у ЭТОГО видео может не быть — тогда играет «Авто»,
+  // и кнопка должна быть подсвечена соответственно.
+  const chosen = effective(ladder, quality);
+
+  const player = useVideoPlayer(playbackSource(source, variantUrl(ladder, chosen)), (p) => {
     p.loop = false;
   });
+
+  /**
+   * Список ступеней.
+   *
+   * ⚠️ Пустой список НЕ затирает прошлый. После переключения на ступень
+   * плеер получает плейлист с ОДНИМ вариантом и честно сообщает о нём —
+   * лестница исчезла бы вместе с меню, и вернуться к «Авто» было бы нечем.
+   */
+  useEventListener(player, 'sourceLoad', ({ availableVideoTracks }) => {
+    const list = rungs(availableVideoTracks);
+    if (list.length > 0) setLadder(list);
+  });
+
+  const chooseQuality = (next: Quality) => {
+    setQuality(next);
+    void setItem(QUALITY_KEY, qualityTag(next));
+  };
 
   /**
    * `CONTENT_PLAY` — один раз на фрагмент.
@@ -131,6 +220,21 @@ export function Player({
   });
 
   /**
+   * Сбой воспроизведения.
+   *
+   * ⚠️ Без этого обработчика кадр просто замирает чёрным прямоугольником:
+   * ни ошибки, ни спиннера, ни объяснения. Просроченная подпись и оборванная
+   * сеть выглядят одинаково — «приложение сломалось».
+   *
+   * Проверяется именно `status`, а не наличие `error`: поле необязательное,
+   * и на части сбоев платформа его не заполняет — условие по нему пропускало
+   * бы их молча.
+   */
+  useEventListener(player, 'statusChange', ({ status, error }) => {
+    if (status === 'error') onError?.(error?.message ?? null);
+  });
+
+  /**
    * «Продолжить просмотр»: запоминает секунду, на которой остановились.
    *
    * <h2>⚠️ Серия важнее контента</h2>
@@ -145,6 +249,8 @@ export function Player({
     player,
     type: episodeId !== null ? 'EPISODE' : 'CONTENT',
     targetId: episodeId ?? contentId,
+    // До появления выбора сюда всегда уходило `auto` — выбирать было нечем.
+    quality: qualityTag(chosen),
   });
 
   // Ширину меряем, а не считаем из размера окна: у экрана свои отступы,
@@ -173,7 +279,55 @@ export function Player({
         }}
         allowsPictureInPicture={false}
       />
+
+      {/*
+        Меню появляется, только если ступеней действительно несколько.
+        «Авто / 480p» при одной ступени обещало бы выбор, которого нет.
+      */}
+      {ladder.length > 1 ? (
+        <View className="mt-2 flex-row flex-wrap justify-center gap-2">
+          <QualityChip
+            label={t('content.qualityAuto')}
+            selected={chosen === 'auto'}
+            onPress={() => chooseQuality('auto')}
+          />
+          {ladder.map((r) => (
+            <QualityChip
+              key={r.height}
+              label={rungLabel(r.height)}
+              selected={chosen === r.height}
+              onPress={() => chooseQuality(r.height)}
+            />
+          ))}
+        </View>
+      ) : null}
     </View>
+  );
+}
+
+/** Кнопка одной ступени. Форма та же, что у переключателя частей. */
+function QualityChip({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      className={`rounded-pill px-3 py-1.5 ${selected ? 'bg-purple' : 'bg-surface'}`}
+    >
+      <Text
+        className={`text-micro ${selected ? 'font-semibold text-white' : 'text-text-muted'}`}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 

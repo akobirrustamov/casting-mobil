@@ -17,6 +17,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import HelpPage from './pages/HelpPage';
 import ContentPage from './pages/ContentPage';
+import ContentEditorPage from './pages/ContentEditorPage';
 import CreatorsPage from './pages/CreatorsPage';
 import TaxonomyPage from './pages/TaxonomyPage';
 import MediaPage from './pages/MediaPage';
@@ -62,6 +63,27 @@ export default function PanelApp() {
               element={
                 <RequirePermission permission="CONTENT_VIEW">
                   <ContentPage />
+                </RequirePermission>
+              }
+            />
+            {/* ⚠️ Muharrir ALOHIDA sahifa, ro'yxat ustidagi modal emas.
+                Uning ichida media tanlash, ijodkor qo'shish va video
+                ko'rish o'z modalini ochadi — modal ustida modal esa
+                ikki qavat qorayish, tushunarsiz Escape va kichkina
+                oynaga sig'magan forma degani edi. */}
+            <Route
+              path="content/new"
+              element={
+                <RequirePermission permission="CONTENT_CREATE">
+                  <ContentEditorPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="content/:contentId"
+              element={
+                <RequirePermission permission="CONTENT_EDIT">
+                  <ContentEditorPage />
                 </RequirePermission>
               }
             />

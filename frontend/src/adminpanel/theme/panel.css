@@ -490,6 +490,26 @@
 .uz-modal-foot { justify-content: flex-end; border-top: 1px solid var(--p-border-soft); }
 .uz-modal-body { padding: 20px; }
 
+/* --------------------------------------------------- muharrir amal paneli */
+/* ⚠️ Muharrir modal emas, SAHIFA. Uzun formada «Saqlash» sahifa
+   oxirida qolib ketmasligi uchun panel pastda yopishib turadi —
+   modalda bu ish tabiiy ravishda `uz-modal-foot` da bo'lardi. */
+.uz-editor-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: var(--p-surface);
+    border: 1px solid var(--p-border-soft);
+    border-radius: var(--p-radius-lg);
+    box-shadow: var(--p-shadow);
+}
+
 /* --------------------------------------------------------------- til tablari */
 .uz-tabs {
     display: flex;

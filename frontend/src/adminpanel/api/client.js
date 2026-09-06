@@ -243,6 +243,35 @@ const STORAGE_UNREACHABLE = "Ombor javob bermadi. Ko'p hollarda sabab — "
   + "Internet uzilgan bo'lishi ham mumkin.";
 
 /**
+ * Bo'lakni PROXY rad etganda ko'rsatiladigan xabar (413).
+ *
+ * ⚠️ Bu xato ilovaga yetib BORMAYDI: nginx yoki Apache tanani
+ * o'qib bo'lgach so'rovni o'zi to'xtatadi. Shu sababli server
+ * log'ida hech narsa ko'rinmaydi va sabab «hech qayerda yo'q»
+ * bo'lib tuyuladi.
+ *
+ * Ilgari panel shunchaki «Xatolik (413)» derdi — raqam esa admin
+ * uchun hech narsani anglatmasdi va u faylni, formatni, hajmni
+ * navbatma-navbat sinab ko'rardi, ayb esa serverning oldidagi
+ * sozlamada edi.
+ */
+const CHUNK_REJECTED = "Bo'lakni server oldidagi proxy rad etdi (413). "
+  + "nginx'da `client_max_body_size`, Apache'da `LimitRequestBody` "
+  + "bo'lak hajmidan katta qilinishi kerak "
+  + "(yoki `app.upload.chunk-size-bytes` kichraytirilsin).";
+
+/** 413 ni tushunarli xabarga aylantiradi, qolgan xatolar tegilmaydi. */
+function asChunkRejected(error) {
+  if (error.response?.status !== 413) return error;
+  const wrapped = new Error(CHUNK_REJECTED);
+  wrapped.response = {
+    status: 413,
+    data: { code: 'CHUNK_TOO_LARGE', message: CHUNK_REJECTED },
+  };
+  return wrapped;
+}
+
+/**
  * Fayl so'rovi — 401 da tokenni yangilab QAYTA uradi.
  *
  * ⚠️ Nega alohida. Fayl so'rovlari `request()` dan o'tmaydi: ular xom
@@ -464,15 +493,22 @@ async function uploadChunked(file, folder, onProgress, options = {}) {
           if (!response.ok) {
             const error = new Error(`Bo'lak yuborilmadi (${response.status})`);
             error.response = { status: response.status };
-            throw error;
+            throw asChunkRejected(error);
           }
         } else {
-          await fileRequest(() => http.put(
-            `/api/v1/app/admin/uploads/${uploadId}/chunks/${index}`, blob, {
-              headers: { 'Content-Type': 'application/octet-stream' },
-              timeout: FILE_TIMEOUT_MS,
-            },
-          ));
+          try {
+            await fileRequest(() => http.put(
+              `/api/v1/app/admin/uploads/${uploadId}/chunks/${index}`, blob, {
+                headers: { 'Content-Type': 'application/octet-stream' },
+                timeout: FILE_TIMEOUT_MS,
+              },
+            ));
+          } catch (error) {
+            // 413 — bo'lak proxy'dan o'tmadi. Qayta urinish befoyda
+            // (`status < 500` bo'lgani uchun halqa baribir to'xtaydi),
+            // lekin xabar SABABNI aytishi kerak.
+            throw asChunkRejected(error);
+          }
         }
         lastError = null;
         break;

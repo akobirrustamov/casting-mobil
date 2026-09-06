@@ -244,6 +244,7 @@ const dict = {
     'tc.queue.serverDownHint': 'Yangi videolar HLS formatiga o\'girilmaydi. Mavjud videolar ishlashda davom etadi. Bu serverni sozlash masalasi — tizim administratoriga murojaat qiling.',
     'media.notPlayableHint': "Bu format (.mkv, .avi) omborda saqlanadi, lekin brauzer va mobil ilova uni to'g'ridan-to'g'ri o'ynata olmaydi. Tomosha uchun mp4 (H.264) yuklang.",
 
+    'editor.back': '← Kontent ro’yxati',
     'editor.new': 'Yangi kontent',
     'editor.edit': 'Kontentni tahrirlash',
     'editor.tab.basic': 'Asosiy',
@@ -1080,6 +1081,7 @@ const dict = {
     'tc.queue.serverDownHint': 'Новые видео не будут переведены в HLS. Уже загруженные продолжат работать. Это вопрос настройки сервера — обратитесь к системному администратору.',
     'media.notPlayableHint': 'Этот формат (.mkv, .avi) хранится в библиотеке, но браузер и мобильное приложение не могут его воспроизвести напрямую. Для просмотра загрузите mp4 (H.264).',
 
+    'editor.back': '← К списку контента',
     'editor.new': 'Новый контент',
     'editor.edit': 'Редактирование контента',
     'editor.tab.basic': 'Основное',
@@ -1916,6 +1918,7 @@ const dict = {
     'tc.queue.serverDownHint': 'New videos will not be converted to HLS. Existing videos keep working. This is a server configuration issue — contact your system administrator.',
     'media.notPlayableHint': 'This format (.mkv, .avi) is stored in the library, but browsers and the mobile app cannot play it directly. Upload mp4 (H.264) for viewing.',
 
+    'editor.back': '← Content list',
     'editor.new': 'New content',
     'editor.edit': 'Edit content',
     'editor.tab.basic': 'Basic',
