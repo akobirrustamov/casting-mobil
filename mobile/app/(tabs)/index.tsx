@@ -19,7 +19,6 @@ import { HomeFeedUnavailableError, useHomeFeed } from '@/features/home/api';
 import { HomeSectionView } from '@/features/home/sections';
 import { ContinueRail } from '@/features/watch/ContinueRail';
 import { useIsOffline } from '@/lib/network';
-import { CASTINGS } from '@/lib/placeholder';
 import { colors } from '@/theme/tokens';
 
 /**
@@ -143,50 +142,38 @@ export default function HomeScreen() {
         )}
       </View>
 
-      <Rail title={t('home.castings')} onSeeAll={() => {}}>
-        {CASTINGS.map((c) => (
-          <View
-            key={c.id}
-            style={{ width: 240 }}
-            className="gap-2 rounded-card bg-surface p-3"
-          >
-            {/*
-              ⚠️ Текст стоит в слотах ПОСТОЯННОЙ высоты: две строки под
-              заголовок (2 × 21) и две под строку с городом и сроком
-              (2 × 18).
+      {/*
+        ⚠️ Здесь был ряд «Кастинги» — три ВЫДУМАННЫХ объявления из
+        `lib/placeholder`, с городами, сроками подачи и кнопкой
+        «откликнуться», у которой не было обработчика.
 
-              Карточки лежат в ряд, и без брони кнопка каждой вставала на
-              своей высоте: у объявления с коротким названием — выше, у
-              соседнего с переносом — ниже. Ряд одинаковых кнопок «Ariza
-              berish» шёл лесенкой, и глазу не за что было зацепиться.
+        К 06.09.2026 все три срока истекли (25.08, 30.08, 02.09), а
+        сборка лежала у тестировщиков. Пустой ряд рисовать нельзя —
+        заголовок без карточек читается как сломанная загрузка, —
+        поэтому блока нет совсем.
 
-              Теперь высота карточек одинаковая, а кнопки стоят на одной
-              линии — независимо от длины названия и города.
-            */}
-            <View style={{ height: 42 }}>
-              <Text numberOfLines={2} className="text-body text-text">
-                {c.title}
-              </Text>
-            </View>
+        ⚠️ Он и по ТЗ был здесь чужим: §31 требует, чтобы состав
+        главной задавал сервер (`GET /api/v1/app/home`). Этот ряд был
+        единственным захардкоженным блоком на экране.
 
-            <View style={{ height: 36 }}>
-              <Text numberOfLines={2} className="text-caption text-text-muted">
-                {c.location} • {t('casting.deadline')}: {c.deadline}
-              </Text>
-            </View>
-
-            <Button variant="primary" className="mt-1">
-              {t('common.apply')}
-            </Button>
-          </View>
-        ))}
-      </Rail>
+        Вернётся, когда появится `GET /api/v1/app/castings`: разметка
+        карточек — в истории, в коммите с этим сообщением.
+      */}
 
       {/* Premium CTA — обязательный блок по ТЗ */}
       <View className="gap-2 rounded-card-lg bg-surface p-4">
         <Text className="text-h2 text-gold">{t('home.premiumTitle')}</Text>
         <Text className="text-caption text-text-muted">{t('home.premiumBody')}</Text>
-        <Button variant="gold" className="mt-2 self-start">
+        {/*
+          ⚠️ У кнопки не было `onPress` — она молчала на нажатие. Экран
+          тарифов при этом существует и открывается из профиля, то есть
+          на главной, где стоит сам призыв купить, дороги к нему не было.
+        */}
+        <Button
+          variant="gold"
+          className="mt-2 self-start"
+          onPress={() => router.push('/subscription/tariffs')}
+        >
           {t('home.premiumCta')}
         </Button>
       </View>
@@ -197,9 +184,14 @@ export default function HomeScreen() {
 /**
  * Серверная часть главной со всеми состояниями.
  *
- * Ошибка фида не уносит весь экран: блоки кастинга работают на другом
- * бэкенде и продолжают показывать реальные данные. Придумывать премьеры
- * вместо неприехавших нельзя — вместо них состояние с «повторить».
+ * Ошибка фида не уносит весь экран: шапка, поиск и блок Premium остаются
+ * на месте. Придумывать премьеры вместо неприехавших нельзя — вместо них
+ * состояние с «повторить».
+ *
+ * ⚠️ Раньше здесь было написано, что «блоки кастинга работают на другом
+ * бэкенде и показывают реальные данные». Это было неправдой: объявления
+ * лежали в `lib/placeholder`. Комментарий пережил тот код, ради которого
+ * писался, и объяснял поведение, которого не было.
  */
 function HomeFeedBlock({
   feed,

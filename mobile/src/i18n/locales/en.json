@@ -124,6 +124,7 @@
   "casting": {
     "title": "Casting calls",
     "subtitle": "All roles and projects",
+    "empty": "Casting calls will appear here soon.",
     "paid": "Paid",
     "unpaid": "Unpaid",
     "deadline": "Deadline"

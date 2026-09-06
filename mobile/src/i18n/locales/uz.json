@@ -124,6 +124,7 @@
   "casting": {
     "title": "Casting e'lonlari",
     "subtitle": "Barcha rollar va loyihalar",
+    "empty": "Kasting e'lonlari tez orada paydo bo'ladi.",
     "paid": "To'lovli",
     "unpaid": "To'lovsiz",
     "deadline": "Muddat"

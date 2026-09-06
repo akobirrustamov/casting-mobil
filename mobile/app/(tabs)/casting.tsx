@@ -1,49 +1,38 @@
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
 
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { ScreenState } from '@/components/states/ScreenState';
 import { Screen } from '@/components/ui/Screen';
-import { CASTINGS } from '@/lib/placeholder';
 
 /**
- * Лента кастингов. Состав по ТЗ (V3, стр. 15 «14. Casting e'lonlari»):
- * search · location/category filters · deadline · paid/unpaid · save · apply.
+ * Лента кастингов (ТЗ V3, стр. 15 «14. Casting e'lonlari»).
  *
- * ⚠️ Данные временные — эндпоинта для объявлений пока нет.
- * TODO: фильтры по городу/категории/возрасту после контракта с бэкендом.
+ * <h2>⚠️ Почему здесь пусто, а не список</h2>
+ * До 06.09.2026 экран показывал три ВЫДУМАННЫХ объявления из
+ * `lib/placeholder`: город, срок подачи и рабочую с виду кнопку
+ * «Ariza berish». К этому дню все три срока уже истекли (25.08, 30.08,
+ * 02.09), а кнопка не делала ничего — обработчика у неё не было вовсе.
+ *
+ * Сборка при этом лежит у тестировщиков. То есть человек мог открыть
+ * вкладку, увидеть просроченные роли и нажать «откликнуться» на роль,
+ * которой не существует. Пустой экран честнее: он говорит «пока нет»,
+ * а не «вот, но всё сломано».
+ *
+ * <h2>Что нужно, чтобы вернуть список</h2>
+ * Эндпоинта для объявлений нет ни в старом API сайта, ни в новом
+ * пространстве `/api/v1/app/**` — я проверял состав контроллеров. Нужен
+ * `GET /api/v1/app/castings` (список + фильтры по городу и категории) и
+ * `POST .../applications` для отклика. Это работа на бэкенде.
+ *
+ * Разметка карточек не потеряна — она в истории, коммит с этим
+ * сообщением. Вернуть её поверх настоящих данных дешевле, чем
+ * объяснять клиенту выдуманные вакансии.
  */
 export default function CastingScreen() {
   const { t } = useTranslation();
 
   return (
-    <Screen title={t('casting.title')} subtitle={t('casting.subtitle')}>
-      <Pressable className="flex-row items-center gap-2 rounded-card bg-surface px-4 py-3 active:opacity-70">
-        <Text className="text-body text-text-muted">⌕</Text>
-        <Text className="text-body text-text-muted">{t('common.search')}</Text>
-      </Pressable>
-
-      {CASTINGS.map((c) => (
-        <View key={c.id} className="gap-3 rounded-card bg-surface p-4">
-          <View className="flex-row items-start justify-between gap-3">
-            <Text className="flex-1 text-body text-text">{c.title}</Text>
-            <Badge tone={c.paid ? 'verified' : 'locked'}>
-              {c.paid ? t('casting.paid') : t('casting.unpaid')}
-            </Badge>
-          </View>
-
-          <Text className="text-caption text-text-muted">
-            {c.location} • {t('casting.deadline')}: {c.deadline}
-          </Text>
-
-          <View className="flex-row gap-2">
-            <Button variant="primary" className="flex-1">
-              {t('common.apply')}
-            </Button>
-            <Button variant="secondary">{t('common.save')}</Button>
-          </View>
-        </View>
-      ))}
+    <Screen scroll={false} title={t('casting.title')} subtitle={t('casting.subtitle')}>
+      <ScreenState kind="empty" body={t('casting.empty')} />
     </Screen>
   );
 }
