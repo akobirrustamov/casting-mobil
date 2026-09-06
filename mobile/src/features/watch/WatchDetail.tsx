@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 
@@ -23,7 +23,7 @@ import {
   WatchUnavailableError,
   type useWatchContent,
 } from './api';
-import { Player } from './Player';
+import { Player, playbackSource } from './Player';
 import type { RequiredAction, WatchInfo } from './types';
 
 /**
@@ -90,7 +90,7 @@ function Loaded({ info, query }: { info: WatchInfo; query: WatchQuery }) {
       onRefresh={() => query.refetch()}
       refreshing={query.isRefetching}
     >
-      <Stage info={info} card={card} />
+      <Stage info={info} card={card} onRetry={() => query.refetch()} />
       <Facts info={info} card={card} />
 
       {card?.shortDescription ? (
@@ -165,16 +165,81 @@ function WatchError({
  * контента: у рилса она вертикальная, иначе под замком человек увидел бы
  * широкий кадр, а после покупки — узкий.
  */
-function Stage({ info, card }: { info: WatchInfo; card: ContentCard | undefined }) {
+function Stage({
+  info,
+  card,
+  onRetry,
+}: {
+  info: WatchInfo;
+  card: ContentCard | undefined;
+  /** Перезапрашивает `/watch` — оттуда приходит свежий адрес видео. */
+  onRetry: () => Promise<unknown>;
+}) {
   const { t } = useTranslation();
   const [part, setPart] = useState(0);
 
   const source = info.sources[part];
 
+  /**
+   * Видео не открылось.
+   *
+   * <h2>Почему это лечится перезапросом `/watch`</h2>
+   * Адрес видео подписан и живёт ограниченное время: билет плейлиста —
+   * 6 часов, подпись сегмента в хранилище — около трёх. Открытый вечером и
+   * продолженный утром фильм упирается именно в это, и починка одна —
+   * спросить адрес заново.
+   *
+   * ⚠️ Повтор РУЧНОЙ. Автоматический бился бы в ту же стену на каждом кадре:
+   * причина может быть и в сети, и в снятой подписке — тогда сервер честно
+   * ответит отказом, и молотить его незачем.
+   *
+   * Место просмотра при этом не теряется: позиция пишется на телефон каждые
+   * пять секунд (`useWatchProgress`), а новый плеер читает её при создании.
+   */
+  const [failed, setFailed] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+
+  /**
+   * ⚠️ Ошибку снимает ОТВЕТ сервера, а не сам факт нажатия.
+   *
+   * Пока `/watch` не ответил, в руках старая — уже просроченная — ссылка.
+   * Показать по ней плеер значило бы вернуть ту же ошибку через секунду, и
+   * кнопка выглядела бы неработающей.
+   */
+  const retry = useCallback(() => {
+    setRetrying(true);
+    void onRetry().finally(() => {
+      setRetrying(false);
+      setFailed(false);
+    });
+  }, [onRetry]);
+
+  // Адрес сменился (повтор или «потянули вниз») — прошлый сбой к нему
+  // отношения не имеет.
+  const uri = source ? playbackSource(source).uri : null;
+  useEffect(() => setFailed(false), [uri]);
+
   if (info.allowed && info.sources.length === 0) {
     return (
       <View className="h-56 justify-center rounded-card bg-surface">
         <ScreenState kind="empty" body={t('content.noVideo')} />
+      </View>
+    );
+  }
+
+  if (info.allowed && source && (failed || retrying)) {
+    return (
+      <View className="h-56 justify-center rounded-card bg-surface">
+        {retrying ? (
+          <ScreenState kind="loading" />
+        ) : (
+          <ScreenState
+            kind="error"
+            title={t('content.playbackFailedTitle')}
+            body={t('content.playbackFailedBody')}
+            onRetry={retry}
+          />
+        )}
       </View>
     );
   }
@@ -196,6 +261,7 @@ function Stage({ info, card }: { info: WatchInfo; card: ContentCard | undefined 
           orientation={info.orientation}
           contentId={info.contentId}
           episodeId={info.episodeId}
+          onError={() => setFailed(true)}
         />
 
         {info.sources.length > 1 ? (
