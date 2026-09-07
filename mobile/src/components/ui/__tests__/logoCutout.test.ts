@@ -48,6 +48,60 @@ describe('logoPaths — слепок assets/brand/logo.svg', () => {
   });
 });
 
+/**
+ * ⚠️ Отдельная проверка САМОГО SVG — того, что рисует `Logo.tsx`.
+ *
+ * Загрузчик показывал перфорацию всегда: он склеивает все контуры в один
+ * трафарет, и там квадраты честно переворачивают чётность. А статичный
+ * знак — нет: до 07.09.2026 отверстия лежали ОТДЕЛЬНЫМИ элементами
+ * `<path>` и были залиты тем же градиентом, что и лента.
+ *
+ * `fill-rule` действует внутри одного элемента, поэтому отдельным
+ * контуром дырку не прорезать: квадрат просто ложится на ленту своим же
+ * цветом. Лента выглядела сплошной — и в приложении, и в браузере, — хотя
+ * в исходнике `assets/brand/logo-source.png` на этих местах прозрачность.
+ *
+ * Сломать это обратно легко и незаметно: достаточно «причесать» SVG,
+ * разложив подфигуры по отдельным `<path>`.
+ */
+describe('перфорация — дырки в ленте, а не квадраты поверх неё', () => {
+  const ELEMENTS = [...SVG.matchAll(/<path([^>]*?)d="([^"]+)"/g)].map((m) => ({
+    attrs: m[1],
+    d: m[2],
+  }));
+
+  const subpathsOf = (d: string) => d.split('Z').filter((part) => part.trim().length > 0);
+
+  /**
+   * Лента — единственный контур из нескольких подфигур: остальные детали
+   * знака (треугольник плея и сам «UZ») нарисованы по одной.
+   */
+  const composite = ELEMENTS.filter((el) => subpathsOf(el.d).length > 1);
+  const ribbon = composite[0];
+
+  it('лента и все одиннадцать отверстий лежат в одном контуре', () => {
+    expect(composite).toHaveLength(1);
+    expect(subpathsOf(ribbon.d)).toHaveLength(1 + LOGO_SPROCKETS.length);
+  });
+
+  it('у этого контура заливка evenodd — иначе дырок не будет', () => {
+    expect(ribbon.attrs).toContain('fill-rule="evenodd"');
+  });
+
+  it.each(LOGO_SPROCKETS.map((hole, i) => [i + 1, hole] as const))(
+    'отверстие %i прозрачно, а лента рядом с ним закрашена',
+    (_number, hole) => {
+      const centre: [number, number] = [hole.x + hole.w / 2, hole.y + hole.h / 2];
+      // Точка сразу под отверстием: там лента ещё есть — её нижний край
+      // проходит ниже (y ≈ 451 у нижней плёнки, 385 у верхней).
+      const beside: [number, number] = [centre[0], hole.y + hole.h + 3];
+
+      expect(isFilled(ribbon.d, centre)).toBe(false);
+      expect(isFilled(ribbon.d, beside)).toBe(true);
+    }
+  );
+});
+
 describe('детали знака, по которым идёт анимация', () => {
   it('нашлись все 11 отверстий перфорации', () => {
     expect(LOGO_SPROCKETS).toHaveLength(11);
