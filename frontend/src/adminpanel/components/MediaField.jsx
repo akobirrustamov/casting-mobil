@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { adminApi, mediaUrl } from '../api/client';
+import { adminApi, mediaUrl, BASE_URL } from '../api/client';
 import { usePanelI18n } from '../i18n';
 import MediaPicker from './MediaPicker';
 import MediaSpec from './MediaSpec';
@@ -15,6 +15,27 @@ import VideoPreview from './VideoPreview';
  * u faylni brauzer oynasida tanlaydi - ya'ni panel ko'rinmay qoladi.
  * Oynadagi takror yozuv aynan tanlash ONIDA ko'z oldida turadi.
  */
+/**
+ * Video eskizining manbasi.
+ *
+ * ⚠️ MUTLAQ manzilga tegilmaydi: S3 imzolangan havolasi `https://`
+ * bilan keladi va oldiga `BASE_URL` qo'shilsa
+ * `http://localhost:8080https://...` chiqardi.
+ *
+ * ⚠️ `#t=0.1` — SHART. Usiz Chrome faqat metama'lumotni oladi va
+ * KADRNI CHIZMAYDI: quti qop-qora bo'lib turadi, xato esa yo'q.
+ * Vaqt belgisi berilsa pleyer o'sha soniyaga o'tadi va kadr
+ * chiziladi. `0` emas, `0.1`: ba'zi kodeklarda birinchi kadr
+ * qora bo'ladi.
+ *
+ * Fragment (`#`) serverga UMUMAN yuborilmaydi — imzo ham, chipta ham
+ * buzilmaydi.
+ */
+const posterSrc = (url) => {
+  if (!url) return null;
+  return `${url.startsWith('http') ? url : `${BASE_URL}${url}`}#t=0.1`;
+};
+
 export default function MediaField({ label, value, onChange, hint, spec, type = 'IMAGE' }) {
   const { t } = usePanelI18n();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -43,24 +64,49 @@ export default function MediaField({ label, value, onChange, hint, spec, type = 
    */
   const [transcoding, setTranscoding] = useState(null);
 
+  /**
+   * Eskiz manzili — videoning birinchi kadri shundan chiziladi.
+   *
+   * ⚠️ ALOHIDA so'rov QILINMAYDI: manzil `mediaAsset` javobining
+   * o'zida keladi (`MediaDto.previewUrl`). Alohida so'rov bo'lsa
+   * qism muharriridagi har bir video maydoni sahifa ochilishida
+   * ikkinchi murojaat yuborardi.
+   */
+  const [poster, setPoster] = useState(null);
+
+  /**
+   * Kadrni chizib bo'lmadi — brauzer faylni ochmadi.
+   *
+   * ⚠️ `notPlayable` dan boshqa narsa: u fayl NOMIGA qarab
+   * oldindan aytadi, bu esa brauzer HAQIQATAN yiqilganda yonadi
+   * (masalan chipta muddati o'tgan). Belgiga qaytamiz — bo'sh
+   * qora quti «video yo'q» degan yolg'on taassurot berardi.
+   */
+  const [posterFailed, setPosterFailed] = useState(false);
+
   useEffect(() => {
     if (!value || type !== 'VIDEO') {
       setNotPlayable(false);
       setTranscoding(null);
+      setPoster(null);
+      setPosterFailed(false);
       return undefined;
     }
     let alive = true;
+    setPosterFailed(false);
     adminApi.mediaAsset(value)
       .then((m) => {
         if (!alive) return;
         setNotPlayable(m.playable === false);
         setTranscoding(m.transcoding ?? null);
+        setPoster(m.previewUrl ?? null);
       })
       // Ogohlantirishni chizolmaslik maydonni ishdan chiqarmasin.
       .catch(() => {
         if (!alive) return;
         setNotPlayable(false);
         setTranscoding(null);
+        setPoster(null);
       });
     return () => { alive = false; };
   }, [value, type]);
@@ -78,9 +124,32 @@ export default function MediaField({ label, value, onChange, hint, spec, type = 
       {/* ⚠️ VIDEO uchun `<img>` chizilmaydi. Ilgari chizilardi va qism
           muharriridagi har bir video qismi SINGAN rasm belgisini
           ko'rsatardi — admin uchun bu «video yuklanmadi» degan
-          taassurot berardi, aslida fayl joyida edi. */}
+          taassurot berardi, aslida fayl joyida edi.
+
+          ⚠️ Endi o'rniga VIDEONING O'ZI qo'yiladi — `<video>` birinchi
+          kadrni chizadi va maydon nima biriktirilganini KO'RSATADI.
+          Ilgari bu yerda faqat 🎞 belgisi turardi: video yuklangani
+          bilan quti bo'm-bo'sh qolardi va admin «yuklanmadi» deb
+          o'ylardi. */}
       {value && type !== 'VIDEO' ? (
         <img className="uz-thumb" src={mediaUrl(value)} alt="" loading="lazy" />
+      ) : value && type === 'VIDEO' && poster && !posterFailed ? (
+        <video
+          className="uz-thumb"
+          src={posterSrc(poster)}
+          // ⚠️ Butun fayl tortilmaydi — faqat kadr uchun kerakli bo'lak.
+          preload="metadata"
+          // Eskiz — bosilganda «Ko'rish» oynasi ochiladi, shu yerda
+          // o'ynatilmaydi: boshqaruv tugmalari kichkina qutida
+          // eskizni butunlay yopib qo'yardi.
+          muted
+          playsInline
+          // Kadrni chizib bo'lmasa — belgiga qaytamiz.
+          onError={() => setPosterFailed(true)}
+          // `uz-thumb` o'lcham va `object-fit` ni allaqachon beradi.
+          style={{ cursor: 'pointer' }}
+          onClick={() => setPreviewOpen(true)}
+        />
       ) : (
         <div
           className="uz-thumb flex items-center justify-center"

@@ -207,6 +207,72 @@ class AdminVideoPreviewTest {
         }
     }
 
+    /**
+     * Eskiz manzili — media MA'LUMOTIDA.
+     *
+     * <h2>⚠️ Qanday kamchilikni yopadi</h2>
+     * Panelda video maydoni BO'SH quti bo'lib turardi (faqat 🎞
+     * belgisi) va admin «video yuklanmadi» deb o'ylardi — aslida
+     * fayl joyida edi. Endi maydon videoning birinchi kadrini
+     * chizadi, buning uchun esa ochib bo'ladigan manzil kerak.
+     *
+     * ⚠️ {@code url} ({@code /raw}) BU ISHGA YARAMAYDI: VIDEO uchun
+     * u chiptasiz yopiq, {@code <video src>} esa sarlavha
+     * yubormaydi. Aynan shuning uchun alohida {@code previewUrl}.
+     */
+    @Nested
+    @DisplayName("Maydondagi eskiz")
+    class FieldPoster {
+
+        @Test
+        @DisplayName("Video ma'lumotida ochib bo'ladigan manzil bor")
+        void assetCarriesPreviewUrl() throws Exception {
+            String body = mockMvc.perform(get("/api/v1/app/admin/media/" + videoId)
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            assertThat(body)
+                    .as("eskiz uchun manzil bo'lsin — usiz maydon bo'sh quti")
+                    .contains("\"previewUrl\":\"/api/v1/app/media/" + videoId + "/raw");
+
+            assertThat(body)
+                    .as("chipta manzilning O'ZIDA bo'lsin")
+                    .contains("?t=");
+        }
+
+        /**
+         * ⚠️ Rasm uchun BERILMAYDI. Rasm oddiy {@code url} orqali
+         * ko'rinadi va unga chipta yasash bekorga sarflangan ish
+         * bo'lardi.
+         */
+        @Test
+        @DisplayName("Rasm uchun eskiz manzili YO'Q")
+        void imageHasNoPreviewUrl() throws Exception {
+            String key = storageService.store(
+                    new java.io.ByteArrayInputStream(new byte[512]),
+                    "afisha.png", "content");
+
+            MediaAsset image = mediaAssetRepo.save(MediaAsset.builder()
+                    .storageKey(key)
+                    .originalFilename("afisha.png")
+                    .type(MediaType.IMAGE)
+                    .mimeType("image/png")
+                    .sizeBytes(512L)
+                    .status(MediaStatus.READY)
+                    .build());
+
+            String body = mockMvc.perform(get("/api/v1/app/admin/media/" + image.getId())
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            // ⚠️ `null` — «bu savol rasmga tegishli emas». Maydon
+            // umuman yo'qolmaydi: klient uni tekshirib o'tiradi.
+            assertThat(body).contains("\"previewUrl\":null");
+        }
+    }
+
     /** Preview chaqirib, javobdagi manzilni oladi. */
     private String ticketUrl() throws Exception {
         String body = mockMvc.perform(get(
