@@ -14,6 +14,14 @@ const resources = {
     uz: {
         translation: {
 
+            notFound: {
+                code: "404",
+                title: "Bunday sahifa topilmadi",
+                text: "Manzil noto'g'ri terilgan bo'lishi yoki sahifa ko'chirilgan bo'lishi mumkin.",
+                home: "Bosh sahifaga",
+                back: "Orqaga qaytish"
+            },
+
             footer: {
                 brand: {
                     description: "O'zbekistondagi eng yirik kasting platformasi. Aktyorlar, modellar va ijodkorlarni topishning eng zamonaviy usuli.",
@@ -163,6 +171,14 @@ const resources = {
     },
     ru: {
         translation: {
+
+            notFound: {
+                code: "404",
+                title: "Такая страница не найдена",
+                text: "Возможно, адрес набран с ошибкой или страница была перемещена.",
+                home: "На главную",
+                back: "Назад"
+            },
 
             footer: {
                 brand: {
@@ -315,6 +331,14 @@ const resources = {
     },
     en: {
         translation: {
+
+            notFound: {
+                code: "404",
+                title: "This page was not found",
+                text: "The address may be mistyped, or the page has moved.",
+                home: "Go to home",
+                back: "Go back"
+            },
             footer: {
                 brand: {
                     description: "The largest casting platform in Uzbekistan. The most modern way to find actors, models, and creators.",

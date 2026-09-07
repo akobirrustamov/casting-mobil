@@ -44,14 +44,14 @@ const LoginStudent = () => {
         }
     };
     return (
-        <div className="min-h-screen bg-black selection:bg-primary/10 selection:text-primary dark:bg-gray-900">
+        <div className="min-h-screen bg-black selection:bg-blue-600/20 selection:text-blue-700 dark:bg-gray-900">
             <section className="pt-24 mt-0 sm:pt-36 md:pt-40 lg:pt-28">
                 <div className="mx-auto px-4 sm:px-12 xl:max-w-6xl xl:px-0 mb-4" >
                     <div>
                         <div aria-hidden="true"
                             className="absolute inset-0 top-60 grid grid-cols-2 -space-x-52 opacity-50 dark:opacity-30">
                             <div
-                                className="h-60 bg-gradient-to-br from-primary to-purple-400 blur-[106px] dark:from-blue-700"></div>
+                                className="h-60 bg-gradient-to-br from-blue-600 to-purple-400 blur-[106px] dark:from-blue-700"></div>
                             <div
                                 className="h-40 bg-gradient-to-r from-cyan-600 to-sky-500 blur-[106px] dark:to-indigo-600"></div>
                         </div>
