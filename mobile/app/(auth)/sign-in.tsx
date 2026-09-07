@@ -11,6 +11,7 @@ import { authErrorKey, googleErrorKey } from '@/features/auth/authErrors';
 import type { DevLoginResult } from '@/features/auth/devLogin';
 import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton';
 import { useAuthStore } from '@/features/auth/store';
+import { PRIVACY_URL, TERMS_URL, openLegal } from '@/features/legal/links';
 import { colors } from '@/theme/tokens';
 
 /**
@@ -138,10 +139,32 @@ export default function SignInScreen() {
             error={googleError}
           />
 
+          {/*
+            ⚠️ Ссылки были подчёркнуты синим, но НЕ нажимались.
+
+            Это хуже, чем обычный текст: подчёркнутое синим человек считает
+            ссылкой и жмёт, а экран не отвечает — приложение выглядит
+            сломанным ровно в тот момент, когда у него просят согласие.
+
+            Те же два адреса нужны экрану согласия Google, поэтому они
+            лежат в одном месте — `features/legal/links`.
+          */}
           <Text className="text-center text-caption text-text-muted">
-            <Text className="text-cyan underline">{t('auth.termsLink')}</Text>
+            <Text
+              className="text-cyan underline"
+              accessibilityRole="link"
+              onPress={() => void openLegal(TERMS_URL)}
+            >
+              {t('auth.termsLink')}
+            </Text>
             {' ' + t('auth.consentMiddle') + ' '}
-            <Text className="text-cyan underline">{t('auth.privacyLink')}</Text>
+            <Text
+              className="text-cyan underline"
+              accessibilityRole="link"
+              onPress={() => void openLegal(PRIVACY_URL)}
+            >
+              {t('auth.privacyLink')}
+            </Text>
             {' ' + t('auth.consentTail')}
           </Text>
         </>

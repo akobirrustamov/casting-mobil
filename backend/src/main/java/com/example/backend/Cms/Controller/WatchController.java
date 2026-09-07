@@ -93,6 +93,9 @@ public class WatchController {
                 .episodePrice(decision.getEpisodePrice())
                 .premierePrice(decision.getPremierePrice())
                 .showAds(decision.isAllowed() && accessService.shouldShowAds(user))
+                // ⚠️ Treyler qismning emas, KONTENTNING roligi: u butun film
+                // yoki serial haqida, alohida qism haqida emas.
+                .trailer(trailer(user, episode.getContent(), decision))
                 // Rad etilganda ham ro'yxat bo'sh emas, BO'SH RO'YXAT - null emas,
                 // klientda "null.length" xatosi chiqmasligi uchun.
                 .sources(decision.isAllowed() ? sources(user, episode, locale) : List.of());
@@ -147,6 +150,7 @@ public class WatchController {
                 .episodePrice(decision.getEpisodePrice())
                 .premierePrice(decision.getPremierePrice())
                 .showAds(decision.isAllowed() && accessService.shouldShowAds(user))
+                .trailer(trailer(user, content, decision))
                 .sources(decision.isAllowed() ? contentSources(user, content, locale) : List.of())
                 .build());
     }
@@ -211,6 +215,51 @@ public class WatchController {
                         .durationSeconds(m.getMedia().getDurationSeconds())
                         .build())
                 .toList();
+    }
+
+    /**
+     * Reklama roligi — treyler yoki tizer.
+     *
+     * <h2>Nima uchun rad javobi bilan BIRGA yuboriladi</h2>
+     * Yopiq kontent ekranida hozir faqat afisha va qulf turadi: odam pul
+     * to'lashdan oldin hech narsa ko'ra olmaydi. ТЗ dagi asosiy sotuv
+     * oqimi esa aynan shu joyda: «davomi UzCasting'da 5 000 so'mga».
+     * Treyler — shu qadamning yagona ko'rsatiladigan qismi.
+     *
+     * ⚠️ Shuning uchun {@code decision.isAllowed()} bu yerda SHART EMAS.
+     * Manba ({@code sources}) esa avvalgidek qat'iy qulflangan — treyler
+     * uning o'rnini bosmaydi va unga qo'shilmaydi.
+     *
+     * ⚠️ Ammo NASHR QILINMAGAN kontentda treyler ham berilmaydi: chiqish
+     * sanasidan oldin rolik tarqab ketardi. Buni {@code NOT_PUBLISHED}
+     * sababi bo'yicha ajratamiz — ko'rinish qarorini {@code AccessService}
+     * allaqachon bergan, uni bu yerda takrorlash ikkinchi haqiqat
+     * manbasini yaratardi.
+     *
+     * @return birinchi mos rolik yoki {@code null} — treyler yuklanmagan
+     */
+    private VideoSource trailer(User user, Content content, AccessDecision decision) {
+        if (content == null || content.getMedia() == null
+                || decision.getReason() == AccessDecision.Reason.NOT_PUBLISHED) {
+            return null;
+        }
+
+        return content.getMedia().stream()
+                .filter(m -> m.getMedia() != null)
+                .filter(m -> m.getRole() == MediaRole.TRAILER || m.getRole() == MediaRole.TEASER)
+                // TRAILER TEASER dan ustun: tizer qisqaroq va ko'pincha
+                // e'lon uchun, treyler esa aynan tomosha qildirish uchun.
+                .sorted(Comparator
+                        .comparing((ContentMedia m) -> m.getRole() == MediaRole.TRAILER ? 0 : 1)
+                        .thenComparing(m -> m.getSortOrder() == null ? 0 : m.getSortOrder()))
+                .findFirst()
+                .map(m -> VideoSource.builder()
+                        .mediaId(m.getMedia().getId())
+                        .url("/api/v1/app/media/" + m.getMedia().getId() + "/raw")
+                        .hlsUrl(playbackUrlService.hlsUrlFor(user, m.getMedia()))
+                        .durationSeconds(m.getMedia().getDurationSeconds())
+                        .build())
+                .orElse(null);
     }
 
     /** Locale bo'sh = barcha tillar uchun mos. */
@@ -314,6 +363,19 @@ public class WatchController {
 
         /** Premium obunachiga reklama ko'rsatilmaydi. */
         private boolean showAds;
+
+        /**
+         * Treyler yoki tizer — {@code null} bo'lishi mumkin.
+         *
+         * ⚠️ {@code sources} dan FARQ QILADI va uning o'rnini bosmaydi:
+         * bu reklama roligi, kontentning o'zi emas. Shuning uchun u
+         * rad javobi bilan ham keladi — yopiq ekranda ko'rsatish uchun
+         * (§ sotuv oqimi).
+         *
+         * ⚠️ Eski mobil qurilma bu maydonni bilmaydi va uni e'tiborsiz
+         * qoldiradi — ikkala versiya yonma-yon ishlaydi.
+         */
+        private VideoSource trailer;
 
         /** Ruxsat bo'lmasa - bo'sh. */
         private List<VideoSource> sources;

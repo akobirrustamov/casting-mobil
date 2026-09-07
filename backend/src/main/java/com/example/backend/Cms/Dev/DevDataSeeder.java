@@ -157,30 +157,139 @@ public class DevDataSeeder implements CommandLineRunner {
                 contentRepo.count(), episodeRepo.count(),
                 commentRepo.count(), donationRepo.count(),
                 advertisementRepo.count(), analyticsEventRepo.count());
+
+        // ⚠️ ENG OXIRIDA: jurnalning tepasiga chiqib ketmasin, ko'z
+        // qidirmasin. Backend ko'tarilganda oxirgi ko'rinadigan narsa
+        // aynan shu jadval bo'ladi.
+        logAccounts();
     }
 
     // ------------------------------------------------------------------ staff
 
+    /**
+     * Bitta dev hisobi ta'rifi.
+     *
+     * ⚠️ Ekish ham, ishga tushishdagi ro'yxat ham AYNAN shu ro'yxatdan
+     * o'qiladi. Ilgari ro'yxat faqat kodda edi va uni bilish uchun
+     * manbani ochish kerak bo'lardi; alohida hujjat yozilsa esa u
+     * kodpdan ajralib, vaqt o'tib yolg'on ma'lumot berardi.
+     */
+    private record DevAccount(String login, String name, UserRoles role,
+                              Set<Permission> permissions, String note) {
+    }
+
+    /**
+     * Har bir rol uchun bittadan (worker uchun ikkita) hisob.
+     *
+     * <h2>⚠️ Nega barcha beshta rol bor</h2>
+     * Bittasi tushib qolsa, o'sha rol ostida panel qanday
+     * ko'rinishini LOKALDA umuman sinab bo'lmasdi — nosozlik faqat
+     * serverda, haqiqiy xodim shikoyat qilganda bilinardi.
+     *
+     * ⚠️ {@code ROLE_REKTOR}, {@code ROLE_STUDENT}, {@code ROLE_TEACHER},
+     * {@code ROLE_DEKAN} ataylab YO'Q: ular eski universitet
+     * modulidan qolgan va {@code RoleMapper} da
+     * {@link com.example.backend.Enums.PlatformRole} ga umuman
+     * bog'lanmagan, ya'ni bu mahsulotda hech qayerga kira olmaydi.
+     * Ularga hisob ochish faqat ro'yxatni chalkashtirardi.
+     */
+    private static final List<DevAccount> STAFF = List.of(
+            new DevAccount("+998901110001", "Hyper Admin",
+                    UserRoles.ROLE_GIPERSUPERADMIN, null, "hamma narsa"),
+            new DevAccount("+998901110002", "Super Admin",
+                    UserRoles.ROLE_SUPERADMIN, null, "xodim boshqaruvi"),
+            new DevAccount("+998901110003", "Admin Aliyev",
+                    UserRoles.ROLE_ADMIN, null, "kundalik admin"),
+
+            // To'liq huquqli worker - kontent bilan ishlaydi
+            new DevAccount("+998901110004", "Worker Kamolov",
+                    UserRoles.ROLE_WORKER, EnumSet.of(
+                    Permission.CONTENT_VIEW, Permission.CONTENT_CREATE, Permission.CONTENT_EDIT,
+                    Permission.CONTENT_PUBLISH, Permission.CATEGORY_VIEW, Permission.GENRE_VIEW,
+                    Permission.CREATOR_VIEW, Permission.CREATOR_CREATE, Permission.CREATOR_EDIT,
+                    Permission.MEDIA_VIEW, Permission.MEDIA_UPLOAD, Permission.COMMENT_VIEW,
+                    Permission.COMMENT_MODERATE), "to'liq huquqli"),
+
+            // Cheklangan worker - faqat ko'radi. Ruxsat farqini tekshirish uchun.
+            new DevAccount("+998901110005", "Worker Nazarova",
+                    UserRoles.ROLE_WORKER, EnumSet.of(
+                    Permission.CONTENT_VIEW, Permission.CATEGORY_VIEW, Permission.CREATOR_VIEW,
+                    Permission.MEDIA_VIEW), "faqat ko'radi"),
+
+            // Oddiy foydalanuvchi - admin panelga KIRA OLMASLIGINI tekshirish uchun
+            new DevAccount("+998901110009", "Oddiy Foydalanuvchi",
+                    UserRoles.ROLE_USER, null, "panelga KIRA OLMAYDI"));
+
     private void seedStaff() {
-        staff("+998901110001", "Hyper Admin", UserRoles.ROLE_GIPERSUPERADMIN, null);
-        staff("+998901110002", "Super Admin", UserRoles.ROLE_SUPERADMIN, null);
-        staff("+998901110003", "Admin Aliyev", UserRoles.ROLE_ADMIN, null);
+        STAFF.forEach(a -> staff(a.login(), a.name(), a.role(), a.permissions()));
+    }
 
-        // To'liq huquqli worker - kontent bilan ishlaydi
-        staff("+998901110004", "Worker Kamolov", UserRoles.ROLE_WORKER, EnumSet.of(
-                Permission.CONTENT_VIEW, Permission.CONTENT_CREATE, Permission.CONTENT_EDIT,
-                Permission.CONTENT_PUBLISH, Permission.CATEGORY_VIEW, Permission.GENRE_VIEW,
-                Permission.CREATOR_VIEW, Permission.CREATOR_CREATE, Permission.CREATOR_EDIT,
-                Permission.MEDIA_VIEW, Permission.MEDIA_UPLOAD, Permission.COMMENT_VIEW,
-                Permission.COMMENT_MODERATE));
+    /**
+     * Hisob ochiladigan rollar — {@code DevAccountsTest} shu ro'yxatni
+     * {@link com.example.backend.Enums.PlatformRole} bilan solishtiradi.
+     *
+     * ⚠️ Ochiq metod ATAYLAB: {@link #STAFF} yopiq qolsin, lekin
+     * «har bir rolga hisob bor» qoidasi tekshiriladigan bo'lsin.
+     * Aks holda yangi rol qo'shgan odam hisob ochishni unutardi va
+     * buni faqat panelga kira olmay qolganda bilardi.
+     */
+    public static Set<UserRoles> seededRoles() {
+        return STAFF.stream().map(DevAccount::role).collect(java.util.stream.Collectors.toSet());
+    }
 
-        // Cheklangan worker - faqat ko'radi. Ruxsat farqini tekshirish uchun.
-        staff("+998901110005", "Worker Nazarova", UserRoles.ROLE_WORKER, EnumSet.of(
-                Permission.CONTENT_VIEW, Permission.CATEGORY_VIEW, Permission.CREATOR_VIEW,
-                Permission.MEDIA_VIEW));
+    /**
+     * Ishga tushishda hisoblarni konsolga chiqaradi.
+     *
+     * <h2>⚠️ Nega jurnalga, hujjatga emas</h2>
+     * Hujjat o'qilmaydi va eskiradi. Bu ro'yxat esa har safar
+     * backend ko'tarilganda ko'z oldida turadi va {@link #STAFF}
+     * dan o'qilgani uchun HAR DOIM haqiqatga mos.
+     *
+     * ⚠️ Parolni jurnalga yozish odatda mumkin emas. Bu yerda mumkin:
+     * butun sinf {@code app.dev.seed=true} ortida va bu xossa
+     * serverda yoqilmaydi — {@code yuklash/application.properties}
+     * da u umuman yo'q. Parol ham haqiqiy emas, dev uchun doimiy.
+     */
+    private void logAccounts() {
+        // ⚠️ Kenglik HISOBLANADI, qo'lda sanalmaydi. Ilgari chegara
+        // satrlari qo'lda yozilgandi va o'zbekcha matn bir belgiga
+        // uzunroq bo'lishi bilanoq jadval qiyshayib ketdi.
+        List<String> rows = new ArrayList<>();
+        rows.add(String.format("  %-22s %-15s %s", "ROL", "LOGIN", "IZOH"));
+        for (DevAccount a : STAFF) {
+            rows.add(String.format("  %-22s %-15s %s",
+                    a.role().name().replace("ROLE_", ""), a.login(), a.note()));
+        }
 
-        // Oddiy foydalanuvchi - admin panelga KIRA OLMASLIGINI tekshirish uchun
-        staff("+998901110009", "Oddiy Foydalanuvchi", UserRoles.ROLE_USER, null);
+        // ⚠️ Sozlamadagi hisob — paroli BOSHQA va u bu yerda
+        // KO'RSATILMAYDI: u haqiqiy parol.
+        boolean hasTestUser = testUserPhone != null && !testUserPhone.isBlank();
+        if (hasTestUser) {
+            rows.add(String.format("  %-22s %-15s %s", "USER (sozlamadan)",
+                    OtpService.normalize(testUserPhone), "paroli sozlamada"));
+        }
+
+        String title = "  DEV HISOBLARI — parol: " + DEV_PASSWORD;
+        int width = rows.stream().mapToInt(String::length).max().orElse(0);
+        width = Math.max(width, title.length()) + 2;
+
+        StringBuilder b = new StringBuilder("\n  ┌").append("─".repeat(width)).append("┐\n");
+        b.append(pad(title, width)).append(pad("", width));
+        for (int i = 0; i < rows.size(); i++) {
+            // Sarlavha qatoridan keyin va sozlama hisobidan oldin ajratgich
+            if (i == 1 || (hasTestUser && i == rows.size() - 1)) {
+                b.append("  ├").append("─".repeat(width)).append("┤\n");
+            }
+            b.append(pad(rows.get(i), width));
+        }
+        b.append("  └").append("─".repeat(width)).append("┘");
+
+        log.info(b.toString());
+    }
+
+    /** Qatorni ramka ichida kerakli kenglikkacha to'ldiradi. */
+    private static String pad(String text, int width) {
+        return "  │" + text + " ".repeat(Math.max(0, width - text.length())) + "│\n";
     }
 
     // ------------------------------------------------- ilova foydalanuvchilari
@@ -383,17 +492,56 @@ public class DevDataSeeder implements CommandLineRunner {
                 .build());
     }
 
+    /**
+     * Dev xodim hisobi — har safar QAYTA TIKLANADI.
+     *
+     * <h2>⚠️ Nega mavjud yozuv ham yangilanadi</h2>
+     * Ilgari bu metod hisob bo'lsa darhol chiqib ketardi. Ya'ni bir
+     * marta noto'g'ri holatga tushgan hisob SHU HOLDA QOLARDI:
+     *
+     * <ul>
+     *   <li>parol qo'lda o'zgartirilgan — endi hech kim kira olmaydi;</li>
+     *   <li>rol o'chirilgan yoki almashtirilgan — panel bo'limlari
+     *       yo'qoladi;</li>
+     *   <li>yozuv yarim yaratilgan — sababi bilinmaydi.</li>
+     * </ul>
+     *
+     * Bularning hech biri xato bermasdi: kirish oynasi shunchaki
+     * «telefon yoki parol xato» derdi va sabab bazada ekani
+     * ko'rinmasdi. Bazani butunlay o'chirishdan boshqa yo'l qolmasdi.
+     *
+     * Endi har ishga tushishda parol, ism va rol ma'lum qiymatga
+     * qaytariladi. Ya'ni {@link #DEV_PASSWORD} DOIM ishlaydi.
+     *
+     * ⚠️ Bu faqat dev uchun xavfsiz: butun sinf
+     * {@code app.dev.seed=true} ortida turadi va bu xossa serverda
+     * hech qachon yoqilmaydi.
+     */
     private void staff(String phone, String name, UserRoles role, Set<Permission> permissions) {
-        Optional<User> existing = userRepo.findByPhone(phone);
-        User user = existing.orElseGet(() -> {
-            Role r = ensureRole(role);
-            return userRepo.save(User.builder()
-                    .phone(phone)
-                    .name(name)
-                    .password(passwordEncoder.encode(DEV_PASSWORD))
-                    .roles(List.of(r))
-                    .build());
-        });
+        Role r = ensureRole(role);
+
+        User draft = userRepo.findByPhone(phone).orElseGet(User::new);
+        draft.setPhone(phone);
+        draft.setName(name);
+        draft.setPassword(passwordEncoder.encode(DEV_PASSWORD));
+
+        // ⚠️ O'ZGARUVCHAN ro'yxat bo'lishi SHART.
+        //
+        // `List.of(...)` o'zgarmas. Yangi yozuv uchun bu muammo emas,
+        // lekin MAVJUD yozuvni saqlashda Hibernate `merge` paytida eski
+        // to'plamni `clear()` qilmoqchi bo'ladi va
+        // `UnsupportedOperationException` bilan yiqiladi — butun ilova
+        // ko'tarilmay qoladi.
+        //
+        // Ilgari bu ko'rinmasdi: metod faqat YANGI yozuv yaratardi.
+        draft.setRoles(new ArrayList<>(List.of(r)));
+
+        // ⚠️ Bayroq o'qilmasa ham to'g'ri qo'yiladi: yolg'on turgan
+        // maydon keyinchalik uni ishlatmoqchi bo'lgan odamni
+        // chalg'itadi.
+        draft.setPasswordSet(true);
+
+        final User user = userRepo.save(draft);
 
         if (permissions == null || permissions.isEmpty()) {
             return;

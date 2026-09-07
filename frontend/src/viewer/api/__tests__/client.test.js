@@ -61,22 +61,61 @@ const ACCESS = 'uzcasting.viewer.access';
 const REFRESH = 'uzcasting.viewer.refresh';
 
 describe('Kirish', () => {
-  it('Sessiya saqlanadi', async () => {
+  it('Kod tasdiqlangach sessiya saqlanadi', async () => {
     mockRequest.mockResolvedValue(ok({
       access_token: 'A1', refresh_token: 'R1', user: { id: 'u1' },
     }));
 
-    await client.signIn('+998945434230', 'parol');
+    await client.verifyCode('+998945434230', '123456');
 
     expect(client.getAccessToken()).toBe('A1');
     expect(localStorage.getItem(REFRESH)).toBe('R1');
+  });
+
+  it('Kod uch qadamli yo\'lga yuboriladi', async () => {
+    mockRequest.mockResolvedValue(ok({ sent: true, expiresInSeconds: 120 }));
+
+    const result = await client.sendCode('+998945434230');
+
+    expect(sent()[0].url).toBe('/api/v1/app/auth/otp/send');
+    expect(result.expiresInSeconds).toBe(120);
+  });
+
+  /**
+   * ⚠️ ENG MUHIM TEKSHIRUV.
+   *
+   * `name_required: true` javobida token YO'Q. Agar u ham sessiya
+   * deb saqlansa, `access_token` `undefined` bo'lib yozilardi va
+   * keyingi HAR BIR so'rov 401 berardi — odam esa «kirdim» deb
+   * o'ylab turardi va nima uchun hech narsa ochilmayotganini
+   * tushunmasdi.
+   */
+  it('Ism kerak bo\'lganda token saqlanmaydi', async () => {
+    mockRequest.mockResolvedValue(ok({ name_required: true, expiresInSeconds: 900 }));
+
+    const result = await client.verifyCode('+998900000001', '123456');
+
+    expect(result.nameRequired).toBe(true);
+    expect(client.getAccessToken()).toBeNull();
+    expect(localStorage.getItem(REFRESH)).toBeNull();
+  });
+
+  it('Ism yuborilgach sessiya saqlanadi', async () => {
+    mockRequest.mockResolvedValue(ok({
+      access_token: 'A2', refresh_token: 'R2', user: { id: 'u2' },
+    }));
+
+    await client.completeSignUp('+998900000001', 'Yangi Odam');
+
+    expect(sent()[0].url).toBe('/api/v1/app/auth/otp/complete');
+    expect(client.getAccessToken()).toBe('A2');
   });
 
   it('Chiqishda hammasi tozalanadi', async () => {
     mockRequest.mockResolvedValue(ok({
       access_token: 'A1', refresh_token: 'R1', user: { id: 'u1' },
     }));
-    await client.signIn('+998945434230', 'parol');
+    await client.verifyCode('+998945434230', '123456');
 
     client.signOut();
 
@@ -203,7 +242,7 @@ describe('Token yangilash', () => {
   it('Kirishdagi 401 yangilashni chaqirmaydi', async () => {
     mockRequest.mockRejectedValue(unauthorized());
 
-    await expect(client.signIn('+998900000000', 'xato')).rejects.toBeDefined();
+    await expect(client.verifyCode('+998900000000', '000000')).rejects.toBeDefined();
 
     expect(sent().filter((r) => r.url.includes('/auth/refresh'))).toHaveLength(0);
   });

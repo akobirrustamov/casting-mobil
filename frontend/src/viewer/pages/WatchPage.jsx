@@ -57,9 +57,25 @@ export default function WatchPage() {
       })
       .catch((error) => {
         if (cancelled) return;
-        // 404 — bunday kontent yo'q. Qolgani tarmoq yoki server.
+
+        // ⚠️ Serverning O'Z xabari saqlanadi.
+        //
+        // Ilgari 404 dan boshqa hamma narsa «Internetni tekshiring»
+        // bo'lardi. Server esa ko'pincha aniq va foydali gap aytadi —
+        // masalan serial ochilganda «bu kontent ko'p qismli,
+        // /watch/{episodeId} dan foydalaning». Uni tashlab, o'rniga
+        // internet haqida gapirish odamni butunlay boshqa narsani
+        // tuzatishga yuborardi.
         const status = error?.response?.status;
-        setState({ status: status === 404 ? 'notFound' : 'error', data: null });
+        const serverMessage = error?.response?.data?.message;
+
+        setState({
+          status: status === 404 ? 'notFound' : 'error',
+          data: null,
+          // Tarmoq uzilganda javob umuman bo'lmaydi — o'shanda
+          // «Internetni tekshiring» to'g'ri gap.
+          message: serverMessage || null,
+        });
       });
 
     return () => {
@@ -74,7 +90,7 @@ export default function WatchPage() {
     return <Shell>{t('watch.notFound')}</Shell>;
   }
   if (state.status === 'error') {
-    return <Shell>{t('error.network')}</Shell>;
+    return <Shell>{state.message || t('error.network')}</Shell>;
   }
 
   const watch = state.data;

@@ -17,7 +17,6 @@
       "policy": "fingerprint"
     },
     "backgroundColor": "#05050A",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "uz.uzcasting.app"

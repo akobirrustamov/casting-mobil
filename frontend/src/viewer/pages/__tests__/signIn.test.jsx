@@ -1,5 +1,5 @@
 /**
- * Tomoshabin kirishi.
+ * Tomoshabin kirishi — SMS kod orqali, uch qadamda.
  *
  * <h2>⚠️ `next` parametri — xavfsizlik masalasi</h2>
  * Kirishdan keyin qayerga o'tish manzildan olinadi. Tashqi manzil
@@ -8,11 +8,21 @@
  * kayfiyatda bo'lgan lahzada.
  *
  * Shuning uchun faqat ICHKI yo'l qabul qilinadi.
+ *
+ * <h2>⚠️ Nega parol emas</h2>
+ * Sahifa ilgari telefon va parol yuborardi. O'sha endpoint
+ * backenddan olib tashlangan va saytdagi kirish umuman ishlamay
+ * qolgan edi — nosozlik esa jimgina, «parol xato» bo'lib
+ * ko'rinardi. Shuning uchun bu yerda endi uchta qadam sinaladi.
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
-jest.mock('../../api/client', () => ({ signIn: jest.fn() }));
+jest.mock('../../api/client', () => ({
+  sendCode: jest.fn(),
+  verifyCode: jest.fn(),
+  completeSignUp: jest.fn(),
+}));
 
 /**
  * ⚠️ `useNavigate` ushlanadi — bu YAGONA ishonchli tekshiruv.
@@ -32,10 +42,16 @@ jest.mock('react-router-dom', () => ({
 }));
 
 jest.mock('../../i18n', () => ({
-  useViewerI18n: () => ({ t: (key) => key, locale: 'uz', setLocale: () => {} }),
+  useViewerI18n: () => ({
+    // Kalitni o'zini qaytaramiz, lekin o'rniga qo'yish ishlasin.
+    t: (key, vars) =>
+      (vars ? `${key}:${Object.values(vars).join(',')}` : key),
+    locale: 'uz',
+    setLocale: () => {},
+  }),
 }));
 
-const { signIn } = require('../../api/client');
+const { sendCode, verifyCode, completeSignUp } = require('../../api/client');
 
 const SignInPage = require('../SignInPage').default;
 
@@ -55,30 +71,110 @@ function renderAt(path) {
   );
 }
 
-async function submit() {
-  const [tel, parol] = screen.getAllByRole('textbox').concat(
-    document.querySelectorAll('input[type="password"]')[0]
-  );
-  fireEvent.change(tel, { target: { value: '+998945434230' } });
-  fireEvent.change(parol, { target: { value: 'akow8434' } });
+/** 1-qadam: raqamni kiritib «kod olish». */
+async function enterPhone(phone = '+998945434230') {
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: phone } });
   fireEvent.click(screen.getByRole('button', { name: 'signIn.submit' }));
+  await screen.findByRole('button', { name: 'signIn.codeSubmit' });
+}
+
+/** 2-qadam: kodni kiritib tasdiqlash. */
+async function enterCode(code = '123456') {
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: code } });
+  fireEvent.click(screen.getByRole('button', { name: 'signIn.codeSubmit' }));
+}
+
+/** Ikkala qadam — eski foydalanuvchi yo'li. */
+async function signInFully() {
+  await enterPhone();
+  await enterCode();
 }
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockNavigate.mockReset();
-  signIn.mockReset();
-  signIn.mockResolvedValue({});
+  sendCode.mockReset().mockResolvedValue({ expiresInSeconds: 0 });
+  verifyCode.mockReset().mockResolvedValue({ nameRequired: false });
+  completeSignUp.mockReset().mockResolvedValue({});
 });
 
-it('Kirish so‘rovi telefon va parol bilan ketadi', async () => {
+// ------------------------------------------------------------------ oqim
+
+it('Raqam kiritilgach kod so‘raladi', async () => {
   renderAt('/kirish');
-  await submit();
+  await enterPhone();
+
+  expect(sendCode).toHaveBeenCalledWith('+998945434230');
+  expect(screen.getByText('signIn.codeTitle')).toBeInTheDocument();
+});
+
+it('Kod to‘g‘ri bo‘lsa ichkariga kiradi', async () => {
+  renderAt('/kirish');
+  await signInFully();
 
   await waitFor(() =>
-    expect(signIn).toHaveBeenCalledWith('+998945434230', 'akow8434')
+    expect(verifyCode).toHaveBeenCalledWith('+998945434230', '123456')
   );
 });
+
+/**
+ * ⚠️ Yangi odam uchun UCHINCHI qadam bor.
+ *
+ * `name_required` javobini e'tiborsiz qoldirsak, odam tokensiz
+ * «kirgan» bo'lardi: ekran ochilardi, lekin har bir so'rov 401
+ * berardi va nima bo'layotgani tushunarsiz bo'lardi.
+ */
+it('Yangi foydalanuvchidan ism so‘raladi', async () => {
+  verifyCode.mockResolvedValue({ nameRequired: true });
+
+  renderAt('/kirish');
+  await signInFully();
+
+  expect(await screen.findByText('signIn.nameTitle')).toBeInTheDocument();
+  expect(mockNavigate).not.toHaveBeenCalled();
+});
+
+it('Ism yuborilgach ichkariga kiradi', async () => {
+  verifyCode.mockResolvedValue({ nameRequired: true });
+
+  renderAt('/kirish');
+  await signInFully();
+  await screen.findByText('signIn.nameTitle');
+
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Yangi Odam' } });
+  fireEvent.click(screen.getByRole('button', { name: 'signIn.nameSubmit' }));
+
+  await waitFor(() =>
+    expect(completeSignUp).toHaveBeenCalledWith('+998945434230', 'Yangi Odam')
+  );
+  await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/'));
+});
+
+/**
+ * ⚠️ Har bosish HAQIQIY SMS va haqiqiy pul.
+ *
+ * Sanoq ishlayotganda tugma o'chiq turishi shart: aks holda sabrsiz
+ * odam uni ketma-ket bosib, bir necha xabar yuborib yuborardi.
+ */
+it('Qayta yuborish sanoq tugagunicha o‘chiq', async () => {
+  sendCode.mockResolvedValue({ expiresInSeconds: 60 });
+
+  renderAt('/kirish');
+  await enterPhone();
+
+  expect(screen.getByRole('button', { name: /signIn.resendIn/ })).toBeDisabled();
+});
+
+it('Raqamni o‘zgartirishga qaytish mumkin', async () => {
+  renderAt('/kirish');
+  await enterPhone();
+
+  fireEvent.click(screen.getByRole('button', { name: 'signIn.back' }));
+
+  expect(await screen.findByText('signIn.hint')).toBeInTheDocument();
+});
+
+// ------------------------------------------------------- qaytish manzili
 
 /**
  * ⚠️ Odam kirish tugmasini VIDEO uchun bosgan.
@@ -88,7 +184,7 @@ it('Kirish so‘rovi telefon va parol bilan ketadi', async () => {
  */
 it('Kirishdan keyin `next` manziliga qaytaradi', async () => {
   renderAt('/kirish?next=%2Ftomosha%2Fcontent%2F13');
-  await submit();
+  await signInFully();
 
   await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/tomosha/content/13'));
 });
@@ -96,7 +192,7 @@ it('Kirishdan keyin `next` manziliga qaytaradi', async () => {
 /** `next` yo'q — ildizga. Boshqa boradigan joy yo'q. */
 it('`next` bo‘lmasa ildizga', async () => {
   renderAt('/kirish');
-  await submit();
+  await signInFully();
 
   await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/'));
 });
@@ -109,7 +205,7 @@ it('`next` bo‘lmasa ildizga', async () => {
  */
 it('Tashqi manzilga o‘tkazmaydi', async () => {
   renderAt('/kirish?next=https%3A%2F%2Fsoxta.example%2Fkirish');
-  await submit();
+  await signInFully();
 
   await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
   expect(mockNavigate).toHaveBeenCalledWith('/');
@@ -126,7 +222,7 @@ it('Tashqi manzilga o‘tkazmaydi', async () => {
  */
 it('`//` bilan boshlanuvchi manzil ham rad etiladi', async () => {
   renderAt('/kirish?next=%2F%2Fsoxta.example');
-  await submit();
+  await signInFully();
 
   await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
   expect(mockNavigate).toHaveBeenCalledWith('/');
@@ -135,27 +231,58 @@ it('`//` bilan boshlanuvchi manzil ham rad etiladi', async () => {
   );
 });
 
-/** Noto'g'ri paroldа aniq xabar ko'rsatiladi. */
-it('Xato parolda xabar chiqadi', async () => {
+// ------------------------------------------------------------- xatolar
+
+it('Xato kodda aniq xabar chiqadi', async () => {
   const err = new Error('401');
   err.response = { status: 401 };
-  signIn.mockRejectedValue(err);
+  verifyCode.mockRejectedValue(err);
 
   renderAt('/kirish');
-  await submit();
+  await signInFully();
 
   expect(await screen.findByText('error.credentials')).toBeInTheDocument();
 });
 
 /**
- * ⚠️ Tarmoq xatosi «parol noto'g'ri» deb ko'rsatilmasin — odam
- * to'g'ri parolni qayta-qayta kiritishga urinardi.
+ * ⚠️ Cheklovga urilgan odam «kod noto'g'ri» xabarini ko'rmasin.
+ *
+ * U to'g'ri kodni qayta-qayta kiritib, har safar yangi cheklovga
+ * urilardi va nima bo'layotganini tushunmasdi.
  */
-it('Tarmoq xatosi boshqacha xabar beradi', async () => {
-  signIn.mockRejectedValue(new Error('tarmoq'));
+it('Cheklovda alohida xabar chiqadi', async () => {
+  const err = new Error('429');
+  err.response = { status: 429 };
+  verifyCode.mockRejectedValue(err);
 
   renderAt('/kirish');
-  await submit();
+  await signInFully();
+
+  expect(await screen.findByText('error.tooMany')).toBeInTheDocument();
+});
+
+/**
+ * ⚠️ Tarmoq xatosi «kod noto'g'ri» deb ko'rsatilmasin — odam
+ * to'g'ri kodni qayta-qayta kiritishga urinardi.
+ */
+it('Tarmoq xatosi boshqacha xabar beradi', async () => {
+  verifyCode.mockRejectedValue(new Error('tarmoq'));
+
+  renderAt('/kirish');
+  await signInFully();
 
   expect(await screen.findByText('error.network')).toBeInTheDocument();
+});
+
+/** Raqam qadamida xato — kod haqida emas, raqam haqida gapiriladi. */
+it('Noto‘g‘ri raqamda raqam haqida xabar chiqadi', async () => {
+  const err = new Error('422');
+  err.response = { status: 422 };
+  sendCode.mockRejectedValue(err);
+
+  renderAt('/kirish');
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'xxx' } });
+  fireEvent.click(screen.getByRole('button', { name: 'signIn.submit' }));
+
+  expect(await screen.findByText('error.phone')).toBeInTheDocument();
 });
