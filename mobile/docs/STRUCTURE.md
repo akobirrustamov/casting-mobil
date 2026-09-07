@@ -398,7 +398,7 @@ Google:   Кнопка «Войти через Google» → OAuth → Home
 | `ScrollableTabs` | горизонтальные табы категорий |
 | `SearchRow` | строка результата поиска с CTA |
 | `MetaTable` | Tili / Yili / Davlati |
-| `StatChips` | лайки, рейтинг, длительность |
+| `StatChips` | просмотры и «нравится» под названием контента |
 | `PersonAvatar` | режиссёр, актёры, креаторы |
 | `ProfileMenuItem` | иконка + текст + шеврон, вариант «опасный» красным |
 | `PaymentMethodGrid` | сетка логотипов платёжных систем |
@@ -406,10 +406,15 @@ Google:   Кнопка «Войти через Google» → OAuth → Home
 
 Готовы: `Button`, `Badge`, `ScreenState`, `PosterCard`, `Rail`, `HeroCarousel`,
 `StoryCircle`, `CategoryTile`, `CreatorCard`, `SearchRow`, `Skeleton`,
-`LanguageSwitcher`, `Wordmark`, `OfflineBanner`.
+`LanguageSwitcher`, `Wordmark`, `OfflineBanner`, `StatChips`.
 
-Осталось: `MetaTable`, `StatChips`, `PersonAvatar`, `PaymentMethodGrid`,
-`BottomSheet` — все нужны для экранов, которые ждут ответов по монетизации.
+Осталось: `MetaTable`, `PersonAvatar`, `PaymentMethodGrid`, `BottomSheet` —
+все нужны для экранов, которые ждут ответов по монетизации.
+
+⚠️ `StatChips` сделан НЕ по исходному описанию («лайки, рейтинг, длительность»):
+поля рейтинга в системе нет ни одного, а длительность уже стоит строкой выше,
+в `Facts`. Осталось то, что существует и чего просил заказчик, — просмотры и
+«нравится».
 
 ---
 

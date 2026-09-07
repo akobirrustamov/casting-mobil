@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -17,6 +18,38 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ContentRepo extends JpaRepository<Content, Long> {
+
+    /**
+     * Hisoblagichni bazaning o'zida oshirish/kamaytirish.
+     *
+     * ⚠️ «O'qib oldik → birga qo'shdik → saqladik» EMAS. Ikki so'rov bir
+     * vaqtda kelsa, ikkalasi ham bir xil eski qiymatni o'qiydi va bittasi
+     * yo'qoladi. Bu yerda qo'shishni bazaning o'zi qiladi.
+     *
+     * {@code case ... < 0 then 0} — sanoq manfiy bo'lib qolmasligi uchun:
+     * jadvalda yozuv bo'lmasa «yoqdi» olib tashlanmaydi, lekin ustun
+     * qo'lda tuzatilgan bo'lsa ham ekranga «−1» chiqmaydi.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update Content c
+               set c.likeCount = case when c.likeCount + :delta < 0 then 0
+                                      else c.likeCount + :delta end
+             where c.id = :id
+            """)
+    void addLikes(@Param("id") Long id, @Param("delta") long delta);
+
+    /**
+     * Ko'rishlar — faqat o'sadi, jamlanma har besh daqiqada qo'shadi.
+     *
+     * ⚠️ Bu yerda {@code clearAutomatically} ATAYLAB YO'Q (yuqoridagidan
+     * farqli). Chaqiruvchi — {@code AnalyticsService.aggregate()} sikli, u
+     * o'sha tranzaksiyada kunlik jamlanma obyektlari bilan ishlaydi:
+     * kontekstni har aylanishda tozalash ularni uzib qo'yardi.
+     */
+    @Modifying
+    @Query("update Content c set c.viewCount = c.viewCount + :delta where c.id = :id")
+    void addViews(@Param("id") Long id, @Param("delta") long delta);
 
     Optional<Content> findBySlug(String slug);
 

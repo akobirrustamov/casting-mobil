@@ -24,6 +24,7 @@ import {
   type useWatchContent,
 } from './api';
 import { Player, playbackSource } from './Player';
+import { StatChips } from './StatChips';
 import type { RequiredAction, WatchInfo } from './types';
 
 /**
@@ -92,6 +93,7 @@ function Loaded({ info, query }: { info: WatchInfo; query: WatchQuery }) {
     >
       <Stage info={info} card={card} onRetry={() => query.refetch()} />
       <Facts info={info} card={card} />
+      <StatChips info={info} />
 
       {card?.shortDescription ? (
         <Text className="text-body text-text-muted">{card.shortDescription}</Text>

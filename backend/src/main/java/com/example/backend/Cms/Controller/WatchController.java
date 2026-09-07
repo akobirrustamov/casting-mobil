@@ -14,6 +14,7 @@ import com.example.backend.Cms.Repository.ContentRepo;
 import com.example.backend.Cms.Repository.EpisodeRepo;
 import com.example.backend.Cms.Service.AccessDecision;
 import com.example.backend.Cms.Service.AccessService;
+import com.example.backend.Cms.Service.ContentLikeService;
 import com.example.backend.Cms.Service.Video.PlaybackUrlService;
 import com.example.backend.Entity.User;
 import com.example.backend.exceptions.BusinessException;
@@ -59,6 +60,7 @@ public class WatchController {
     private final EpisodeRepo episodeRepo;
     private final ContentRepo contentRepo;
     private final AccessService accessService;
+    private final ContentLikeService likeService;
 
     /**
      * Ombor kalitini pleyer ochadigan manzilga aylantiradi.
@@ -96,6 +98,12 @@ public class WatchController {
                 // ⚠️ Treyler qismning emas, KONTENTNING roligi: u butun film
                 // yoki serial haqida, alohida qism haqida emas.
                 .trailer(trailer(user, episode.getContent(), decision))
+                // Ko'rsatkichlar QISMNIKI emas, kontentniki: odam «bu
+                // kinoni 12 ming kishi ko'rgan» deb o'ylaydi, «uchinchi
+                // qismni» deb emas.
+                .viewCount(views(episode.getContent()))
+                .likeCount(likes(episode.getContent()))
+                .liked(liked(user, episode.getContent()))
                 // Rad etilganda ham ro'yxat bo'sh emas, BO'SH RO'YXAT - null emas,
                 // klientda "null.length" xatosi chiqmasligi uchun.
                 .sources(decision.isAllowed() ? sources(user, episode, locale) : List.of());
@@ -151,6 +159,9 @@ public class WatchController {
                 .premierePrice(decision.getPremierePrice())
                 .showAds(decision.isAllowed() && accessService.shouldShowAds(user))
                 .trailer(trailer(user, content, decision))
+                .viewCount(views(content))
+                .likeCount(likes(content))
+                .liked(liked(user, content))
                 .sources(decision.isAllowed() ? contentSources(user, content, locale) : List.of())
                 .build());
     }
@@ -238,6 +249,25 @@ public class WatchController {
      *
      * @return birinchi mos rolik yoki {@code null} — treyler yuklanmagan
      */
+    /** Null-xavfsiz: eski yozuvlarda ustun bo'sh bo'lishi mumkin. */
+    private long views(Content content) {
+        return content == null || content.getViewCount() == null ? 0L : content.getViewCount();
+    }
+
+    private long likes(Content content) {
+        return content == null || content.getLikeCount() == null ? 0L : content.getLikeCount();
+    }
+
+    /**
+     * Mehmon uchun har doim {@code false} — va bu so'rovsiz aniqlanadi:
+     * tokensiz odamning «yoqdi» si bo'lishi mumkin emas.
+     */
+    private boolean liked(User user, Content content) {
+        return user != null
+                && content != null
+                && likeService.isLiked(user.getId(), content.getId());
+    }
+
     private VideoSource trailer(User user, Content content, AccessDecision decision) {
         if (content == null || content.getMedia() == null
                 || decision.getReason() == AccessDecision.Reason.NOT_PUBLISHED) {
@@ -376,6 +406,27 @@ public class WatchController {
          * qoldiradi — ikkala versiya yonma-yon ishlaydi.
          */
         private VideoSource trailer;
+
+        /**
+         * Ko'rishlar soni.
+         *
+         * ⚠️ Bu ilovadagi ko'rsatkich, hisobot emas: u
+         * {@code AnalyticsService.aggregate()} tomonidan har besh
+         * daqiqada yangilanadi, ya'ni bir necha daqiqa orqada bo'lishi
+         * mumkin. Ekranda bu sezilmaydi, bazani esa tinch qoldiradi.
+         */
+        private long viewCount;
+
+        /** «Yoqdi» soni — hammaga ko'rinadi, mehmonga ham. */
+        private long likeCount;
+
+        /**
+         * Shu odam bosganmi. Mehmon uchun doim {@code false}.
+         *
+         * ⚠️ Bu «Saqlanganlar» dan boshqa narsa: sevimlilar ro'yxati
+         * shaxsiy, «yoqdi» esa ommaviy sanoq.
+         */
+        private boolean liked;
 
         /** Ruxsat bo'lmasa - bo'sh. */
         private List<VideoSource> sources;

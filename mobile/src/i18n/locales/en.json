@@ -315,6 +315,8 @@
     "multiPartBody": "The app cannot list episodes yet — that needs a separate backend endpoint.",
     "noVideo": "The video is not uploaded yet",
     "trailer": "Trailer",
+    "like": "Like",
+    "unlike": "Remove like",
     "qualityAuto": "Auto",
     "playbackFailedTitle": "The video did not open",
     "playbackFailedBody": "The link may have expired. Try again — playback resumes from the same spot.",
