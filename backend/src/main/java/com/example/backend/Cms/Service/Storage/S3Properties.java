@@ -77,7 +77,30 @@ public class S3Properties {
         return missing;
     }
 
+    /**
+     * Qiymat HAQIQATAN berilganmi.
+     *
+     * <h2>⚠️ Nega shablon qiymati «berilmagan» hisoblanadi</h2>
+     * {@code deploy/application.properties} da o'rinbosarlar turadi
+     * ({@code BU_YERGA_BUCKET_NOMI} va h.k.). Ular bo'sh EMAS, ya'ni
+     * eski tekshiruvdan bemalol o'tardi: ilova muvaffaqiyatli ishga
+     * tushardi, S3 esa har yuklashda 403 qaytarardi.
+     *
+     * Natijada nosozlik shunday ko'rinardi: «lokalda ishlaydi,
+     * serverda ishlamaydi» — sababi esa hech qayerda aytilmasdi,
+     * chunki server o'z sozlamasini to'g'ri deb bilardi.
+     *
+     * Endi ilova ISHGA TUSHMAYDI va qaysi qator to'ldirilmaganini
+     * aniq aytadi.
+     */
     private static boolean notBlank(String value) {
-        return value != null && !value.isBlank();
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        String upper = value.trim().toUpperCase();
+        return !upper.startsWith("BU_YERGA")
+                && !upper.equals("CHANGEME")
+                && !upper.equals("CHANGE_ME")
+                && !upper.equals("TODO");
     }
 }

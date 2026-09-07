@@ -164,6 +164,49 @@ class StorageKeysTest {
             assertThat(configured().isConfigured()).isTrue();
         }
 
+        /**
+         * ⚠️ HAQIQIY nosozlik: «lokalda ishlaydi, serverda ishlamaydi».
+         *
+         * {@code deploy/application.properties} da o'rinbosarlar
+         * turadi ({@code BU_YERGA_ACCESS_KEY}). Ular bo'sh EMAS, ya'ni
+         * tekshiruvdan o'tardi: ilova muvaffaqiyatli ishga tushardi,
+         * har bir yuklash esa S3 dan 403 olardi.
+         *
+         * Sabab hech qayerda ko'rinmasdi — server o'z sozlamasini
+         * to'g'ri deb bilardi.
+         */
+        @Test
+        @DisplayName("Shablon qiymati «to'ldirilmagan» hisoblanadi")
+        void placeholderCountsAsMissing() {
+            S3Properties properties = configured();
+            properties.setAccessKey("BU_YERGA_ACCESS_KEY");
+            properties.setSecretKey("BU_YERGA_SECRET_KEY");
+            properties.setBucket("BU_YERGA_BUCKET_NOMI");
+
+            assertThat(properties.isConfigured()).isFalse();
+            assertThat(properties.missingFields())
+                    .as("qaysi qatorni to'ldirish kerakligi AYTILSIN")
+                    .containsExactlyInAnyOrder(
+                            "app.storage.s3.bucket",
+                            "app.storage.s3.access-key",
+                            "app.storage.s3.secret-key");
+        }
+
+        /**
+         * ⚠️ Haqiqiy kalit tasodifan rad etilmasin.
+         *
+         * Tekshiruv juda keng bo'lsa ishlab turgan server yangilanish
+         * paytida ishga tushmay qolardi — bu nosozlikdan ham battar.
+         */
+        @Test
+        @DisplayName("Haqiqiy kalit shablon deb hisoblanmaydi")
+        void realKeyIsNotAPlaceholder() {
+            S3Properties properties = configured();
+            properties.setAccessKey("BUYERGA9KX2QW1PLMN");
+
+            assertThat(properties.isConfigured()).isTrue();
+        }
+
         private S3Properties configured() {
             S3Properties properties = new S3Properties();
             properties.setEndpoint("https://s3.twcstorage.ru");

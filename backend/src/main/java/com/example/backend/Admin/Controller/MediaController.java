@@ -277,6 +277,11 @@ public class MediaController {
         var jobs = transcodingJobs.forMediaIds(
                 result.getContent().stream().map(MediaAsset::getId).toList());
 
+        // ⚠️ `previewUrl` bu yerda BERILMAYDI (`one` da beriladi).
+        // Sahifada 60 element bo'ladi va har biriga chipta/imzo
+        // yasash — 60 ta ortiqcha ish. Undan ham qimmati: brauzer
+        // 60 ta videodan metama'lumot tortishga kirishardi, ya'ni
+        // kutubxona oynasi o'nlab megabayt yuklardi.
         return ResponseEntity.ok(PageResponse.of(
                 result, asset -> MediaDto.from(asset, jobs.get(asset.getId()))));
     }
@@ -301,8 +306,40 @@ public class MediaController {
         MediaAsset asset = mediaAssetRepo.findById(id)
                 .orElseThrow(() -> BusinessException.notFound("Media", id));
 
-        return ResponseEntity.ok(
-                MediaDto.from(asset, transcodingJobs.forMedia(id).orElse(null)));
+        return ResponseEntity.ok(withPoster(
+                MediaDto.from(asset, transcodingJobs.forMedia(id).orElse(null)),
+                asset,
+                CurrentUser.get()));
+    }
+
+    /**
+     * Eskiz uchun manba — VIDEO ga birinchi kadrni chizish imkonini beradi.
+     *
+     * <h2>⚠️ Nima uchun kerak bo'ldi</h2>
+     * Panelda video maydoni BO'SH quti bo'lib turardi: ichida faqat
+     * 🎞 belgisi. Admin uchun bu «fayl yuklanmadi» degani edi —
+     * aslida fayl joyida, shunchaki ko'rsatadigan narsa yo'q edi.
+     *
+     * Rasm bilan farqi shunda: {@code MediaDto.url} — {@code /raw},
+     * u VIDEO uchun OCHIQ EMAS ({@code <video src>} `Authorization`
+     * sarlavhasini yubormaydi). Shuning uchun bu yerda aynan
+     * {@link #previewUrl} — imzolangan yoki chiptali manzil.
+     *
+     * <h2>⚠️ Nega serverda kadr yasalmaydi</h2>
+     * FFmpeg bilan eskiz chiqarish alohida fayl, alohida ustun va
+     * eski yozuvlar uchun qayta ishlash talab qilardi. Brauzer esa
+     * {@code preload="metadata"} bilan birinchi kadrni O'ZI chizadi
+     * va faylning bir necha yuz kilobaytini oladi, xolos.
+     *
+     * Rasm va hujjatda {@code null}: ular {@code url} orqali
+     * ko'rinadi va ortiqcha imzo bekorga hisoblanardi.
+     */
+    private MediaDto withPoster(MediaDto dto, MediaAsset asset, User actor) {
+        if (asset.getType() != MediaType.VIDEO || !accessService.canReadMedia(actor, asset)) {
+            return dto;
+        }
+        dto.setPreviewUrl(previewUrl(actor, asset));
+        return dto;
     }
 
     /**
@@ -678,6 +715,24 @@ public class MediaController {
     public static class MediaDto {
         private Long id;
         private String url;
+
+        /**
+         * Eskiz uchun ochib bo'ladigan manzil — FAQAT VIDEO da.
+         *
+         * ⚠️ {@link #url} dan farqi shunda: u {@code /raw} ga
+         * ishora qiladi va VIDEO uchun u ochiq EMAS. Bu yerda esa
+         * imzolangan (S3) yoki chiptali havola — brauzer uni
+         * {@code <video>} elementiga qo'yib birinchi kadrni chiza
+         * oladi.
+         *
+         * ⚠️ Rasm va hujjatda {@code null}: ular {@code url} orqali
+         * ko'rinadi.
+         *
+         * ⚠️ Muddati CHEKLANGAN. Panel uni saqlab qo'ymasligi kerak —
+         * har ochilishda qayta so'raladi (`withPoster` ga qarang).
+         */
+        private String previewUrl;
+
         private String originalFilename;
         private MediaType type;
         private String mimeType;
