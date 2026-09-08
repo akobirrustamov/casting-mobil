@@ -72,6 +72,16 @@ public class MediaController {
     private final AccessService accessService;
     private final MediaUsageService mediaUsageService;
 
+    /**
+     * ⚠️ Rasm hajmi shu yerda tekshiriladi.
+     *
+     * Ilgari bu endpointda hech qanday hajm chegarasi YO'Q edi:
+     * yagona to'siq nginx (60 MB) va Spring multipart (50 MB) bo'lgan.
+     * Ya'ni 40 MB lik afisha bemalol o'tib ketardi va keyin har bir
+     * kartochkada tomoshabinga yuborilardi.
+     */
+    private final com.example.backend.Cms.Service.Storage.ImageSizeLimit imageSizeLimit;
+
     /** Panelda oldindan ko'rish uchun chipta — {@code /preview} ga qarang. */
     private final com.example.backend.Cms.Service.Video.PlaybackTicketService ticketService;
 
@@ -527,6 +537,11 @@ public class MediaController {
     public ResponseEntity<MediaDto> upload(@RequestParam MultipartFile file,
                                            @RequestParam(defaultValue = "content") String folder) {
         require(Permission.MEDIA_UPLOAD);
+
+        // ⚠️ Saqlashdan OLDIN: aks holda katta fayl avval omborga
+        // yozilib, keyin rad etilardi — va o'sha yozuv o'chirilmay
+        // qolardi.
+        imageSizeLimit.check(file.getOriginalFilename(), file.getContentType(), file.getSize());
 
         String key = storageService.store(file, folder);
         String contentType = file.getContentType() == null ? "" : file.getContentType();

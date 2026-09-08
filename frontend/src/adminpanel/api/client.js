@@ -551,7 +551,34 @@ async function uploadChunked(file, folder, onProgress, options = {}) {
  * O'lchamga qarab o'zi tanlaydi: kichik bo'lsa bitta so'rov, katta bo'lsa
  * bo'laklab. Chaqiruvchi uchun farqi yo'q.
  */
+/**
+ * Rasm uchun eng katta hajm — 10 MB.
+ *
+ * ⚠️ Server bilan MOS bo'lishi shart
+ * (`app.upload.max-image-bytes`, sukut 10485760). Ular ajralib
+ * qolsa, panel faylni yuboradi-yu, server rad etadi — va odam nima
+ * uchun ekanini tushunmaydi.
+ *
+ * ⚠️ Bu tekshiruv serverdagisining O'RNINI BOSMAYDI, faqat
+ * qulaylik uchun: 40 MB lik faylni yuborib bo'lgach rad javobini
+ * olish uzoq va bekorga trafik. Haqiqiy qoida — serverda.
+ */
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
 async function uploadFile(file, folder = 'content', onProgress, options = {}) {
+  // ⚠️ Tur `file.type` bo'yicha: brauzer uni fayl tanlanganda o'zi
+  // qo'yadi. Bo'sh bo'lsa tekshirmaymiz — serverda kengaytma bo'yicha
+  // ham aniqlanadi, ya'ni chegara baribir ishlaydi.
+  if (file?.type?.startsWith('image/') && file.size > MAX_IMAGE_BYTES) {
+    const mb = Math.round(file.size / 1024 / 1024);
+    throw {
+      status: 400,
+      code: 'IMAGE_TOO_LARGE',
+      message: `Rasm juda katta: ${mb} MB. Ruxsat etilgan chegara: ${MAX_IMAGE_BYTES / 1024 / 1024} MB`,
+      errors: [],
+    };
+  }
+
   try {
     return file.size > CHUNKED_THRESHOLD
       ? await uploadChunked(file, folder, onProgress, options)

@@ -176,6 +176,12 @@ class S3MultipartUploadTest {
                     mock(com.example.backend.Cms.Service.StorageService.class),
                     java.util.Optional.of(s3Multipart),
                     mock(com.example.backend.Cms.Service.Video.TranscodingJobService.class),
+                    // ⚠️ Haqiqiy chegara, mock EMAS: bu testlar bo'laklash
+                    // mantig'ini tekshiradi va rasm chegarasi ularga
+                    // xalaqit bermasligi kerak — mock bo'lsa u jimgina
+                    // hech narsa qilmasdi va tekshiruv yo'qolganini
+                    // hech kim sezmasdi.
+                    new com.example.backend.Cms.Service.Storage.ImageSizeLimit(),
                     "/tmp/test-uploads");
         }
 

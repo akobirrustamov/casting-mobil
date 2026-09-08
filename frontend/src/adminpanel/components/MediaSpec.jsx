@@ -2,7 +2,7 @@ import { usePanelI18n } from '../i18n';
 import { specLine, specNote } from '../mediaSpecs';
 
 /**
- * Maydon yonidagi o'lcham talabi: «600×900 px · 2:3 · JPG/PNG/WebP · ≤2 MB».
+ * Maydon yonidagi o'lcham talabi: «600×900 px · 2:3 · JPG/PNG/WebP · ≤10 MB».
  *
  * <h2>Nega maydonning YONIDA, yo'riqnomada emas</h2>
  * Yo'riqnoma ham bor (`help/guide.js` → «Rasm va video o'lchamlari»), lekin

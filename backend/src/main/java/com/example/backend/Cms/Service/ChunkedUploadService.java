@@ -116,17 +116,22 @@ public class ChunkedUploadService {
     /** Yuklangan video transcoding navbatiga tushadi. */
     private final TranscodingJobService transcodingJobs;
 
+    /** Rasm uchun alohida chegara — video 5 GB gacha, rasm ancha kam. */
+    private final com.example.backend.Cms.Service.Storage.ImageSizeLimit imageSizeLimit;
+
     public ChunkedUploadService(UploadSessionRepo sessionRepo,
                                 MediaAssetRepo mediaAssetRepo,
                                 StorageService storageService,
                                 Optional<S3MultipartUploadService> s3Multipart,
                                 TranscodingJobService transcodingJobs,
+                                com.example.backend.Cms.Service.Storage.ImageSizeLimit imageSizeLimit,
                                 @Value("${app.upload.temp-dir:backend/files/.uploads}") String tempDir) {
         this.sessionRepo = sessionRepo;
         this.mediaAssetRepo = mediaAssetRepo;
         this.storageService = storageService;
         this.s3Multipart = s3Multipart;
         this.transcodingJobs = transcodingJobs;
+        this.imageSizeLimit = imageSizeLimit;
         this.tempRoot = Paths.get(tempDir);
     }
 
@@ -153,6 +158,13 @@ public class ChunkedUploadService {
             throw BusinessException.validation(
                     "Fayl juda katta. Ruxsat etilgan chegara: " + (maxBytes / 1024 / 1024) + " MB");
         }
+        // ⚠️ Rasm uchun ALOHIDA, ancha qattiqroq chegara. Yuqoridagi
+        // 5 GB video uchun o'lchangan va rasmga qo'llansa amalda
+        // chegara yo'qligini bildirardi.
+        //
+        // Tekshiruv ENG BOSHIDA: bo'laklar yuborilib bo'lgach rad
+        // etish odamning vaqtini ham, trafikni ham behuda sarflardi.
+        imageSizeLimit.check(filename, mimeType, sizeBytes);
         // Kengaytmani ENG BOSHIDA tekshiramiz. Aks holda foydalanuvchi butun
         // faylni yuborib bo'lgach, yig'ish paytida rad javobini olardi.
         if (!storageService.accepts(filename)) {
