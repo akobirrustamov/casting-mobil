@@ -98,7 +98,7 @@ export const MEDIA_SPECS = {
     size: '1200×1800',
     ratio: '2:3',
     formats: IMG,
-    maxMb: 2,
+    maxMb: 5,
     where: 'PosterCard / ContentGrid ≤118dp × 177dp (@3x = 354×531); LockedPoster ≤279dp × 419dp (@3x = 837×1257)',
     frames: [[354, 531], [837, 1257]],
     note: {
@@ -171,7 +171,7 @@ export const MEDIA_SPECS = {
     size: '1200×1800',
     ratio: '2:3',
     formats: IMG,
-    maxMb: 2,
+    maxMb: 5,
     where: 'kontent afishasi bilan bir xil ramka (@3x = 354×531)',
     frames: [[354, 531]],
     note: {
