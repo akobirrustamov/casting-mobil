@@ -87,6 +87,23 @@ export type VideoSource = {
   durationSeconds: number | null;
 };
 
+/**
+ * Один участник съёмок.
+ *
+ * `profession` — имя из `CreatorProfession` бэкенда (`ACTOR`, `DIRECTOR`
+ * и так далее). Перевод подписи делает клиент: список закрытый, и
+ * держать три языка на сервере ради одного слова незачем.
+ */
+export type Credit = {
+  creatorId: number | null;
+  slug: string | null;
+  name: string | null;
+  photoMediaId: number | null;
+  profession: string | null;
+  /** Имя роли — «Sevinch». Может отсутствовать. */
+  characterName: string | null;
+};
+
 export type WatchInfo = {
   episodeId: number | null;
   contentId: number | null;
@@ -146,6 +163,34 @@ export type WatchInfo = {
    * владельцу, а «нравится» — общий счётчик.
    */
   liked: boolean;
+
+  /**
+   * Звёзды, отправленные этому контенту.
+   *
+   * ⚠️ Это счётчик КОНТЕНТА, не креатора: у одного автора несколько
+   * работ, и на экране показывается, сколько прилетело именно этой.
+   */
+  starsReceived: number | null;
+
+  /**
+   * UZCASTING Coin — вторая донатная валюта.
+   *
+   * ⚠️ Со звёздами В ОДНО ЧИСЛО НЕ СКЛАДЫВАЕТСЯ: это разные единицы, и
+   * их сумма ничего не значит. На референсе это тоже две отдельные
+   * плитки, а на бэкенде правило охраняется тестом отчётов.
+   */
+  coinsReceived: number | null;
+
+  /** Сколько видимых обсуждений. Скрытые модератором не считаются. */
+  commentCount: number | null;
+
+  /**
+   * Кто снимался — актёры, режиссёр и остальные.
+   *
+   * ⚠️ Список заполнялся в админке с самого начала, но в приложение
+   * НИКОГДА не попадал: данные лежали в базе, и их никто не видел.
+   */
+  credits: Credit[];
 
   /** При отказе — всегда пустой список, ссылок на файлы в отказе нет. */
   sources: VideoSource[];

@@ -319,6 +319,13 @@
     "multiPartBody": "The app cannot list episodes yet — that needs a separate backend endpoint.",
     "noVideo": "The video is not uploaded yet",
     "trailer": "Trailer",
+    "watch": "Watch",
+    "likes": "Likes",
+    "stars": "Stars",
+    "coins": "Uzcasting",
+    "views": "{{count}} views",
+    "comments": "Comments",
+    "cast": "Cast",
     "like": "Like",
     "unlike": "Remove like",
     "qualityAuto": "Auto",
@@ -371,6 +378,17 @@
     "STREAM": "Live",
     "CLIP": "Clip",
     "OTHER": "Other"
+  },
+  "profession": {
+    "ACTOR": "Actor",
+    "ACTRESS": "Actress",
+    "DIRECTOR": "Director",
+    "MODEL": "Model",
+    "PRODUCER": "Producer",
+    "SCREENWRITER": "Screenwriter",
+    "OPERATOR": "Operator",
+    "HOST": "Host",
+    "CREATOR": "Creator"
   },
   "contentLanguage": {
     "ar": "Arabic",

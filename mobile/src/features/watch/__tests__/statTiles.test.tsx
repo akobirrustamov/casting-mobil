@@ -1,5 +1,5 @@
 /**
- * Просмотры и «нравится» под названием.
+ * Плитки показателей под кнопкой просмотра.
  *
  * <h2>Что здесь ломается тихо</h2>
  * Две вещи, и обе не видны на скриншоте:
@@ -32,7 +32,7 @@ jest.mock('../api', () => ({ setLike: (...a: unknown[]) => mockSetLike(...a) }))
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { Text } from 'react-native';
 
-import { StatChips } from '../StatChips';
+import { StatTiles } from '../StatTiles';
 
 import type { WatchInfo } from '../types';
 
@@ -54,6 +54,10 @@ function info(over: Partial<WatchInfo> = {}): WatchInfo {
     viewCount: 1200,
     likeCount: 7,
     liked: false,
+    starsReceived: null,
+    coinsReceived: null,
+    commentCount: null,
+    credits: [],
     sources: [],
     ...over,
   };
@@ -62,7 +66,7 @@ function info(over: Partial<WatchInfo> = {}): WatchInfo {
 function render(data: WatchInfo): ReactTestRenderer {
   let tree!: ReactTestRenderer;
   act(() => {
-    tree = create(<StatChips info={data} />);
+    tree = create(<StatTiles info={data} />);
   });
   return tree;
 }
@@ -81,12 +85,18 @@ function heart(tree: ReactTestRenderer) {
   );
 }
 
-/** Все подписи на экране. */
-function texts(tree: ReactTestRenderer): string[] {
+/**
+ * Только числа на плитках.
+ *
+ * ⚠️ У каждой плитки две строки — подпись и число. Сверять всё подряд
+ * значило бы переписывать тест при каждой правке формулировки; проверяем
+ * то, ради чего плитка и существует.
+ */
+function numbers(tree: ReactTestRenderer): string[] {
   return tree.root
     .findAllByType(Text)
     .map((node) => String(node.props.children))
-    .filter(Boolean);
+    .filter((value) => /^[\d\s]+$/.test(value) && value.trim() !== '');
 }
 
 beforeEach(() => {
@@ -97,8 +107,10 @@ beforeEach(() => {
 });
 
 describe('чего сервер не сказал — того не рисуем', () => {
-  it('без обоих счётчиков строки нет совсем', () => {
-    const tree = render(info({ viewCount: null, likeCount: null }));
+  it('без единого счётчика ряда нет совсем', () => {
+    const tree = render(
+      info({ likeCount: null, starsReceived: null, commentCount: null })
+    );
 
     expect(tree.toJSON()).toBeNull();
   });
@@ -106,21 +118,21 @@ describe('чего сервер не сказал — того не рисуем
   it('ноль от сервера — это факт, его показываем', () => {
     // ⚠️ Именно этим ноль отличается от `null`: «никто не смотрел» —
     // правда о контенте, и скрывать её незачем.
-    const tree = render(info({ viewCount: 0, likeCount: 0 }));
+    const tree = render(info({ likeCount: 0, starsReceived: 0, commentCount: 0 }));
 
-    expect(texts(tree)).toEqual(['0', '0']);
+    expect(numbers(tree)).toEqual(['0', '0', '0']);
   });
 
-  it('пришло одно из двух — рисуется одно', () => {
-    const tree = render(info({ viewCount: 340, likeCount: null }));
+  it('пришло одно из трёх — рисуется одна плитка', () => {
+    const tree = render(info({ likeCount: null, starsReceived: 340, commentCount: null }));
 
-    expect(texts(tree)).toEqual(['340']);
+    expect(numbers(tree)).toEqual(['340']);
   });
 
   it('разряды разделены пробелом', () => {
-    const tree = render(info({ viewCount: 1200, likeCount: 12345 }));
+    const tree = render(info({ likeCount: 12345, starsReceived: 1200 }));
 
-    expect(texts(tree)).toEqual(['1 200', '12 345']);
+    expect(numbers(tree)).toEqual(['12 345', '1 200']);
   });
 });
 
@@ -153,7 +165,7 @@ describe('вошедший человек', () => {
 
     expect(mockSetLike).toHaveBeenCalledWith(13, true);
     // Число из ОТВЕТА сервера, а не наше предположение.
-    expect(texts(tree)).toContain('8');
+    expect(numbers(tree)).toContain('8');
   });
 
   it('повторное нажатие снимает — DELETE, а не второй PUT', async () => {
@@ -165,7 +177,7 @@ describe('вошедший человек', () => {
     });
 
     expect(mockSetLike).toHaveBeenCalledWith(13, false);
-    expect(texts(tree)).toContain('6');
+    expect(numbers(tree)).toContain('6');
   });
 
   it('сбой сети возвращает как было', async () => {
@@ -179,6 +191,6 @@ describe('вошедший человек', () => {
     // ⚠️ Не «7 после оптимистичных 8», а именно исходное состояние:
     // иначе человек ушёл бы с экрана уверенным, что «нравится»
     // сохранилось.
-    expect(texts(tree)).toContain('7');
+    expect(numbers(tree)).toContain('7');
   });
 });

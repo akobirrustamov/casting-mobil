@@ -6,7 +6,7 @@ import { useFeedLanguage } from '@/features/home/api';
 import { DEFAULT_LANGUAGE, type Language } from '@/i18n';
 import { api } from '@/lib/api';
 
-import type { VideoSource, WatchInfo } from './types';
+import type { Credit, VideoSource, WatchInfo } from './types';
 
 const LOCALE_PARAM: Record<Language, 'UZ' | 'RU' | 'EN'> = {
   uz: 'UZ',
@@ -69,6 +69,18 @@ function mapSource(raw: unknown): VideoSource | null {
   };
 }
 
+function mapCredit(raw: unknown): Credit {
+  const r = raw as Record<string, unknown>;
+  return {
+    creatorId: num(r?.creatorId),
+    slug: str(r?.slug),
+    name: str(r?.name),
+    photoMediaId: num(r?.photoMediaId),
+    profession: str(r?.profession),
+    characterName: str(r?.characterName),
+  };
+}
+
 function mapWatch(raw: unknown): WatchInfo {
   const r = raw as Record<string, unknown> | null;
 
@@ -101,6 +113,10 @@ function mapWatch(raw: unknown): WatchInfo {
     viewCount: num(r.viewCount),
     likeCount: num(r.likeCount),
     liked: r.liked === true,
+    starsReceived: num(r.starsReceived),
+    coinsReceived: num(r.coinsReceived),
+    commentCount: num(r.commentCount),
+    credits: Array.isArray(r.credits) ? r.credits.map(mapCredit) : [],
     sources: Array.isArray(r.sources)
       ? r.sources.map(mapSource).filter((s): s is VideoSource => s !== null)
       : [],

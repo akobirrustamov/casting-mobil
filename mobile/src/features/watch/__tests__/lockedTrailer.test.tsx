@@ -89,14 +89,18 @@ function locked(over: Partial<WatchInfo> = {}): WatchInfo {
     orientation: 'LANDSCAPE',
     allowed: false,
     reason: 'PAYMENT_REQUIRED',
-    viewCount: null,
-    likeCount: null,
-    liked: false,
     requiredAction: 'BUY_PREMIERE',
     episodePrice: null,
     premierePrice: 5000,
     showAds: false,
     trailer: null,
+    viewCount: null,
+    likeCount: null,
+    liked: false,
+    starsReceived: null,
+    coinsReceived: null,
+    commentCount: null,
+    credits: [],
     sources: [],
     ...over,
   };
@@ -112,19 +116,56 @@ async function render(info: WatchInfo) {
     refetch: jest.fn().mockResolvedValue({}),
   };
 
+  let tree!: ReturnType<typeof create>;
   await act(async () => {
-    create(<WatchDetail query={query as never} />);
+    tree = create(<WatchDetail query={query as never} />);
   });
-  return query;
+  return tree;
 }
+
+/**
+ * Нажать «Tomosha qilish».
+ *
+ * ⚠️ Ищем по подписи, а не по типу: NativeWind оборачивает `Pressable`
+ * своей обёрткой, и `findByType` не находит ничего. Перевод в тестах
+ * подменён на сам ключ, поэтому в подписи именно `content.watch`.
+ */
+function press(tree: ReturnType<typeof create>, label: string) {
+  const button = tree.root.find(
+    (node) =>
+      node.props?.accessibilityRole === 'button' &&
+      typeof node.props?.onPress === 'function' &&
+      node.props?.accessibilityLabel === label
+  );
+  act(() => button.props.onPress());
+}
+
+const pressWatch = (tree: ReturnType<typeof create>) => press(tree, 'content.watch');
+const pressTrailer = (tree: ReturnType<typeof create>) => press(tree, 'content.trailer');
 
 beforeEach(() => {
   playerProps.length = 0;
   jest.clearAllMocks();
 });
 
-it('Есть трейлер — он и играет под замком', async () => {
+/**
+ * ⚠️ Ролик тоже НЕ грузится сам.
+ *
+ * Пока в блоке трейлера сразу стоял плеер, он тянул видео при каждом
+ * открытии экрана — ровно то, от чего избавились у основного видео.
+ * Два видео на одной карточке — это двойной трафик у человека, который
+ * ещё ничего не выбрал.
+ */
+it('Трейлер не грузится, пока не нажали', async () => {
   await render(locked({ trailer: trailer() }));
+
+  expect(playerProps).toHaveLength(0);
+});
+
+it('После нажатия играет ролик', async () => {
+  const tree = await render(locked({ trailer: trailer() }));
+
+  pressTrailer(tree);
 
   expect(playerProps).toHaveLength(1);
   expect(playerProps[0].source).toMatchObject({ mediaId: 42, durationSeconds: 90 });
@@ -138,15 +179,37 @@ it('Есть трейлер — он и играет под замком', async
  * просмотр» станет показывать место, на котором закончился ролик.
  */
 it('Трейлер не пишет позицию и не считается просмотром', async () => {
-  await render(locked({ trailer: trailer() }));
+  const tree = await render(locked({ trailer: trailer() }));
+  pressTrailer(tree);
 
   expect(playerProps[0].contentId).toBeNull();
   expect(playerProps[0].episodeId).toBeNull();
 });
 
-/** Без ролика экран прежний: афиша под замком, плеера нет вовсе. */
+/** Без ролика плеера нет вовсе — только афиша. */
 it('Нет трейлера — плеер не создаётся', async () => {
   await render(locked({ trailer: null }));
+
+  expect(playerProps).toHaveLength(0);
+});
+
+/**
+ * ⚠️ Открытый контент НЕ начинает играть сам.
+ *
+ * Заказчик (09.09.2026): «только нажав на кнопку можно получить доступ к
+ * видео». Плеер, поднятый сразу, тянет видео у каждого, кто просто
+ * заглянул на карточку.
+ */
+it('Доступ открыт, но кнопку не нажали — фильм не играет', async () => {
+  const film: VideoSource = {
+    partNumber: 1,
+    mediaId: 7,
+    url: '/api/v1/app/media/7/raw',
+    hlsUrl: '/api/v1/app/media/7/hls/master.m3u8?t=xyz',
+    durationSeconds: 5400,
+  };
+
+  await render(locked({ allowed: true, reason: 'FREE', trailer: null, sources: [film] }));
 
   expect(playerProps).toHaveLength(0);
 });
@@ -158,7 +221,7 @@ it('Нет трейлера — плеер не создаётся', async () =>
  * купивший человек получил бы 90 секунд рекламы вместо фильма — и это
  * худший из возможных исходов.
  */
-it('Доступ открыт — играет фильм, а не трейлер', async () => {
+it('После кнопки играет фильм, а не трейлер', async () => {
   const film: VideoSource = {
     partNumber: 1,
     mediaId: 7,
@@ -167,11 +230,22 @@ it('Доступ открыт — играет фильм, а не трейле�
     durationSeconds: 5400,
   };
 
-  await render(
+  const tree = await render(
     locked({ allowed: true, reason: 'PREMIERE_PURCHASE', trailer: trailer(), sources: [film] })
   );
 
-  expect(playerProps).toHaveLength(1);
-  expect(playerProps[0].source).toMatchObject({ mediaId: 7 });
-  expect(playerProps[0].contentId).toBe(13);
+  // До нажатия не играет ничего: ни фильм, ни ролик.
+  expect(playerProps).toHaveLength(0);
+
+  pressWatch(tree);
+
+  // ⚠️ Фильм, а не ролик: подставь сюда трейлер — и купивший человек
+  // получил бы 90 секунд рекламы вместо фильма.
+  expect(playerProps.map((p) => p.source)).toContainEqual(
+    expect.objectContaining({ mediaId: 7 })
+  );
+  // ⚠️ А вот у ФИЛЬМА идентификаторы настоящие: по ним пишется позиция
+  // и считается просмотр. Ролик и фильм различаются именно этим.
+  const movie = playerProps.find((p) => (p.source as { mediaId: number }).mediaId === 7);
+  expect(movie?.contentId).toBe(13);
 });

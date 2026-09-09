@@ -2,15 +2,23 @@ package com.example.backend.Cms.Controller;
 
 import com.example.backend.Admin.CurrentUser;
 import com.example.backend.Cms.Entity.Content;
+import com.example.backend.Cms.Entity.ContentCredit;
 import com.example.backend.Cms.Entity.ContentMedia;
 import com.example.backend.Cms.Entity.ContentTranslation;
 import com.example.backend.Cms.Entity.Episode;
 import com.example.backend.Cms.Entity.EpisodeTranslation;
+import com.example.backend.Cms.Entity.CreatorTranslation;
 import com.example.backend.Cms.Entity.EpisodeVideo;
 import com.example.backend.Cms.Enums.Locale;
+import com.example.backend.Cms.Enums.CommentStatus;
+import com.example.backend.Cms.Enums.CurrencyKind;
+import com.example.backend.Cms.Enums.DonationTargetType;
 import com.example.backend.Cms.Enums.MediaRole;
 import com.example.backend.Cms.Enums.StructureType;
+import com.example.backend.Cms.Repository.CommentRepo;
+import com.example.backend.Cms.Repository.ContentCreditRepo;
 import com.example.backend.Cms.Repository.ContentRepo;
+import com.example.backend.Cms.Repository.DonationRepo;
 import com.example.backend.Cms.Repository.EpisodeRepo;
 import com.example.backend.Cms.Service.AccessDecision;
 import com.example.backend.Cms.Service.AccessService;
@@ -61,6 +69,9 @@ public class WatchController {
     private final ContentRepo contentRepo;
     private final AccessService accessService;
     private final ContentLikeService likeService;
+    private final ContentCreditRepo creditRepo;
+    private final CommentRepo commentRepo;
+    private final DonationRepo donationRepo;
 
     /**
      * Ombor kalitini pleyer ochadigan manzilga aylantiradi.
@@ -104,6 +115,10 @@ public class WatchController {
                 .viewCount(views(episode.getContent()))
                 .likeCount(likes(episode.getContent()))
                 .liked(liked(user, episode.getContent()))
+                .starsReceived(stars(episode.getContent()))
+                .coinsReceived(coins(episode.getContent()))
+                .commentCount(comments(episode.getContent()))
+                .credits(credits(episode.getContent(), locale))
                 // Rad etilganda ham ro'yxat bo'sh emas, BO'SH RO'YXAT - null emas,
                 // klientda "null.length" xatosi chiqmasligi uchun.
                 .sources(decision.isAllowed() ? sources(user, episode, locale) : List.of());
@@ -162,6 +177,10 @@ public class WatchController {
                 .viewCount(views(content))
                 .likeCount(likes(content))
                 .liked(liked(user, content))
+                .starsReceived(stars(content))
+                .coinsReceived(coins(content))
+                .commentCount(comments(content))
+                .credits(credits(content, locale))
                 .sources(decision.isAllowed() ? contentSources(user, content, locale) : List.of())
                 .build());
     }
@@ -266,6 +285,90 @@ public class WatchController {
         return user != null
                 && content != null
                 && likeService.isLiked(user.getId(), content.getId());
+    }
+
+    /**
+     * Kontentga tushgan UZCASTING Coin.
+     *
+     * ⚠️ Yulduzlar bilan QO'SHILMAYDI. Ular boshqa-boshqa birliklar, va
+     * ularning yig'indisi hech narsani anglatmaydi — referens ekranda
+     * ham ular ikkita alohida plitka.
+     *
+     * ⚠️ Yulduzlardan farqli o'laroq bu yerda tayyor hisoblagich yo'q:
+     * kontentda faqat {@code starsReceived} ustuni bor. Shuning uchun
+     * summa donatlar bo'yicha yig'iladi — indeks bor
+     * ({@code idx_donation_target}), va bu so'rov kontent ekrani
+     * ochilganda bir marta ketadi.
+     */
+    private long coins(Content content) {
+        return content == null ? 0L
+                : donationRepo.sumForTarget(DonationTargetType.CONTENT, content.getId(),
+                        CurrencyKind.UZCASTING_COIN);
+    }
+
+    private long stars(Content content) {
+        return content == null || content.getStarsReceived() == null
+                ? 0L : content.getStarsReceived();
+    }
+
+    /**
+     * Nechta ochiq izoh bor.
+     *
+     * ⚠️ Faqat {@code VISIBLE}: moderator yashirgan izoh sanoqqa
+     * tushmasligi kerak, aks holda odam «16 ta izoh» ni ko'rib, ochganda
+     * o'n to'rttasini topardi.
+     */
+    private long comments(Content content) {
+        return content == null ? 0L
+                : commentRepo.countByContentIdAndStatus(content.getId(), CommentStatus.VISIBLE);
+    }
+
+    /**
+     * Kontentda qatnashganlar — referens ekrandagi «Aktyorlar» qatori.
+     *
+     * ⚠️ Ro'yxat admin panelda allaqachon to'ldirilardi, lekin ilovaga
+     * HECH QACHON chiqmagan: aktyorlar bazada yotardi va hech kim ularni
+     * ko'rmasdi.
+     */
+    private List<CreditCard> credits(Content content, Locale locale) {
+        if (content == null) {
+            return List.of();
+        }
+        return creditRepo.findForContent(content.getId()).stream()
+                .map(c -> CreditCard.builder()
+                        .creatorId(c.getCreator().getId())
+                        .slug(c.getCreator().getSlug())
+                        .name(creatorName(c, locale))
+                        .photoMediaId(c.getCreator().getPhoto() == null
+                                ? null : c.getCreator().getPhoto().getId())
+                        .profession(c.getProfession() == null ? null : c.getProfession().name())
+                        .characterName(c.getCharacterName())
+                        .build())
+                .toList();
+    }
+
+    /** Ism tarjimada; yo'q bo'lsa — ism va familiyadan yig'iladi. */
+    private String creatorName(ContentCredit credit, Locale locale) {
+        List<CreatorTranslation> all = credit.getCreator().getTranslations();
+        if (all == null || all.isEmpty()) {
+            return null;
+        }
+        return all.stream().filter(t -> t.getLocale() == locale).findFirst()
+                .or(() -> all.stream().filter(t -> t.getLocale() == Locale.DEFAULT).findFirst())
+                .or(() -> all.stream().findFirst())
+                .map(WatchController::displayName)
+                .orElse(null);
+    }
+
+    private static String displayName(CreatorTranslation t) {
+        if (t.getDisplayName() != null && !t.getDisplayName().isBlank()) {
+            return t.getDisplayName();
+        }
+        return java.util.stream.Stream.of(t.getFirstName(), t.getLastName())
+                .filter(java.util.Objects::nonNull)
+                .filter(part -> !part.isBlank())
+                .reduce((a, b) -> a + " " + b)
+                .orElse(null);
     }
 
     private VideoSource trailer(User user, Content content, AccessDecision decision) {
@@ -428,8 +531,51 @@ public class WatchController {
          */
         private boolean liked;
 
+        /**
+         * Kontentga tushgan yulduzlar.
+         *
+         * ⚠️ Bu KONTENTNING sanog'i, ijodkorniki emas: bitta ijodkorning
+         * bir nechta ishi bo'lishi mumkin, va ekranda aynan shu ishga
+         * nechta yulduz tushgani ko'rsatiladi.
+         */
+        private long starsReceived;
+
+        /** Ochiq izohlar soni. */
+        /**
+         * UZCASTING Coin — ikkinchi donat valyutasi.
+         *
+         * ⚠️ Yulduzlar bilan bitta songa qo'shilmaydi: bu boshqa birlik.
+         */
+        private long coinsReceived;
+
+        private long commentCount;
+
+        /**
+         * Kimlar qatnashgan — aktyorlar, rejissyor va boshqalar.
+         *
+         * ⚠️ Bo'sh ro'yxat, {@code null} emas: klientda «null.length»
+         * xatosi chiqmasligi uchun — {@code sources} bilan bir xil sabab.
+         */
+        private List<CreditCard> credits;
+
         /** Ruxsat bo'lmasa - bo'sh. */
         private List<VideoSource> sources;
+    }
+
+    /** Bitta qatnashuvchi: aktyor, rejissyor va hokazo. */
+    @Data
+    @Builder
+    public static class CreditCard {
+        private Long creatorId;
+        private String slug;
+        private String name;
+        private Long photoMediaId;
+
+        /** {@code CreatorProfession} nomi: ACTOR, DIRECTOR va boshqalar. */
+        private String profession;
+
+        /** Rolning ismi — «Sevinch». Bo'lmasligi mumkin. */
+        private String characterName;
     }
 
     @Data

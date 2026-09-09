@@ -16,6 +16,30 @@ public interface DonationRepo extends JpaRepository<DonationTransaction, Long> {
     Page<DonationTransaction> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     /**
+     * Bitta nishonga tushgan summa — BITTA valyutada.
+     *
+     * <h2>⚠️ Valyutalar qo'shilmaydi</h2>
+     * Yulduz va tanga — boshqa-boshqa birliklar, ularning yig'indisi hech
+     * narsani anglatmaydi. Shuning uchun {@code kind} majburiy parametr:
+     * chaqiruvchi qaysi valyutani so'rayotganini AYTISHI kerak, va
+     * «hammasini qo'shib ber» degan variant bu yerda umuman yo'q.
+     *
+     * Xuddi shu qoidani hisobotlar tomonida
+     * {@code DonationAndPaymentTest$Report} qo'riqlaydi.
+     *
+     * @return nol, agar hech kim donat qilmagan bo'lsa — {@code null} emas
+     */
+    @Query("""
+            select coalesce(sum(d.amount), 0) from DonationTransaction d
+            where d.targetType = :targetType
+              and d.targetId = :targetId
+              and d.kind = :kind
+            """)
+    long sumForTarget(@Param("targetType") DonationTargetType targetType,
+                      @Param("targetId") Long targetId,
+                      @Param("kind") com.example.backend.Cms.Enums.CurrencyKind kind);
+
+    /**
      * Foydalanuvchining O'Z donatlari (ТЗ §43).
      *
      * <h2>Nima uchun kerak</h2>
