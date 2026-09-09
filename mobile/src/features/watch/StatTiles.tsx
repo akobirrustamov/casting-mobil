@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +8,8 @@ import { Pressable, Text, View } from 'react-native';
 import { useAuthStore } from '@/features/auth/store';
 import { groupDigits } from '@/lib/money';
 import { colors } from '@/theme/tokens';
+
+import coinIcon from '../../../assets/brand/coin.png';
 
 import { setLike } from './api';
 import type { WatchInfo } from './types';
@@ -26,11 +29,14 @@ import type { WatchInfo } from './types';
  * входа: иначе один человек накрутил бы «нравится» сколько угодно раз.
  * Гостя ведём на экран входа, а не показываем ошибку.
  *
- * <h2>⚠️ Четвёртой плитки — второй донатной валюты — пока нет</h2>
- * На референсе рядом со звёздами стоит UZCASTING Coin. В базе такой
- * счётчик у контента отсутствует: `starsReceived` есть, монет нет, их
- * можно только просуммировать по донатам. Пока сервер не отдаёт число,
- * плитки нет — вместо выдуманного значения.
+ * <h2>⚠️ Звёзды и монеты — РАЗНЫЕ плитки</h2>
+ * Это разные единицы, и складывать их в одно число нельзя: сумма ничего
+ * не значит. На референсе они тоже стоят порознь, а на бэкенде то же
+ * правило охраняет тест отчётов.
+ *
+ * ⚠️ У монет, в отличие от звёзд, готового счётчика у контента нет — их
+ * сумма собирается по донатам. Поэтому число может прийти `null`, и
+ * тогда плитки просто не будет.
  */
 export function StatTiles({ info }: { info: WatchInfo }) {
   const { t } = useTranslation();
@@ -98,6 +104,16 @@ export function StatTiles({ info }: { info: WatchInfo }) {
           value: info.starsReceived,
           onPress: undefined,
         },
+    info.coinsReceived === null
+      ? null
+      : {
+          key: 'coins',
+          icon: 'coin' as const,
+          tint: colors.textMuted,
+          label: t('content.coins'),
+          value: info.coinsReceived,
+          onPress: undefined,
+        },
     info.commentCount === null
       ? null
       : {
@@ -130,6 +146,16 @@ export function StatTiles({ info }: { info: WatchInfo }) {
 }
 
 /**
+ * Знак плитки.
+ *
+ * ⚠️ `'coin'` — не имя из Ionicons, а НАША картинка: у UZCASTING Coin
+ * свой фирменный знак, и подобрать ему замену из набора нельзя.
+ * Отдельным полем это не сделано намеренно — тогда у каждой плитки было
+ * бы два взаимоисключающих свойства, и однажды заполнили бы оба.
+ */
+type Glyph = keyof typeof Ionicons.glyphMap | 'coin';
+
+/**
  * Одна плитка.
  *
  * ⚠️ `flex-1` — плитки делят ширину поровну, как на референсе. Ширина по
@@ -143,7 +169,7 @@ function Tile({
   onPress,
   busy,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: Glyph;
   tint: string;
   label: string;
   value: number;
@@ -152,7 +178,20 @@ function Tile({
 }) {
   const body = (
     <>
-      <Ionicons name={icon} size={20} color={tint} />
+      {icon === 'coin' ? (
+        <Image
+          source={coinIcon}
+          // ⚠️ Знак залит белым, цвет даёт `tintColor` — тогда он живёт
+          // по тем же правилам, что и соседние значки: одна линия, один
+          // цвет. Иначе хромированный оригинал выглядел бы наклейкой из
+          // чужого приложения.
+          tintColor={tint}
+          style={{ width: 20, height: 20 }}
+          contentFit="contain"
+        />
+      ) : (
+        <Ionicons name={icon} size={20} color={tint} />
+      )}
       <Text className="text-caption text-text-muted" numberOfLines={1}>
         {label}
       </Text>

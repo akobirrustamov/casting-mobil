@@ -318,6 +318,8 @@
     "watch": "Watch",
     "likes": "Likes",
     "stars": "Stars",
+    "coins": "Uzcasting",
+    "views": "{{count}} views",
     "comments": "Comments",
     "cast": "Cast",
     "like": "Like",

@@ -11,11 +11,14 @@ import com.example.backend.Cms.Entity.CreatorTranslation;
 import com.example.backend.Cms.Entity.EpisodeVideo;
 import com.example.backend.Cms.Enums.Locale;
 import com.example.backend.Cms.Enums.CommentStatus;
+import com.example.backend.Cms.Enums.CurrencyKind;
+import com.example.backend.Cms.Enums.DonationTargetType;
 import com.example.backend.Cms.Enums.MediaRole;
 import com.example.backend.Cms.Enums.StructureType;
 import com.example.backend.Cms.Repository.CommentRepo;
 import com.example.backend.Cms.Repository.ContentCreditRepo;
 import com.example.backend.Cms.Repository.ContentRepo;
+import com.example.backend.Cms.Repository.DonationRepo;
 import com.example.backend.Cms.Repository.EpisodeRepo;
 import com.example.backend.Cms.Service.AccessDecision;
 import com.example.backend.Cms.Service.AccessService;
@@ -68,6 +71,7 @@ public class WatchController {
     private final ContentLikeService likeService;
     private final ContentCreditRepo creditRepo;
     private final CommentRepo commentRepo;
+    private final DonationRepo donationRepo;
 
     /**
      * Ombor kalitini pleyer ochadigan manzilga aylantiradi.
@@ -112,6 +116,7 @@ public class WatchController {
                 .likeCount(likes(episode.getContent()))
                 .liked(liked(user, episode.getContent()))
                 .starsReceived(stars(episode.getContent()))
+                .coinsReceived(coins(episode.getContent()))
                 .commentCount(comments(episode.getContent()))
                 .credits(credits(episode.getContent(), locale))
                 // Rad etilganda ham ro'yxat bo'sh emas, BO'SH RO'YXAT - null emas,
@@ -173,6 +178,7 @@ public class WatchController {
                 .likeCount(likes(content))
                 .liked(liked(user, content))
                 .starsReceived(stars(content))
+                .coinsReceived(coins(content))
                 .commentCount(comments(content))
                 .credits(credits(content, locale))
                 .sources(decision.isAllowed() ? contentSources(user, content, locale) : List.of())
@@ -279,6 +285,25 @@ public class WatchController {
         return user != null
                 && content != null
                 && likeService.isLiked(user.getId(), content.getId());
+    }
+
+    /**
+     * Kontentga tushgan UZCASTING Coin.
+     *
+     * ⚠️ Yulduzlar bilan QO'SHILMAYDI. Ular boshqa-boshqa birliklar, va
+     * ularning yig'indisi hech narsani anglatmaydi — referens ekranda
+     * ham ular ikkita alohida plitka.
+     *
+     * ⚠️ Yulduzlardan farqli o'laroq bu yerda tayyor hisoblagich yo'q:
+     * kontentda faqat {@code starsReceived} ustuni bor. Shuning uchun
+     * summa donatlar bo'yicha yig'iladi — indeks bor
+     * ({@code idx_donation_target}), va bu so'rov kontent ekrani
+     * ochilganda bir marta ketadi.
+     */
+    private long coins(Content content) {
+        return content == null ? 0L
+                : donationRepo.sumForTarget(DonationTargetType.CONTENT, content.getId(),
+                        CurrencyKind.UZCASTING_COIN);
     }
 
     private long stars(Content content) {
@@ -516,6 +541,13 @@ public class WatchController {
         private long starsReceived;
 
         /** Ochiq izohlar soni. */
+        /**
+         * UZCASTING Coin — ikkinchi donat valyutasi.
+         *
+         * ⚠️ Yulduzlar bilan bitta songa qo'shilmaydi: bu boshqa birlik.
+         */
+        private long coinsReceived;
+
         private long commentCount;
 
         /**

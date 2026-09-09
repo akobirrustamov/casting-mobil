@@ -114,6 +114,7 @@ function mapWatch(raw: unknown): WatchInfo {
     likeCount: num(r.likeCount),
     liked: r.liked === true,
     starsReceived: num(r.starsReceived),
+    coinsReceived: num(r.coinsReceived),
     commentCount: num(r.commentCount),
     credits: Array.isArray(r.credits) ? r.credits.map(mapCredit) : [],
     sources: Array.isArray(r.sources)

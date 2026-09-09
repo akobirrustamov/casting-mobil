@@ -11,6 +11,7 @@ import { Badge, type BadgeTone } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
 import { trackContentView } from '@/features/analytics/api';
+import { formatDuration } from '@/features/content/duration';
 import { CARD_RATIO } from '@/features/content/railLayout';
 import { contentCards, useHomeFeed } from '@/features/home/api';
 import type { ContentCard } from '@/features/home/types';
@@ -126,7 +127,7 @@ function Loaded({ info, query }: { info: WatchInfo; query: WatchQuery }) {
 
       <GenreChips card={card} />
       <CastRow credits={info.credits} />
-      <TrailerSection info={info} />
+      <TrailerSection info={info} card={card} />
 
       {info.allowed ? null : <LockedPanel info={info} />}
     </Screen>
@@ -242,26 +243,86 @@ function GenreChips({ card }: { card: ContentCard | undefined }) {
  * трейлер — именованный блок ниже. Заодно исчезла путаница «что сейчас
  * играет»: наверху фильм, здесь ролик, и подписано.
  */
-function TrailerSection({ info }: { info: WatchInfo }) {
+function TrailerSection({
+  info,
+  card,
+}: {
+  info: WatchInfo;
+  card: ContentCard | undefined;
+}) {
   const { t } = useTranslation();
   const trailer = info.trailer;
+
+  /**
+   * ⚠️ Ролик тоже поднимается ТОЛЬКО по нажатию.
+   *
+   * Пока здесь стоял плеер, он начинал грузить трейлер при каждом
+   * открытии экрана — ровно то, от чего мы избавились у основного
+   * видео. На карточке два видео сразу — это двойной трафик у
+   * человека, который ещё ничего не выбрал.
+   */
+  const [playing, setPlaying] = useState(false);
   const [failed, setFailed] = useState(false);
 
   if (trailer === null || failed) return null;
 
+  const poster = mediaUrl(card?.posterMediaId);
+  const length = formatDuration(trailer.durationSeconds);
+
   return (
     <View className="gap-3">
       <Text className="text-h2 text-text">{t('content.trailer')}</Text>
-      <Player
-        key={`trailer-${trailer.mediaId}-${trailer.hlsUrl ? 'hls' : 'raw'}`}
-        source={trailer}
-        orientation={info.orientation}
-        // ⚠️ Ни контента, ни серии: ролик не должен ни писать позицию
-        // просмотра, ни считаться просмотром фильма.
-        contentId={null}
-        episodeId={null}
-        onError={() => setFailed(true)}
-      />
+
+      {playing ? (
+        <Player
+          key={`trailer-${trailer.mediaId}-${trailer.hlsUrl ? 'hls' : 'raw'}`}
+          source={trailer}
+          orientation={info.orientation}
+          // ⚠️ Ни контента, ни серии: ролик не должен ни писать позицию
+          // просмотра, ни считаться просмотром фильма.
+          contentId={null}
+          episodeId={null}
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <Pressable
+          onPress={() => setPlaying(true)}
+          accessibilityRole="button"
+          accessibilityLabel={t('content.trailer')}
+          className="h-44 overflow-hidden rounded-card bg-surface-2 active:opacity-80"
+        >
+          {poster ? (
+            <Image
+              source={{ uri: poster }}
+              style={{ width: '100%', height: '100%' }}
+              contentFit="cover"
+              transition={150}
+            />
+          ) : null}
+
+          {/* Кружок с треугольником по центру — как на референсе. */}
+          <View className="absolute inset-0 items-center justify-center">
+            <View
+              className="items-center justify-center rounded-full"
+              style={{
+                width: 56,
+                height: 56,
+                backgroundColor: 'rgba(0,0,0,0.45)',
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.5)',
+              }}
+            >
+              <Ionicons name="play" size={24} color={colors.white} />
+            </View>
+          </View>
+
+          {length ? (
+            <View className="absolute bottom-2 left-2 rounded-pill bg-ink/80 px-2.5 py-1">
+              <Text className="text-caption text-text">{length}</Text>
+            </View>
+          ) : null}
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -570,13 +631,18 @@ function Facts({ info, card }: { info: WatchInfo; card: ContentCard | undefined 
       ? Math.max(1, Math.round(info.durationSeconds / 60))
       : null;
 
+  const views = info.viewCount;
+
   const facts = [
     info.episodeNumber !== null ? t('content.part', { number: info.episodeNumber }) : null,
-    card?.contentType
-      ? t(`contentType.${card.contentType}`, { defaultValue: card.contentType })
-      : null,
+    // ⚠️ Типа контента здесь БОЛЬШЕ НЕТ: он стоит бейджем над названием
+    // (`Head`), как на референсе. Пока он был и там, и тут, «Mini-serial»
+    // читался дважды подряд.
     card?.ageRating,
     minutes !== null ? t('content.minutes', { count: minutes }) : null,
+    // Просмотры ушли сюда, в мелкую строку: на референсе их нет среди
+    // плиток, но цифра полезная, а места в строке фактов достаточно.
+    views !== null ? t('content.views', { count: views }) : null,
   ].filter((f): f is string => Boolean(f));
 
   const badge = info.allowed ? accessBadge(info.reason) : null;

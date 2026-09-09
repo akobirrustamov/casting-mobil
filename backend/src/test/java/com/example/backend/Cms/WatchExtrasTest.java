@@ -6,10 +6,13 @@ import com.example.backend.Cms.Entity.Content;
 import com.example.backend.Cms.Entity.ContentCredit;
 import com.example.backend.Cms.Entity.Creator;
 import com.example.backend.Cms.Entity.CreatorTranslation;
+import com.example.backend.Cms.Entity.DonationTransaction;
 import com.example.backend.Cms.Enums.AccessPolicy;
 import com.example.backend.Cms.Enums.CommentStatus;
 import com.example.backend.Cms.Enums.ContentType;
 import com.example.backend.Cms.Enums.CreatorProfession;
+import com.example.backend.Cms.Enums.CurrencyKind;
+import com.example.backend.Cms.Enums.DonationTargetType;
 import com.example.backend.Cms.Enums.Locale;
 import com.example.backend.Cms.Enums.PublicationStatus;
 import com.example.backend.Cms.Enums.StructureType;
@@ -17,6 +20,7 @@ import com.example.backend.Cms.Repository.CommentRepo;
 import com.example.backend.Cms.Repository.ContentCreditRepo;
 import com.example.backend.Cms.Repository.ContentRepo;
 import com.example.backend.Cms.Repository.CreatorRepo;
+import com.example.backend.Cms.Repository.DonationRepo;
 import com.example.backend.Cms.Service.ContentService;
 import com.example.backend.Entity.User;
 import com.example.backend.Repository.UserRepo;
@@ -68,6 +72,7 @@ class WatchExtrasTest {
     @Autowired private ContentCreditRepo creditRepo;
     @Autowired private CreatorRepo creatorRepo;
     @Autowired private CommentRepo commentRepo;
+    @Autowired private DonationRepo donationRepo;
     @Autowired private UserRepo userRepo;
     @Autowired private EntityManager entityManager;
 
@@ -189,6 +194,72 @@ class WatchExtrasTest {
             mockMvc.perform(get("/api/v1/app/watch/content/" + film.getId()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.commentCount").value(0));
+        }
+    }
+
+    @Nested
+    @DisplayName("UZCASTING Coin")
+    class Coins {
+
+        private void donate(Content content, CurrencyKind kind, long amount) {
+            User sender = userRepo.save(User.builder()
+                    .phone("+99890" + (3_000_000 + SEQ.incrementAndGet()))
+                    .name("Donat qiluvchi")
+                    .roles(List.of())
+                    .build());
+
+            donationRepo.save(DonationTransaction.builder()
+                    .sender(sender)
+                    .targetType(DonationTargetType.CONTENT)
+                    .targetId(content.getId())
+                    .kind(kind)
+                    .amount(amount)
+                    .build());
+        }
+
+        @Test
+        @DisplayName("Tangalar qo'shilib javobga tushadi")
+        void coinsAreSummed() throws Exception {
+            Content film = movie();
+            donate(film, CurrencyKind.UZCASTING_COIN, 20);
+            donate(film, CurrencyKind.UZCASTING_COIN, 36);
+            entityManager.flush();
+
+            mockMvc.perform(get("/api/v1/app/watch/content/" + film.getId()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.coinsReceived").value(56));
+        }
+
+        /**
+         * ⚠️ Bu faylning eng muhim tekshiruvi.
+         *
+         * Yulduz va tanga — boshqa-boshqa birliklar. Ular bitta songa
+         * qo'shilib ketsa, ekranda ma'nosiz raqam turadi, va buni
+         * payqash deyarli imkonsiz: son o'sadi, ya'ni «ishlayotgandek»
+         * ko'rinadi.
+         */
+        @Test
+        @DisplayName("Yulduzlar tangalarga qo'shilmaydi")
+        void starsDoNotLeakIntoCoins() throws Exception {
+            Content film = movie();
+            donate(film, CurrencyKind.UZCASTING_COIN, 10);
+            donate(film, CurrencyKind.STARS, 500);
+            entityManager.flush();
+
+            mockMvc.perform(get("/api/v1/app/watch/content/" + film.getId()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.coinsReceived").value(10));
+        }
+
+        @Test
+        @DisplayName("Hech kim donat qilmagan bo'lsa — nol, null emas")
+        void zeroWhenNobodyDonated() throws Exception {
+            Content film = movie();
+            entityManager.flush();
+
+            mockMvc.perform(get("/api/v1/app/watch/content/" + film.getId()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.coinsReceived").value(0));
         }
     }
 

@@ -318,6 +318,8 @@
     "watch": "Tomosha qilish",
     "likes": "Yoqdi",
     "stars": "Yulduzlar",
+    "coins": "Uzcasting",
+    "views": "{{count}} marta ko'rilgan",
     "comments": "Izohlar",
     "cast": "Aktyorlar",
     "like": "Yoqdi deb belgilash",

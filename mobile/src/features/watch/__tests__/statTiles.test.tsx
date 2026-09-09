@@ -55,6 +55,7 @@ function info(over: Partial<WatchInfo> = {}): WatchInfo {
     likeCount: 7,
     liked: false,
     starsReceived: null,
+    coinsReceived: null,
     commentCount: null,
     credits: [],
     sources: [],

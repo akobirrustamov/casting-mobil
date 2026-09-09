@@ -98,6 +98,7 @@ function locked(over: Partial<WatchInfo> = {}): WatchInfo {
     likeCount: null,
     liked: false,
     starsReceived: null,
+    coinsReceived: null,
     commentCount: null,
     credits: [],
     sources: [],
@@ -129,23 +130,42 @@ async function render(info: WatchInfo) {
  * своей обёрткой, и `findByType` не находит ничего. Перевод в тестах
  * подменён на сам ключ, поэтому в подписи именно `content.watch`.
  */
-function pressWatch(tree: ReturnType<typeof create>) {
+function press(tree: ReturnType<typeof create>, label: string) {
   const button = tree.root.find(
     (node) =>
       node.props?.accessibilityRole === 'button' &&
       typeof node.props?.onPress === 'function' &&
-      node.props?.accessibilityLabel === 'content.watch'
+      node.props?.accessibilityLabel === label
   );
   act(() => button.props.onPress());
 }
+
+const pressWatch = (tree: ReturnType<typeof create>) => press(tree, 'content.watch');
+const pressTrailer = (tree: ReturnType<typeof create>) => press(tree, 'content.trailer');
 
 beforeEach(() => {
   playerProps.length = 0;
   jest.clearAllMocks();
 });
 
-it('Есть трейлер — он играет своим блоком', async () => {
+/**
+ * ⚠️ Ролик тоже НЕ грузится сам.
+ *
+ * Пока в блоке трейлера сразу стоял плеер, он тянул видео при каждом
+ * открытии экрана — ровно то, от чего избавились у основного видео.
+ * Два видео на одной карточке — это двойной трафик у человека, который
+ * ещё ничего не выбрал.
+ */
+it('Трейлер не грузится, пока не нажали', async () => {
   await render(locked({ trailer: trailer() }));
+
+  expect(playerProps).toHaveLength(0);
+});
+
+it('После нажатия играет ролик', async () => {
+  const tree = await render(locked({ trailer: trailer() }));
+
+  pressTrailer(tree);
 
   expect(playerProps).toHaveLength(1);
   expect(playerProps[0].source).toMatchObject({ mediaId: 42, durationSeconds: 90 });
@@ -159,7 +179,8 @@ it('Есть трейлер — он играет своим блоком', asyn
  * просмотр» станет показывать место, на котором закончился ролик.
  */
 it('Трейлер не пишет позицию и не считается просмотром', async () => {
-  await render(locked({ trailer: trailer() }));
+  const tree = await render(locked({ trailer: trailer() }));
+  pressTrailer(tree);
 
   expect(playerProps[0].contentId).toBeNull();
   expect(playerProps[0].episodeId).toBeNull();
@@ -213,8 +234,8 @@ it('После кнопки играет фильм, а не трейлер', as
     locked({ allowed: true, reason: 'PREMIERE_PURCHASE', trailer: trailer(), sources: [film] })
   );
 
-  // До нажатия наверху афиша, играет только ролик в своём блоке.
-  expect(playerProps.map((p) => p.source)).toMatchObject([{ mediaId: 42 }]);
+  // До нажатия не играет ничего: ни фильм, ни ролик.
+  expect(playerProps).toHaveLength(0);
 
   pressWatch(tree);
 
