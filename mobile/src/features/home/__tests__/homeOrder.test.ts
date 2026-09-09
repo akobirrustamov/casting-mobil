@@ -23,11 +23,28 @@ const SCREEN = fs.readFileSync(
   'utf8'
 );
 
+/**
+ * Исходник БЕЗ закомментированных кусков.
+ *
+ * ⚠️ Иначе тест считает выключенный блок за живой. `at()` ищет по
+ * тексту файла, а `{/* <Block /> *\/}` — это по-прежнему текст: порядок
+ * «проверялся» бы по строке, которой на экране нет, и тест оставался
+ * бы зелёным, ничего не проверяя.
+ */
+const ACTIVE = SCREEN
+  .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+  .replace(/^\s*\/\/.*$/gm, '');
+
 /** Позиция куска в файле; -1 превращается в понятный провал. */
 function at(marker: string): number {
-  const index = SCREEN.indexOf(marker);
+  const index = ACTIVE.indexOf(marker);
   expect(index).toBeGreaterThanOrEqual(0);
   return index;
+}
+
+/** Есть ли блок на экране (не закомментирован). */
+function isActive(marker: string): boolean {
+  return ACTIVE.includes(marker);
 }
 
 describe('главная: порядок блоков', () => {
@@ -37,7 +54,16 @@ describe('главная: порядок блоков', () => {
   });
 
   it('«продолжить просмотр» — ПОСЛЕ разделов каталога', () => {
-    expect(at('<ContinueRail />')).toBeGreaterThan(at('<CategoryRows />'));
+    // ⚠️ `<CategoryRows />` временно отключён (09.09.2026). Пока его нет,
+    // проверять его позицию нечего — но и молча пропускать нельзя:
+    // порядок задал заказчик, и при возврате блока проверку надо вернуть.
+    //
+    // Поэтому условие перевёрнуто: когда блок снова появится, эта ветка
+    // сработает сама. Никто не обязан помнить про этот тест.
+    if (isActive('<CategoryRows />')) {
+      expect(at('<ContinueRail />')).toBeGreaterThan(at('<CategoryRows />'));
+    }
+
     expect(at('<ContinueRail />')).toBeGreaterThan(at("t('home.categories')"));
   });
 

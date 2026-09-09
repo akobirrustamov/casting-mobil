@@ -13,7 +13,8 @@ import { Skeleton, SkeletonRail } from '@/components/ui/Skeleton';
 import { StoryCircle } from '@/components/ui/StoryCircle';
 import { Wordmark } from '@/components/ui/Wordmark';
 import { CATEGORIES } from '@/features/catalog/categories';
-import { CategoryRows } from '@/features/catalog/CategoryRows';
+// ⚠️ Вместе с блоком ниже: см. «ВРЕМЕННО ОТКЛЮЧЕНО».
+// import { CategoryRows } from '@/features/catalog/CategoryRows';
 import { useCreators, withPhotos } from '@/features/creators/api';
 import { HomeFeedUnavailableError, useHomeFeed } from '@/features/home/api';
 import { HomeSectionView } from '@/features/home/sections';
@@ -82,14 +83,21 @@ export default function HomeScreen() {
 
       <HomeFeedBlock feed={feed} isOffline={isOffline} active={isFocused} />
 
-      {/* Разделы каталога контента: «Drama», под ним карточки — такой же
+      {/* ⚠️ ВРЕМЕННО ОТКЛЮЧЕНО (09.09.2026, по просьбе заказчика).
+          Возврат — снять комментарий с этой строки и с импорта выше.
+
+          Разделы каталога контента: «Drama», под ним карточки — такой же
           ряд, как «Podkastlar» из фида. Стоят сразу под фидом, потому что
           это продолжение того же списка контента; блоки кастинга ниже —
           другой продукт и другой бэкенд.
 
           ⚠️ Не путать со следующим рельсом: там 10 направлений КАСТИНГА
-          (анкеты людей), здесь разделы каталога КОНТЕНТА (фильмы). */}
-      <CategoryRows />
+          (анкеты людей), здесь разделы каталога КОНТЕНТА (фильмы).
+
+          Блок сам по себе рабочий: он тянет `/api/v1/app/catalog/categories`
+          и по запросу на каждый раздел — карточки. Отключение убирает
+          и эти запросы. */}
+      {/* <CategoryRows /> */}
 
       <Rail title={t('home.categories')} onSeeAll={() => router.push('/catalog/all')}>
         {CATEGORIES.map((c) => (
