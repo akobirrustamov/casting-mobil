@@ -15,8 +15,10 @@
  *    va bu xulosa mantiqan to'g'ri bo'lardi.
  */
 import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import ContentStatsModal from '../reports/ContentStatsModal';
 import ReportsPage from '../ReportsPage';
+import ContentPage from '../ContentPage';
 import { PanelI18nProvider } from '../../i18n';
 
 jest.mock('../../api/client', () => ({
@@ -24,17 +26,23 @@ jest.mock('../../api/client', () => ({
     contentStatistics: jest.fn(),
     reportOverview: jest.fn(),
     // Filtrlar ro'yxati bu testning mavzusi emas — bo'sh javob yetarli.
-    content: jest.fn().mockResolvedValue({ items: [] }),
-    categories: jest.fn().mockResolvedValue({ items: [] }),
-    creators: jest.fn().mockResolvedValue({ items: [] }),
-    tariffs: jest.fn().mockResolvedValue([]),
-    advertisements: jest.fn().mockResolvedValue([]),
+    content: jest.fn(),
+    categories: jest.fn(),
+    creators: jest.fn(),
+    tariffs: jest.fn(),
+    advertisements: jest.fn(),
   },
+  // ContentPage afishani shu orqali quradi.
+  mediaUrl: (id) => (id ? '/media/' + id : null),
 }));
 
 // Grafik bu testning mavzusi emas — u `charts.test.jsx` da qamralgan.
 jest.mock('../../components/TrendChart', () => () => <div data-testid="trend" />);
 jest.mock('../../components/charts/BarChart', () => () => <div data-testid="bars" />);
+
+jest.mock('../../auth/AuthContext', () => ({
+  useAuth: () => ({ can: () => true, atLeast: () => true, user: { role: 'ADMIN' } }),
+}));
 
 const { adminApi } = require('../../api/client');
 
@@ -67,8 +75,14 @@ function open(data = STATS) {
   );
 }
 
+// CRA jest'ida `resetMocks: true` — fabrikada berilgan qiymatlar har
+// testdan oldin o'chadi. Shuning uchun ular shu yerda beriladi.
 beforeEach(() => {
-  adminApi.contentStatistics.mockReset();
+  adminApi.content.mockResolvedValue({ items: [] });
+  adminApi.categories.mockResolvedValue({ items: [] });
+  adminApi.creators.mockResolvedValue({ items: [] });
+  adminApi.tariffs.mockResolvedValue([]);
+  adminApi.advertisements.mockResolvedValue([]);
 });
 
 test('davr soni va jami son ALOHIDA ko\'rsatiladi', async () => {
@@ -164,5 +178,44 @@ describe('umumiy hisobot', () => {
     // mumkin, shuning uchun qatordan qidiramiz.
     const row = screen.getByText('film-bir').closest('tr');
     expect(row).toHaveTextContent('200');
+  });
+});
+
+/**
+ * Kontent ro'yxatidagi «Yoqdi» ustuni.
+ *
+ * ⚠️ Ko'rishlar bilan YONMA-YON turishi muhim: ko'p ko'rilib, kam
+ * yoqqan kontent butunlay boshqa xulosa beradi. Ustun tushib qolsa
+ * jadval baribir to'g'ri ko'rinadi — shunchaki bu xulosani chiqarib
+ * bo'lmasdi.
+ */
+describe('kontent katalogi', () => {
+  test('ikkala sanoq bir qatorda turadi', async () => {
+    adminApi.content.mockResolvedValue({
+      items: [{
+        id: 7, slug: 'film-bir', status: 'PUBLISHED', contentType: 'MOVIE',
+        orientation: 'LANDSCAPE', accessPolicy: 'FREE',
+        viewCount: 4321, likeCount: 89,
+        translations: { UZ: { title: 'Film bir' } },
+      }],
+      totalPages: 1,
+      totalItems: 1,
+    });
+
+    render(
+      <MemoryRouter>
+        <PanelI18nProvider>
+          <ContentPage />
+        </PanelI18nProvider>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(screen.getByText('film-bir')).toBeInTheDocument());
+    const row = screen.getByText('film-bir').closest('tr');
+    // Ajratgich muhit tiliga bog'liq (`count` — `toLocaleString`):
+    // 4 321 ham, 4,321 ham to'g'ri. Testni ajratgichga bog'lash uni
+    // boshqa mashinada yiqitardi — kod esa to'g'ri qolardi.
+    expect(row).toHaveTextContent(/4\s?321/);
+    expect(row).toHaveTextContent('89');
   });
 });

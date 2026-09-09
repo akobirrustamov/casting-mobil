@@ -633,6 +633,7 @@ Har biri token talab qiladi. Ustunda — kerakli ruxsat.
 | GET | `/api/v1/app/admin/auth/me` | token |
 | GET | `/api/v1/app/admin/dashboard/summary` | `CONTENT_VIEW` |
 | GET | `/api/v1/app/admin/reports/overview` | `REPORT_VIEW` |
+| GET | `/api/v1/app/admin/reports/content/{id}/statistics` | `REPORT_VIEW` |
 | GET | `/api/v1/app/admin/settings` | `SETTINGS_VIEW` |
 | PUT | `/api/v1/app/admin/settings/{key}` | `SETTINGS_EDIT` |
 | GET | `/api/v1/app/admin/staff` | rol ≥ ADMIN |

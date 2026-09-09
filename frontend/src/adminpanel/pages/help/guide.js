@@ -53,25 +53,28 @@ export const GUIDE = [
         icon: '📊',
         title: { uz: 'Hisobotlar', ru: 'Отчёты', en: 'Reports' },
         what: {
-          uz: 'Ko\'rishlar, daromad, reklama va bildirishnomalar bo\'yicha statistika.',
-          ru: 'Статистика по просмотрам, доходу, рекламе и уведомлениям.',
-          en: 'Statistics for views, revenue, advertising and notifications.',
+          uz: 'Ko\'rishlar, «yoqdi», daromad, reklama va bildirishnomalar bo\'yicha statistika.',
+          ru: 'Статистика по просмотрам, лайкам, доходу, рекламе и уведомлениям.',
+          en: 'Statistics for views, likes, revenue, advertising and notifications.',
         },
         steps: {
           uz: [
             'Yuqoridan davrni tanlang: hafta, oy yoki o\'z oralig\'ingiz.',
             'Kontent yoki reklama qatoriga bosing — batafsil oyna ochiladi.',
             'Ma\'lumot yo\'q bo\'lsa bo\'sh ko\'rsatiladi. Panel raqamni o\'ylab topmaydi.',
+            '«Yoqdi» soni kamayishi mumkin: odam uni olib tashlasa, u qo\'yilgan kundan ham yo\'qoladi. Ko\'rish esa hech qachon kamaymaydi.',
           ],
           ru: [
             'Выберите период сверху: неделя, месяц или свой диапазон.',
             'Нажмите на строку контента или рекламы — откроется подробное окно.',
             'Если данных нет, показывается пусто. Панель не выдумывает цифры.',
+            'Число лайков может уменьшиться: если лайк сняли, он исчезает и из того дня, когда был поставлен. Просмотры не уменьшаются никогда.',
           ],
           en: [
             'Pick a period at the top: week, month or a custom range.',
             'Click a content or ad row to open the detailed view.',
             'When there is no data it shows empty. The panel never invents numbers.',
+            'The like count can go down: removing a like also removes it from the day it was placed. Views never go down.',
           ],
         },
       },
