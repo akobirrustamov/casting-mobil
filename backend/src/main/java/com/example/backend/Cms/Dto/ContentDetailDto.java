@@ -104,6 +104,18 @@ public class ContentDetailDto {
     /** Shu kontentga yuborilgan yulduzlar yig'indisi. */
     private Long starsReceived;
 
+    /**
+     * UZCASTING Coin — ikkinchi donat valyutasi.
+     *
+     * ⚠️ Yulduzlar bilan BITTA songa qo'shilmaydi: bu boshqa birlik, va
+     * ularning yig'indisi hech narsani anglatmaydi. Referens ekranda ham
+     * ular ikkita alohida plitka.
+     *
+     * ⚠️ Yulduzlardan farqli o'laroq kontentda tayyor hisoblagich yo'q —
+     * summa donatlar bo'yicha yig'iladi.
+     */
+    private Long coinsReceived;
+
     /** Shu odam «yoqdi» bosganmi. Mehmonda doim {@code false}. */
     private boolean liked;
 

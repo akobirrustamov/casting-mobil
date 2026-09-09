@@ -105,6 +105,8 @@ public class ContentDetailService {
                 .commentCount(commentRepo.countByContentIdAndStatus(
                         c.getId(), CommentStatus.VISIBLE))
                 .starsReceived(nz(c.getStarsReceived()))
+                .coinsReceived(donationRepo.sumForTarget(
+                        DonationTargetType.CONTENT, c.getId(), CurrencyKind.UZCASTING_COIN))
                 .liked(viewer != null
                         && contentLikeRepo.existsByContentIdAndUserId(c.getId(), viewer.getId()))
                 .cast(cast(c, lang))

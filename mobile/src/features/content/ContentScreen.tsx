@@ -427,6 +427,7 @@ function FactsRow({
 }) {
   const { t } = useTranslation();
 
+  const views = detail?.viewCount ?? info?.viewCount ?? null;
   const seconds = detail?.durationSeconds ?? info?.durationSeconds ?? null;
   const minutes = seconds !== null && seconds > 0 ? Math.max(1, Math.round(seconds / 60)) : null;
 
@@ -440,6 +441,10 @@ function FactsRow({
     detail?.ageRating ?? null,
     detail?.episodeCount ? t('content.episodeCount', { count: detail.episodeCount }) : null,
     minutes !== null ? t('content.minutes', { count: minutes }) : null,
+    // ⚠️ Просмотры переехали сюда из плиток: на референсе третья плитка —
+    // монеты, а пять плиток в ряд не помещаются. Цифра при этом нужна,
+    // заказчик просил её отдельно (07.09.2026).
+    views !== null ? t('content.views', { count: views }) : null,
   ].filter((f): f is string => Boolean(f));
 
   if (facts.length === 0) return null;

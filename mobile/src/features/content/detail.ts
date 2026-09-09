@@ -80,6 +80,15 @@ export type ContentDetail = {
   commentCount: number | null;
   starsReceived: number | null;
 
+  /**
+   * UZCASTING Coin — вторая донатная валюта.
+   *
+   * ⚠️ Со звёздами в одно число не складывается: это разные единицы, и
+   * сумма ничего не значит. На бэкенде то же правило охраняет тест
+   * отчётов.
+   */
+  coinsReceived: number | null;
+
   liked: boolean;
 
   cast: CastMember[];
@@ -187,6 +196,7 @@ export function mapDetail(raw: unknown): ContentDetail {
     likeCount: num(r.likeCount),
     commentCount: num(r.commentCount),
     starsReceived: num(r.starsReceived),
+    coinsReceived: num(r.coinsReceived),
     liked: r.liked === true,
     cast: Array.isArray(r.cast) ? r.cast.map(mapCast) : [],
   };

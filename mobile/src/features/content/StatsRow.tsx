@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +9,8 @@ import { useAuthStore } from '@/features/auth/store';
 import { setLike } from '@/features/watch/api';
 import type { WatchInfo } from '@/features/watch/types';
 import { groupDigits } from '@/lib/money';
+
+import coinIcon from '../../../assets/brand/coin.png';
 import { colors } from '@/theme/tokens';
 
 import type { ContentDetail } from './detail';
@@ -40,6 +43,7 @@ export function StatsRow({
 
   const views = detail?.viewCount ?? info?.viewCount ?? null;
   const stars = detail?.starsReceived ?? null;
+  const coins = detail?.coinsReceived ?? null;
   const comments = detail?.commentCount ?? null;
 
   return (
@@ -52,11 +56,17 @@ export function StatsRow({
         value={stars}
         label={t('content.stars')}
       />
+      {/*
+        ⚠️ Здесь монеты, а не просмотры — так на референсе. Просмотры
+        никуда не делись: они ушли в строку фактов, к году и возрасту.
+        Пять плиток в ряд не помещаются: подпись «Uzcasting» под значком
+        и так занимает всю ширину плитки.
+      */}
       <Tile
-        icon="eye-outline"
-        color={colors.cyan}
-        value={views}
-        label={t('content.views')}
+        icon="coin"
+        color={colors.textMuted}
+        value={coins}
+        label={t('content.coins')}
       />
       <Tile
         icon="chatbubble-outline"
@@ -143,6 +153,14 @@ function LikeTile({
   );
 }
 
+/**
+ * Знак плитки.
+ *
+ * ⚠️ `'coin'` — не имя из Ionicons, а НАША картинка: у UZCASTING Coin
+ * свой фирменный знак, и заменить его значком из набора нельзя.
+ */
+type Glyph = keyof typeof Ionicons.glyphMap | 'coin';
+
 function Tile({
   icon,
   color,
@@ -152,7 +170,7 @@ function Tile({
   disabled = false,
   selected = false,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: Glyph;
   color: string;
   value: number | null;
   label: string;
@@ -162,7 +180,21 @@ function Tile({
 }) {
   const body = (
     <>
-      <Ionicons name={icon} size={18} color={color} />
+      {icon === 'coin' ? (
+        <Image
+          source={coinIcon}
+          // ⚠️ Знак залит белым, цвет даёт `tintColor`: тогда он живёт по
+          // тем же правилам, что и соседние значки — одна линия, один
+          // цвет. Хромированный оригинал рядом с ними выглядел бы
+          // наклейкой из чужого приложения, а на 18 пунктах блики
+          // превращаются в грязь.
+          tintColor={color}
+          style={{ width: 18, height: 18 }}
+          contentFit="contain"
+        />
+      ) : (
+        <Ionicons name={icon} size={18} color={color} />
+      )}
       <Text numberOfLines={1} className="text-caption font-semibold text-text">
         {/* Прочерк, а не «0»: сервер про это число ничего не сказал. */}
         {value === null ? '—' : groupDigits(value)}

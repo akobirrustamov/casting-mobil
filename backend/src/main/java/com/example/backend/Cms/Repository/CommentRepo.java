@@ -111,7 +111,4 @@ public interface CommentRepo extends JpaRepository<Comment, Long> {
     long countByContentIdAndStatus(Long contentId, CommentStatus status);
 
     long countByStatus(CommentStatus status);
-
-    /** Kontent ekranidagi «Izohlar N ta» — faqat ochiq izohlar. */
-    long countByContentIdAndStatus(Long contentId, CommentStatus status);
 }
