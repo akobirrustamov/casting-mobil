@@ -13,6 +13,24 @@ public interface EpisodeRepo extends JpaRepository<Episode, Long> {
 
     List<Episode> findAllByContentIdOrderBySortOrderAsc(Long contentId);
 
+    /**
+     * Qism ko'rishlarini oshirish (buyurtmachi 07.09.2026).
+     *
+     * <h2>⚠️ Ustun bor edi, lekin uni hech kim oshirmasdi</h2>
+     * {@code cms_episode.view_count} boshidan mavjud va admin panel uni
+     * ko'rsatib turardi — doim nol. Hodisalar {@code episodeId} bilan
+     * kelardi, ammo jamlash ularni faqat KONTENT bo'yicha guruhlab,
+     * qism raqamini tashlab yuborardi. Ya'ni panel yolg'on nol
+     * ko'rsatardi, buzuq ekani esa ko'rinmasdi.
+     *
+     * ⚠️ {@code clearAutomatically} YO'Q — {@code ContentRepo.addViews}
+     * bilan bir sababdan: chaqiruvchi o'sha tranzaksiyada kunlik
+     * jamlanma obyektlari bilan ishlaydi.
+     */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("update Episode e set e.viewCount = e.viewCount + :delta where e.id = :id")
+    void addViews(@Param("id") Long id, @Param("delta") long delta);
+
     List<Episode> findAllBySeasonIdOrderByEpisodeNumberAsc(Long seasonId);
 
     long countByContentId(Long contentId);

@@ -2,6 +2,7 @@ package com.example.backend.Cms;
 
 import com.example.backend.Admin.Dto.ContentSaveRequest;
 import com.example.backend.Cms.Entity.Content;
+import com.example.backend.Cms.Entity.Episode;
 import com.example.backend.Cms.Enums.AccessPolicy;
 import com.example.backend.Cms.Enums.AnalyticsEventType;
 import com.example.backend.Cms.Enums.ContentType;
@@ -72,6 +73,8 @@ class ContentLikeTest {
     @Autowired private UserRepo userRepo;
     @Autowired private FavoriteService favoriteService;
     @Autowired private AnalyticsService analyticsService;
+    @Autowired private com.example.backend.Cms.Service.EpisodeService episodeService;
+    @Autowired private com.example.backend.Cms.Repository.EpisodeRepo episodeRepo;
     @Autowired private EntityManager entityManager;
 
     // ------------------------------------------------------------- yordamchi
@@ -94,6 +97,26 @@ class ContentLikeTest {
         c.setPremierePrice(new BigDecimal("5000"));
         c.setTranslations(Translations.all("Film " + SEQ.incrementAndGet()));
         return contentService.create(null, c);
+    }
+
+    private Content series() {
+        ContentSaveRequest c = new ContentSaveRequest();
+        c.setContentType(ContentType.MINI_SERIES);
+        c.setStructureType(StructureType.EPISODIC);
+        c.setAccessPolicy(AccessPolicy.FREE);
+        c.setStatus(PublicationStatus.PUBLISHED);
+        c.setTranslations(Translations.all("Serial " + SEQ.incrementAndGet()));
+        return contentService.create(null, c);
+    }
+
+    private Episode episode(Content content, int number) {
+        com.example.backend.Admin.Dto.EpisodeSaveRequest e =
+                new com.example.backend.Admin.Dto.EpisodeSaveRequest();
+        e.setEpisodeNumber(number);
+        e.setStatus(PublicationStatus.PUBLISHED);
+        e.setSortOrder(number);
+        e.setTranslations(Translations.all(number + "-qism"));
+        return episodeService.saveEpisode(null, content.getId(), null, e);
     }
 
     /** Bazadagi haqiqiy qiymat — kontekstdagi eski nusxa emas. */
@@ -314,6 +337,123 @@ class ContentLikeTest {
 
             entityManager.clear();
             assertThat(contentRepo.findById(film.getId()).orElseThrow().getViewCount())
+                    .isZero();
+        }
+    }
+
+    /**
+     * Qism ko'rishlari.
+     *
+     * ⚠️ {@code cms_episode.view_count} — kontentnikidan KEYIN
+     * topilgan o'sha kasallik: ustun bor edi, admin panel uni
+     * ko'rsatardi, lekin hodisalarni jamlash {@code episodeId} ni
+     * tashlab yuborardi. Panel yolg'on nol ko'rsatardi va buzuq ekani
+     * ko'rinmasdi — nol «hali hech kim ko'rmagan» degan haqiqatga
+     * o'xshab turardi.
+     */
+    @Nested
+    @DisplayName("Qism ko'rishlari")
+    class EpisodeViews {
+
+        @Test
+        @DisplayName("Qism bilan kelgan hodisa QISM sanog'ini oshiradi")
+        void eventsRaiseEpisodeViewCount() {
+            Content series = series();
+            Episode first = episode(series, 1);
+
+            for (int i = 0; i < 4; i++) {
+                analyticsService.record(AnalyticsEventType.CONTENT_VIEW,
+                        series.getId(), first.getId(), null, "qurilma-" + i);
+            }
+            analyticsService.aggregate();
+
+            entityManager.clear();
+            assertThat(episodeRepo.findById(first.getId()).orElseThrow().getViewCount())
+                    .isEqualTo(4);
+        }
+
+        /**
+         * Bitta hodisa ikki xil savolga javob beradi: «bu serialni necha
+         * kishi ochdi» va «uning qaysi qismi ochildi». Ikkalasi ham
+         * sanaladi, lekin ular BIR-BIRIGA QO'SHILMAYDI.
+         */
+        @Test
+        @DisplayName("O'sha hodisa kontent sanog'ini ham oshiradi")
+        void sameEventAlsoCountsForContent() {
+            Content series = series();
+            Episode first = episode(series, 1);
+
+            analyticsService.record(AnalyticsEventType.CONTENT_VIEW,
+                    series.getId(), first.getId(), null, "qurilma");
+            analyticsService.aggregate();
+
+            entityManager.clear();
+            assertThat(contentRepo.findById(series.getId()).orElseThrow().getViewCount())
+                    .isEqualTo(1);
+            assertThat(episodeRepo.findById(first.getId()).orElseThrow().getViewCount())
+                    .isEqualTo(1);
+        }
+
+        /**
+         * ⚠️ Ro'yxatdagi har qator o'z sonini ko'rsatishi kerak.
+         * Ikkinchi qism birinchisining sanog'ini olib qo'ysa, ro'yxat
+         * to'g'ri ishlayotgandek KO'RINARDI — raqamlar joyida, faqat
+         * hammasi bir xil.
+         */
+        @Test
+        @DisplayName("Har qism o'z sanog'ini oladi")
+        void episodesAreCountedSeparately() {
+            Content series = series();
+            Episode first = episode(series, 1);
+            Episode second = episode(series, 2);
+
+            analyticsService.record(AnalyticsEventType.CONTENT_VIEW,
+                    series.getId(), first.getId(), null, "a");
+            analyticsService.record(AnalyticsEventType.CONTENT_VIEW,
+                    series.getId(), first.getId(), null, "b");
+            analyticsService.record(AnalyticsEventType.CONTENT_VIEW,
+                    series.getId(), second.getId(), null, "a");
+            analyticsService.aggregate();
+
+            entityManager.clear();
+            assertThat(episodeRepo.findById(first.getId()).orElseThrow().getViewCount())
+                    .isEqualTo(2);
+            assertThat(episodeRepo.findById(second.getId()).orElseThrow().getViewCount())
+                    .isEqualTo(1);
+        }
+
+        /**
+         * Kontent kartochkasi qismsiz ochiladi — hodisada
+         * {@code episodeId} yo'q. Bunday hodisa hech qaysi qismga
+         * yozilmasligi kerak.
+         */
+        @Test
+        @DisplayName("Qismsiz hodisa hech qaysi qismga tushmaydi")
+        void eventWithoutEpisodeTouchesNoEpisode() {
+            Content series = series();
+            Episode first = episode(series, 1);
+
+            analyticsService.record(AnalyticsEventType.CONTENT_VIEW,
+                    series.getId(), null, null, "qurilma");
+            analyticsService.aggregate();
+
+            entityManager.clear();
+            assertThat(episodeRepo.findById(first.getId()).orElseThrow().getViewCount())
+                    .isZero();
+        }
+
+        @Test
+        @DisplayName("Ijro hodisasi qism ko'rishlarini oshirmaydi")
+        void playIsNotAnEpisodeView() {
+            Content series = series();
+            Episode first = episode(series, 1);
+
+            analyticsService.record(AnalyticsEventType.CONTENT_PLAY,
+                    series.getId(), first.getId(), null, "qurilma");
+            analyticsService.aggregate();
+
+            entityManager.clear();
+            assertThat(episodeRepo.findById(first.getId()).orElseThrow().getViewCount())
                     .isZero();
         }
     }

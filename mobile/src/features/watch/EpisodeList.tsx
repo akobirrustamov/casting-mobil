@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -11,7 +12,8 @@ import { isVertical } from '@/features/content/orientation';
 import { useContentCard } from '@/features/home/api';
 import { mediaUrl } from '@/lib/api';
 import { useIsOffline } from '@/lib/network';
-import { formatSum } from '@/lib/money';
+import { colors } from '@/theme/tokens';
+import { formatSum, groupDigits } from '@/lib/money';
 
 import { ContentNotFoundError, WatchUnavailableError } from './api';
 import { episodesOfSeason, type EpisodeCard, type useEpisodes } from './episodes';
@@ -207,6 +209,24 @@ function EpisodeRow({
             <Text className="text-micro text-text-muted">
               {t('common.price', { amount: formatSum(episode.episodePrice) })}
             </Text>
+          ) : null}
+
+          {/* Просмотры ЭТОЙ серии, а не всего сериала: число на экране
+              контента одно на всё, и напротив каждой серии оно
+              повторялось бы.
+
+              ⚠️ Ноль не рисуется — как и на карточках ленты. В списке из
+              двадцати серий столбик нулей читался бы как «сериал никто
+              не смотрит», хотя серия просто вышла вчера. На экране
+              контента правило обратное: там счётчик один, и ноль про
+              него — честный факт. */}
+          {episode.viewCount ? (
+            <View className="flex-row items-center gap-1">
+              <Ionicons name="eye-outline" size={12} color={colors.textMuted} />
+              <Text className="text-micro text-text-muted">
+                {groupDigits(episode.viewCount)}
+              </Text>
+            </View>
           ) : null}
         </View>
       </View>

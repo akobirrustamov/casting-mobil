@@ -40,6 +40,7 @@ public class AnalyticsService {
     private final AdDailyStatisticRepo adStatRepo;
     private final ContentDailyStatisticRepo contentStatRepo;
     private final ContentRepo contentRepo;
+    private final com.example.backend.Cms.Repository.EpisodeRepo episodeRepo;
 
     /**
      * Hodisani qabul qilish.
@@ -86,10 +87,41 @@ public class AnalyticsService {
             }
         }
 
+        // ⚠️ BELGILASHDAN OLDIN: bu so'rov ham `processed = false`
+        // ustidan ishlaydi, keyin chaqirilsa doim bo'sh qaytardi.
+        applyEpisodeRows();
+
         int processed = eventRepo.markAllProcessed();
         log.info("Analitika: {} ta hodisa {} ta jamlanma qatoriga qo'shildi",
                 processed, rows.size());
         return processed;
+    }
+
+    /**
+     * Qism ko'rishlarini oshiradi.
+     *
+     * <h2>Nima uchun kontent qatoridan alohida</h2>
+     * Asosiy jamlash {@code targetId} (kontent) bo'yicha guruhlaydi va
+     * {@code episodeId} ni tashlab yuboradi — aks holda bitta kontent
+     * qatori qismlar soniga bo'linib ketardi. Shuning uchun qism
+     * ikkinchi so'rov bilan sanaladi.
+     *
+     * ⚠️ Bu KO'RSATKICHNI IKKI MARTA SANASH EMAS. Bitta hodisa
+     * ikki xil savolga javob beradi: «bu filmni necha kishi ochdi» va
+     * «uning qaysi qismi ochildi». Birinchisi kontent qatorida,
+     * ikkinchisi qismda turadi; ular qo'shilmaydi.
+     *
+     * ⚠️ Faqat {@code CONTENT_VIEW}. Ijro va oxirigacha ko'rish
+     * qism darajasida saqlanadigan joyga ega emas — ular kunlik
+     * jamlanmada, u esa kontent bo'yicha.
+     */
+    private void applyEpisodeRows() {
+        for (AnalyticsEventRepo.EpisodeAggregateRow row : eventRepo.aggregateUnprocessedEpisodes()) {
+            if (row.getType() != AnalyticsEventType.CONTENT_VIEW || row.getEpisodeId() == null) {
+                continue;
+            }
+            episodeRepo.addViews(row.getEpisodeId(), nz(row.getTotal()));
+        }
     }
 
     private void applyAdRow(AnalyticsEventRepo.AggregateRow row) {

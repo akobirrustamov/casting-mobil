@@ -132,6 +132,11 @@ export default function ContentPage() {
                     <th>{t('content.col.status')}</th>
                     <th>{t('content.col.access')}</th>
                     <th style={{ textAlign: 'right' }}>{t('content.col.views')}</th>
+                    {/* ⚠️ Соседняя колонка, а не вторая строка в «Просмотрах»:
+                        числа разные по смыслу. Просмотр — пассивный, «нравится»
+                        человек нажал сам; рядом они читаются как отношение, а
+                        слепленные в одну ячейку — как одно число с пояснением. */}
+                    <th style={{ textAlign: 'right' }}>{t('content.col.likes')}</th>
                     <th />
                   </tr>
                 </thead>
@@ -185,6 +190,9 @@ export default function ContentPage() {
                       </td>
                       <td className="uz-mono" style={{ textAlign: 'right' }}>
                         {count(item.viewCount)}
+                      </td>
+                      <td className="uz-mono" style={{ textAlign: 'right' }}>
+                        {count(item.likeCount)}
                       </td>
                       <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                         {/* ⚠️ Statistika `REPORT_VIEW` ruxsatini talab

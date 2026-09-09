@@ -185,6 +185,7 @@ public class CmsCatalogController {
             com.example.backend.Admin.SortWhitelist.of("createdAt")
                     .add("updatedAt")
                     .add("views", "viewCount")
+                    .add("likes", "likeCount")
                     .add("publicationDate")
                     .add("premiereDate");
 

@@ -32,6 +32,30 @@ public interface AnalyticsEventRepo extends JpaRepository<AnalyticsEvent, Long> 
     List<AggregateRow> aggregateUnprocessed();
 
     /**
+     * O'sha hodisalar, lekin QISM bo'yicha jamlangan.
+     *
+     * <h2>Nima uchun alohida so'rov</h2>
+     * {@link #aggregateUnprocessed()} {@code episodeId} ni tashlab
+     * yuboradi: u kontent darajasidagi jadvalni to'ldiradi va qismni
+     * qo'shsa, bitta kontent qatori qismlar soniga bo'linib ketardi.
+     *
+     * ⚠️ Ikkala so'rov ham {@code processed = false} ustidan
+     * ishlaydi, ya'ni ikkalasi ham belgilashdan OLDIN chaqirilishi shart.
+     * Aks holda qism sanog'i doim bo'sh qaytardi.
+     *
+     * Qismsiz hodisalar (kontent kartochkasi ochilgani) bu yerga
+     * tushmaydi — ularning {@code episodeId} si null.
+     */
+    @Query("""
+            select e.eventDate as day, e.type as type, e.episodeId as episodeId,
+                   count(e) as total
+            from AnalyticsEvent e
+            where e.processed = false and e.episodeId is not null
+            group by e.eventDate, e.type, e.episodeId
+            """)
+    List<EpisodeAggregateRow> aggregateUnprocessedEpisodes();
+
+    /**
      * Bir KUN ichidagi unikal foydalanuvchilar — qayta ishlanganidan qat'i nazar.
      *
      * <h2>Nima uchun kerak</h2>
@@ -87,5 +111,19 @@ public interface AnalyticsEventRepo extends JpaRepository<AnalyticsEvent, Long> 
         Long getTargetId();
         Long getTotal();
         Long getUniques();
+    }
+
+    /**
+     * Qism bo'yicha qator.
+     *
+     * ⚠️ Unikal sanoq bu yerda YO'Q: qism uchun kunlik jamlanma
+     * jadvali ham yo'q, ya'ni uni saqlaydigan joy yo'q. Qismda faqat
+     * umumiy hisoblagich bor.
+     */
+    interface EpisodeAggregateRow {
+        LocalDate getDay();
+        AnalyticsEventType getType();
+        Long getEpisodeId();
+        Long getTotal();
     }
 }

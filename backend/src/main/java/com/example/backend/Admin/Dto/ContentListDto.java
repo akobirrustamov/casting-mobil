@@ -53,6 +53,17 @@ public class ContentListDto {
     private Boolean featured;
     private Boolean popular;
     private Long viewCount;
+
+    /**
+     * Nechta «yoqdi» ({@code cms_content_like} dan olingan nusxa).
+     *
+     * ⚠️ {@code viewCount} bilan bir xil narsa EMAS: ko'rish
+     * passiv, «yoqdi» esa odam ataylab bosgan. Panelda ikkalasi yonma-yon
+     * turgani shu uchun ma'noli — ko'p ko'rilib, kam yoqqan kontent
+     * boshqacha xulosa beradi.
+     */
+    private Long likeCount;
+
     private LocalDateTime publicationDate;
     private LocalDateTime premiereDate;
 
@@ -188,6 +199,7 @@ public class ContentListDto {
                 .featured(c.getFeatured())
                 .popular(c.getPopular())
                 .viewCount(c.getViewCount())
+                .likeCount(c.getLikeCount())
                 .publicationDate(c.getPublicationDate())
                 .premiereDate(c.getPremiereDate())
                 .translations(tr)

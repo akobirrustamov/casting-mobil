@@ -103,6 +103,10 @@ public class ContentController {
                     .title(title(e, locale))
                     .durationSeconds(e.getDurationSeconds())
                     .thumbnailMediaId(e.getThumbnail() == null ? null : e.getThumbnail().getId())
+                    // Eski qatorlarda null bo'lishi mumkin — nol yuboramiz:
+                    // ilova «server aytmadi» ni «hech kim ko'rmagan» dan
+                    // ajratadi, va bu yerda javob aniq.
+                    .viewCount(e.getViewCount() == null ? 0L : e.getViewCount())
                     .accessPolicy(e.effectiveAccessPolicy().name())
                     .allowed(d != null && d.isAllowed())
                     .reason(d == null ? null : d.getReason().name())
@@ -207,6 +211,18 @@ public class ContentController {
         private String title;
         private Integer durationSeconds;
         private Long thumbnailMediaId;
+
+        /**
+         * Shu QISM necha marta ochilgan.
+         *
+         * ⚠️ Kontentning umumiy sanog'i bilan aralashtirilmasin:
+         * {@code /watch/**} javobidagi {@code viewCount} butun film yoki
+         * serial haqida («buni 12 ming kishi ko'rgan»), bu esa aynan shu
+         * qism haqida. Ro'yxatda kontent sanog'ini har qatorga yozish
+         * barcha qismlarni bir xil ko'rsatardi.
+         */
+        private Long viewCount;
+
         /** Qismning o'z siyosati, bo'lmasa kontentniki. */
         private String accessPolicy;
 

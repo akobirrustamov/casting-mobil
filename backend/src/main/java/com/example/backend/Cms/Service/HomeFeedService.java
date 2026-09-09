@@ -357,7 +357,17 @@ public class HomeFeedService {
                 .durationSeconds(c.getDurationMinutes() == null
                         ? null : c.getDurationMinutes() * 60)
                 .genre(firstGenre(c, lang))
+                // Kontent qatorining o'zida yotadi — kartochka uchun
+                // qo'shimcha so'rov yo'q. Null bo'lsa nolga aylantiramiz:
+                // ilova «server aytmadi» ni «hech kim ko'rmagan» dan
+                // ajratadi, va bu yerda javob aniq.
+                .viewCount(nz(c.getViewCount()))
                 .build();
+    }
+
+    /** Eski qatorlarda ustun {@code null} bo'lishi mumkin — nol ko'rsatiladi. */
+    private static long nz(Long v) {
+        return v == null ? 0L : v;
     }
 
     /**

@@ -28,6 +28,18 @@ export function PosterCard({
   badgeIcon,
   /** Таймкод в углу обложки. Уже отформатирован — карточка не считает. */
   duration,
+  /**
+   * Просмотры — левый НИЖНИЙ угол кадра. Уже отформатированы вызывающим.
+   *
+   * ⚠️ Счётчик стоит НА кадре, а не четвёртой строкой под подписью:
+   * подпись растянула бы карточку, а её высота одна на всё приложение
+   * (`railLayout.CARD_RATIO`) и утверждена заказчиком 01.09.2026.
+   * Строка выросла бы разом в рядах, сетке и на «Barchasi».
+   *
+   * ⚠️ «Нравится» здесь НЕТ: карточка в ряду ~105px шириной, и правый
+   * угол занят таймкодом. Сердце — кнопка, и живёт на экране контента.
+   */
+  views,
   /** Третья строка: жанр. */
   meta,
   /**
@@ -53,6 +65,7 @@ export function PosterCard({
   badgeLabel?: string;
   badgeIcon?: keyof typeof Ionicons.glyphMap;
   duration?: string;
+  views?: string;
   meta?: string;
   onMenu?: () => void;
   menuLabel?: string;
@@ -96,6 +109,16 @@ export function PosterCard({
         {duration ? (
           <View className="absolute bottom-2 right-2 rounded-pill bg-ink/70 px-2 py-0.5">
             <Text className="text-micro font-semibold text-text">{duration}</Text>
+          </View>
+        ) : null}
+
+        {/* Просмотры — напротив таймкода, в левом нижнем углу. Подложка
+            та же, что у таймкода: два счётчика на кадре должны читаться
+            как одна пара, а не как метка и что-то ещё. */}
+        {views ? (
+          <View className="absolute bottom-2 left-2 flex-row items-center gap-1 rounded-pill bg-ink/70 px-2 py-0.5">
+            <Ionicons name="eye-outline" size={11} color={colors.white} />
+            <Text className="text-micro font-semibold text-text">{views}</Text>
           </View>
         ) : null}
 

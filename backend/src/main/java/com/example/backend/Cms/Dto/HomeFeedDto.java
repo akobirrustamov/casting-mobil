@@ -89,6 +89,24 @@ public class HomeFeedDto {
          * to'liq ro'yxat kontent sahifasida ko'rsatiladi.
          */
         private String genre;
+
+        /**
+         * Nechta ko'rilgan. Kontent qatoridagi nusxa
+         * ({@code cms_content.view_count}) — kartochka uchun qo'shimcha
+         * so'rov qilinmaydi.
+         *
+         * ⚠️ Kunlik jamlanmadan ({@code cms_content_daily_statistic})
+         * emas: u sana bo'yicha bo'lingan va kartochka uchun uni har safar
+         * yig'ish kerak bo'lardi. Bu ustunni {@code AnalyticsService}
+         * har besh daqiqada oshirib boradi.
+         *
+         * ⚠️ «Yoqdi» soni bu yerda YO'Q. Kartochka eni uch ustunli
+         * qatorda ~105px, va uning pastki chetida allaqachon davomiylik
+         * turadi: ikkinchi ko'rsatkich u yerga sig'masdi. Yurak baribir
+         * bosiladigan tugma — uning o'rni kontent sahifasi
+         * ({@code watch/StatChips}).
+         */
+        private Long viewCount;
     }
 
     /** Reklama va premyera — bir xil ko'rinishdagi kartochka. */

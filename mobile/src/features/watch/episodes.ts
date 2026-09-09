@@ -26,6 +26,17 @@ export type EpisodeCard = {
   title: string | null;
   durationSeconds: number | null;
   thumbnailMediaId: number | null;
+
+  /**
+   * Сколько раз открывали ЭТУ серию. `null` — старая сборка бэкенда.
+   *
+   * ⚠️ Это не тот счётчик, что на экране контента: там число про весь
+   * фильм или сериал целиком (`watch/types.WatchInfo.viewCount`).
+   * Подставить его в список серий — значит написать одно и то же число
+   * напротив каждой серии.
+   */
+  viewCount: number | null;
+
   accessPolicy: string | null;
 
   /** Решение сервера — то же самое, что вернёт `/watch` (ТЗ §37). */
@@ -86,6 +97,7 @@ function mapEpisode(raw: unknown): EpisodeCard | null {
     title: str(r.title),
     durationSeconds: num(r.durationSeconds),
     thumbnailMediaId: num(r.thumbnailMediaId),
+    viewCount: num(r.viewCount),
     accessPolicy: str(r.accessPolicy),
     // Осторожная сторона: пока сервер не сказал «можно» — считаем, что нельзя.
     allowed: r.allowed === true,

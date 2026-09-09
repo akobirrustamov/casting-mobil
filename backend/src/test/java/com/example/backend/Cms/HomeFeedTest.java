@@ -615,6 +615,41 @@ class HomeFeedTest {
 
         // ---------------------------------------------------------- yordamchi
 
+        /**
+         * Ko'rishlar soni kartochkaga ham chiqadi (buyurtmachi 07.09.2026).
+         *
+         * ⚠️ Manba — kontent qatoridagi {@code view_count}, kunlik
+         * jamlanma emas: jamlanma sana bo'yicha bo'lingan va har bir
+         * kartochka uchun uni yig'ish kerak bo'lardi. Ustunni
+         * {@code AnalyticsService.aggregate()} har besh daqiqada oshiradi.
+         */
+        @Test
+        @DisplayName("Ko'rishlar soni kartochkada keladi")
+        void cardCarriesViewCount() {
+            Content movie = contentWith(ContentType.MOVIE, 90, null);
+            contentRepo.addViews(movie.getId(), 1234);
+            // Yangilash so'rovi kontekstdan o'tmaydi: tozalamasak,
+            // kartochka eski nusxadan yig'ilardi va test yashil qolardi.
+            em.flush();
+            em.clear();
+
+            assertThat(cardOf(movie.getId()).getViewCount()).isEqualTo(1234L);
+        }
+
+        /**
+         * ⚠️ Nol — {@code null} EMAS. Ilova ikkalasini ajratadi:
+         * nol «hali hech kim ko'rmagan», {@code null} esa «server
+         * aytmadi» va kartochkada umuman ko'rsatilmaydi. Bu yerda server
+         * javobni biladi, ya'ni nol yuborishi shart.
+         */
+        @Test
+        @DisplayName("Hech kim ko'rmagan kontentda nol keladi, null emas")
+        void unwatchedCardCarriesZero() {
+            Content movie = contentWith(ContentType.MOVIE, 90, null);
+
+            assertThat(cardOf(movie.getId()).getViewCount()).isZero();
+        }
+
         private HomeFeedDto.ContentCard cardOf(Long contentId) {
             return cardOf(contentId, Locale.UZ);
         }

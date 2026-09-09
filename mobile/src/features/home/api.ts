@@ -85,6 +85,10 @@ export function mapContent(raw: unknown): ContentCard | null {
     durationSeconds: num(r.durationSeconds),
     episodeCount: num(r.episodeCount),
     genre: str(r.genre),
+    // ⚠️ Именно `num`, а не `?? 0`: отсутствующее поле остаётся `null`,
+    // иначе старая сборка бэкенда нарисовала бы «0 просмотров» под
+    // каждой карточкой ленты.
+    viewCount: num(r.viewCount),
   };
 }
 
