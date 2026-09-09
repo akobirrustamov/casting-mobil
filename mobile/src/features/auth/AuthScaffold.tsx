@@ -138,6 +138,15 @@ const MARK_BLOCK_RATIO = 1.48;
 const MARK_BLOCK_EXTRA = 52;
 
 /**
+ * Отступ блока со знаком сверху — `pt-2` у его контейнера.
+ *
+ * Вынесен в имя, потому что его должна знать не только вёрстка: по нему
+ * шестерёнка языка считает, где она окажется в координатах окна, когда
+ * замер не удался (см. `AuthLanguageButton`).
+ */
+const WORDMARK_PADDING_TOP = 8;
+
+/**
  * Размер знака — от того, сколько высоты остаётся под него.
  *
  * ⚠️ Считается от ОКНА, а не от содержимого экрана: число обязано быть
@@ -251,7 +260,10 @@ export function AuthScaffold({
           {/* Шестерёнка выбора языка — справа, примерно на нижней кромке
               знака, как на референсе. Она ВНЕ потока, поэтому колонка
               под ней стоит там же, где стояла бы без неё. */}
-          <AuthLanguageButton top={markSize - TOUCH_TARGET / 2} />
+          <AuthLanguageButton
+            top={markSize - TOUCH_TARGET / 2}
+            windowTop={insets.top + WORDMARK_PADDING_TOP}
+          />
         </View>
 
         <View className="gap-4 px-6 pt-2">

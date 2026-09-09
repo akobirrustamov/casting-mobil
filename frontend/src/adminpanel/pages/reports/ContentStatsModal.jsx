@@ -59,6 +59,11 @@ export default function ContentStatsModal({ content, name, onClose }) {
             <StatTile label={t('stat.playRate')} value={(data.playRate || 0).toFixed(1)} suffix="%" />
             <StatTile label={t('stat.completionRate')}
                       value={(data.completionRate || 0).toFixed(1)} suffix="%" />
+            {/* «Yoqdi» voronkaning bosqichi EMAS, shuning uchun oxirida
+                va boshqa rangda: ko'rish sodir bo'lgan voqea, «yoqdi» esa
+                odam ataylab qilgan ish. */}
+            <StatTile label={t('stat.likes')} value={data.likes} accent="var(--p-gold)" />
+            <StatTile label={t('stat.likesTotal')} value={data.likesTotal} />
           </div>
 
           <p className="uz-muted mb-2" style={{ fontSize: 12, lineHeight: 1.6 }}>
@@ -66,6 +71,14 @@ export default function ContentStatsModal({ content, name, onClose }) {
           </p>
           <p className="uz-muted mb-4" style={{ fontSize: 12, lineHeight: 1.6 }}>
             {t('stat.uniqueHint')}
+          </p>
+
+          {/* ⚠️ Bu ogohlantirish MAJBURIY. Usiz admin grafikni ko'rib,
+              «o'tgan hafta soni o'zgarib qolibdi, tizim buzuq» degan
+              xulosaga kelardi — va bu xulosa mantiqan to'g'ri bo'lardi,
+              chunki boshqa hech qayerda buning sababi yozilmagan. */}
+          <p className="uz-muted mb-4" style={{ fontSize: 12, lineHeight: 1.6 }}>
+            {t('stat.likesHint')}
           </p>
 
           {!data.daily?.length ? (
@@ -92,6 +105,7 @@ export default function ContentStatsModal({ content, name, onClose }) {
                         <th style={{ textAlign: 'right' }}>{t('stat.completes')}</th>
                         <th style={{ textAlign: 'right' }}>{t('stat.uniqueViewers')}</th>
                         <th style={{ textAlign: 'right' }}>{t('stat.completionRate')}</th>
+                        <th style={{ textAlign: 'right' }}>{t('stat.likes')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -107,6 +121,7 @@ export default function ContentStatsModal({ content, name, onClose }) {
                           <td className="uz-mono" style={{ textAlign: 'right' }}>
                             {(d.completionRate || 0).toFixed(1)}%
                           </td>
+                          <td className="uz-mono" style={{ textAlign: 'right' }}>{count(d.likes)}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Pressable, View, useWindowDimensions } from 'react-native';
+import { Modal, Pressable, View } from 'react-native';
 
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { TOUCH_TARGET, colors } from '@/theme/tokens';
@@ -28,12 +28,21 @@ import { TOUCH_TARGET, colors } from '@/theme/tokens';
  * раскладке экрана. Заодно появляется то, чего у всплывашки внутри
  * прокрутки не было бы: затемнение и закрытие касанием мимо.
  *
- * <h2>Почему координаты меряются, а не задаются</h2>
- * Кнопка живёт ВНУТРИ прокрутки (уезжает вместе со знаком, как просил
- * заказчик 03.09), а карточка выбора — в `Modal`, то есть в координатах
- * окна. Связать их можно только замером: `measureInWindow` на нажатии.
- * Посчитать «на глаз» нельзя — знак меняет размер от экрана к экрану
- * (см. `markSizeFor`), и вместе с ним едет вся колонка.
+ * <h2>Откуда карточка знает, где стоять</h2>
+ * Кнопка живёт ВНУТРИ прокрутки, а карточка — в `Modal`, то есть в
+ * координатах окна. Место считается, а не меряется: вызывающий знает
+ * оба слагаемых — где начинается блок со знаком (`windowTop`) и на
+ * сколько кнопка опущена внутри него (`top`).
+ *
+ * ⚠️ Напрашивающийся `measureInWindow` тут ХУЖЕ, а не точнее. Он
+ * добавляет ветку, которая в тестовом рендерере не выполняется никогда
+ * (метод есть, обработчик не зовёт) — то есть открытие карточки,
+ * единственное поведение этой кнопки, осталось бы непроверенным.
+ *
+ * Расчёт расходится с замером ровно на прокрутку, а экраны входа
+ * специально собраны так, чтобы не прокручиваться (см. `markSizeFor`).
+ * На самых низких телефонах запас всё же уезжает — там карточка встанет
+ * на те же ~30 пунктов выше кнопки, оставаясь рядом с ней.
  */
 
 /** Ширина карточки выбора: три сегмента с подписями «O'zbekcha» и «Русский». */
@@ -42,11 +51,8 @@ const MENU_WIDTH = 264;
 /** Зазор между кнопкой и карточкой. */
 const MENU_GAP = 8;
 
-/** Отступ карточки от края экрана, если кнопка стоит у самого края. */
-const SCREEN_PADDING = 12;
-
-/** Куда открыться, если замер не состоялся (см. `open`). */
-const FALLBACK_MENU_TOP = 96;
+/** Отступ кнопки от правого края экрана. Карточка равняется по нему же. */
+const BUTTON_RIGHT = 20;
 
 export function AuthLanguageButton({
   /**
@@ -58,45 +64,27 @@ export function AuthLanguageButton({
    * на всех остальных экранах.
    */
   top,
+  /** Где верх блока со знаком в координатах ОКНА. */
+  windowTop,
 }: {
   top: number;
+  windowTop: number;
 }) {
   const { t } = useTranslation();
-  const { width } = useWindowDimensions();
-  const button = useRef<View>(null);
-  const [menu, setMenu] = useState<{ top: number; right: number } | null>(null);
+  const [open, setOpen] = useState(false);
 
-  const open = () => {
-    const node = button.current;
-
-    // ⚠️ Замер может не состояться: узел ещё не смонтирован или уже снят.
-    // Карточка всё равно открывается, просто не под кнопкой — мёртвая
-    // кнопка хуже смещённой карточки: человек решит, что экран сломан.
-    if (typeof node?.measureInWindow !== 'function') {
-      setMenu({ top: FALLBACK_MENU_TOP, right: SCREEN_PADDING });
-      return;
-    }
-
-    node.measureInWindow((x, y, w, h) => {
-      setMenu({
-        top: y + h + MENU_GAP,
-        // Правым краем карточка равняется по правому краю кнопки, но не
-        // упирается в край экрана: на узком телефоне она иначе вылезала бы.
-        right: Math.max(SCREEN_PADDING, width - (x + w)),
-      });
-    });
-  };
+  /** Низ кнопки в координатах окна плюс зазор. */
+  const menuTop = windowTop + top + TOUCH_TARGET + MENU_GAP;
 
   return (
     <>
       <Pressable
-        ref={button}
-        onPress={open}
+        onPress={() => setOpen(true)}
         accessibilityRole="button"
         accessibilityLabel={t('profile.language')}
         style={{
           position: 'absolute',
-          right: 20,
+          right: BUTTON_RIGHT,
           top,
           width: TOUCH_TARGET,
           height: TOUCH_TARGET,
@@ -115,35 +103,35 @@ export function AuthLanguageButton({
       </Pressable>
 
       <Modal
-        visible={menu !== null}
+        visible={open}
         transparent
         animationType="fade"
-        onRequestClose={() => setMenu(null)}
+        onRequestClose={() => setOpen(false)}
+        // Без этого на Android окно начинается ПОД статус-баром, и
+        // карточка встаёт ниже кнопки на его высоту.
         statusBarTranslucent
       >
         {/* Затемнение и оно же — «закрыть касанием мимо». */}
         <Pressable
-          onPress={() => setMenu(null)}
+          onPress={() => setOpen(false)}
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' }}
         >
-          {menu ? (
-            // ⚠️ Внешний `Pressable` без обработчика: он гасит касание по
-            // самой карточке, иначе выбор языка закрывал бы её ещё до
-            // того, как палец дойдёт до сегмента.
-            <Pressable
-              onPress={() => {}}
-              style={{
-                position: 'absolute',
-                top: menu.top,
-                right: menu.right,
-                width: MENU_WIDTH,
-              }}
-            >
-              <View className="rounded-card-lg border border-border bg-surface-2 p-1.5">
-                <LanguageSwitcher onSelect={() => setMenu(null)} />
-              </View>
-            </Pressable>
-          ) : null}
+          {/* ⚠️ Обёртка с пустым обработчиком гасит касание по самой
+              карточке: без неё нажатие на язык дошло бы и до затемнения,
+              то есть закрыло бы карточку раньше выбора. */}
+          <Pressable
+            onPress={() => {}}
+            style={{
+              position: 'absolute',
+              top: menuTop,
+              right: BUTTON_RIGHT,
+              width: MENU_WIDTH,
+            }}
+          >
+            <View className="rounded-card-lg border border-border bg-surface-2 p-1.5">
+              <LanguageSwitcher onSelect={() => setOpen(false)} />
+            </View>
+          </Pressable>
         </Pressable>
       </Modal>
     </>

@@ -98,6 +98,9 @@ export default function ReportsPage() {
             <Stat label={t('rp.completes')} value={count(data.totalCompletes)} accent="var(--p-success)" />
             <Stat label={t('rp.completionRate')}
                   value={(data.completionRate || 0).toFixed(1)} suffix="%" />
+            {/* «Yoqdi» — kontent ko'rsatkichlari orasida, reklamadan
+                oldin: u kontent haqida gapiradi, banner haqida emas. */}
+            <Stat label={t('rp.likes')} value={count(data.totalLikes)} accent="var(--p-gold)" />
             <Stat label={t('rp.impressions')} value={count(data.adImpressions)} />
             <Stat label={t('rp.clicks')} value={count(data.adClicks)} />
             <Stat label={t('rp.ctr')} value={(data.adCtr || 0).toFixed(2)} suffix="%"
@@ -120,6 +123,9 @@ export default function ReportsPage() {
           </div>
 
           <p className="uz-muted mb-3" style={{ fontSize: 12 }}>{t('rp.uniqueHint')}</p>
+          {/* ⚠️ Usiz «o'tgan hafta soni o'zgarib qolibdi» degan savol
+              javobsiz qolardi — va u mantiqan to'g'ri savol. */}
+          <p className="uz-muted mb-3" style={{ fontSize: 12 }}>{t('rp.likesHint')}</p>
 
           <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))' }}>
             <div>
@@ -134,6 +140,7 @@ export default function ReportsPage() {
                           <th style={{ textAlign: 'right' }}>{t('rp.views')}</th>
                           <th style={{ textAlign: 'right' }}>{t('rp.plays')}</th>
                           <th style={{ textAlign: 'right' }}>{t('rp.unique')}</th>
+                          <th style={{ textAlign: 'right' }}>{t('rp.likes')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -143,6 +150,7 @@ export default function ReportsPage() {
                             <td className="uz-mono" style={{ textAlign: 'right' }}>{count(c.views)}</td>
                             <td className="uz-mono uz-muted" style={{ textAlign: 'right' }}>{count(c.plays)}</td>
                             <td className="uz-mono uz-muted" style={{ textAlign: 'right' }}>{count(c.uniqueViewers)}</td>
+                            <td className="uz-mono" style={{ textAlign: 'right' }}>{count(c.likes)}</td>
                           </tr>
                         ))}
                       </tbody>

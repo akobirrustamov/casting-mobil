@@ -32,24 +32,41 @@ import { AuthLanguageButton } from '../AuthLanguageButton';
  * ⚠️ Узлы ищутся по роли, а не по типу: NativeWind подменяет `Pressable`
  * своей обёрткой, и `findByType(Pressable)` не находит ничего.
  */
+/**
+ * ⚠️ Проверяется ЗАПАСНОЙ путь, и иначе тут никак.
+ *
+ * На устройстве карточка встаёт по замеру (`measureInWindow`), но в
+ * тестовом рендерере этот метод есть и молчит: обработчик он не зовёт
+ * никогда. Значит здесь всегда срабатывает запасной расчёт — тот самый,
+ * который и решает, будет кнопка живой или мёртвой.
+ */
 function render(): ReactTestRenderer {
   let tree!: ReactTestRenderer;
   act(() => {
-    tree = create(<AuthLanguageButton top={128} />);
+    tree = create(<AuthLanguageButton top={128} windowTop={52} />);
   });
   return tree;
 }
 
+/**
+ * ⚠️ Узел ищется по роли и наличию обработчика, а не по типу: NativeWind
+ * подменяет `Pressable` своей обёрткой, и на подпись отзываются сразу
+ * три узла, из которых нажимаемый — один.
+ */
 function gear(tree: ReactTestRenderer) {
-  return tree.root.find((node) => node.props?.accessibilityLabel === 'profile.language');
+  return tree.root.find(
+    (node) =>
+      node.props?.accessibilityLabel === 'profile.language' &&
+      typeof node.props?.onPress === 'function'
+  );
 }
 
-/** Все нажимаемые сегменты выбора языка. */
+/** Нажимаемые сегменты выбора языка — по одному на язык. */
 function segments(tree: ReactTestRenderer) {
   return tree.root.findAll(
     (node) =>
-      node.props?.accessibilityRole === 'button' &&
-      node.props?.accessibilityState?.selected !== undefined
+      node.props?.accessibilityState?.selected !== undefined &&
+      typeof node.props?.onPress === 'function'
   );
 }
 
@@ -69,7 +86,7 @@ describe('AuthLanguageButton', () => {
     expect(segments(render())).toHaveLength(0);
   });
 
-  it('открывает выбор языка даже без замера координат', () => {
+  it('открывает выбор из трёх языков', () => {
     const tree = render();
 
     act(() => gear(tree).props.onPress());

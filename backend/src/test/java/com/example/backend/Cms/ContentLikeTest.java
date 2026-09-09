@@ -32,6 +32,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -75,6 +76,7 @@ class ContentLikeTest {
     @Autowired private AnalyticsService analyticsService;
     @Autowired private com.example.backend.Cms.Service.EpisodeService episodeService;
     @Autowired private com.example.backend.Cms.Repository.EpisodeRepo episodeRepo;
+    @Autowired private com.example.backend.Cms.Repository.ContentLikeRepo likeRepo;
     @Autowired private EntityManager entityManager;
 
     // ------------------------------------------------------------- yordamchi
@@ -455,6 +457,120 @@ class ContentLikeTest {
             entityManager.clear();
             assertThat(episodeRepo.findById(first.getId()).orElseThrow().getViewCount())
                     .isZero();
+        }
+    }
+
+    /**
+     * Hisobot so'rovlari (admin panel statistikasi).
+     *
+     * <h2>Nima bu yerda tekshiriladi</h2>
+     * Uchta narsa, va uchalasi ham skrinshotda ko'rinmaydi:
+     *
+     * 1. {@code cast(... as date)} H2 da haqiqatan ishlaydimi. So'rov
+     *    xato bo'lsa panel butun sahifani yo'qotardi, kod esa
+     *    kompilyatsiyadan o'tardi.
+     * 2. Har kontent O'Z sonini oladimi. Guruhlash buzilsa, jadvaldagi
+     *    barcha qatorlar bir xil son ko'rsatardi — to'ldirilgan
+     *    jadval ishlayotgandek KO'RINARDI.
+     * 3. Yechilgan «yoqdi» o'tmishdan ham yo'qolishi. Bu hujjatlashtirilgan
+     *    xatti-harakat, xato emas — lekin uni bilmasdan «grafik
+     *    o'zgarib ketdi» deb xato qidirish oson.
+     */
+    @Nested
+    @DisplayName("Hisobot so'rovlari")
+    class Statistics {
+
+        private final LocalDate today = LocalDate.now();
+
+        @Test
+        @DisplayName("Kunlik qator qo'yilgan «yoqdi» ni beradi")
+        void dailySeriesCountsLikes() {
+            Content film = movie();
+            likeService.like(person("Statistika 001"), film.getId());
+            likeService.like(person("Statistika 002"), film.getId());
+            entityManager.flush();
+
+            var rows = likeRepo.dailyForContent(film.getId(), today.minusDays(6), today);
+
+            assertThat(rows).hasSize(1);
+            assertThat(rows.get(0).getDay()).isEqualTo(today);
+            assertThat(rows.get(0).getTotal()).isEqualTo(2);
+        }
+
+        /**
+         * ⚠️ Guruhlash buzilsa jadval TO'LDIRILGAN bo'lib ko'rinadi:
+         * raqamlar joyida, faqat hammasi bir xil.
+         */
+        @Test
+        @DisplayName("Har kontent o'z sonini oladi")
+        void likesAreGroupedPerContent() {
+            Content first = movie();
+            Content second = movie();
+            likeService.like(person("Statistika 003"), first.getId());
+            likeService.like(person("Statistika 004"), first.getId());
+            likeService.like(person("Statistika 005"), second.getId());
+            entityManager.flush();
+
+            var byContent = likeRepo.likesByContentBetween(
+                    List.of(first.getId(), second.getId()), today.minusDays(6), today);
+
+            assertThat(byContent).hasSize(2);
+            assertThat(byContent.stream()
+                    .filter(r -> r.getContentId().equals(first.getId()))
+                    .findFirst().orElseThrow().getTotal()).isEqualTo(2);
+            assertThat(byContent.stream()
+                    .filter(r -> r.getContentId().equals(second.getId()))
+                    .findFirst().orElseThrow().getTotal()).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("Davrdan tashqaridagi kun sanalmaydi")
+        void outsideThePeriodIsNotCounted() {
+            Content film = movie();
+            likeService.like(person("Statistika 006"), film.getId());
+            entityManager.flush();
+
+            // Kechagacha bo'lgan davr — bugungi «yoqdi» unga kirmaydi.
+            assertThat(likeRepo.dailyForContent(
+                    film.getId(), today.minusDays(6), today.minusDays(1))).isEmpty();
+        }
+
+        /**
+         * ⚠️ Bu XATO EMAS, jadval tuzilishining oqibati: yechilgan
+         * «yoqdi» yozuvi o'chadi, ya'ni u qo'yilgan kundan ham
+         * yo'qoladi. Ko'rish bilan solishtirib bo'lmaydi — ko'rish
+         * sodir bo'lgan voqea, «yoqdi» esa hozirgi holat.
+         *
+         * Test shu xatti-harakatni QOTIRADI: kimdir uni «tuzatib»,
+         * hisobotni jimgina boshqa narsaga aylantirmasin.
+         */
+        @Test
+        @DisplayName("Yechilgan «yoqdi» o'tmish sonidan ham yo'qoladi")
+        void unlikeAlsoDisappearsFromHistory() {
+            Content film = movie();
+            User person = person("Statistika 007");
+            likeService.like(person, film.getId());
+            entityManager.flush();
+            assertThat(likeRepo.countBetween(today.minusDays(6), today)).isPositive();
+
+            long before = likeRepo.countBetween(today.minusDays(6), today);
+            likeService.unlike(person, film.getId());
+            entityManager.flush();
+
+            assertThat(likeRepo.countBetween(today.minusDays(6), today)).isEqualTo(before - 1);
+        }
+
+        @Test
+        @DisplayName("Filtr qo'llansa faqat tanlangan kontent sanaladi")
+        void filterNarrowsTheCount() {
+            Content counted = movie();
+            Content ignored = movie();
+            likeService.like(person("Statistika 008"), counted.getId());
+            likeService.like(person("Statistika 009"), ignored.getId());
+            entityManager.flush();
+
+            assertThat(likeRepo.countBetweenForContents(
+                    List.of(counted.getId()), today.minusDays(6), today)).isEqualTo(1);
         }
     }
 

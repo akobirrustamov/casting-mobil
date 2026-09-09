@@ -29,9 +29,7 @@ export function LanguageSwitcher({
   onSelect?: () => void;
 } = {}) {
   const { i18n } = useTranslation();
-  const current: Language = isSupportedLanguage(i18n.language)
-    ? i18n.language
-    : 'uz';
+  const current: Language = isSupportedLanguage(i18n.language) ? i18n.language : 'uz';
 
   return (
     <View className="flex-row gap-2 rounded-card bg-surface p-1.5">

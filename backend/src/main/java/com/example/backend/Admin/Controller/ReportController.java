@@ -56,6 +56,7 @@ public class ReportController {
     private final com.example.backend.Cms.Repository.ContentDailyStatisticRepo contentStatRepo;
     private final AdvertisementRepo advertisementRepo;
     private final ContentRepo contentRepo;
+    private final com.example.backend.Cms.Repository.ContentLikeRepo likeRepo;
     private final com.example.backend.Cms.Repository.SubscriptionRepo subscriptionRepo;
     private final PermissionService permissionService;
 
@@ -177,6 +178,20 @@ public class ReportController {
         long completes = daily.stream().mapToLong(d -> z(d.getCompletes())).sum();
         long uniques = daily.stream().mapToLong(d -> z(d.getUniqueViewers())).sum();
 
+        // «Yoqdi» kunlik jamlanmada YO'Q: uning jadvali kunlarga
+        // bo'linmagan, hozirgi holatni saqlaydi. Shuning uchun alohida
+        // so'rov, va u kunlar bo'yicha xaritaga aylantiriladi.
+        Map<LocalDate, Long> likesByDay = likeRepo.dailyForContent(id, from, to).stream()
+                .collect(Collectors.toMap(
+                        com.example.backend.Cms.Repository.ContentLikeRepo.DailyLikes::getDay,
+                        d -> z(d.getTotal()),
+                        (a, b) -> a));
+        long likes = likesByDay.values().stream().mapToLong(Long::longValue).sum();
+        // Ilovada ko'rinadigan JAMI son — davrdan qat'i nazar.
+        long likesTotal = contentRepo.findById(id)
+                .map(c -> z(c.getLikeCount()))
+                .orElse(0L);
+
         return ResponseEntity.ok(ContentStatisticsDto.builder()
                 .contentId(id)
                 .from(from)
@@ -189,6 +204,8 @@ public class ReportController {
                 // xatosi butun hisobotni yiqitardi.
                 .playRate(percent(plays, views))
                 .completionRate(percent(completes, plays))
+                .likes(likes)
+                .likesTotal(likesTotal)
                 .daily(daily.stream().map(d -> ContentStatisticsDto.DayRow.builder()
                         .date(d.getStatDate())
                         .views(z(d.getViews()))
@@ -196,6 +213,12 @@ public class ReportController {
                         .completes(z(d.getCompletes()))
                         .uniqueViewers(z(d.getUniqueViewers()))
                         .completionRate(d.completionRate())
+                        // ⚠️ Kunlik qator KO'RISH kunlaridan quriladi.
+                        // «Yoqdi» bo'lgan, ko'rish bo'lmagan kun qatorga
+                        // tushmaydi — amalda bunday kun bo'lmaydi
+                        // (odam «yoqdi» ni ko'rmasdan bosolmaydi), lekin
+                        // grafik nolni ko'rsatgani ma'qul.
+                        .likes(likesByDay.getOrDefault(d.getStatDate(), 0L))
                         .build()).toList())
                 .build());
     }
@@ -262,6 +285,30 @@ public class ReportController {
         long impressions = adTotals.stream().mapToLong(a -> nz(a.getImpressions())).sum();
         long clicks = adTotals.stream().mapToLong(a -> nz(a.getClicks())).sum();
 
+        // «Yoqdi» — davr ichida qo'yilgani. Filtr qo'llansa u ham
+        // toraytiriladi: aks holda ro'yxat torayib, ko'rsatkich butun
+        // platformaniki bo'lib qolardi (yuqoridagi grafik bilan bir xil
+        // sabab).
+        long likes = contentFilter == null
+                ? likeRepo.countBetween(r[0], r[1])
+                : (contentFilter.isEmpty() ? 0L
+                        : likeRepo.countBetweenForContents(contentFilter, r[0], r[1]));
+
+        // Jadvaldagi o'nta qator uchun «yoqdi» — BITTA so'rovda.
+        // Ro'yxat oldindan kesiladi: butun katalog bo'yicha so'rash
+        // ko'rinmaydigan qatorlar uchun ish qilish bo'lardi.
+        List<Long> topContentIds = contentTotals.stream()
+                .limit(10)
+                .map(com.example.backend.Cms.Repository.ContentDailyStatisticRepo.ContentTotals::getContentId)
+                .toList();
+        Map<Long, Long> likesByContent = topContentIds.isEmpty()
+                ? Map.of()
+                : likeRepo.likesByContentBetween(topContentIds, r[0], r[1]).stream()
+                        .collect(Collectors.toMap(
+                                com.example.backend.Cms.Repository.ContentLikeRepo.ContentLikes::getContentId,
+                                c -> nz(c.getTotal()),
+                                (a, b) -> a));
+
         // Nomlarni bitta so'rovda olamiz — har qator uchun alohida so'rov emas (§66)
         Map<Long, String> adNames = advertisementRepo.findAllByOrderBySortOrderAscIdAsc()
                 .stream().collect(Collectors.toMap(a -> a.getId(), a -> a.getName(), (a, b) -> a));
@@ -286,6 +333,7 @@ public class ReportController {
                         .build())
                 .totalViews(views).totalPlays(plays).totalCompletes(completes)
                 .completionRate(plays == 0 ? 0d : completes * 100d / plays)
+                .totalLikes(likes)
                 .adImpressions(impressions).adClicks(clicks)
                 .adCtr(impressions == 0 ? 0d : clicks * 100d / impressions)
                 .pendingEvents(analyticsService.pendingEvents())
@@ -298,6 +346,7 @@ public class ReportController {
                         .slug(contentNames.getOrDefault(c.getContentId(), "#" + c.getContentId()))
                         .views(nz(c.getViews())).plays(nz(c.getPlays()))
                         .completes(nz(c.getCompletes())).uniqueViewers(nz(c.getUniqueViewers()))
+                        .likes(likesByContent.getOrDefault(c.getContentId(), 0L))
                         .build()).toList())
                 .topAds(adTotals.stream().limit(10).map(a -> AdRow.builder()
                         .advertisementId(a.getAdvertisementId())
@@ -337,6 +386,17 @@ public class ReportController {
         private Long totalPlays;
         private Long totalCompletes;
         private Double completionRate;
+
+        /**
+         * Davr ichida qo'yilgan «yoqdi».
+         *
+         * ⚠️ Ko'rishlar bilan bitta voronkaga qo'shilmaydi: ko'rish
+         * sodir bo'lgan voqea, «yoqdi» esa olib tashlanishi mumkin
+         * bo'lgan HOLAT. Yechilgan «yoqdi» o'tmish sonidan ham
+         * yo'qoladi — sabab {@code ContentLikeRepo} da yozilgan.
+         */
+        private Long totalLikes;
+
         private Long adImpressions;
         private Long adClicks;
         private Double adCtr;
@@ -376,6 +436,9 @@ public class ReportController {
         private Long plays;
         private Long completes;
         private Long uniqueViewers;
+
+        /** Davr ichida qo'yilgan «yoqdi». */
+        private Long likes;
     }
 
     @Data

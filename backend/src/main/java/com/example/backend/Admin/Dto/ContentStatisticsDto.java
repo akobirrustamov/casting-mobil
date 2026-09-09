@@ -48,6 +48,27 @@ public class ContentStatisticsDto {
     /** O'ynatganlarning necha foizi oxirigacha ko'rgan. */
     private Double completionRate;
 
+    /**
+     * Davr ichida qo'yilgan «yoqdi».
+     *
+     * ⚠️ BU KO'RSATKICH ORQAGA QARAB O'ZGARADI. «Yoqdi» olib
+     * tashlanganda yozuv jadvaldan o'chadi, ya'ni dushanba qo'yilib
+     * juma kuni yechilgan «yoqdi» dushanba sonidan ham yo'qoladi.
+     * Ko'rishlar bilan solishtirib bo'lmaydi: ko'rish — sodir bo'lgan
+     * voqea, «yoqdi» esa hozirgi HOLAT.
+     */
+    private Long likes;
+
+    /**
+     * Hozir turgan JAMI «yoqdi» — davrdan qat'i nazar.
+     *
+     * Aynan shu son ilovada kontent ostida turadi
+     * ({@code cms_content.like_count}). Davr bo'yicha songa qarab
+     * «ilovada boshqacha ko'rsatilyapti» degan savol tug'ilmasin uchun
+     * ikkalasi yonma-yon beriladi.
+     */
+    private Long likesTotal;
+
     private List<DayRow> daily;
 
     @Data
@@ -59,5 +80,8 @@ public class ContentStatisticsDto {
         private Long completes;
         private Long uniqueViewers;
         private Double completionRate;
+
+        /** Shu kuni qo'yilgan va HOZIRGACHA turgan «yoqdi». */
+        private Long likes;
     }
 }
