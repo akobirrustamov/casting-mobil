@@ -176,9 +176,28 @@ public class Content {
     @Builder.Default
     private Boolean popular = false;
 
+    /**
+     * ⚠️ 07.09.2026 gacha bu ustunni HECH KIM oshirmasdi.
+     *
+     * Hodisalar faqat {@code cms_content_daily_statistic} ga tushardi,
+     * ya'ni ustun doim nol edi — va admin paneldagi «views» bo'yicha
+     * tartiblash aslida nollarni tartiblardi. Endi uni
+     * {@code AnalyticsService.aggregate()} har besh daqiqada oshiradi.
+     */
     @Column(name = "view_count", nullable = false)
     @Builder.Default
     private Long viewCount = 0L;
+
+    /**
+     * «Yoqdi» soni.
+     *
+     * Haqiqat manbai — {@code cms_content_like} jadvali; bu yerda faqat
+     * nusxa, kontent sahifasida har safar {@code count(*)} qilmaslik uchun.
+     * Ikkalasi bitta tranzaksiyada o'zgaradi.
+     */
+    @Column(name = "like_count", nullable = false)
+    @Builder.Default
+    private Long likeCount = 0L;
 
     @Column(name = "stars_received", nullable = false)
     @Builder.Default

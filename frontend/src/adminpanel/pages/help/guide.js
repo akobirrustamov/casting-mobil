@@ -328,7 +328,7 @@ export const GUIDE = [
         },
         steps: {
           uz: [
-            "Maydon tagidagi 📐 yozuvga qarang: «1200×1800 px · 2:3 · JPG/PNG/WebP · ≤2 MB».",
+            "Maydon tagidagi 📐 yozuvga qarang: «1200×1800 px · 2:3 · JPG/PNG/WebP · ≤10 MB».",
             "⚠️ Server rasmni QAYTA O'LCHAMAYDI — fayl qanday yuklansa, telefonga shundayligicha boradi.",
             "Ilova rasmni ramkaga sig'dirmaydi, ortiqchasini QIRQADI. Nisbat noto'g'ri bo'lsa yuzning chekkasi kesiladi.",
             "Afisha — 1200×1800 (2:3). BITTA fayl hamma joy uchun: qator, katalog va yopiq kontent ekranida ramka bir xil 2:3, vertikal (Reels) kontentda ham SHU o'lcham.",
@@ -339,7 +339,7 @@ export const GUIDE = [
             "Video — 1920×1080 yoki vertikal 1080×1920, MP4 (H.264). 1080p dan kattasi sifat qo'shmaydi.",
           ],
           ru: [
-            'Смотрите строку 📐 под полем: «1200×1800 px · 2:3 · JPG/PNG/WebP · ≤2 MB».',
+            'Смотрите строку 📐 под полем: «1200×1800 px · 2:3 · JPG/PNG/WebP · ≤10 MB».',
             '⚠️ Сервер НЕ пережимает изображение — файл уходит на телефон как есть.',
             'Приложение не вписывает картинку в рамку, а ОБРЕЗАЕТ лишнее. При неверной пропорции срежется край лица.',
             'Афиша — 1200×1800 (2:3). ОДИН файл на все места: в ряду, каталоге и на экране закрытого контента рамка одна и та же — 2:3, у вертикального (Reels) контента ТОТ ЖЕ размер.',
@@ -350,7 +350,7 @@ export const GUIDE = [
             'Видео — 1920×1080 или вертикальное 1080×1920, MP4 (H.264). Больше 1080p качества не добавит.',
           ],
           en: [
-            'Look at the 📐 line under the field: “1200×1800 px · 2:3 · JPG/PNG/WebP · ≤2 MB”.',
+            'Look at the 📐 line under the field: “1200×1800 px · 2:3 · JPG/PNG/WebP · ≤10 MB”.',
             '⚠️ The server does NOT resize images — the file reaches the phone exactly as uploaded.',
             'The app does not fit the image into the frame, it CROPS the excess. A wrong ratio cuts off the edge of a face.',
             'Poster — 1200×1800 (2:3). ONE file everywhere: rails, catalogue and the locked-content screen all use the same 2:3 frame, vertical (Reels) content included.',

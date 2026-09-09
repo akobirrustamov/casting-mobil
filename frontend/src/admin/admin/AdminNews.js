@@ -398,7 +398,7 @@ const AdminNews = () => {
                                     bo'lmasa, yangiliklar qatori teng
                                     bo'lmagan balandlikda chiqadi. */}
                                 <p className="mb-2 text-[#a1a1aa] text-[0.78rem] leading-snug">
-                                    📐 1200×675 px · 16:9 · JPG / PNG / WebP · ≤2 MB.
+                                    📐 1200×675 px · 16:9 · JPG / PNG / WebP · ≤10 MB.
                                     Barcha yangiliklarda bir xil nisbat bo'lsin — aks holda
                                     kartochkalar turli balandlikda ko'rinadi.
                                 </p>
@@ -427,7 +427,7 @@ const AdminNews = () => {
                                     tik rasmning yuqori va pastki cheti
                                     qirqiladi. */}
                                 <p className="mb-2 text-[#a1a1aa] text-[0.78rem] leading-snug">
-                                    📐 800×600 px · 4:3 · JPG / PNG / WebP · ≤1 MB.
+                                    📐 800×600 px · 4:3 · JPG / PNG / WebP · ≤10 MB.
                                     Galereyada rasm 150px balandlikda qirqiladi —
                                     asosiy tasvirni markazda saqlang.
                                 </p>

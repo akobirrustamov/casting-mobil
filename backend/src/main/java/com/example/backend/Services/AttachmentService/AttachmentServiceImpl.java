@@ -26,11 +26,29 @@ public class AttachmentServiceImpl implements AttachmentService {
 
     private final AttachmentRepo attachmentRepo;
 
+    /**
+     * ⚠️ Rasm hajmi chegarasi.
+     *
+     * Bu endpoint OCHIQ — tokensiz chaqiriladi (ochiq anketa formasi).
+     * Ilgari bu yerda hech qanday hajm tekshiruvi yo'q edi: yagona
+     * to'siq nginx (60 MB) bo'lgan, va cheklov daqiqasiga 30 ta
+     * so'rovga ruxsat beradi. Ya'ni begona odam serverning diskini
+     * to'ldirib qo'yishi mumkin edi.
+     *
+     * Forma tagidagi yozuv esa allaqachon «≤10 MB» deb turardi —
+     * ya'ni qoida e'lon qilingan, lekin qo'llanmagan.
+     */
+    private final com.example.backend.Cms.Service.Storage.ImageSizeLimit imageSizeLimit;
+
     @Override
     public HttpEntity<?> uploadFile(MultipartFile photo, String prefix) throws IOException {
         if (photo == null || photo.isEmpty()) {
             return ResponseEntity.badRequest().body("Fayl bo'sh");
         }
+
+        // ⚠️ Diskka yozishdan OLDIN. Aks holda katta fayl avval
+        // saqlanib, keyin rad etilardi — va o'sha fayl diskda qolardi.
+        imageSizeLimit.check(photo.getOriginalFilename(), photo.getContentType(), photo.getSize());
 
         String safePrefix = safePrefix(prefix);
         UUID id = UUID.randomUUID();

@@ -96,9 +96,45 @@ function mapWatch(raw: unknown): WatchInfo {
     // ⚠️ Старая сборка бэкенда поля не отдаёт — тогда `null`, и экран
     // остаётся прежним: афиша под замком. Обе версии работают рядом.
     trailer: mapSource(r.trailer),
+    // ⚠️ Именно `num`, а не `?? 0`: отсутствующее поле должно остаться
+    // `null`, иначе старый сервер превратился бы в «ноль просмотров».
+    viewCount: num(r.viewCount),
+    likeCount: num(r.likeCount),
+    liked: r.liked === true,
     sources: Array.isArray(r.sources)
       ? r.sources.map(mapSource).filter((s): s is VideoSource => s !== null)
       : [],
+  };
+}
+
+/**
+ * Поставить или снять «нравится».
+ *
+ * <h2>⚠️ Почему PUT и DELETE, а не один переключатель</h2>
+ * Переключатель («есть — сними, нет — поставь») в одном запросе выглядит
+ * удобнее, но он ломается ровно там, где мобильная сеть и ломается: ответ
+ * потерялся, клиент повторил — и нажатие человека само себя отменило.
+ *
+ * PUT и DELETE идемпотентны: сколько раз ни повтори, результат один.
+ * Сервер написан под это же (`ContentLikeService`).
+ *
+ * ⚠️ На стенде с `READ_ONLY` запрос падает ДО отправки — это защита
+ * боевой базы. «Нравится» намеренно не в списке исключений: в отличие от
+ * избранного это ОБЩИЙ счётчик, и отладочное нажатие увидели бы все.
+ */
+export async function setLike(
+  contentId: number,
+  liked: boolean
+): Promise<{ liked: boolean; likeCount: number }> {
+  const url = `/api/v1/app/content/${contentId}/like`;
+  const { data } = liked ? await api.put<unknown>(url) : await api.delete<unknown>(url);
+
+  const r = data as Record<string, unknown> | null;
+  return {
+    liked: r?.liked === true,
+    // Счёт берём у сервера, а не считаем сами: на втором устройстве
+    // человека число иначе разъехалось бы с первым.
+    likeCount: num(r?.likeCount) ?? 0,
   };
 }
 

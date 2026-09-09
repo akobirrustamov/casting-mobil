@@ -43,11 +43,22 @@ jest.mock('@/features/content/railLayout', () => ({ CARD_RATIO: 2 / 3 }));
 jest.mock('@/features/home/api', () => ({ useHomeFeed: () => ({ data: undefined }), contentCards: () => [] }));
 jest.mock('@/lib/api', () => ({ mediaUrl: () => undefined }));
 jest.mock('@/lib/network', () => ({ useIsOffline: () => false }));
-jest.mock('@/lib/money', () => ({ formatSum: (n: number) => String(n) }));
+jest.mock('@/lib/money', () => ({
+  formatSum: (n: number) => String(n),
+  groupDigits: (n: number) => String(n),
+}));
+
+// StatChips спрашивает, вошёл ли человек: без мока сюда приезжает
+// expo-secure-store, которого в jest нет.
+jest.mock('@/features/auth/store', () => ({
+  useAuthStore: (select: (s: { token: string | null }) => unknown) =>
+    select({ token: null }),
+}));
 
 jest.mock('../api', () => ({
   ContentNotFoundError: class ContentNotFoundError extends Error {},
   WatchUnavailableError: class WatchUnavailableError extends Error {},
+  setLike: jest.fn(),
 }));
 
 import { act, create } from 'react-test-renderer';
@@ -78,6 +89,9 @@ function locked(over: Partial<WatchInfo> = {}): WatchInfo {
     orientation: 'LANDSCAPE',
     allowed: false,
     reason: 'PAYMENT_REQUIRED',
+    viewCount: null,
+    likeCount: null,
+    liked: false,
     requiredAction: 'BUY_PREMIERE',
     episodePrice: null,
     premierePrice: 5000,

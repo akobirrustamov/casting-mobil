@@ -7,6 +7,7 @@ import com.example.backend.Cms.Enums.AnalyticsEventType;
 import com.example.backend.Cms.Repository.AdDailyStatisticRepo;
 import com.example.backend.Cms.Repository.AnalyticsEventRepo;
 import com.example.backend.Cms.Repository.ContentDailyStatisticRepo;
+import com.example.backend.Cms.Repository.ContentRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -38,6 +39,7 @@ public class AnalyticsService {
     private final AnalyticsEventRepo eventRepo;
     private final AdDailyStatisticRepo adStatRepo;
     private final ContentDailyStatisticRepo contentStatRepo;
+    private final ContentRepo contentRepo;
 
     /**
      * Hodisani qabul qilish.
@@ -135,6 +137,15 @@ public class AnalyticsService {
         switch (row.getType()) {
             case CONTENT_VIEW -> {
                 stat.setViews(nz(stat.getViews()) + total);
+                // ⚠️ Kontentning o'zidagi umumiy sanoq. 07.09.2026 gacha u
+                // hech qachon oshmasdi: hodisalar faqat shu kunlik
+                // jadvalga tushardi, ilova esa doim nol ko'rsatardi.
+                //
+                // Bu yerda oshiriladi, qabul qilishda emas: hodisa kelishi
+                // eng issiq yo'l, va u yerga qo'shimcha UPDATE qo'yish
+                // har bir kartochka ochilishida kontent qatorini
+                // qulflardi. Besh daqiqalik kechikish ekranda sezilmaydi.
+                contentRepo.addViews(row.getTargetId(), total);
                 // Reklama bilan bir xil sabab: unikal qo'shilmaydi, qayta
                 // hisoblanadi. Aks holda bir soat ko'rgan foydalanuvchi
                 // 12 ta «unikal tomoshabin» bo'lib chiqardi.

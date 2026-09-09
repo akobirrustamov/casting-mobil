@@ -54,7 +54,7 @@
  * holda panel yolg'on maslahat berib turaveradi.
  *
  * <h2>Nega faqat izoh tarjima qilinadi</h2>
- * «600×900 px · 2:3 · JPG/PNG/WebP · ≤2 MB» — bu raqamlar, uchala tilda
+ * «600×900 px · 2:3 · JPG/PNG/WebP · ≤10 MB» — bu raqamlar, uchala tilda
  * ham bir xil o'qiladi. Uni uch marta yozish faqat xato imkoniyatini
  * qo'shardi. Tarjima qilinadigani — IZOH, chunki u gap.
  */
@@ -98,7 +98,7 @@ export const MEDIA_SPECS = {
     size: '1200×1800',
     ratio: '2:3',
     formats: IMG,
-    maxMb: 2,
+    maxMb: 10,
     where: 'PosterCard / ContentGrid ≤118dp × 177dp (@3x = 354×531); LockedPoster ≤279dp × 419dp (@3x = 837×1257)',
     frames: [[354, 531], [837, 1257]],
     note: {
@@ -119,7 +119,7 @@ export const MEDIA_SPECS = {
     size: '1600×900',
     ratio: '16:9',
     formats: IMG,
-    maxMb: 3,
+    maxMb: 10,
     where: 'hozircha ilovada ishlatilmaydi (`HomeFeedService` faqat POSTER ni beradi)',
     note: {
       uz: "Hozircha mobil ilovada ko'rsatilmaydi — u faqat afishani oladi. Keng gorizontal kadr yuklang.",
@@ -132,7 +132,7 @@ export const MEDIA_SPECS = {
     size: '1600×900',
     ratio: '16:9',
     formats: IMG,
-    maxMb: 3,
+    maxMb: 10,
     where: 'hozircha ilovada ishlatilmaydi',
     note: {
       uz: "Barcha rasmlar BIR XIL nisbatda bo'lsin — aks holda galereya qatori teng bo'lmagan balandlikda ko'rinadi.",
@@ -171,7 +171,7 @@ export const MEDIA_SPECS = {
     size: '1200×1800',
     ratio: '2:3',
     formats: IMG,
-    maxMb: 2,
+    maxMb: 10,
     where: 'kontent afishasi bilan bir xil ramka (@3x = 354×531)',
     frames: [[354, 531]],
     note: {
@@ -192,7 +192,7 @@ export const MEDIA_SPECS = {
     size: '720×480',
     ratio: '3:2',
     formats: IMG,
-    maxMb: 1,
+    maxMb: 10,
     where: 'EpisodeList 96dp × 64dp (@3x = 288×192); vertikalda 54dp × 96dp (@3x = 162×288)',
     frames: [[288, 192], [162, 288]],
     note: {
@@ -229,7 +229,7 @@ export const MEDIA_SPECS = {
     size: '1280×720',
     ratio: '16:9',
     formats: IMG,
-    maxMb: 2,
+    maxMb: 10,
     where: 'HeroCarousel (ekran − 32dp), balandligi 16:9 dan; eng kattasi 398dp × 224dp (@3x = 1194×672)',
     frames: [[1194, 672]],
     note: {
@@ -250,7 +250,7 @@ export const MEDIA_SPECS = {
     size: '1080×1350',
     ratio: '4:5',
     formats: IMG,
-    maxMb: 2,
+    maxMb: 10,
     where: 'veb sayt; mobil ILOVA bu maydonni olmaydi',
     note: {
       uz: "⚠️ Mobil ILOVA bu rasmni OLMAYDI — u har doim asosiy rasmni ko'rsatadi. Bu maydon faqat veb saytdagi tor ekran uchun.",
@@ -270,7 +270,7 @@ export const MEDIA_SPECS = {
     size: '600×900',
     ratio: '2:3',
     formats: IMG,
-    maxMb: 2,
+    maxMb: 10,
     where: 'PremiereRail → PosterCard ≤118dp × 177dp (@3x = 354×531)',
     /* ⚠️ Kontent afishasidan FARQLI: premyera rasmi yopiq kontent
        ekraniga tushmaydi, u faqat qatorda turadi. Shuning uchun 600×900
@@ -298,7 +298,7 @@ export const MEDIA_SPECS = {
     size: '400×400',
     ratio: '1:1',
     formats: IMG,
-    maxMb: 1,
+    maxMb: 10,
     where: 'StoryCircle 64dp (@3x = 192×192)',
     frames: [[192, 192]],
     note: {
@@ -312,7 +312,7 @@ export const MEDIA_SPECS = {
     size: '1600×900',
     ratio: '16:9',
     formats: IMG,
-    maxMb: 2,
+    maxMb: 10,
     where: 'hozircha ilovada ishlatilmaydi',
     note: {
       uz: "Hozircha mobil ilovada ko'rsatilmaydi — ilova faqat suratni oladi.",
@@ -333,7 +333,7 @@ export const MEDIA_SPECS = {
     size: '512×512',
     ratio: '1:1',
     formats: 'PNG / SVG (shaffof fon)',
-    maxMb: 1,
+    maxMb: 10,
     where: "CategoryTile 116dp × 76dp (@3x = 348×228) — hozir o'rniga vektor glif chiziladi",
     frames: [[348, 228]],
     note: {
@@ -355,7 +355,7 @@ export const MEDIA_SPECS = {
     size: '1024×512',
     ratio: '2:1',
     formats: IMG,
-    maxMb: 1,
+    maxMb: 10,
     where: 'push bildirishnoma standarti; hozircha ilovada chizilmaydi',
     note: {
       uz: "⚠️ Hozircha ilovada ko'rsatilmaydi. Push bildirishnoma rasmi keng va past bo'ladi — matnni rasmga yozmang, u qirqilishi mumkin.",
@@ -366,7 +366,7 @@ export const MEDIA_SPECS = {
 };
 
 /**
- * Bitta qatorlik texnik yozuv: «600×900 px · 2:3 · JPG/PNG/WebP · ≤2 MB».
+ * Bitta qatorlik texnik yozuv: «600×900 px · 2:3 · JPG/PNG/WebP · ≤10 MB».
  *
  * Tarjima qilinmaydi — bu raqamlar, gap emas.
  */
