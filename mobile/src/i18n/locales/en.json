@@ -307,7 +307,11 @@
     "nothingBody": "Try a different word."
   },
   "favorites": {
-    "empty": "Tap the heart to collect creators here."
+    "empty": "Tap the heart to collect creators here.",
+    "add": "Save",
+    "remove": "Remove from saved",
+    "contentTitle": "Saved content",
+    "creatorsTitle": "Saved creators"
   },
   "content": {
     "notFound": "No such content",
@@ -336,7 +340,25 @@
     "episodeCount": "{{count}} episodes",
     "share": "Share",
     "copyLink": "Copy link",
-    "linkCopied": "Link copied"
+    "linkCopied": "Link copied",
+    "watch": "Watch",
+    "more": "More",
+    "less": "Less",
+    "likes": "Likes",
+    "stars": "Stars",
+    "views": "Views",
+    "comments": "Comments",
+    "cast": "Cast",
+    "scenes": "Scenes",
+    "topDonors": "Top supporters",
+    "starsTotal": "{{amount}} stars in total",
+    "noDonors": "No one has supported this yet",
+    "anonymousDonor": "Unknown user",
+    "donate": "Support",
+    "donateAmount": "Send {{amount}} stars",
+    "donateHint": "Support with stars",
+    "donateSoon": "Payments are not connected in the app yet — coming soon.",
+    "yourStars": "You have {{amount}} stars"
   },
   "contentType": {
     "SHORT_FILM": "Short film",
@@ -349,5 +371,26 @@
     "STREAM": "Live",
     "CLIP": "Clip",
     "OTHER": "Other"
+  },
+  "contentLanguage": {
+    "ar": "Arabic",
+    "en": "English",
+    "hi": "Hindi",
+    "kk": "Kazakh",
+    "ko": "Korean",
+    "ru": "Russian",
+    "tr": "Turkish",
+    "uz": "Uzbek"
+  },
+  "profession": {
+    "ACTOR": "Actor",
+    "ACTRESS": "Actress",
+    "DIRECTOR": "Director",
+    "MODEL": "Model",
+    "PRODUCER": "Producer",
+    "SCREENWRITER": "Screenwriter",
+    "OPERATOR": "Cinematographer",
+    "HOST": "Host",
+    "CREATOR": "Creator"
   }
 }

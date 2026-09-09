@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "4b3796fd-60e5-410a-b7d4-bef2b062d057"
+      }
+    },
+    "android": {
+      "package": "com.diyorbekjumayev1.myproject"
+    }
+  }
+}

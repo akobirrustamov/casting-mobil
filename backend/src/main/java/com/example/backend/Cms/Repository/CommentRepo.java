@@ -101,5 +101,14 @@ public interface CommentRepo extends JpaRepository<Comment, Long> {
     @EntityGraph(attributePaths = {"author", "content"})
     Page<Comment> search(@Param("q") String q, Pageable pageable);
 
+    /**
+     * Kontent sahifasidagi izohlar soni.
+     *
+     * ⚠️ Holat bo'yicha filtr SHART: yashirilgan va moderatsiya kutayotgan
+     * izohlar ham sanalsa, sahifada «16 izoh» yozilib, ochilganda uchtasi
+     * chiqardi — va farqni tushuntiradigan hech narsa bo'lmasdi.
+     */
+    long countByContentIdAndStatus(Long contentId, CommentStatus status);
+
     long countByStatus(CommentStatus status);
 }

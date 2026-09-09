@@ -71,41 +71,10 @@ export function AuthLanguageButton({
   windowTop: number;
 }) {
   const { t } = useTranslation();
-  const { width } = useWindowDimensions();
-  const button = useRef<View>(null);
-  const [menu, setMenu] = useState<{ top: number; right: number } | null>(null);
+  const [open, setOpen] = useState(false);
 
-  const open = () => {
-    const node = button.current;
-
-    /**
-     * ⚠️ Карточка открывается СРАЗУ, ещё до замера, и только потом
-     * встаёт под кнопку.
-     *
-     * Раньше она ждала ответа `measureInWindow`, и открытие держалось
-     * на предположении, что ответ вообще придёт. Проверялся при этом
-     * только случай «метода нет» — а бывает хуже: метод есть, вызов
-     * проходит, колбэк не приходит никогда (узел не привязан к
-     * нативному дереву). Тогда нажатие не делает ровно ничего, и это
-     * та самая мёртвая кнопка, ради которой запасной путь и писался.
-     *
-     * Скачка на экране нет: нативный замер отвечает в том же кадре, до
-     * отрисовки. А если не ответит — карточка просто останется у
-     * правого края, что человеку всё равно понятнее пустого нажатия.
-     */
-    setMenu({ top: FALLBACK_MENU_TOP, right: SCREEN_PADDING });
-
-    if (typeof node?.measureInWindow !== 'function') return;
-
-    node.measureInWindow((x, y, w, h) => {
-      setMenu({
-        top: y + h + MENU_GAP,
-        // Правым краем карточка равняется по правому краю кнопки, но не
-        // упирается в край экрана: на узком телефоне она иначе вылезала бы.
-        right: Math.max(SCREEN_PADDING, width - (x + w)),
-      });
-    });
-  };
+  /** Низ кнопки в координатах окна плюс зазор. */
+  const menuTop = windowTop + top + TOUCH_TARGET + MENU_GAP;
 
   return (
     <>

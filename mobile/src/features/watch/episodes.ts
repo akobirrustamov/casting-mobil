@@ -24,6 +24,14 @@ export type EpisodeCard = {
   seasonId: number | null;
   seasonNumber: number | null;
   title: string | null;
+  /**
+   * Двухстрочный подзаголовок строки серии.
+   *
+   * ⚠️ Именно КОРОТКОЕ описание, а не полное: в строке списка помещается
+   * две строки текста, а полное бывает на десять — оно принадлежит
+   * странице самой серии.
+   */
+  shortDescription: string | null;
   durationSeconds: number | null;
   thumbnailMediaId: number | null;
 
@@ -95,6 +103,7 @@ function mapEpisode(raw: unknown): EpisodeCard | null {
     seasonId: num(r.seasonId),
     seasonNumber: num(r.seasonNumber),
     title: str(r.title),
+    shortDescription: str(r.shortDescription),
     durationSeconds: num(r.durationSeconds),
     thumbnailMediaId: num(r.thumbnailMediaId),
     viewCount: num(r.viewCount),

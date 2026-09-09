@@ -1,35 +1,25 @@
 import { useLocalSearchParams } from 'expo-router';
 
-import { ContentIsMultiPartError, useWatchContent } from '@/features/watch/api';
-import { useEpisodes } from '@/features/watch/episodes';
-import { EpisodeListScreen } from '@/features/watch/EpisodeList';
-import { WatchDetail } from '@/features/watch/WatchDetail';
+import { ContentScreen } from '@/features/content/ContentScreen';
 
 /**
- * Экран 17 — контент.
+ * Экран 17 — карточка контента.
  *
- * <h2>Почему структура выясняется запросом</h2>
- * По карточке главной фильм от сериала не отличить: `structureType` фид не
- * отдаёт, а `contentType` о структуре не говорит (ТЗ §13, §14 — «шоу» бывает
- * и цельным, и эпизодическим). Поэтому сначала спрашиваем «можно ли смотреть»,
- * и если сервер отвечает «контент многосерийный», показываем список серий.
+ * <h2>Почему здесь больше нет развилки «фильм или сериал»</h2>
+ * Раньше экран сначала спрашивал `/watch`, и если сервер отвечал
+ * «контент многосерийный», сразу подменял себя списком серий. То есть у
+ * сериала карточки не было вовсе: ни описания, ни актёров, ни донатов.
  *
- * Второй запрос уходит только в этом случае — фильму список серий не нужен.
+ * На макете заказчика (08.09.2026) страница у фильма и у сериала ОДНА, а
+ * различается только кнопка: у фильма она включает плеер, у сериала ведёт
+ * в список серий (`/episodes/{id}`). Развилка переехала внутрь
+ * {@link ContentScreen} — туда, где известен `structureType`.
  */
-export default function ContentScreen() {
+export default function ContentRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const parsed = Number(id);
   const contentId = Number.isFinite(parsed) ? parsed : null;
 
-  const watch = useWatchContent(contentId);
-  const isMultiPart = watch.error instanceof ContentIsMultiPartError;
-
-  const episodes = useEpisodes(isMultiPart ? contentId : null);
-
-  if (isMultiPart) {
-    return <EpisodeListScreen contentId={contentId} query={episodes} />;
-  }
-
-  return <WatchDetail query={watch} />;
+  return <ContentScreen contentId={contentId} />;
 }

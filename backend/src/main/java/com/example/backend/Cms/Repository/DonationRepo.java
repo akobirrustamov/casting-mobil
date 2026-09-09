@@ -59,6 +59,38 @@ public interface DonationRepo extends JpaRepository<DonationTransaction, Long> {
     List<TargetTotal> topTargetsOfType(@Param("targetType") DonationTargetType targetType,
                                        Pageable pageable);
 
+    /**
+     * Bitta nishonni QO'LLAB-QUVVATLAGANLAR reytingi — maketdagi
+     * «Top 10 Donatchilar».
+     *
+     * <h2>Nima uchun mavjud so'rovlar yaramadi</h2>
+     * {@link #topTargetsOfType} savolga TESKARI javob beradi: u «qaysi
+     * kontent ko'p donat oldi» ni sanaydi. Bu yerda esa nishon bitta va
+     * savol boshqa — «shu kontentga KIM ko'p yubordi».
+     *
+     * <h2>Valyuta qat'iy bir xil</h2>
+     * Yulduz va tanga bir ustunga qo'shilmaydi: kursi boshqa, ma'nosi
+     * boshqa. Qo'shilsa, 100 tanga yuborgan odam 100 yulduz yuborgandan
+     * yuqori turib qolishi mumkin edi.
+     *
+     * ⚠️ Faqat identifikator va yig'indi qaytadi — ism va rasm
+     * chaqiruvchi tomonda alohida olinadi. {@code d.sender} ni fetch
+     * qilish guruhlash bilan birga ishlamaydi.
+     */
+    @Query("""
+            select d.sender.id as senderId, sum(d.amount) as total
+            from DonationTransaction d
+            where d.targetType = :targetType
+              and d.targetId = :targetId
+              and d.kind = :kind
+            group by d.sender.id
+            order by sum(d.amount) desc
+            """)
+    List<SenderTotal> topSenders(@Param("targetType") DonationTargetType targetType,
+                                 @Param("targetId") Long targetId,
+                                 @Param("kind") com.example.backend.Cms.Enums.CurrencyKind kind,
+                                 Pageable pageable);
+
     /** Valyuta bo'yicha umumiy jamlanma: STARS va COIN alohida (ТЗ §42). */
     @Query("""
             select d.kind as kind, sum(d.amount) as total, count(d) as transactions
@@ -137,6 +169,12 @@ public interface DonationRepo extends JpaRepository<DonationTransaction, Long> {
         com.example.backend.Cms.Enums.CurrencyKind getKind();
         Long getTotal();
         Long getTransactions();
+    }
+
+    /** Bitta nishonni qo'llab-quvvatlagan odam va uning yig'indisi. */
+    interface SenderTotal {
+        java.util.UUID getSenderId();
+        Long getTotal();
     }
 
     /** Proyeksiya — entity o'rniga faqat kerakli ustunlar (§66). */

@@ -148,6 +148,18 @@ public class SecurityConfig {
                         // Token yuborilsa hisobga olinadi: sotib olingan qism
                         // ro'yxatda ochiq ko'rinadi.
                         .requestMatchers(HttpMethod.GET, "/api/v1/app/content/*/episodes").permitAll()
+                        // Kontent kartochkasi va donat reytingi. Bosh sahifa
+                        // bilan bir xil sabab: mehmon ilovada nima borligini
+                        // ko'ra olishi kerak, aks holda ro'yxatdan o'tmaguncha
+                        // filmning nima haqidaligini ham bilmasdi.
+                        //
+                        // ⚠️ Video havolasi bu javoblarda YO'Q — u faqat
+                        // /watch dan, huquq tasdiqlangandan keyin chiqadi.
+                        //
+                        // Token yuborilsa hisobga olinadi: «yoqdi» belgisi
+                        // aynan shu odamniki bo'ladi.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/app/content/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/app/content/*/donors").permitAll()
                         // Bosh sahifa (§31). Mehmon ham ko'ra oladi - aks holda
                         // odam ilovada nima borligini bilmasdan ro'yxatdan
                         // o'tishi kerak bo'lardi. Tomosha qilish esa baribir

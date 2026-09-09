@@ -307,7 +307,11 @@
     "nothingBody": "Boshqa so'z bilan urinib ko'ring."
   },
   "favorites": {
-    "empty": "Yurak belgisini bosib, yoqqan ijodkorlarni shu yerga qo'shing."
+    "empty": "Yurak belgisini bosib, yoqqan ijodkorlarni shu yerga qo'shing.",
+    "add": "Saqlash",
+    "remove": "Saqlanganlardan olib tashlash",
+    "contentTitle": "Saqlangan kontent",
+    "creatorsTitle": "Saqlangan ijodkorlar"
   },
   "content": {
     "notFound": "Bu kontent topilmadi",
@@ -336,7 +340,25 @@
     "episodeCount": "{{count}} qism",
     "share": "Ulashish",
     "copyLink": "Havolani nusxalash",
-    "linkCopied": "Havola nusxalandi"
+    "linkCopied": "Havola nusxalandi",
+    "watch": "Tomosha qilish",
+    "more": "Ko'proq",
+    "less": "Yopish",
+    "likes": "Yoqdi",
+    "stars": "Yulduzlar",
+    "views": "Ko'rishlar",
+    "comments": "Izohlar",
+    "cast": "Aktyorlar",
+    "scenes": "Qiziq sahnalar",
+    "topDonors": "Top donatchilar",
+    "starsTotal": "Jami {{amount}} yulduz",
+    "noDonors": "Hali hech kim qo'llab-quvvatlamagan",
+    "anonymousDonor": "Noma'lum foydalanuvchi",
+    "donate": "Donat qilish",
+    "donateAmount": "{{amount}} yulduz yuborish",
+    "donateHint": "Yulduzlar bilan qo'llab-quvvatlang",
+    "donateSoon": "To'lov ilovada hali ulanmagan — tez orada ishga tushadi.",
+    "yourStars": "Sizda {{amount}} yulduz bor"
   },
   "contentType": {
     "SHORT_FILM": "Qisqa metraj",
@@ -349,5 +371,26 @@
     "STREAM": "Jonli efir",
     "CLIP": "Klip",
     "OTHER": "Boshqa"
+  },
+  "contentLanguage": {
+    "ar": "Arabcha",
+    "en": "Inglizcha",
+    "hi": "Hindcha",
+    "kk": "Qozoqcha",
+    "ko": "Koreyscha",
+    "ru": "Ruscha",
+    "tr": "Turkcha",
+    "uz": "O'zbekcha"
+  },
+  "profession": {
+    "ACTOR": "Aktyor",
+    "ACTRESS": "Aktrisa",
+    "DIRECTOR": "Rejissyor",
+    "MODEL": "Model",
+    "PRODUCER": "Prodyuser",
+    "SCREENWRITER": "Ssenarist",
+    "OPERATOR": "Operator",
+    "HOST": "Boshlovchi",
+    "CREATOR": "Ijodkor"
   }
 }

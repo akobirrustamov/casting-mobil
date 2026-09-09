@@ -14,6 +14,7 @@ import { CARD_RATIO } from '@/features/content/railLayout';
 import { contentCards, useHomeFeed } from '@/features/home/api';
 import type { ContentCard } from '@/features/home/types';
 import { mediaUrl } from '@/lib/api';
+import { LockedPanel } from '@/features/content/LockedPanel';
 import { colors } from '@/theme/tokens';
 import { useIsOffline } from '@/lib/network';
 import { formatSum } from '@/lib/money';
@@ -459,93 +460,6 @@ function Facts({ info, card }: { info: WatchInfo; card: ContentCard | undefined 
           {f}
         </Text>
       ))}
-    </View>
-  );
-}
-
-/** Разряды пробелами: 5000 → «5 000». Цену считает сервер, мы только читаем. */
-/** Что делать — по требуемому действию. */
-const LOCKED_BODY: Record<string, string> = {
-  SIGN_IN: 'content.needSignIn',
-  BUY_EPISODE: 'content.needPurchase',
-  BUY_PREMIERE: 'content.needPurchase',
-  SUBSCRIBE: 'content.needSubscription',
-  BUY_OR_SUBSCRIBE: 'content.needPurchaseOrSubscription',
-};
-
-/**
- * Отказы, в которых делать нечего: `requiredAction` там `NONE`, и без этой
- * таблицы человек увидел бы общее «закрыто» вместо настоящей причины.
- */
-const LOCKED_REASON: Record<string, string> = {
-  NOT_PUBLISHED: 'content.notPublished',
-  USER_BLOCKED: 'content.userBlocked',
-};
-
-/**
- * Почему закрыто и что с этим делать.
- *
- * Кнопка рисуется только там, где ей есть куда вести. Вход есть, экрана
- * оплаты (19) нет — он ждёт решения по оплате через сторы. Поэтому там, где
- * нужна оплата, показывается НАСТОЯЩАЯ цена сервера и неактивная кнопка, а
- * не рабочая кнопка в никуда.
- */
-function LockedPanel({ info }: { info: WatchInfo }) {
-  const { t } = useTranslation();
-  const action: RequiredAction = info.requiredAction;
-
-  /**
-   * Показывать ли «оплата скоро».
-   *
-   * Раньше кнопка стояла выключенной, а подпись висела всегда. Выключенная
-   * кнопка на 40% прозрачности выглядит блёклой — на макете заказчика она
-   * в полном цвете, и на скриншоте разница бросается в глаза.
-   *
-   * Теперь кнопка обычная, а на нажатие честно отвечает, что оплаты пока
-   * нет. Это не «кнопка в никуда»: на касание она реагирует и объясняет.
-   */
-  const [paymentNote, setPaymentNote] = useState(false);
-
-  const needsSignIn = action === 'SIGN_IN';
-  const needsPurchase =
-    action === 'BUY_EPISODE' || action === 'BUY_PREMIERE' || action === 'BUY_OR_SUBSCRIBE';
-  const needsSubscription = action === 'SUBSCRIBE' || action === 'BUY_OR_SUBSCRIBE';
-
-  const bodyKey = LOCKED_BODY[action] ?? LOCKED_REASON[info.reason] ?? 'states.lockedBody';
-  const price = info.episodePrice ?? info.premierePrice;
-
-  return (
-    <View className="gap-3 rounded-card bg-surface p-4">
-      <Text className="text-h2 text-text">{t('states.lockedTitle')}</Text>
-      <Text className="text-body text-text-muted">{t(bodyKey)}</Text>
-
-      {needsSignIn ? (
-        <Button onPress={() => router.push('/(auth)/sign-in')}>{t('profile.signIn')}</Button>
-      ) : null}
-
-      {needsPurchase ? (
-        // Ромб и цена — форма кнопки покупки с макета заказчика.
-        // Слово «купить» на ней лишнее: цена и знак говорят то же самое.
-        <Button
-          variant="purchase"
-          onPress={() => setPaymentNote(true)}
-          leading={<Ionicons name="diamond" size={16} color={colors.white} />}
-        >
-          {price === null
-            ? t('common.buy')
-            : t('common.price', { amount: formatSum(price) })}
-        </Button>
-      ) : null}
-
-      {needsSubscription ? (
-        <Button variant="gold" onPress={() => setPaymentNote(true)}>
-          {t('content.subscribe')}
-        </Button>
-      ) : null}
-
-      {paymentNote ? (
-        <Text className="text-micro text-text-muted">{t('content.paymentSoon')}</Text>
-      ) : null}
     </View>
   );
 }

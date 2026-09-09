@@ -1,36 +1,40 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ScreenState } from '@/components/states/ScreenState';
-import { Badge, type BadgeTone } from '@/components/ui/Badge';
 import { Screen } from '@/components/ui/Screen';
 import { isVertical } from '@/features/content/orientation';
-import { useContentCard } from '@/features/home/api';
+import { feedLocale, useContentCard, useFeedLanguage } from '@/features/home/api';
+import { DEFAULT_LANGUAGE } from '@/i18n';
 import { mediaUrl } from '@/lib/api';
-import { useIsOffline } from '@/lib/network';
-import { colors } from '@/theme/tokens';
 import { formatSum, groupDigits } from '@/lib/money';
+import { useIsOffline } from '@/lib/network';
+import { colors, radius } from '@/theme/tokens';
 
-import { ContentNotFoundError, WatchUnavailableError } from './api';
+import { ContentNotFoundError, WatchUnavailableError, useViewerKey } from './api';
 import { episodesOfSeason, type EpisodeCard, type useEpisodes } from './episodes';
+import { fetchContinueWatching } from './progressApi';
 
 /**
- * Серии контента — сериал, мини-сериал, подкаст.
+ * Серии контента — макет заказчика «3» (08.09.2026): сезоны вкладками,
+ * серии крупными карточками с кадром.
  *
- * <h2>Зачем отдельный экран</h2>
- * `/watch/content/{id}` открывает только цельный контент; у многосерийного он
- * отвечает «спрашивай серию». До появления `/content/{id}/episodes` спросить
- * было нечего, и половина каталога в приложении была тупиком.
+ * <h2>Как сюда попадают</h2>
+ * С карточки контента, по кнопке «Tomosha qilish». Раньше многосерийный
+ * контент проваливался сюда сразу, минуя карточку, — и описание, актёры и
+ * донаты сериалу были недоступны вовсе.
  *
  * <h2>Замок на серии считает сервер</h2>
- * `allowed` и `requiredAction` приходят из того же `AccessService`, что и на
- * экране просмотра (ТЗ §37). Клиент не решает по `accessPolicy` сам: политика
- * не знает ни о подписке, ни о купленной серии — купленная серия выглядела бы
- * закрытой, и человек заплатил бы второй раз.
+ * `allowed` и `requiredAction` приходят из того же `AccessService`, что и
+ * на экране просмотра (ТЗ §37). Клиент не решает по `accessPolicy` сам:
+ * политика не знает ни о подписке, ни о купленной серии — купленная серия
+ * выглядела бы закрытой, и человек заплатил бы второй раз.
  */
 type EpisodesQuery = ReturnType<typeof useEpisodes>;
 
@@ -46,6 +50,7 @@ export function EpisodeListScreen({
   const card = useContentCard(contentId);
 
   const [season, setSeason] = useState<number | null>(null);
+  const current = useCurrentEpisodeNumber(contentId);
 
   const title = card?.title ?? t('content.episodes');
 
@@ -92,34 +97,26 @@ export function EpisodeListScreen({
   return (
     <Screen
       title={title}
-      subtitle={t('content.episodes')}
       onBack={() => router.back()}
       underTabBar={false}
       onRefresh={() => query.refetch()}
       refreshing={query.isRefetching}
     >
       {seasons.length > 1 ? (
-        <View className="flex-row flex-wrap gap-2">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8, paddingRight: 16 }}
+        >
           {seasons.map((s) => (
-            <Pressable
+            <SeasonTab
               key={s.id}
+              label={s.title ?? t('content.season', { number: s.seasonNumber ?? '' })}
+              selected={s.id === activeSeason}
               onPress={() => setSeason(s.id)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: s.id === activeSeason }}
-              className={`rounded-pill px-4 py-2 ${
-                s.id === activeSeason ? 'bg-purple' : 'bg-surface'
-              }`}
-            >
-              <Text
-                className={`text-caption ${
-                  s.id === activeSeason ? 'font-semibold text-white' : 'text-text-muted'
-                }`}
-              >
-                {s.title ?? t('content.season', { number: s.seasonNumber ?? '' })}
-              </Text>
-            </Pressable>
+            />
           ))}
-        </View>
+        </ScrollView>
       ) : null}
 
       {visible.length === 0 ? (
@@ -129,7 +126,13 @@ export function EpisodeListScreen({
       ) : (
         <View className="gap-3">
           {visible.map((episode) => (
-            <EpisodeRow key={episode.id} episode={episode} vertical={vertical} />
+            <EpisodeRow
+              key={episode.id}
+              episode={episode}
+              vertical={vertical}
+              // Подсвечивается та серия, на которой человек остановился.
+              current={current !== null && episode.episodeNumber === current}
+            />
           ))}
         </View>
       )}
@@ -137,33 +140,78 @@ export function EpisodeListScreen({
   );
 }
 
-/** Бейдж на строке серии — по решению сервера, а не по политике доступа. */
-function stateBadge(episode: EpisodeCard): { tone: BadgeTone; key: string } | null {
-  if (episode.allowed) {
-    return episode.reason === 'FREE'
-      ? { tone: 'purchased', key: 'common.free' }
-      : { tone: 'purchased', key: 'common.purchased' };
+/**
+ * Вкладка сезона.
+ *
+ * Выбранная — градиентом, как на макете. Ровно один акцент на экране: у
+ * невыбранных заливка обычная, иначе три одинаково ярких вкладки не
+ * сказали бы, какая открыта.
+ */
+function SeasonTab({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  if (!selected) {
+    return (
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityState={{ selected: false }}
+        className="rounded-pill bg-surface px-5 py-2.5 active:opacity-70"
+      >
+        <Text className="text-caption text-text-muted">{label}</Text>
+      </Pressable>
+    );
   }
-  return { tone: 'locked', key: 'common.locked' };
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: true }}
+      style={{ borderRadius: radius.pill, overflow: 'hidden' }}
+    >
+      <LinearGradient
+        colors={[colors.magenta, colors.purple]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={{ paddingHorizontal: 20, paddingVertical: 10 }}
+      >
+        <Text className="text-caption font-semibold text-white">{label}</Text>
+      </LinearGradient>
+    </Pressable>
+  );
 }
 
-/** Разряды пробелами: 5000 → «5 000». */
+/**
+ * Строка серии: кадр со знаком воспроизведения, номер, длительность и
+ * короткое описание.
+ *
+ * <h2>⚠️ Чего здесь НЕТ и почему</h2>
+ * На макете справа стоит стрелка «скачать». Офлайн-загрузок в платформе
+ * нет — ни в приложении, ни на сервере. Кнопка, которая ничего не
+ * скачивает, хуже её отсутствия, поэтому на её месте стоит замок у
+ * закрытых серий: это то, что человеку в этой строке действительно нужно
+ * знать.
+ */
 function EpisodeRow({
   episode,
   vertical,
+  current,
 }: {
   episode: EpisodeCard;
   vertical: boolean;
+  current: boolean;
 }) {
   const { t } = useTranslation();
-  const badge = stateBadge(episode);
-
-  const minutes =
-    episode.durationSeconds !== null && episode.durationSeconds > 0
-      ? Math.max(1, Math.round(episode.durationSeconds / 60))
-      : null;
 
   const thumbnail = mediaUrl(episode.thumbnailMediaId);
+  const duration = clock(episode.durationSeconds);
 
   return (
     <Pressable
@@ -171,13 +219,22 @@ function EpisodeRow({
       // просмотра, и там же сервер ещё раз подтверждает решение.
       onPress={() => router.push(`/episode/${episode.id}`)}
       accessibilityRole="button"
-      className="flex-row items-center gap-3 rounded-card bg-surface p-3 active:opacity-70"
+      accessibilityState={{ selected: current }}
+      style={{
+        borderRadius: radius.card,
+        borderWidth: 1,
+        // Кромка — единственное, что отличает «эту серию я смотрю» от
+        // остальных. Прозрачная у прочих, чтобы карточки не прыгали на
+        // пиксель, когда подсветка переезжает.
+        borderColor: current ? colors.purple : 'transparent',
+      }}
+      className="flex-row items-center gap-3 bg-surface p-3 active:opacity-70"
     >
-      {/* Кадр серии в пропорции формата: обрезанный до 3:2 вертикальный
-          кадр показывал бы середину головы вместо кадра. */}
+      {/* Кадр в пропорции формата: обрезанный до 3:2 вертикальный кадр
+          показывал бы середину головы вместо кадра. */}
       <View
         className={`overflow-hidden rounded-md bg-surface-2 ${
-          vertical ? 'h-24 w-[54px]' : 'h-16 w-24'
+          vertical ? 'h-24 w-[54px]' : 'h-[60px] w-24'
         }`}
       >
         {thumbnail ? (
@@ -185,51 +242,114 @@ function EpisodeRow({
             source={{ uri: thumbnail }}
             style={{ width: '100%', height: '100%' }}
             contentFit="cover"
+            transition={200}
           />
         ) : null}
+
+        <View className="absolute inset-0 items-center justify-center">
+          <View className="h-8 w-8 items-center justify-center rounded-pill bg-black/55">
+            <Ionicons name="play" size={15} color={colors.white} />
+          </View>
+        </View>
       </View>
 
-      <View className="flex-1 gap-1">
-        <Text numberOfLines={2} className="text-body text-text">
+      <View className="flex-1 gap-0.5">
+        <Text numberOfLines={1} className="text-body font-semibold text-text">
           {episode.episodeNumber !== null
-            ? `${t('content.part', { number: episode.episodeNumber })}${
-                episode.title ? ` · ${episode.title}` : ''
-              }`
+            ? t('content.part', { number: episode.episodeNumber })
             : (episode.title ?? '')}
         </Text>
 
         <View className="flex-row items-center gap-2">
-          {badge ? <Badge tone={badge.tone}>{t(badge.key)}</Badge> : null}
-          {minutes !== null ? (
-            <Text className="text-micro text-text-muted">
-              {t('content.minutes', { count: minutes })}
-            </Text>
-          ) : null}
-          {!episode.allowed && episode.episodePrice !== null ? (
-            <Text className="text-micro text-text-muted">
-              {t('common.price', { amount: formatSum(episode.episodePrice) })}
-            </Text>
+          {duration ? (
+            <Text className="text-micro text-text-muted">{duration}</Text>
           ) : null}
 
-          {/* Просмотры ЭТОЙ серии, а не всего сериала: число на экране
-              контента одно на всё, и напротив каждой серии оно
-              повторялось бы.
+          {/* Просмотры ЭТОЙ серии, а не всего сериала.
 
               ⚠️ Ноль не рисуется — как и на карточках ленты. В списке из
-              двадцати серий столбик нулей читался бы как «сериал никто
-              не смотрит», хотя серия просто вышла вчера. На экране
-              контента правило обратное: там счётчик один, и ноль про
-              него — честный факт. */}
+              двадцати серий столбик нулей читался бы как «сериал никто не
+              смотрит», хотя серия просто вышла вчера. */}
           {episode.viewCount ? (
             <View className="flex-row items-center gap-1">
-              <Ionicons name="eye-outline" size={12} color={colors.textMuted} />
+              <Ionicons name="eye-outline" size={11} color={colors.textMuted} />
               <Text className="text-micro text-text-muted">
                 {groupDigits(episode.viewCount)}
               </Text>
             </View>
           ) : null}
+
+          {!episode.allowed && episode.episodePrice !== null ? (
+            <Text className="text-micro text-gold">
+              {t('common.price', { amount: formatSum(episode.episodePrice) })}
+            </Text>
+          ) : null}
         </View>
+
+        {episode.shortDescription ?? episode.title ? (
+          <Text numberOfLines={2} className="text-micro text-text-muted">
+            {episode.shortDescription ?? episode.title}
+          </Text>
+        ) : null}
       </View>
+
+      {!episode.allowed ? (
+        <Ionicons name="lock-closed" size={16} color={colors.gold} />
+      ) : current ? (
+        <Ionicons name="play-circle" size={20} color={colors.magenta} />
+      ) : null}
     </Pressable>
+  );
+}
+
+/**
+ * Секунды в «45:12».
+ *
+ * ⚠️ Не «45 daqiqa»: на макете под номером серии стоит именно
+ * часы-минуты-секунды, и для серии это точнее — «46 daqiqa» у трёх серий
+ * подряд выглядит как одно и то же число.
+ */
+function clock(seconds: number | null): string | null {
+  if (seconds === null || seconds <= 0) return null;
+
+  const total = Math.round(seconds);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+
+  const pad = (v: number) => String(v).padStart(2, '0');
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
+
+/**
+ * Номер серии, на которой человек остановился.
+ *
+ * <h2>Почему из «продолжить смотреть», а не по каждой серии</h2>
+ * Позиция лежит отдельно для КАЖДОЙ серии, и спросить их все — это
+ * двадцать запросов на открытие списка. Список «продолжить» отвечает на
+ * тот же вопрос одним запросом и уже прогрет главной: ключ запроса здесь
+ * тот же, что у `ContinueRail`.
+ *
+ * ⚠️ Гостю не запрашиваем: позиция привязана к человеку, и ответом был бы
+ * отказ на каждом открытии списка.
+ */
+function useCurrentEpisodeNumber(contentId: number | null): number | null {
+  const language = useFeedLanguage();
+  const viewer = useViewerKey();
+
+  const query = useQuery({
+    queryKey: ['watch-progress', 'continue', language, viewer],
+    queryFn: () => fetchContinueWatching(feedLocale(language ?? DEFAULT_LANGUAGE)),
+    enabled: viewer !== 'guest',
+    staleTime: 0,
+    // Подсветка необязательна: её отсутствие ничего не ломает, и
+    // повторять запрос ради неё незачем.
+    retry: 1,
+  });
+
+  if (contentId === null) return null;
+
+  return (
+    query.data?.find((item) => item.content.id === contentId)?.episodeNumber ?? null
   );
 }
