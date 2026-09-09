@@ -44,10 +44,25 @@ function gear(tree: ReactTestRenderer) {
   return tree.root.find((node) => node.props?.accessibilityLabel === 'profile.language');
 }
 
-/** Все нажимаемые сегменты выбора языка. */
+/**
+ * Все нажимаемые сегменты выбора языка.
+ *
+ * ⚠️ Берём только узлы, которые ДЕЙСТВИТЕЛЬНО нажимаются, — то есть с
+ * функцией `onPress`.
+ *
+ * `findAll` обходит и составные компоненты, и то, во что они
+ * разворачиваются: один `Pressable` даёт цепочку узлов с одинаковыми
+ * props, и три языка превращались в девять совпадений. Отбор по
+ * host-узлам эту проблему решал, но ломал сам тест: до `onPress`
+ * у host-узла не добраться — его держит составной `Pressable`.
+ *
+ * Условие «есть `onPress`» даёт ровно то, что нужно: по одному узлу на
+ * язык, и по нему же можно нажать.
+ */
 function segments(tree: ReactTestRenderer) {
   return tree.root.findAll(
     (node) =>
+      typeof node.props?.onPress === 'function' &&
       node.props?.accessibilityRole === 'button' &&
       node.props?.accessibilityState?.selected !== undefined
   );
