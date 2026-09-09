@@ -10,6 +10,9 @@
       "uz.uzcasting.app"
     ],
     "userInterfaceStyle": "dark",
+    "updates": {
+      "url": "https://u.expo.dev/0ce6ce6a-5243-426b-9a5f-adff85882fec"
+    },
     "runtimeVersion": {
       "policy": "fingerprint"
     },
@@ -52,9 +55,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "705e3238-9b8c-4676-9099-556e01afa79b"
+        "projectId": "0ce6ce6a-5243-426b-9a5f-adff85882fec"
       }
     },
-    "owner": "diyorbekjumayev1"
+    "owner": "bukakish"
   }
 }

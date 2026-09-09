@@ -18,7 +18,6 @@ import type { ContentCard } from '@/features/home/types';
 import { mediaUrl } from '@/lib/api';
 import { colors, gradients, radius } from '@/theme/tokens';
 import { LockedPanel } from '@/features/content/LockedPanel';
-import { colors } from '@/theme/tokens';
 import { useIsOffline } from '@/lib/network';
 import { formatSum } from '@/lib/money';
 
