@@ -3,6 +3,7 @@ package com.example.backend.Admin.Dto;
 import com.example.backend.Cms.Entity.Advertisement;
 import com.example.backend.Cms.Entity.AdvertisementTranslation;
 import com.example.backend.Cms.Enums.AdAudience;
+import com.example.backend.Cms.Enums.AdPlacement;
 import com.example.backend.Cms.Enums.Locale;
 import com.example.backend.Cms.Enums.PublicationStatus;
 import lombok.Builder;
@@ -23,6 +24,9 @@ public class AdvertisementDto {
     private Boolean buttonEnabled;
     private InternalLinkDto link;
     private AdAudience audience;
+
+    /** Karuselda yoki butun ekranda. */
+    private AdPlacement placement;
     private PublicationStatus status;
     private LocalDateTime startAt;
     private LocalDateTime endAt;
@@ -62,6 +66,7 @@ public class AdvertisementDto {
                 .buttonEnabled(a.getButtonEnabled())
                 .link(InternalLinkDto.from(a.getLink()))
                 .audience(a.getAudience())
+                .placement(a.getPlacement())
                 .status(a.getStatus())
                 .startAt(a.getStartAt())
                 .endAt(a.getEndAt())

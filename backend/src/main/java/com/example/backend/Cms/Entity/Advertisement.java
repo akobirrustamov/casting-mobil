@@ -1,6 +1,7 @@
 package com.example.backend.Cms.Entity;
 
 import com.example.backend.Cms.Enums.AdAudience;
+import com.example.backend.Cms.Enums.AdPlacement;
 import com.example.backend.Cms.Enums.PublicationStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -62,6 +63,16 @@ public class Advertisement {
     @Column(nullable = false, length = 32)
     @Builder.Default
     private AdAudience audience = AdAudience.ADVERTISEMENT;
+
+    /**
+     * Qayerda ko'rinadi — karuselda yoki butun ekranda.
+     *
+     * ⚠️ Sukut FEED: yangi format admin uni tanlaganda yoqiladi.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16)
+    @Builder.Default
+    private AdPlacement placement = AdPlacement.FEED;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)

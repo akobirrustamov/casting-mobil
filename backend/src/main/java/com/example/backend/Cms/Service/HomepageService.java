@@ -71,6 +71,11 @@ public class HomepageService {
         ad.setButtonEnabled(Boolean.TRUE.equals(request.getButtonEnabled()));
         ad.setLink(request.getLink() == null ? new InternalLink() : request.getLink().toEntity());
         ad.setAudience(request.getAudience());
+        // ⚠️ null — bu «eski klient maydonni yubormadi», «karuselni
+        // o'chir» emas. Shuning uchun mavjud qiymat saqlanadi.
+        if (request.getPlacement() != null) {
+            ad.setPlacement(request.getPlacement());
+        }
         ad.setStatus(request.getStatus());
         ad.setStartAt(request.getStartAt());
         ad.setEndAt(request.getEndAt());

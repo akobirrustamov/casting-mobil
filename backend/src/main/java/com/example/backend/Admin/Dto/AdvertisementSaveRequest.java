@@ -1,6 +1,7 @@
 package com.example.backend.Admin.Dto;
 
 import com.example.backend.Cms.Enums.AdAudience;
+import com.example.backend.Cms.Enums.AdPlacement;
 import com.example.backend.Cms.Enums.Locale;
 import com.example.backend.Cms.Enums.PublicationStatus;
 import jakarta.validation.constraints.NotBlank;
@@ -25,6 +26,14 @@ public class AdvertisementSaveRequest {
     private InternalLinkDto link = new InternalLinkDto();
 
     private AdAudience audience = AdAudience.ADVERTISEMENT;
+
+    /**
+     * Qayerda ko'rinadi.
+     *
+     * ⚠️ Sukut FEED: eski klient bu maydonni umuman yubormaydi, va
+     * uning bannerlari bugungidek karuselda qolishi kerak.
+     */
+    private AdPlacement placement = AdPlacement.FEED;
     private PublicationStatus status = PublicationStatus.DRAFT;
 
     private LocalDateTime startAt;

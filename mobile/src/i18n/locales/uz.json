@@ -37,6 +37,7 @@
     "premium": "Premium",
     "free": "Bepul",
     "ad": "Reklama",
+    "close": "Yopish",
     "more": "Yana"
   },
   "splash": {
@@ -323,7 +324,7 @@
     "likes": "Yoqdi",
     "stars": "Yulduzlar",
     "coins": "Uzcasting",
-    "views": "{{count}} marta ko'rilgan",
+    "views": "Ko'rishlar",
     "comments": "Izohlar",
     "cast": "Aktyorlar",
     "like": "Yoqdi deb belgilash",
@@ -348,14 +349,8 @@
     "share": "Ulashish",
     "copyLink": "Havolani nusxalash",
     "linkCopied": "Havola nusxalandi",
-    "watch": "Tomosha qilish",
     "more": "Ko'proq",
     "less": "Yopish",
-    "likes": "Yoqdi",
-    "stars": "Yulduzlar",
-    "views": "Ko'rishlar",
-    "comments": "Izohlar",
-    "cast": "Aktyorlar",
     "scenes": "Qiziq sahnalar",
     "topDonors": "Top donatchilar",
     "starsTotal": "Jami {{amount}} yulduz",
@@ -385,7 +380,7 @@
     "DIRECTOR": "Rejissyor",
     "MODEL": "Model",
     "PRODUCER": "Prodyuser",
-    "SCREENWRITER": "Ssenariy muallifi",
+    "SCREENWRITER": "Ssenarist",
     "OPERATOR": "Operator",
     "HOST": "Boshlovchi",
     "CREATOR": "Ijodkor"
@@ -399,16 +394,5 @@
     "ru": "Ruscha",
     "tr": "Turkcha",
     "uz": "O'zbekcha"
-  },
-  "profession": {
-    "ACTOR": "Aktyor",
-    "ACTRESS": "Aktrisa",
-    "DIRECTOR": "Rejissyor",
-    "MODEL": "Model",
-    "PRODUCER": "Prodyuser",
-    "SCREENWRITER": "Ssenarist",
-    "OPERATOR": "Operator",
-    "HOST": "Boshlovchi",
-    "CREATOR": "Ijodkor"
   }
 }

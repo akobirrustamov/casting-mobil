@@ -168,6 +168,12 @@ public class SecurityConfig {
                         // Token yuborilsa hisobga olinadi: faol obunasi
                         // borlarga reklama qaytarilmaydi.
                         .requestMatchers(HttpMethod.GET, "/api/v1/app/home").permitAll()
+                        // Butun ekranni yopadigan banner.
+                        //
+                        // ⚠️ OCHIQ ataylab: aynan tizimga kirmagan odam
+                        // reklamani ko'radi, obuna sotib olgani — yo'q.
+                        // Yopilsa, reklama faqat kirganlarga ko'rinardi.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/app/ads/interstitial").permitAll()
                         // Katalog kategoriyalari («Drama» qatori va shu kabilar).
                         // Bosh sahifa bilan bir xil sabab: mehmon ilovada nima
                         // borligini ko'ra olishi kerak. Video havolasi bu yerda

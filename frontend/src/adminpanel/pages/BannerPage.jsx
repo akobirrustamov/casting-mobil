@@ -18,7 +18,7 @@ const STATUSES = ['DRAFT', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED'];
 const emptyAd = () => ({
   name: '', imageMediaId: null, mobileImageMediaId: null,
   buttonEnabled: false, link: { linkType: 'NONE' },
-  audience: 'ADVERTISEMENT', status: 'DRAFT',
+  audience: 'ADVERTISEMENT', placement: 'FEED', status: 'DRAFT',
   startAt: '', endAt: '', sortOrder: 0,
   translations: { UZ: {}, RU: {}, EN: {} },
 });
@@ -96,7 +96,15 @@ export default function BannerPage({ kind }) {
         translations: { UZ: {}, RU: {}, EN: {}, ...(row.translations || {}) },
       };
       setForm(isAd
-        ? { ...base, mobileImageMediaId: row.mobileImageMediaId ?? null, audience: row.audience }
+        ? {
+            ...base,
+            mobileImageMediaId: row.mobileImageMediaId ?? null,
+            audience: row.audience,
+            // ⚠️ Запасное значение нужно: у баннеров, созданных до
+            // появления поля, сервер вернёт FEED, но у совсем старых
+            // ответов его может не быть вовсе.
+            placement: row.placement ?? 'FEED',
+          }
         : { ...base, videoMediaId: row.videoMediaId ?? null, contentId: row.contentId ?? '' });
     }
     setOpen(true);
@@ -135,7 +143,11 @@ export default function BannerPage({ kind }) {
       sortOrder: Number(form.sortOrder) || 0,
       translations: form.translations,
       ...(isAd
-        ? { mobileImageMediaId: form.mobileImageMediaId, audience: form.audience }
+        ? {
+            mobileImageMediaId: form.mobileImageMediaId,
+            audience: form.audience,
+            placement: form.placement,
+          }
         : { videoMediaId: form.videoMediaId,
             contentId: form.contentId === '' ? null : Number(form.contentId) }),
     };
@@ -319,6 +331,18 @@ export default function BannerPage({ kind }) {
                 <option value="ADVERTISEMENT">{t('ads.audienceAd')}</option>
                 <option value="ADMIN_ANNOUNCEMENT">{t('ads.audienceAnnouncement')}</option>
               </Select>
+            </div>
+          )}
+
+          {isAd && (
+            <div className="uz-col" style={{ flexBasis: '100%' }}>
+              <label className="uz-label" htmlFor="b-place">{t('ads.placement')}</label>
+              <Select id="b-place" className="uz-select" value={form.placement}
+                      onChange={(e) => setForm({ ...form, placement: e.target.value })}>
+                <option value="FEED">{t('ads.placementFeed')}</option>
+                <option value="INTERSTITIAL">{t('ads.placementInterstitial')}</option>
+              </Select>
+              <p className="uz-muted mt-1" style={{ fontSize: 11 }}>{t('ads.placementHint')}</p>
             </div>
           )}
 

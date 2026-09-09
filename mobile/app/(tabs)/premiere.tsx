@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { Screen } from '@/components/ui/Screen';
+import { InterstitialAd } from '@/features/ads/InterstitialAd';
 import { isVertical } from '@/features/content/orientation';
 import { contentCards, useHomeFeed } from '@/features/home/api';
 import { ContentGrid } from '@/features/home/ContentGrid';
@@ -125,6 +126,18 @@ export default function PremiereScreen() {
   };
 
   return (
+    <>
+      {/*
+        ⚠️ Баннер поверх экрана — «Majburiy reklama» (макет 09.09.2026).
+
+        Стоит именно здесь, а не в корневой раскладке: на макете он
+        накрывает «Media», и человек видит его, дойдя до витрины, а не
+        в первую секунду после запуска, когда он ещё ничего не открыл.
+
+        Кому показывать — решает сервер (`features/ads/api`).
+      */}
+      <InterstitialAd />
+
     <Screen
       title={t('premiere.title')}
       subtitle={t('premiere.subtitle')}
@@ -243,6 +256,7 @@ export default function PremiereScreen() {
         onClose={() => setGenreOpen(false)}
       />
     </Screen>
+    </>
   );
 }
 

@@ -51,6 +51,41 @@ public class HomeFeedService {
     private final com.example.backend.Cms.Repository.UserAccountRepo userAccountRepo;
     private final HomepageService homepageService;
 
+    /**
+     * Butun ekranni yopadigan banner — «Majburiy reklama» (maket,
+     * 09.09.2026).
+     *
+     * <h2>Nima uchun bu bosh sahifa javobida emas</h2>
+     * Banner ekranning bir qismi emas: u ustidan chiqadi va uni yopish
+     * kerak. Fidga qo'shilsa, klient uni qatorlar orasidan qidirishi
+     * kerak bo'lardi, va «ko'rsatildimi» degan holat qatorlar bilan
+     * aralashib ketardi.
+     *
+     * <h2>Qoidalar shu yerda, bitta joyda</h2>
+     * Kimga ko'rinadi — {@link AdAudience} bo'yicha: tijorat reklamasi
+     * faqat faol obunasi YO'Q odamga, admin e'loni hammaga. Bu qoida
+     * karusel bilan bir xil va shuning uchun bir xil yozilgan.
+     *
+     * @return bitta banner yoki {@code null}, agar ko'rsatadigan narsa
+     *         bo'lmasa
+     */
+    @Transactional(readOnly = true)
+    public HomeFeedDto.BannerCard interstitial(User user, Locale locale) {
+        Locale lang = resolveLanguage(user, locale);
+        boolean showAds = accessService.shouldShowAds(user);
+        LocalDateTime now = LocalDateTime.now();
+
+        return advertisementRepo.findAllByOrderBySortOrderAscIdAsc().stream()
+                .filter(a -> a.getPlacement() == AdPlacement.INTERSTITIAL)
+                .filter(a -> a.isLiveAt(now))
+                .filter(a -> showAds || a.getAudience() == AdAudience.ADMIN_ANNOUNCEMENT)
+                // ⚠️ Bittasi, birinchisi. Ketma-ket ikkita to'liq ekran —
+                // bu ilovaga kirishning o'rniga reklama tomosha qilish.
+                .findFirst()
+                .map(a -> adCard(a, lang))
+                .orElse(null);
+    }
+
     @Transactional(readOnly = true)
     public HomeFeedDto build(User user, Locale locale) {
         Locale lang = resolveLanguage(user, locale);
@@ -204,6 +239,10 @@ public class HomeFeedService {
                 // Tijorat reklamasi faol obunasi borlarga ko'rsatilmaydi
                 // («Premium — reklamasiz tomosha»), admin e'loni esa hammaga.
                 .filter(a -> showAds || a.getAudience() == AdAudience.ADMIN_ANNOUNCEMENT)
+                // ⚠️ To'liq ekranga qo'yilgani karuselda ham chiqmaydi:
+                // aks holda odam bitta reklamani ketma-ket ikki marta
+                // ko'rardi va buni buzilish deb o'qirdi.
+                .filter(a -> a.getPlacement() != AdPlacement.INTERSTITIAL)
                 .limit(limit)
                 .map(a -> adCard(a, lang))
                 .toList();
