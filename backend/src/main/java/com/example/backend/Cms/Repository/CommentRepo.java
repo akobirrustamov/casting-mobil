@@ -102,4 +102,7 @@ public interface CommentRepo extends JpaRepository<Comment, Long> {
     Page<Comment> search(@Param("q") String q, Pageable pageable);
 
     long countByStatus(CommentStatus status);
+
+    /** Kontent ekranidagi «Izohlar N ta» — faqat ochiq izohlar. */
+    long countByContentIdAndStatus(Long contentId, CommentStatus status);
 }

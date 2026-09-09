@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +15,7 @@ import { CARD_RATIO } from '@/features/content/railLayout';
 import { contentCards, useHomeFeed } from '@/features/home/api';
 import type { ContentCard } from '@/features/home/types';
 import { mediaUrl } from '@/lib/api';
-import { colors } from '@/theme/tokens';
+import { colors, gradients, radius } from '@/theme/tokens';
 import { useIsOffline } from '@/lib/network';
 import { formatSum } from '@/lib/money';
 
@@ -23,8 +24,9 @@ import {
   WatchUnavailableError,
   type useWatchContent,
 } from './api';
+import { CastRow } from './CastRow';
 import { Player, playbackSource } from './Player';
-import { StatChips } from './StatChips';
+import { StatTiles } from './StatTiles';
 import type { RequiredAction, WatchInfo } from './types';
 
 /**
@@ -83,24 +85,184 @@ function Loaded({ info, query }: { info: WatchInfo; query: WatchQuery }) {
     if (contentId !== null) trackContentView(contentId, episodeId);
   }, [contentId, episodeId]);
 
+  /**
+   * Плеер поднимается только по кнопке.
+   *
+   * ⚠️ Сбрасывается при смене контента: экран переиспользуется при
+   * переходе «серия → серия», и без сброса следующая начинала бы
+   * играть сама, без нажатия.
+   */
+  const [playing, setPlaying] = useState(false);
+  useEffect(() => setPlaying(false), [contentId, episodeId]);
+
   return (
     <Screen
-      title={info.title ?? card?.title ?? ''}
+      // ⚠️ Заголовка в шапке НЕТ намеренно: по референсу название стоит
+      // крупно под афишей. Оставь его и здесь — человек прочитает одно
+      // и то же дважды, а место под афишу украдёт строка, которую он
+      // уже прочёл.
+      title=" "
       onBack={() => router.back()}
       underTabBar={false}
       onRefresh={() => query.refetch()}
       refreshing={query.isRefetching}
     >
-      <Stage info={info} card={card} onRetry={() => query.refetch()} />
-      <Facts info={info} card={card} />
-      <StatChips info={info} />
+      <Stage
+        info={info}
+        card={card}
+        playing={playing}
+        onRetry={() => query.refetch()}
+      />
+
+      <Head info={info} card={card} />
+
+      {info.allowed && !playing ? <WatchCta onPress={() => setPlaying(true)} /> : null}
+
+      <StatTiles info={info} />
 
       {card?.shortDescription ? (
         <Text className="text-body text-text-muted">{card.shortDescription}</Text>
       ) : null}
 
+      <GenreChips card={card} />
+      <CastRow credits={info.credits} />
+      <TrailerSection info={info} />
+
       {info.allowed ? null : <LockedPanel info={info} />}
     </Screen>
+  );
+}
+
+/**
+ * Шапка под афишей: бейдж, название, строка фактов.
+ *
+ * Порядок с референса и он не случайный: сначала ЧТО это (сериал,
+ * фильм), потом название, потом мелочи. Человек, пришедший из ряда на
+ * главной, узнаёт контент по названию — оно и должно быть самым
+ * крупным на экране.
+ */
+function Head({ info, card }: { info: WatchInfo; card: ContentCard | undefined }) {
+  const { t } = useTranslation();
+
+  const kind = card?.contentType
+    ? t(`contentType.${card.contentType}`, { defaultValue: card.contentType })
+    : null;
+
+  return (
+    <View className="gap-2">
+      {kind ? (
+        <View className="flex-row">
+          <Badge tone="premiere">{kind.toUpperCase()}</Badge>
+        </View>
+      ) : null}
+
+      <Text className="text-h1 text-text">{info.title ?? card?.title ?? ''}</Text>
+
+      <Facts info={info} card={card} />
+    </View>
+  );
+}
+
+/**
+ * Главная кнопка — «Tomosha qilish».
+ *
+ * <h2>⚠️ Видео открывается ТОЛЬКО отсюда</h2>
+ * Заказчик (09.09.2026): «Только нажав на кнопку можно получить доступ
+ * к видео». До этого плеер стоял сразу и начинал грузиться сам — то
+ * есть трафик тратился у каждого, кто просто заглянул на карточку.
+ *
+ * <h2>⚠️ Заливка здесь ГРАДИЕНТНАЯ, и это исключение</h2>
+ * 01.09.2026 заказчик просил одну заливку на все кнопки — сплошной
+ * фиолетовый (`components/ui/Button`). 09.09.2026 он же прислал
+ * референс, где главная кнопка контента — градиент, и сказал повторить
+ * «в точности до цвета кнопок». Более позднее указание сильнее.
+ *
+ * Исключение ОДНО и живёт здесь, а не в `Button`: вернись градиент в
+ * общий компонент — и он расползётся по всем экранам, откуда его
+ * убирали.
+ */
+function WatchCta({ onPress }: { onPress: () => void }) {
+  const { t } = useTranslation();
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={t('content.watch')}
+      className="overflow-hidden active:opacity-80"
+      style={{ borderRadius: radius.card, minHeight: 52 }}
+    >
+      <LinearGradient
+        colors={gradients.premium}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={{
+          flex: 1,
+          minHeight: 52,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+        }}
+      >
+        <Ionicons name="play" size={18} color={colors.white} />
+        <Text className="text-body font-semibold text-white">{t('content.watch')}</Text>
+      </LinearGradient>
+    </Pressable>
+  );
+}
+
+/**
+ * Жанры отдельными плашками — как на референсе.
+ *
+ * ⚠️ Фид отдаёт ОДИН жанр (`ContentCard.genre`), поэтому плашка обычно
+ * одна. Полного списка жанров у карточки в API пока нет; выдумывать
+ * второй жанр ради симметрии с макетом нельзя.
+ */
+function GenreChips({ card }: { card: ContentCard | undefined }) {
+  const genres = [card?.genre].filter((g): g is string => Boolean(g));
+  if (genres.length === 0) return null;
+
+  return (
+    <View className="flex-row flex-wrap gap-2">
+      {genres.map((genre) => (
+        <View key={genre} className="rounded-pill bg-surface px-4 py-2">
+          <Text className="text-caption text-text">{genre}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
+ * «Treyler» — отдельным блоком под составом, как на референсе.
+ *
+ * <h2>⚠️ Раньше ролик стоял НАВЕРХУ закрытого экрана</h2>
+ * Это работало, но спорило с референсом: там сверху всегда афиша, а
+ * трейлер — именованный блок ниже. Заодно исчезла путаница «что сейчас
+ * играет»: наверху фильм, здесь ролик, и подписано.
+ */
+function TrailerSection({ info }: { info: WatchInfo }) {
+  const { t } = useTranslation();
+  const trailer = info.trailer;
+  const [failed, setFailed] = useState(false);
+
+  if (trailer === null || failed) return null;
+
+  return (
+    <View className="gap-3">
+      <Text className="text-h2 text-text">{t('content.trailer')}</Text>
+      <Player
+        key={`trailer-${trailer.mediaId}-${trailer.hlsUrl ? 'hls' : 'raw'}`}
+        source={trailer}
+        orientation={info.orientation}
+        // ⚠️ Ни контента, ни серии: ролик не должен ни писать позицию
+        // просмотра, ни считаться просмотром фильма.
+        contentId={null}
+        episodeId={null}
+        onError={() => setFailed(true)}
+      />
+    </View>
   );
 }
 
@@ -170,10 +332,13 @@ function WatchError({
 function Stage({
   info,
   card,
+  playing,
   onRetry,
 }: {
   info: WatchInfo;
   card: ContentCard | undefined;
+  /** Человек нажал «Tomosha qilish». До этого наверху стоит афиша. */
+  playing: boolean;
   /** Перезапрашивает `/watch` — оттуда приходит свежий адрес видео. */
   onRetry: () => Promise<unknown>;
 }) {
@@ -220,6 +385,18 @@ function Stage({
   // отношения не имеет.
   const uri = source ? playbackSource(source).uri : null;
   useEffect(() => setFailed(false), [uri]);
+
+  /**
+   * ⚠️ Пока кнопку не нажали — только афиша, и это не украшение.
+   *
+   * Плеер, поставленный сразу, начинает грузить видео у каждого, кто
+   * просто заглянул на карточку: трафик человека и наш CDN тратятся на
+   * тех, кто смотреть не собирался. Заказчик (09.09.2026) закрепил это
+   * прямо: «только нажав на кнопку можно получить доступ к видео».
+   */
+  if (!playing) {
+    return <Poster card={card} />;
+  }
 
   if (info.allowed && info.sources.length === 0) {
     return (
@@ -291,65 +468,20 @@ function Stage({
     );
   }
 
-  return <LockedStage info={info} card={card} />;
+  return <Poster card={card} />;
 }
 
 /**
- * Верх закрытого экрана.
+ * Афиша наверху экрана.
  *
- * <h2>Зачем здесь вообще видео</h2>
- * Раньше человек до покупки не мог посмотреть НИЧЕГО: афиша и замок. При
- * этом главный сценарий ТЗ — «первая серия бесплатно, продолжение за
- * 5 000» — упирается ровно в этот экран. Трейлер и есть то единственное,
- * что можно показать, не отдав фильм.
+ * ⚠️ Стоит ВСЕГДА, пока не нажата кнопка «Tomosha qilish» — и на
+ * закрытом контенте, и на открытом. Раньше она была только у закрытого,
+ * а у открытого сразу поднимался плеер; теперь верх экрана одинаковый,
+ * как на референсе заказчика (09.09.2026).
  *
- * <h2>⚠️ Ролик подписан бейджем — и это не украшение</h2>
- * Без подписи 90 секунд в рамке плеера читаются как «фильм уже открыт»:
- * человек досматривает ролик, видит конец и уходит, решив, что купил
- * пустоту. Бейдж — единственное, что отличает одно от другого.
- *
- * <h2>Сбой трейлера — не ошибка экрана</h2>
- * Ролик необязателен, поэтому на сбой возвращаемся к афише молча. Кнопка
- * «попробовать ещё раз» здесь была бы враньём: человеку нужен не трейлер,
- * а фильм, и повтор ничего для него не изменит.
- */
-function LockedStage({ info, card }: { info: WatchInfo; card: ContentCard | undefined }) {
-  const { t } = useTranslation();
-  const [failed, setFailed] = useState(false);
-
-  const trailer = info.trailer;
-  if (trailer === null || failed) {
-    return <LockedPoster card={card} />;
-  }
-
-  return (
-    <View className="gap-2">
-      {/*
-        ⚠️ `contentId` и `episodeId` — `null` НАМЕРЕННО.
-
-        Плеер по ним делает две вещи: пишет позицию просмотра и считает
-        запуск контента. Ни то, ни другое к ролику не относится: позиция
-        трейлера затёрла бы место, на котором человек бросил сам фильм, а
-        счётчик просмотров раздулся бы теми, кто ничего не купил.
-      */}
-      <Player
-        key={`trailer-${trailer.mediaId}-${trailer.hlsUrl ? 'hls' : 'raw'}`}
-        source={trailer}
-        orientation={info.orientation}
-        contentId={null}
-        episodeId={null}
-        onError={() => setFailed(true)}
-      />
-
-      <View className="flex-row justify-center">
-        <Badge tone="info">{t('content.trailer')}</Badge>
-      </View>
-    </View>
-  );
-}
-
-/**
- * Обложка закрытого контента.
+ * ⚠️ Трейлер отсюда УБРАН: он теперь именованный блок ниже
+ * (`TrailerSection`). Пока ролик стоял наверху без подписи, 90 секунд в
+ * рамке плеера читались как «фильм уже открыт».
  *
  * <h2>Почему 2:3, а не формат видео</h2>
  * Раньше рамка бралась из `frameRatio(orientation)` — 16:9 у обычного
@@ -369,7 +501,7 @@ function LockedStage({ info, card }: { info: WatchInfo; card: ContentCard | unde
  * Форма кадра у ПЛЕЕРА не изменилась: он по-прежнему рисует 16:9 или 9:16
  * по `orientation`, то есть рилс открывается вертикальным.
  */
-function LockedPoster({
+function Poster({
   card,
 }: {
   card: ContentCard | undefined;

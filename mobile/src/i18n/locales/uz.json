@@ -315,6 +315,11 @@
     "multiPartBody": "Qismlar ro'yxatini ilova hali ololmaydi — bu uchun server tomonida alohida manzil kerak.",
     "noVideo": "Video hali yuklanmagan",
     "trailer": "Treyler",
+    "watch": "Tomosha qilish",
+    "likes": "Yoqdi",
+    "stars": "Yulduzlar",
+    "comments": "Izohlar",
+    "cast": "Aktyorlar",
     "like": "Yoqdi deb belgilash",
     "unlike": "Yoqdi belgisini olib tashlash",
     "qualityAuto": "Avto",
@@ -349,5 +354,16 @@
     "STREAM": "Jonli efir",
     "CLIP": "Klip",
     "OTHER": "Boshqa"
+  },
+  "profession": {
+    "ACTOR": "Aktyor",
+    "ACTRESS": "Aktrisa",
+    "DIRECTOR": "Rejissyor",
+    "MODEL": "Model",
+    "PRODUCER": "Prodyuser",
+    "SCREENWRITER": "Ssenariy muallifi",
+    "OPERATOR": "Operator",
+    "HOST": "Boshlovchi",
+    "CREATOR": "Ijodkor"
   }
 }
