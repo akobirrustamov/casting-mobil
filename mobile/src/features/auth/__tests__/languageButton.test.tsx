@@ -13,6 +13,29 @@ jest.mock('@/i18n/storage', () => ({
   setLanguage: (...a: unknown[]) => mockSetLanguage(...a),
 }));
 
+/**
+ * ⚠️ В jest-expo `Modal` не рендерит СОДЕРЖИМОЕ вообще: дерево выходит
+ * пустым, и любая проверка того, что внутри всплывашки, находит ноль
+ * узлов — сколько бы правильно ни работал сам компонент.
+ *
+ * Подменяем его прозрачной обёрткой. Тогда проверяется НАША логика —
+ * открылось, переключило, закрылось, — а не реализация RN, которую мы
+ * всё равно не чиним.
+ */
+jest.mock('react-native/Libraries/Modal/Modal', () => {
+  const react = jest.requireActual('react');
+  const { View } = jest.requireActual('react-native');
+
+  const FakeModal = ({ visible, children }: { visible: boolean; children: unknown }) =>
+    visible ? react.createElement(View, null, children) : null;
+
+  // ⚠️ `displayName` обязателен: NativeWind оборачивает компоненты и
+  // читает его на импорте — без него падает не тест, а сам модуль.
+  FakeModal.displayName = 'Modal';
+
+  return { __esModule: true, default: FakeModal };
+});
+
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 
 import { AuthLanguageButton } from '../AuthLanguageButton';
@@ -61,13 +84,32 @@ function gear(tree: ReactTestRenderer) {
   );
 }
 
-/** Нажимаемые сегменты выбора языка — по одному на язык. */
+/**
+ * Все нажимаемые сегменты выбора языка — по одному на язык.
+ *
+ * ⚠️ Дедупликация обязательна. NativeWind оборачивает каждый `Pressable`
+ * в несколько слоёв, и один сегмент находится трижды: три кнопки давали
+ * девять совпадений. Отбирать по «настоящим» узлам (`typeof type ===
+ * 'string'`) нельзя — у них уже нет `onPress`, только внутренние
+ * обработчики RN, и нажать такой узел не получится.
+ *
+ * Поэтому берём узлы С обработчиком и схлопываем по его тождеству:
+ * слои передают одну и ту же функцию вниз.
+ */
 function segments(tree: ReactTestRenderer) {
-  return tree.root.findAll(
+  const found = tree.root.findAll(
     (node) =>
+      node.props?.accessibilityRole === 'button' &&
       node.props?.accessibilityState?.selected !== undefined &&
       typeof node.props?.onPress === 'function'
   );
+
+  const seen = new Set<unknown>();
+  return found.filter((node) => {
+    if (seen.has(node.props.onPress)) return false;
+    seen.add(node.props.onPress);
+    return true;
+  });
 }
 
 beforeEach(() => {
