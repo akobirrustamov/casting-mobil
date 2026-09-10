@@ -191,7 +191,21 @@ export default function PremiereScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerClassName="gap-2 pr-4"
+        /**
+         * ⚠️ `items-center` и `flexGrow: 0` — не украшение, а починка.
+         *
+         * Внутри горизонтальной прокрутки поперечная ось ВЕРТИКАЛЬНАЯ, и
+         * по умолчанию дети растягиваются по ней. Сам ряд при коротком
+         * списке забирал остаток высоты экрана — и кнопки превращались в
+         * пилюли во весь экран (видео заказчика 10.09.2026: «Kliplar» на
+         * пол-экрана высотой).
+         *
+         * Заметно это становилось только там, где карточек мало: с
+         * длинным списком свободной высоты нет и ряд выглядел нормально.
+         * Поэтому ошибка и дожила до демонстрации.
+         */
+        style={{ flexGrow: 0 }}
+        contentContainerClassName="items-center gap-2 pr-4"
       >
         {TABS.map((item, i) => (
           <Pressable

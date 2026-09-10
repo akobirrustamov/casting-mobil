@@ -106,7 +106,14 @@ export function EpisodeListScreen({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8, paddingRight: 16 }}
+          // ⚠️ Тот же дефект, что и у фильтров на «Media»: внутри
+          // горизонтальной прокрутки поперечная ось вертикальная, дети по
+          // умолчанию растягиваются по ней, а сам ряд при коротком списке
+          // забирает остаток высоты экрана. Сезоны превращались бы в
+          // пилюли во весь экран — у сериала с двумя короткими сериями это
+          // ровно тот случай.
+          style={{ flexGrow: 0 }}
+          contentContainerStyle={{ gap: 8, paddingRight: 16, alignItems: 'center' }}
         >
           {seasons.map((s) => (
             <SeasonTab

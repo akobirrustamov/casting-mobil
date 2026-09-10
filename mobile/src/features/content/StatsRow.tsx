@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
@@ -97,6 +98,7 @@ function LikeTile({
 }) {
   const { t } = useTranslation();
   const signedIn = useAuthStore((s) => s.token !== null);
+  const queryClient = useQueryClient();
 
   /**
    * Наше нажатие поверх серверных данных.
@@ -105,7 +107,7 @@ function LikeTile({
    * иначе сердце мигало бы обратно на каждом `refetch`, пока сервер не
    * пересчитает. Ответ сервера кладём сюда же — он и есть истина.
    */
-  const [own, setOwn] = useState<{ liked: boolean; likeCount: number } | null>(null);
+  const [own, setOwn] = useState<{ liked: boolean; likeCount: number | null } | null>(null);
   const [busy, setBusy] = useState(false);
 
   const liked = own?.liked ?? detail?.liked ?? info?.liked ?? false;
@@ -120,14 +122,45 @@ function LikeTile({
     }
 
     const next = !liked;
-    const base = likes ?? 0;
 
-    // Сердце откликается сразу: ждать ответа сети — значит показать
-    // человеку, что кнопка «не нажалась».
-    setOwn({ liked: next, likeCount: Math.max(0, base + (next ? 1 : -1)) });
+    /**
+     * Сердце откликается сразу: ждать ответа сети — значит показать
+     * человеку, что кнопка «не нажалась».
+     *
+     * ⚠️ А вот ЧИСЛО, если сервер его не присылал, остаётся прочерком.
+     * Соблазн подставить «ноль плюс один» велик, но тогда на экране
+     * появляется «1», а через мгновение приходит настоящее «3» —
+     * счётчик прыгает, и это читается как ошибка счёта. Прочерк честнее:
+     * он и означает «пока неизвестно».
+     */
+    setOwn({
+      liked: next,
+      likeCount: likes === null ? null : Math.max(0, likes + (next ? 1 : -1)),
+    });
     setBusy(true);
     try {
-      setOwn(await setLike(contentId, next));
+      const result = await setLike(contentId, next);
+      setOwn(result);
+
+      /**
+       * ⚠️ Ответ кладётся и в КЭШ карточки, иначе лайк «отваливается».
+       *
+       * Состояние компонента живёт до ухода с экрана, а карточка лежит в
+       * кэше пять минут (`useContentDetail`). Вернувшись на экран в эти
+       * пять минут, человек видел ответ, снятый ДО нажатия: сердце снова
+       * серое, счётчик прежний. На сервере при этом всё правильно — и
+       * поэтому баг выглядит как «лайк не работает», хотя он работает.
+       *
+       * Ключ неполный намеренно: в полном есть ещё язык и зритель, а
+       * поправить нужно все снимки этого контента.
+       */
+      queryClient.setQueriesData<{ liked: boolean; likeCount: number | null } | undefined>(
+        { queryKey: ['content-detail', contentId] },
+        (cached) =>
+          cached === undefined
+            ? cached
+            : { ...cached, liked: result.liked, likeCount: result.likeCount }
+      );
     } catch {
       // Не получилось — возвращаем как было. Ошибку не показываем:
       // «нравится» не то действие, ради которого стоит закрывать экран
@@ -136,7 +169,7 @@ function LikeTile({
     } finally {
       setBusy(false);
     }
-  }, [busy, contentId, liked, likes, signedIn]);
+  }, [busy, contentId, liked, likes, queryClient, signedIn]);
 
   return (
     <Tile
@@ -218,6 +251,10 @@ function Tile({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
+      // ⚠️ Подпись обязательна: внутри плитки только значок и два
+      // коротких слова, и без неё скринридер читает кнопку как «кнопка»
+      // — без единого намёка, что она делает.
+      accessibilityLabel={label}
       accessibilityState={{ selected, busy: disabled }}
       className="flex-1 items-center gap-1 rounded-card bg-surface px-1 py-3 active:opacity-70"
     >
