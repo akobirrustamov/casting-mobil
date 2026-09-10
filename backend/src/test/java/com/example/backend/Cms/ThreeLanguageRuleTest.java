@@ -61,15 +61,31 @@ class ThreeLanguageRuleTest {
     @Autowired private EpisodeService episodeService;
     @Autowired private TaxonomyService taxonomyService;
 
+    /**
+     * ⚠️ FILM, serial emas. Til qoidasi tuzilishga bog'liq emas, serial
+     * esa 10.09.2026 dan ko'rsa bo'ladigan qismsiz nashr qilinmaydi
+     * ({@code ContentService.requirePlayableEpisode}). Serial qolsa,
+     * «uchala til bo'lsa nashr o'tadi» testi til uchun emas, qism uchun
+     * yiqilardi.
+     */
     private ContentSaveRequest content(PublicationStatus status,
                                        Map<Locale, TranslationDto> translations) {
         ContentSaveRequest c = new ContentSaveRequest();
-        c.setContentType(ContentType.SERIES);
-        c.setStructureType(StructureType.EPISODIC);
+        c.setContentType(ContentType.MOVIE);
+        c.setStructureType(StructureType.SINGLE);
         c.setAccessPolicy(AccessPolicy.FREE);
         c.setStatus(status);
         c.setTranslations(translations);
         return c;
+    }
+
+    /** Qism qoidasi uchun ota-kontent: qism faqat serialga qo'shiladi. */
+    private Content draftSerial() {
+        ContentSaveRequest c = content(PublicationStatus.DRAFT,
+                Translations.all("Serial " + SEQ.incrementAndGet()));
+        c.setContentType(ContentType.SERIES);
+        c.setStructureType(StructureType.EPISODIC);
+        return contentService.create(null, c);
     }
 
     // ----------------------------------------------------------- kontent
@@ -197,9 +213,7 @@ class ThreeLanguageRuleTest {
         @Test
         @DisplayName("Nashr qilingan qism — uchala til majburiy")
         void publishedEpisodeNeedsAllThree() {
-            Content series = contentService.create(null,
-                    content(PublicationStatus.DRAFT,
-                            Translations.all("Serial " + SEQ.incrementAndGet())));
+            Content series = draftSerial();
 
             EpisodeSaveRequest e = new EpisodeSaveRequest();
             e.setEpisodeNumber(1);
@@ -215,9 +229,7 @@ class ThreeLanguageRuleTest {
         @Test
         @DisplayName("Qoralama qism — o'zbekchasi yetarli")
         void draftEpisodeAcceptsBaseOnly() {
-            Content series = contentService.create(null,
-                    content(PublicationStatus.DRAFT,
-                            Translations.all("Serial " + SEQ.incrementAndGet())));
+            Content series = draftSerial();
 
             EpisodeSaveRequest e = new EpisodeSaveRequest();
             e.setEpisodeNumber(1);

@@ -23,6 +23,7 @@ import com.example.backend.Cms.Service.UserAdminService;
 import com.example.backend.Entity.User;
 import com.example.backend.Repository.UserRepo;
 import com.example.backend.exceptions.BusinessException;
+import com.example.backend.support.ContentFixtures;
 import com.example.backend.support.CapturingStatementInspector;
 import com.example.backend.support.Translations;
 import org.junit.jupiter.api.AfterEach;
@@ -74,6 +75,7 @@ class EpisodeListTest {
 
     @Autowired private ContentController controller;
     @Autowired private ContentService contentService;
+    @Autowired private ContentFixtures contentFixtures;
     @Autowired private EpisodeService episodeService;
     @Autowired private AccessService accessService;
     @Autowired private UserAdminService userAdminService;
@@ -107,7 +109,7 @@ class EpisodeListTest {
         c.setAccessPolicy(policy);
         c.setPremierePrice(new BigDecimal("15000"));
         c.setTranslations(Translations.all("Serial " + System.nanoTime()));
-        return contentService.create(null, c);
+        return contentFixtures.create(c);
     }
 
     private Episode episode(Content content, Long seasonId, int number,
@@ -362,7 +364,7 @@ class EpisodeListTest {
             c.setStatus(PublicationStatus.DRAFT);
             c.setAccessPolicy(AccessPolicy.FREE);
             c.setTranslations(Translations.all("Yashirin " + System.nanoTime()));
-            Content hidden = contentService.create(null, c);
+            Content hidden = contentFixtures.create(c);
 
             // "Bor, lekin yopiq" javobi ham ma'lumot: tayyorlanayotgan
             // serialning mavjudligini bildirardi.

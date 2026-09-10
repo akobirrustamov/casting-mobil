@@ -1,19 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
-import { useAuthStore } from '@/features/auth/store';
-import { setLike } from '@/features/watch/api';
 import type { WatchInfo } from '@/features/watch/types';
 import { groupDigits } from '@/lib/money';
 
 import coinIcon from '../../../assets/brand/coin.png';
 import { colors } from '@/theme/tokens';
 
-import type { ContentDetail } from './detail';
+import type { ContentDetail, DonationCurrency } from './detail';
+import { DonorsSheet } from './DonorsSheet';
+import { useContentLike } from './like';
 
 /**
  * Четыре плитки под кнопкой «Tomosha qilish» (макет заказчика, 08.09.2026).
@@ -22,8 +21,16 @@ import type { ContentDetail } from './detail';
  * На макете четыре знака: сердце, звезда, стрелка вниз и облачко. Три из
  * них есть в базе — «нравится», подаренные звёзды и комментарии. Четвёртой,
  * «скачиваний», НЕТ: офлайн-загрузок в платформе нет вовсе, и счётчика
- * тоже. Вместо выдуманного числа стоит просмотры — они считаются на самом
- * деле и на макете тоже присутствуют, только выше.
+ * тоже. Вместо выдуманного числа стоит вторая валюта донатов — монеты
+ * UZCASTING, они считаются на самом деле. Просмотры ушли в строку фактов,
+ * к году и возрасту: пять плиток в ряд не помещаются.
+ *
+ * <h2>Три из четырёх плиток НАЖИМАЮТСЯ</h2>
+ * Сердце ставит «нравится». Звезда и монета открывают рейтинг «Top 10
+ * donatchilar» своей валюты, и кнопка «поддержать» стоит внизу этого
+ * окна — требование заказчика от 10.09.2026. Раньше рейтинг и кнопка
+ * стояли прямо на странице; см. {@link DonorsSheet}, почему они оттуда
+ * ушли.
  *
  * <h2>⚠️ Пустая плитка не рисуется</h2>
  * Старая сборка бэкенда части полей не отдаёт (`null`). Нарисовать вместо
@@ -40,116 +47,69 @@ export function StatsRow({
   info: WatchInfo | undefined;
 }) {
   const { t } = useTranslation();
+  const [sheet, setSheet] = useState<DonationCurrency | null>(null);
 
-  const views = detail?.viewCount ?? info?.viewCount ?? null;
-  const stars = detail?.starsReceived ?? null;
-  const coins = detail?.coinsReceived ?? null;
-  const comments = detail?.commentCount ?? null;
+  const like = useContentLike(contentId, detail, info);
 
-  return (
-    <View className="flex-row gap-2">
-      <LikeTile contentId={contentId} detail={detail} info={info} />
+  // ⚠️ Запасной источник — `/watch`. У многосерийного контента он молчит
+  // (там нужен номер серии), но у фильма отвечает и на старой сборке
+  // бэкенда, где карточки `/content/{id}` ещё нет вовсе.
+  const stars = detail?.starsReceived ?? info?.starsReceived ?? null;
+  const coins = detail?.coinsReceived ?? info?.coinsReceived ?? null;
+  const comments = detail?.commentCount ?? info?.commentCount ?? null;
 
-      <Tile
-        icon="star-outline"
-        color={colors.gold}
-        value={stars}
-        label={t('content.stars')}
-      />
-      {/*
-        ⚠️ Здесь монеты, а не просмотры — так на референсе. Просмотры
-        никуда не делись: они ушли в строку фактов, к году и возрасту.
-        Пять плиток в ряд не помещаются: подпись «Uzcasting» под значком
-        и так занимает всю ширину плитки.
-      */}
-      <Tile
-        icon="coin"
-        color={colors.textMuted}
-        value={coins}
-        label={t('content.coins')}
-      />
-      <Tile
-        icon="chatbubble-outline"
-        color={colors.violet}
-        value={comments}
-        label={t('content.comments')}
-      />
-    </View>
-  );
-}
-
-/**
- * «Нравится» — единственная плитка, на которую нажимают.
- *
- * <h2>Гость видит число, но не ставит</h2>
- * Счётчик — часть описания контента, его видят все. Нажатие требует входа:
- * иначе один человек накрутил бы его сколько угодно раз. Гостя ведём на
- * экран входа, а не показываем ошибку.
- */
-function LikeTile({
-  contentId,
-  detail,
-  info,
-}: {
-  contentId: number | null;
-  detail: ContentDetail | undefined;
-  info: WatchInfo | undefined;
-}) {
-  const { t } = useTranslation();
-  const signedIn = useAuthStore((s) => s.token !== null);
-
-  /**
-   * Наше нажатие поверх серверных данных.
-   *
-   * ⚠️ Живёт до ухода с экрана и НЕ сбрасывается при повторном запросе:
-   * иначе сердце мигало бы обратно на каждом `refetch`, пока сервер не
-   * пересчитает. Ответ сервера кладём сюда же — он и есть истина.
-   */
-  const [own, setOwn] = useState<{ liked: boolean; likeCount: number } | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const liked = own?.liked ?? detail?.liked ?? info?.liked ?? false;
-  const likes = own?.likeCount ?? detail?.likeCount ?? info?.likeCount ?? null;
-
-  const toggle = useCallback(async () => {
-    if (contentId === null || busy) return;
-
-    if (!signedIn) {
-      router.push('/(auth)/sign-in');
-      return;
-    }
-
-    const next = !liked;
-    const base = likes ?? 0;
-
-    // Сердце откликается сразу: ждать ответа сети — значит показать
-    // человеку, что кнопка «не нажалась».
-    setOwn({ liked: next, likeCount: Math.max(0, base + (next ? 1 : -1)) });
-    setBusy(true);
-    try {
-      setOwn(await setLike(contentId, next));
-    } catch {
-      // Не получилось — возвращаем как было. Ошибку не показываем:
-      // «нравится» не то действие, ради которого стоит закрывать экран
-      // сообщением.
-      setOwn(null);
-    } finally {
-      setBusy(false);
-    }
-  }, [busy, contentId, liked, likes, signedIn]);
+  const title = detail?.title ?? info?.title ?? null;
 
   return (
-    <Tile
-      icon={liked ? 'heart' : 'heart-outline'}
-      // Нажатое сердце — фирменной маджентой: серое «нравится» невозможно
-      // отличить от ненажатого одним взглядом.
-      color={liked ? colors.magenta : colors.textMuted}
-      value={likes}
-      label={t('content.likes')}
-      onPress={() => void toggle()}
-      disabled={busy || contentId === null}
-      selected={liked}
-    />
+    <>
+      <View className="flex-row gap-2">
+        <Tile
+          icon={like.liked ? 'heart' : 'heart-outline'}
+          // Нажатое сердце — фирменной маджентой: серое «нравится»
+          // невозможно отличить от ненажатого одним взглядом.
+          color={like.liked ? colors.magenta : colors.textMuted}
+          value={like.likes}
+          label={t('content.likes')}
+          onPress={() => void like.toggle()}
+          disabled={like.busy || contentId === null}
+          selected={like.liked}
+        />
+
+        <Tile
+          icon="star-outline"
+          color={colors.gold}
+          value={stars}
+          label={t('content.stars')}
+          onPress={() => setSheet('STARS')}
+          disabled={contentId === null}
+        />
+        <Tile
+          icon="coin"
+          color={colors.textMuted}
+          value={coins}
+          label={t('content.coins')}
+          onPress={() => setSheet('UZCASTING_COIN')}
+          disabled={contentId === null}
+        />
+        {/* ⚠️ Облачко НЕ нажимается: списка комментариев в
+            `/api/v1/app/**` пока нет вовсе (есть только счётчик), и
+            кнопка вела бы в пустоту. */}
+        <Tile
+          icon="chatbubble-outline"
+          color={colors.violet}
+          value={comments}
+          label={t('content.comments')}
+        />
+      </View>
+
+      <DonorsSheet
+        open={sheet !== null}
+        contentId={contentId}
+        title={title}
+        currency={sheet ?? 'STARS'}
+        onClose={() => setSheet(null)}
+      />
+    </>
   );
 }
 

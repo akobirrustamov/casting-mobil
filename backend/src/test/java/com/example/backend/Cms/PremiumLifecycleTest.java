@@ -10,6 +10,7 @@ import com.example.backend.Cms.Entity.UserAccount;
 import com.example.backend.Cms.Enums.AccessPolicy;
 import com.example.backend.Cms.Enums.ContentType;
 import com.example.backend.Cms.Enums.Locale;
+import com.example.backend.support.ContentFixtures;
 import com.example.backend.support.Translations;
 import com.example.backend.Cms.Enums.PublicationStatus;
 import com.example.backend.Cms.Enums.StructureType;
@@ -69,6 +70,7 @@ class PremiumLifecycleTest {
     @Autowired private UserAdminService userAdminService;
     @Autowired private AccessService accessService;
     @Autowired private ContentService contentService;
+    @Autowired private ContentFixtures contentFixtures;
     @Autowired private EpisodeService episodeService;
     @Autowired private SubscriptionRepo subscriptionRepo;
     @Autowired private UserRepo userRepo;
@@ -98,7 +100,7 @@ class PremiumLifecycleTest {
         c.setAccessPolicy(AccessPolicy.PREMIUM_ONLY);
         c.setStatus(PublicationStatus.PUBLISHED);
         c.setTranslations(Translations.all("Premium serial " + SEQ.incrementAndGet()));
-        Content content = contentService.create(null, c);
+        Content content = contentFixtures.create(c);
 
         EpisodeSaveRequest e = new EpisodeSaveRequest();
         e.setEpisodeNumber(1);

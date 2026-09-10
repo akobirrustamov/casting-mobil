@@ -99,17 +99,27 @@ export type Donor = {
   name: string | null;
   /** Готовый адрес картинки (Google), а не id медиа. */
   avatarUrl: string | null;
+  /** Сумма В ЗАПРОШЕННОЙ ВАЛЮТЕ — звёзды или монеты, поле одно на обе. */
   stars: number;
 };
 
+/**
+ * Валюта доната.
+ *
+ * ⚠️ Два РАЗНЫХ рейтинга, а не два столбца одного: звезда и монета не
+ * складываются (курс разный), и на бэкенде это же правило охраняет
+ * `DonationRepo.topSenders`.
+ */
+export type DonationCurrency = 'STARS' | 'UZCASTING_COIN';
+
 export type DonorList = {
   /**
-   * Всего звёзд у контента.
+   * Всего у контента в запрошенной валюте.
    *
    * ⚠️ Больше суммы десяти строк — это норма, а не ошибка: в списке
    * только верхушка. Складывать одно с другим нельзя.
    */
-  starsReceived: number;
+  total: number;
   donors: Donor[];
 };
 
@@ -212,7 +222,10 @@ export function mapDonors(raw: unknown): DonorList {
   }
 
   return {
-    starsReceived: num(r.starsReceived) ?? 0,
+    // ⚠️ `starsReceived` — запасной ключ: так отвечает сборка бэкенда до
+    // 10.09.2026, где рейтинг был только звёздный. Без него на старом
+    // сервере итог показался бы нулём при непустом списке.
+    total: num(r.total) ?? num(r.starsReceived) ?? 0,
     donors: list.map((raw, i) => {
       const d = raw as Record<string, unknown>;
       return {
@@ -244,9 +257,13 @@ async function fetchDetail(
   }
 }
 
-async function fetchDonors(contentId: number, limit: number): Promise<DonorList> {
+async function fetchDonors(
+  contentId: number,
+  limit: number,
+  currency: DonationCurrency
+): Promise<DonorList> {
   const { data } = await api.get<unknown>(`/api/v1/app/content/${contentId}/donors`, {
-    params: { limit },
+    params: { limit, currency },
   });
   return mapDonors(data);
 }
@@ -271,8 +288,21 @@ export function useContentDetail(contentId: number | null) {
     queryKey: ['content-detail', contentId, language, viewer],
     queryFn: () => fetchDetail(contentId as number, language),
     enabled: contentId !== null,
-    // Каталожные данные меняются редко — в отличие от права доступа.
-    staleTime: 5 * 60 * 1000,
+    /**
+     * ⚠️ Ноль, хотя каталожные данные меняются редко.
+     *
+     * В этом же ответе живут СЧЁТЧИКИ: просмотры, «нравится», звёзды,
+     * монеты, комментарии. При `staleTime: 5 мин` карточка ряда на
+     * главной показывала «8 просмотров», а открытая страница — «5»:
+     * лента успевала обновиться, а страница отдавала ответ, снятый до
+     * последних открытий. Та же чёрствость возвращала серое сердце
+     * после «нравится» — казалось, что нажатие не сохранилось.
+     *
+     * Лишнего мигания это не даёт: прошлый ответ остаётся на экране,
+     * пока идёт фоновой запрос.
+     */
+    staleTime: 0,
+    refetchOnMount: 'always',
     retry: (failureCount, error) =>
       !(error instanceof ContentDetailUnavailableError) && failureCount < 2,
   });
@@ -288,11 +318,23 @@ export const TOP_DONORS = 10;
  * карточку значило бы делать группировку по донатам при каждом открытии
  * любого фильма.
  */
-export function useContentDonors(contentId: number | null) {
+export function useContentDonors(
+  contentId: number | null,
+  currency: DonationCurrency,
+  /**
+   * ⚠️ По умолчанию ВЫКЛЮЧЕН.
+   *
+   * Рейтинг больше не стоит на странице — он открывается нажатием на
+   * плитку «Yulduzlar» или «Uzcasting». Запрашивать оба списка при каждом
+   * открытии любого фильма значило бы делать две группировки по донатам
+   * ради окна, которое чаще всего не откроют.
+   */
+  enabled = false
+) {
   return useQuery({
-    queryKey: ['content-donors', contentId],
-    queryFn: () => fetchDonors(contentId as number, TOP_DONORS),
-    enabled: contentId !== null,
+    queryKey: ['content-donors', contentId, currency],
+    queryFn: () => fetchDonors(contentId as number, TOP_DONORS, currency),
+    enabled: enabled && contentId !== null,
     staleTime: 60 * 1000,
     retry: (failureCount, error) =>
       !(error instanceof ContentDetailUnavailableError) && failureCount < 2,

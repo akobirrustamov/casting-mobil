@@ -345,6 +345,7 @@
     "episodes": "Серии",
     "season": "Сезон {{number}}",
     "episodesEmpty": "В этом сезоне пока нет серий",
+    "episodesSoon": "Серии скоро появятся",
     "episodeCount": "{{count}} серии",
     "share": "Поделиться",
     "copyLink": "Скопировать ссылку",
@@ -360,7 +361,11 @@
     "donateAmount": "Отправить {{amount}} звёзд",
     "donateHint": "Поддержите звёздами",
     "donateSoon": "Оплата в приложении пока не подключена — скоро заработает.",
-    "yourStars": "У вас {{amount}} звёзд"
+    "yourStars": "У вас {{amount}} звёзд",
+    "coinsTotal": "Всего {{amount}} монет",
+    "donateAmountCoins": "Отправить {{amount}} монет",
+    "donateHintCoins": "Поддержите монетами UZCASTING",
+    "yourCoins": "У вас {{amount}} монет"
   },
   "contentType": {
     "SHORT_FILM": "Короткий метр",

@@ -120,13 +120,21 @@ public class ContentDetailService {
      * Reyting kartochkaga kirmaydi: u sahifaning eng pastida turadi va
      * har bir kontent ochilganda kerak emas. Ilova uni sahifa
      * ochilgandan keyin alohida so'raydi — kartochka esa darhol chiqadi.
+     *
+     * <h2>⚠️ Valyuta CHAQIRUVCHIDAN keladi</h2>
+     * Ilovada ikkita alohida reyting bor: «Yulduzlar» va «Uzcasting».
+     * Ular BIR ro'yxatga qo'shilmaydi — {@link DonationRepo#topSenders}
+     * dagi sabab bilan bir xil: kurs boshqa, ma'no boshqa, va 100 tanga
+     * yuborgan odam 100 yulduz yuborgandan yuqori turib qolardi.
+     * {@code null} — eskicha xatti-harakat, ya'ni yulduzlar.
      */
     @Transactional(readOnly = true)
-    public List<ContentDetailDto.Donor> topDonors(Long contentId, int limit) {
+    public List<ContentDetailDto.Donor> topDonors(Long contentId, int limit, CurrencyKind kind) {
         int safe = Math.min(Math.max(limit, 1), 50);
 
         List<DonationRepo.SenderTotal> totals = donationRepo.topSenders(
-                DonationTargetType.CONTENT, contentId, CurrencyKind.STARS,
+                DonationTargetType.CONTENT, contentId,
+                kind == null ? CurrencyKind.STARS : kind,
                 PageRequest.of(0, safe));
 
         if (totals.isEmpty()) {

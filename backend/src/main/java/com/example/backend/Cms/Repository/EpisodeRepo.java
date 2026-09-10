@@ -36,6 +36,30 @@ public interface EpisodeRepo extends JpaRepository<Episode, Long> {
     long countByContentId(Long contentId);
 
     /**
+     * Ko'rsa bo'ladigan qismlar soni: holati berilganlardan biri va
+     * kamida BITTA videosi bor.
+     *
+     * <h2>Nima uchun kerak</h2>
+     * Ko'p qismli kontentda video kontentning o'ziga emas, QISMGA
+     * biriktiriladi. Qismsiz yoki videosiz qismli serial nashr qilinsa,
+     * ilovada «Tomosha qilish» bo'sh ro'yxatga olib borardi — hech narsa
+     * ochilmasdi, xato ham chiqmasdi (10.09.2026). {@code ContentService}
+     * nashr qilishdan oldin shu sanoqqa qaraydi.
+     *
+     * ⚠️ Videosi yo'q qism HISOBGA OLINMAYDI: ro'yxatda u ko'rinadi,
+     * lekin bosilsa «video hali yuklanmagan» chiqadi — ya'ni tomoshabin
+     * uchun u yo'q bilan barobar.
+     */
+    @Query("""
+            select count(e) from Episode e
+            where e.content.id = :contentId
+              and e.status in :statuses
+              and exists (select v.id from EpisodeVideo v where v.episode = e)
+            """)
+    long countPlayable(@Param("contentId") Long contentId,
+                       @Param("statuses") Collection<PublicationStatus> statuses);
+
+    /**
      * Nechta NASHR QILINGAN qism — bir nechta kontent uchun BITTA so'rovda.
      *
      * <h2>Nima uchun guruhlangan</h2>

@@ -22,7 +22,7 @@ import { LOCALES, toBackendLocale } from '../../i18n';
  * ⚠️ Treyler har qanday tuzilishda ko'rinadi: u kontentning o'zi emas,
  * reklama roligi va obunasiz ham ochiq.
  */
-export default function MediaTab({ form, set, t, locale, isSingle }) {
+export default function MediaTab({ form, set, t, locale, isSingle, onGoToEpisodes }) {
   return (
       <>
         <div className="uz-row mb-5">
@@ -64,6 +64,40 @@ export default function MediaTab({ form, set, t, locale, isSingle }) {
                 <p className="uz-muted" style={{ fontSize: 12 }}>
                   {t('editor.videoInEpisodes')}
                 </p>
+
+                {/* Matn «qayerda» deydi, tugma — olib boradi. Ilgari admin
+                    bo'limni o'zi qidirishi kerak edi va videoni kontentning
+                    o'ziga yuklab qo'yish osonroq tuyulardi. */}
+                {onGoToEpisodes && (
+                  <button type="button" className="uz-btn uz-btn-ghost mt-2"
+                          onClick={onGoToEpisodes}>
+                    {t('editor.goToEpisodes')}
+                  </button>
+                )}
+
+                {/*
+                  ⚠️ YASHIRIN QOLGAN FILM VIDEOSI (10.09.2026).
+
+                  Kontent film sifatida video bilan yaratilib, keyin
+                  serialga o'zgartirilsa, bog'lanish saqlanib qolaverardi —
+                  maydon esa yashirin. Ilova serialda bu videoni HECH
+                  QACHON ochmaydi: u faqat qismlarni o'ynatadi. Admin buni
+                  ko'rmasdi, tomoshabin esa «video yuklangan, ammo
+                  ochilmayapti» deb yozardi.
+
+                  Olib tashlash faqat BOG'LANISHNI uzadi — fayl
+                  kutubxonada qoladi va uni qismga biriktirish mumkin.
+                  Kuchga «Saqlash» bilan kiradi.
+                */}
+                {form.video && (
+                  <div className="uz-field-warn mt-3" role="alert">
+                    <p style={{ margin: 0 }}>{t('editor.orphanVideo')}</p>
+                    <button type="button" className="uz-btn uz-btn-ghost mt-2"
+                            onClick={() => set({ video: null })}>
+                      {t('editor.orphanVideoDetach')}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

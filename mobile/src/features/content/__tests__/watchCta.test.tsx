@@ -43,11 +43,11 @@ jest.mock('react-native-safe-area-context', () => ({
 // баланс, донаты и плеер — здесь это лишний шум.
 jest.mock('../ContentExtras', () => ({
   CastRail: () => null,
-  DonorsBoard: () => null,
   ScenesRail: () => null,
   TrailerCard: () => null,
 }));
 jest.mock('../StatsRow', () => ({ StatsRow: () => null }));
+jest.mock('../PlayerActions', () => ({ PlayerActions: () => null }));
 jest.mock('../LockedPanel', () => ({ LockedPanel: () => null }));
 
 jest.mock('@/features/watch/Player', () => ({
@@ -200,6 +200,23 @@ function watchButton(tree: ReactTestRenderer) {
   );
 }
 
+/**
+ * Окно полноэкранного плеера.
+ *
+ * Ищется по `onRequestClose` + `supportedOrientations`: это единственное
+ * окно страницы, которому разрешён ландшафт, — окна донатов живут только
+ * в портрете.
+ */
+function playerWindow(tree: ReactTestRenderer) {
+  return (
+    tree.root.findAll(
+      (node) =>
+        typeof node.props?.onRequestClose === 'function' &&
+        Array.isArray(node.props?.supportedOrientations)
+    )[0] ?? null
+  );
+}
+
 beforeEach(() => {
   mockPush.mockClear();
   mockDetailData = undefined;
@@ -219,6 +236,45 @@ describe('развилка «фильм или сериал»', () => {
     expect(mockPush).toHaveBeenCalledWith('/episodes/42');
   });
 
+  /**
+   * Сериал, у которого ещё нет ни одной опубликованной серии.
+   *
+   * ⚠️ Раньше кнопка вела в пустой список — и со стороны это выглядело
+   * как «видео загружено, но не открывается» (10.09.2026).
+   */
+  it('у сериала без серий вместо кнопки — «скоро», и никуда не ведёт', () => {
+    mockDetailData = detail({
+      structureType: 'EPISODIC',
+      contentType: 'SERIES',
+      episodeCount: 0,
+    });
+    mockWatchError = new watchApi.ContentIsMultiPartError();
+
+    const tree = render();
+
+    expect(watchButton(tree)).toBeNull();
+    expect(
+      tree.root
+        .findAllByType(Text)
+        .some((n) => String(n.props.children) === 'content.episodesSoon')
+    ).toBe(true);
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('число серий неизвестно (старый сервер) — кнопка ведёт в список, как раньше', () => {
+    mockDetailData = detail({
+      structureType: 'EPISODIC',
+      contentType: 'SERIES',
+      episodeCount: null,
+    });
+    mockWatchError = new watchApi.ContentIsMultiPartError();
+
+    const tree = render();
+    act(() => watchButton(tree)?.props.onPress());
+
+    expect(mockPush).toHaveBeenCalledWith('/episodes/42');
+  });
+
   it('старый сервер без structureType — развилку решает отказ /watch', () => {
     // Карточки нет вовсе: на старой сборке адреса `/content/{id}` нет.
     mockDetailData = undefined;
@@ -230,7 +286,7 @@ describe('развилка «фильм или сериал»', () => {
     expect(mockPush).toHaveBeenCalledWith('/episodes/42');
   });
 
-  it('у фильма кнопка никуда не уводит — включает плеер на месте', () => {
+  it('у фильма кнопка никуда не уводит — открывает плеер во весь экран', () => {
     mockDetailData = detail();
     mockWatchData = watch();
 
@@ -238,11 +294,17 @@ describe('развилка «фильм или сериал»', () => {
     const button = watchButton(tree);
     expect(button).not.toBeNull();
 
+    // До нажатия окно плеера закрыто: иначе видео начинало бы грузиться
+    // от одного открытия страницы.
+    expect(playerWindow(tree)?.props.visible).toBe(false);
+
     act(() => button?.props.onPress());
 
     expect(mockPush).not.toHaveBeenCalled();
-    // Плеер занял место афиши, и второй кнопки «смотреть» на экране нет.
-    expect(watchButton(tree)).toBeNull();
+    // Плеер открылся ОКНОМ поверх страницы (требование от 10.09.2026), а
+    // не отдельным маршрутом: `/watch` уже получен, спрашивать его заново
+    // незачем.
+    expect(playerWindow(tree)?.props.visible).toBe(true);
   });
 });
 

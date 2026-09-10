@@ -18,6 +18,7 @@ import com.example.backend.Cms.Repository.HomepageSectionRepo;
 import com.example.backend.Cms.Service.ContentService;
 import com.example.backend.Cms.Service.HomeFeedService;
 import com.example.backend.Cms.Service.HomepageService;
+import com.example.backend.support.ContentFixtures;
 import com.example.backend.support.CapturingStatementInspector;
 import com.example.backend.exceptions.BusinessException;
 import com.example.backend.support.Translations;
@@ -59,6 +60,7 @@ class HomeFeedTest {
     @Autowired private HomepageService homepageService;
     @Autowired private HomepageSectionRepo sectionRepo;
     @Autowired private ContentService contentService;
+    @Autowired private ContentFixtures contentFixtures;
     @Autowired private com.example.backend.Cms.Service.EpisodeService episodeService;
     @Autowired private com.example.backend.Cms.Service.TaxonomyService taxonomyService;
     @Autowired private com.example.backend.Cms.Repository.CategoryRepo categoryRepo;
@@ -755,7 +757,7 @@ class HomeFeedTest {
             req.setGenreIds(new java.util.LinkedHashSet<>(List.of(genreId)));
         }
         req.setTranslations(Translations.all("Kartochka " + SEQ.incrementAndGet()));
-        return contentService.create(null, req);
+        return contentFixtures.create(req);
     }
 
     private Episode episode(Content content, int number, PublicationStatus status) {
@@ -807,6 +809,6 @@ class HomeFeedTest {
         req.setStatus(status);
         req.setVisibility(visibility);
         req.setTranslations(Translations.all("Bosh sahifa kontenti " + SEQ.incrementAndGet()));
-        return contentService.create(null, req);
+        return contentFixtures.create(req);
     }
 }

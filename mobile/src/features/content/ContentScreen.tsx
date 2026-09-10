@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -21,6 +22,7 @@ import { trackContentView } from '@/features/analytics/api';
 import { useAuthStore } from '@/features/auth/store';
 import { useContentFavorites, useIsContentSaved } from '@/features/favorites/content';
 import { contentCards, useHomeFeed } from '@/features/home/api';
+import type { ContentCard } from '@/features/home/types';
 import {
   ContentIsMultiPartError,
   ContentNotFoundError,
@@ -33,9 +35,10 @@ import { mediaUrl } from '@/lib/api';
 import { useIsOffline } from '@/lib/network';
 import { TOUCH_TARGET, colors, radius } from '@/theme/tokens';
 
-import { CastRail, DonorsBoard, ScenesRail, TrailerCard } from './ContentExtras';
+import { CastRail, ScenesRail, TrailerCard } from './ContentExtras';
 import { useContentDetail, type ContentDetail } from './detail';
 import { LockedPanel } from './LockedPanel';
+import { PlayerActions } from './PlayerActions';
 import { StatsRow } from './StatsRow';
 
 /**
@@ -198,13 +201,28 @@ function Loaded({
   bottomInset: number;
 }) {
   /**
-   * Включён ли плеер.
+   * Открыт ли полноэкранный плеер.
    *
-   * ⚠️ Живёт на уровне страницы, а не внутри шапки: по нажатию «Tomosha
-   * qilish» кадр должен заменить афишу, а кнопка — уйти. Внутри шапки об
-   * этом нажатии знала бы только она сама.
+   * ⚠️ Живёт на уровне страницы: нажимают кнопку в теле страницы, а окно
+   * плеера лежит поверх всего экрана. Ни одна из двух частей не знает о
+   * другой, кроме как через этот флаг.
    */
   const [playing, setPlaying] = useState(false);
+
+  /**
+   * Запасной источник шапки — карточка ряда с главной.
+   *
+   * ⚠️ Нужен не для красоты. У многосерийного контента `/watch` молчит
+   * («спрашивай серию»), и если рядом отказал ещё и `/content/{id}`, то
+   * ни названия, ни афиши на экране не оставалось вовсе — открывалась
+   * чёрная страница с одним описанием. Название и постер в карточке ряда
+   * есть всегда.
+   */
+  const feed = useHomeFeed();
+  const card =
+    contentId === null
+      ? undefined
+      : contentCards(feed.data).find((c) => c.id === contentId);
 
   return (
     <View className="flex-1 bg-ink">
@@ -222,12 +240,7 @@ function Loaded({
           />
         }
       >
-        <Hero
-          detail={detail}
-          info={info}
-          playing={playing}
-          onRetryPlayback={onRetryPlayback}
-        />
+        <Hero detail={detail} info={info} card={card} />
 
         <View className="gap-5 px-4 pt-4">
           {/* Кнопка и закладка стоят в одной строке — как на макете.
@@ -238,10 +251,9 @@ function Loaded({
             <View className="flex-1">
               <WatchCta
                 contentId={contentId}
-                detail={detail}
                 info={info}
                 isMultiPart={isMultiPart}
-                playing={playing}
+                episodeCount={detail?.episodeCount ?? null}
                 onPlay={() => setPlaying(true)}
               />
             </View>
@@ -261,11 +273,100 @@ function Loaded({
           <TrailerCard detail={detail} info={info} />
 
           <ScenesRail mediaIds={detail?.galleryMediaIds ?? []} />
-
-          <DonorsBoard contentId={contentId} title={detail?.title ?? null} />
         </View>
       </ScrollView>
+
+      {/*
+        ⚠️ Плеер открывается ОТДЕЛЬНЫМ окном во весь экран, а не подменяет
+        собой афишу.
+
+        Так просил заказчик (10.09.2026), и причина не только в размере
+        кадра: на странице под плеером оставались описание, актёры и
+        кадры, и человек листал их, пока фильм играл где-то вверху.
+        Полноэкранное окно снимает этот вопрос — а «назад» возвращает на
+        ту же страницу, никуда не уводя из истории переходов.
+      */}
+      <WatchScreen
+        open={playing}
+        contentId={contentId}
+        detail={detail}
+        info={info}
+        onClose={() => setPlaying(false)}
+        onRetryPlayback={onRetryPlayback}
+      />
     </View>
+  );
+}
+
+/**
+ * Полноэкранный просмотр.
+ *
+ * <h2>Почему окно, а не отдельный маршрут</h2>
+ * Плееру нужен ответ `/watch` — он уже получен страницей. Отдельный
+ * экран спросил бы его заново, и между нажатием и первым кадром встал бы
+ * пустой чёрный экран с крутилкой.
+ *
+ * <h2>⚠️ Панель управления — НАША</h2>
+ * У кнопок платформы нет места под «нравится», комментарии и донат, а на
+ * макете они стоят прямо на кадре. Разбор — в `watch/Player`; там же
+ * сказано, почему после кнопки «на весь экран» (системный режим) панель
+ * всё-таки платформенная.
+ */
+function WatchScreen({
+  open,
+  contentId,
+  detail,
+  info,
+  onClose,
+  onRetryPlayback,
+}: {
+  open: boolean;
+  contentId: number | null;
+  detail: ContentDetail | undefined;
+  info: WatchInfo | undefined;
+  onClose: () => void;
+  onRetryPlayback: () => Promise<unknown>;
+}) {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Modal
+      visible={open}
+      animationType="fade"
+      onRequestClose={onClose}
+      statusBarTranslucent
+      // Кадр разворачивают в ландшафт кнопкой «на весь экран» — без
+      // этого списка окно осталось бы портретным и плеер поворачивался
+      // бы внутри неповёрнутого окна.
+      supportedOrientations={[
+        'portrait',
+        'landscape',
+        'landscape-left',
+        'landscape-right',
+      ]}
+    >
+      <View className="flex-1 bg-black" style={{ paddingTop: insets.top }}>
+        <View className="flex-row px-2 py-2">
+          <Pressable
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Orqaga"
+            hitSlop={12}
+            style={{ width: TOUCH_TARGET, height: TOUCH_TARGET }}
+            className="items-center justify-center rounded-pill active:opacity-60"
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.white} />
+          </Pressable>
+        </View>
+
+        <Stage
+          contentId={contentId}
+          detail={detail}
+          info={info}
+          onRetry={onRetryPlayback}
+        />
+      </View>
+    </Modal>
   );
 }
 
@@ -290,13 +391,12 @@ const HERO_SCREEN_SHARE = 0.52;
 function Hero({
   detail,
   info,
-  playing,
-  onRetryPlayback,
+  card,
 }: {
   detail: ContentDetail | undefined;
   info: WatchInfo | undefined;
-  playing: boolean;
-  onRetryPlayback: () => Promise<unknown>;
+  /** Карточка ряда с главной — запасное название и афиша. */
+  card: ContentCard | undefined;
 }) {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
@@ -305,18 +405,9 @@ function Hero({
 
   // Широкий кадр (COVER) — то, что задумано для шапки. Афиша 2:3 —
   // запасной вариант: она есть всегда, просто обрезается по бокам.
-  const image = mediaUrl(detail?.coverMediaId ?? detail?.posterMediaId);
-
-  if (playing) {
-    return (
-      <View style={{ paddingTop: insets.top }} className="bg-black">
-        <View className="flex-row items-center px-2 py-2">
-          <BackButton />
-        </View>
-        <Stage info={info} onRetry={onRetryPlayback} />
-      </View>
-    );
-  }
+  const image = mediaUrl(
+    detail?.coverMediaId ?? detail?.posterMediaId ?? card?.posterMediaId
+  );
 
   return (
     <View style={{ height: heroHeight }} className="bg-surface-2">
@@ -351,10 +442,10 @@ function Hero({
       </View>
 
       <View className="absolute bottom-0 left-0 right-0 gap-2 px-4 pb-4">
-        <TypeBadge detail={detail} />
+        <TypeBadge detail={detail} card={card} />
 
         <Text numberOfLines={2} className="text-display text-text">
-          {detail?.title ?? info?.title ?? ''}
+          {detail?.title ?? info?.title ?? card?.title ?? ''}
         </Text>
 
         <FactsRow detail={detail} info={info} />
@@ -396,9 +487,15 @@ function ShareButton({
 }
 
 /** «SERIAL», «FILM» — тип контента маджентой, как на макете. */
-function TypeBadge({ detail }: { detail: ContentDetail | undefined }) {
+function TypeBadge({
+  detail,
+  card,
+}: {
+  detail: ContentDetail | undefined;
+  card: ContentCard | undefined;
+}) {
   const { t } = useTranslation();
-  const type = detail?.contentType;
+  const type = detail?.contentType ?? card?.contentType;
   if (!type) return null;
 
   return (
@@ -531,23 +628,51 @@ function SaveButton({ contentId }: { contentId: number | null }) {
  */
 function WatchCta({
   contentId,
-  detail,
   info,
   isMultiPart,
-  playing,
+  episodeCount,
   onPlay,
 }: {
   contentId: number | null;
-  detail: ContentDetail | undefined;
   info: WatchInfo | undefined;
   isMultiPart: boolean;
-  playing: boolean;
+  /**
+   * Сколько серий УЖЕ опубликовано. `null` — сервер не сказал (старая
+   * сборка без `/content/{id}`), и тогда кнопка ведёт в список как раньше:
+   * там свой пустой экран.
+   */
+  episodeCount: number | null;
   onPlay: () => void;
 }) {
   const { t } = useTranslation();
 
-  // Плеер уже открыт — второй кнопки «смотреть» на экране быть не должно.
-  if (playing) return null;
+  /**
+   * Сериал без единой серии.
+   *
+   * ⚠️ Раньше кнопка «Tomosha qilish» стояла и здесь — и вела в пустой
+   * список. Со стороны это читалось как «видео загружено, но не
+   * открывается» (10.09.2026): у сериала видео прикрепляется к СЕРИИ, а
+   * не к самому контенту, и пока серий нет, смотреть просто нечего.
+   * Честная неактивная плашка вместо кнопки, которая обещает и не делает.
+   *
+   * Сервер больше не даёт опубликовать сериал без серий
+   * (`ContentService.requirePlayableEpisode`), но уже опубликованные
+   * такие остались — плашка нужна им.
+   */
+  if (isMultiPart && episodeCount === 0) {
+    return (
+      <View
+        accessibilityRole="text"
+        style={{ borderRadius: radius.card, minHeight: TOUCH_TARGET }}
+        className="flex-row items-center justify-center gap-2 border border-border bg-surface px-5 py-3.5"
+      >
+        <Ionicons name="time-outline" size={18} color={colors.textMuted} />
+        <Text className="text-body font-semibold text-text-muted">
+          {t('content.episodesSoon')}
+        </Text>
+      </View>
+    );
+  }
 
   // Закрытый контент: что делать, говорит `LockedPanel` — там настоящая
   // цена сервера. Дублировать «смотреть» рядом с замком значило бы обещать
@@ -666,9 +791,13 @@ function GenreTags({ genres }: { genres: string[] }) {
  * причина может быть и в сети, и в снятой подписке.
  */
 function Stage({
+  contentId,
+  detail,
   info,
   onRetry,
 }: {
+  contentId: number | null;
+  detail: ContentDetail | undefined;
   info: WatchInfo | undefined;
   onRetry: () => Promise<unknown>;
 }) {
@@ -694,7 +823,7 @@ function Stage({
 
   if (!info || info.sources.length === 0) {
     return (
-      <View className="h-56 justify-center">
+      <View className="flex-1 justify-center">
         <ScreenState kind="empty" body={t('content.noVideo')} />
       </View>
     );
@@ -702,7 +831,7 @@ function Stage({
 
   if (source && (failed || retrying)) {
     return (
-      <View className="h-56 justify-center">
+      <View className="flex-1 justify-center">
         {retrying ? (
           <ScreenState kind="loading" />
         ) : (
@@ -720,7 +849,7 @@ function Stage({
   if (!source) return null;
 
   return (
-    <View className="gap-3 pb-3">
+    <View className="flex-1 gap-3 pb-3">
       {/* key: смена части пересоздаёт плеер. Признак HLS в ключе —
           чтобы после «потянули вниз» плеер перешёл на появившийся
           `hlsUrl`, а не остался со старым адресом мимо CDN. */}
@@ -731,6 +860,11 @@ function Stage({
         contentId={info.contentId}
         episodeId={info.episodeId}
         onError={() => setFailed(true)}
+        controls="custom"
+        fill
+        autoPlay
+        title={detail?.title ?? info.title}
+        actions={<PlayerActions contentId={contentId} detail={detail} info={info} />}
       />
 
       {info.sources.length > 1 ? (

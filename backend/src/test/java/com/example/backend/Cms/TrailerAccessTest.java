@@ -16,6 +16,7 @@ import com.example.backend.Cms.Repository.MediaAssetRepo;
 import com.example.backend.Cms.Service.ContentService;
 import com.example.backend.Cms.Service.EpisodeService;
 import com.example.backend.Cms.Service.StorageService;
+import com.example.backend.support.ContentFixtures;
 import com.example.backend.support.Translations;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -70,6 +71,7 @@ class TrailerAccessTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private ContentService contentService;
+    @Autowired private ContentFixtures contentFixtures;
     @Autowired private EpisodeService episodeService;
     @Autowired private MediaAssetRepo mediaAssetRepo;
     @Autowired private StorageService storageService;
@@ -121,7 +123,7 @@ class TrailerAccessTest {
         c.setPremierePrice(new BigDecimal("5000"));
         c.setTranslations(Translations.all("Film " + SEQ.incrementAndGet()));
         c.setMedia(media);
-        return contentService.create(null, c);
+        return contentFixtures.create(c);
     }
 
     /** Ko'p qismli pullik serial: treyler KONTENTGA biriktiriladi. */
@@ -134,7 +136,7 @@ class TrailerAccessTest {
         c.setPremierePrice(new BigDecimal("15000"));
         c.setTranslations(Translations.all("Serial " + SEQ.incrementAndGet()));
         c.setMedia(new ArrayList<>(promo));
-        return contentService.create(null, c);
+        return contentFixtures.create(c);
     }
 
     private Episode episode(Content content, int number) {

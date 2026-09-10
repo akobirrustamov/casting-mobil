@@ -127,4 +127,26 @@ describe('mapDonors', () => {
     expect(donor.name).toBeNull();
     expect(donor.stars).toBe(50);
   });
+
+  /**
+   * Итог рейтинга.
+   *
+   * ⚠️ С 10.09.2026 сервер отвечает `total` — сумму В ЗАПРОШЕННОЙ валюте, а
+   * `starsReceived` приходит только у звёзд. Прочитай экран монет старое
+   * поле — он показал бы сумму звёзд под знаком монеты.
+   */
+  it('итог берётся из `total`, а не из звёздного поля', () => {
+    const coins = mapDonors({
+      currency: 'UZCASTING_COIN',
+      total: 300,
+      starsReceived: null,
+      donors: [],
+    });
+
+    expect(coins.total).toBe(300);
+  });
+
+  it('старый сервер без `total` — итог из `starsReceived`, а не ноль', () => {
+    expect(mapDonors({ starsReceived: 1000, donors: [] }).total).toBe(1000);
+  });
 });

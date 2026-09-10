@@ -6,6 +6,7 @@ import com.example.backend.Admin.Dto.TranslationDto;
 import com.example.backend.Cms.Entity.*;
 import com.example.backend.Cms.Enums.*;
 import com.example.backend.Cms.Enums.Locale;
+import com.example.backend.support.ContentFixtures;
 import com.example.backend.support.Translations;
 import com.example.backend.Cms.Repository.PurchaseRepo;
 import com.example.backend.Cms.Repository.UserAccountRepo;
@@ -42,6 +43,7 @@ class AccessServiceTest {
 
     @Autowired private AccessService accessService;
     @Autowired private ContentService contentService;
+    @Autowired private ContentFixtures contentFixtures;
     @Autowired private EpisodeService episodeService;
     @Autowired private UserAdminService userAdminService;
     @Autowired private UserRepo userRepo;
@@ -70,7 +72,7 @@ class AccessServiceTest {
         c.setAccessPolicy(contentPolicy);
         c.setPremierePrice(new BigDecimal("15000"));
         c.setTranslations(Translations.all("Kirish sinovi " + System.nanoTime()));
-        Content content = contentService.create(null, c);
+        Content content = contentFixtures.create(c);
 
         EpisodeSaveRequest e = new EpisodeSaveRequest();
         e.setEpisodeNumber(1);

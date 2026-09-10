@@ -11,6 +11,7 @@ import com.example.backend.Cms.Service.ContentService;
 import com.example.backend.Cms.Service.EpisodeService;
 import com.example.backend.Cms.Service.SettingKeys;
 import com.example.backend.Cms.Service.SettingsService;
+import com.example.backend.support.ContentFixtures;
 import com.example.backend.support.Translations;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -48,6 +49,7 @@ class AccessPricingTest {
     private static final AtomicInteger SEQ = new AtomicInteger(0);
 
     @Autowired private ContentService contentService;
+    @Autowired private ContentFixtures contentFixtures;
     @Autowired private EpisodeService episodeService;
     @Autowired private AccessService accessService;
     @Autowired private SettingsService settingsService;
@@ -61,7 +63,7 @@ class AccessPricingTest {
         c.setStatus(PublicationStatus.PUBLISHED);
         c.setPremierePrice(new BigDecimal("50000"));
         c.setTranslations(Translations.all("Narx sinovi " + SEQ.incrementAndGet()));
-        Content series = contentService.create(null, c);
+        Content series = contentFixtures.create(c);
 
         EpisodeSaveRequest e = new EpisodeSaveRequest();
         e.setEpisodeNumber(1);
@@ -141,7 +143,7 @@ class AccessPricingTest {
             c.setStatus(PublicationStatus.PUBLISHED);
             // premierePrice ATAYLAB berilmaydi
             c.setTranslations(Translations.all("Narxsiz serial " + SEQ.incrementAndGet()));
-            Content series = contentService.create(null, c);
+            Content series = contentFixtures.create(c);
 
             EpisodeSaveRequest e = new EpisodeSaveRequest();
             e.setEpisodeNumber(1);
@@ -214,7 +216,7 @@ class AccessPricingTest {
             c.setAccessPolicy(AccessPolicy.PREMIUM_ONLY);
             c.setStatus(PublicationStatus.PUBLISHED);
             c.setTranslations(Translations.all("Ilinma " + SEQ.incrementAndGet()));
-            Content series = contentService.create(null, c);
+            Content series = contentFixtures.create(c);
 
             EpisodeSaveRequest e = new EpisodeSaveRequest();
             e.setEpisodeNumber(1);

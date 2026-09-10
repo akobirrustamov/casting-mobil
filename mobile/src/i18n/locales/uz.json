@@ -345,6 +345,7 @@
     "episodes": "Qismlar",
     "season": "{{number}}-mavsum",
     "episodesEmpty": "Bu mavsumda hali qism yo'q",
+    "episodesSoon": "Qismlar tez orada",
     "episodeCount": "{{count}} qism",
     "share": "Ulashish",
     "copyLink": "Havolani nusxalash",
@@ -360,7 +361,11 @@
     "donateAmount": "{{amount}} yulduz yuborish",
     "donateHint": "Yulduzlar bilan qo'llab-quvvatlang",
     "donateSoon": "To'lov ilovada hali ulanmagan — tez orada ishga tushadi.",
-    "yourStars": "Sizda {{amount}} yulduz bor"
+    "yourStars": "Sizda {{amount}} yulduz bor",
+    "coinsTotal": "Jami {{amount}} tanga",
+    "donateAmountCoins": "{{amount}} tanga yuborish",
+    "donateHintCoins": "UZCASTING tangalari bilan qo'llab-quvvatlang",
+    "yourCoins": "Sizda {{amount}} tanga bor"
   },
   "contentType": {
     "SHORT_FILM": "Qisqa metraj",

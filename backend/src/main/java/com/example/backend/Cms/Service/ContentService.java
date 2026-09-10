@@ -4,6 +4,7 @@ import com.example.backend.Admin.Dto.ContentSaveRequest;
 import com.example.backend.Cms.Entity.*;
 import com.example.backend.Cms.Enums.Locale;
 import com.example.backend.Cms.Enums.PublicationStatus;
+import com.example.backend.Cms.Enums.StructureType;
 import com.example.backend.Cms.Repository.*;
 import com.example.backend.Entity.User;
 import com.example.backend.Services.AuditService.AuditAction;
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,11 +37,19 @@ public class ContentService {
     private final GenreRepo genreRepo;
     private final CreatorRepo creatorRepo;
     private final MediaAssetRepo mediaAssetRepo;
+    private final EpisodeRepo episodeRepo;
     private final AuditService auditService;
 
     @Transactional
     public Content create(User actor, ContentSaveRequest request) {
         validate(request);
+
+        // Yangi kontentda qism bo'lishi MUMKIN EMAS — qism mavjud kontentga
+        // qo'shiladi. Ya'ni yaratilishdayoq nashr qilingan serial doim
+        // bo'sh bo'lardi. Sabab va qoida: `requirePlayableEpisode`.
+        if (isUserVisible(request.getStatus()) && isMultiPart(request.getStructureType())) {
+            throw BusinessException.validation(SERIAL_WITHOUT_EPISODES);
+        }
 
         Content content = new Content();
         content.setSlug(resolveSlug(request, null));
@@ -77,6 +87,8 @@ public class ContentService {
         content.touch();
 
         PublicationStatus before = content.getStatus();
+        requirePlayableEpisode(content, request);
+
         if (request.getSlug() != null && !request.getSlug().isBlank()) {
             content.setSlug(resolveSlug(request, content));
         }
@@ -109,6 +121,64 @@ public class ContentService {
     }
 
     // ------------------------------------------------------------------ ichki
+
+    static final String SERIAL_WITHOUT_EPISODES =
+            "Serial kamida bitta videoli, nashr qilingan qism bilan nashr qilinadi. "
+            + "Avval serialni qoralama sifatida saqlang, «Qismlar» bo'limida "
+            + "qism qo'shing, keyin nashr qiling.";
+
+    /**
+     * Ko'p qismli kontent ko'rsa bo'ladigan qismsiz NASHR QILINMAYDI.
+     *
+     * <h2>Nima uchun (10.09.2026)</h2>
+     * Serialda video kontentning o'ziga emas, qismga biriktiriladi. Qismsiz
+     * serial ilovada ochiladi, «Tomosha qilish» ham bor — lekin u bo'sh
+     * ro'yxatga olib boradi. Xato ham, ogohlantirish ham yo'q: tomoshabin
+     * uchun bu «video yuklangan, ammo ochilmayapti».
+     *
+     * <h2>⚠️ Qachon tekshiriladi</h2>
+     * Faqat kontent tomoshabinga KO'RINA BOSHLAGANDA:
+     * <ul>
+     *   <li>qoralamadan nashrga (yoki rejaga) o'tganda;</li>
+     *   <li>nashr qilingan FILM serialga aylantirilganda — aynan shu
+     *       holatda film videosi yashirin qolib ketardi.</li>
+     * </ul>
+     * Allaqachon nashr qilingan qismsiz serialni har tahrirlashda to'xtatish
+     * noto'g'ri bo'lardi: sarlavhadagi bitta harfni ham tuzatib bo'lmay
+     * qolardi. Unday kontentni panel o'zi ko'rsatadi.
+     *
+     * <h2>Rejalashtirilgan (SCHEDULED) kontent</h2>
+     * Belgilangan vaqtda qismlar ham chiqishi mumkin — shuning uchun u
+     * yerda rejalashtirilgan qism ham hisobga olinadi.
+     */
+    private void requirePlayableEpisode(Content content, ContentSaveRequest request) {
+        if (!isUserVisible(request.getStatus()) || !isMultiPart(request.getStructureType())) {
+            return;
+        }
+
+        boolean wasVisible = isUserVisible(content.getStatus());
+        boolean wasSingle = content.getStructureType() == StructureType.SINGLE;
+        if (wasVisible && !wasSingle) {
+            return;
+        }
+
+        List<PublicationStatus> ready = request.getStatus() == PublicationStatus.SCHEDULED
+                ? List.of(PublicationStatus.PUBLISHED, PublicationStatus.SCHEDULED)
+                : List.of(PublicationStatus.PUBLISHED);
+
+        if (episodeRepo.countPlayable(content.getId(), ready) == 0) {
+            throw BusinessException.validation(SERIAL_WITHOUT_EPISODES);
+        }
+    }
+
+    /** SCHEDULED ham kiradi: u belgilangan vaqtda o'zi PUBLISHED bo'ladi. */
+    private static boolean isUserVisible(PublicationStatus status) {
+        return status == PublicationStatus.PUBLISHED || status == PublicationStatus.SCHEDULED;
+    }
+
+    private static boolean isMultiPart(StructureType type) {
+        return type != null && type != StructureType.SINGLE;
+    }
 
     private void validate(ContentSaveRequest request) {
         Map<Locale, com.example.backend.Admin.Dto.TranslationDto> tr = request.getTranslations();

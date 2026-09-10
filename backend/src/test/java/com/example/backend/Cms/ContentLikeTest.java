@@ -17,6 +17,7 @@ import com.example.backend.Cms.Service.FavoriteService;
 import com.example.backend.Entity.User;
 import com.example.backend.Repository.UserRepo;
 import com.example.backend.exceptions.BusinessException;
+import com.example.backend.support.ContentFixtures;
 import com.example.backend.support.Translations;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
@@ -70,6 +71,7 @@ class ContentLikeTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ContentLikeService likeService;
     @Autowired private ContentService contentService;
+    @Autowired private ContentFixtures contentFixtures;
     @Autowired private ContentRepo contentRepo;
     @Autowired private UserRepo userRepo;
     @Autowired private FavoriteService favoriteService;
@@ -98,7 +100,7 @@ class ContentLikeTest {
         c.setDurationMinutes(90);
         c.setPremierePrice(new BigDecimal("5000"));
         c.setTranslations(Translations.all("Film " + SEQ.incrementAndGet()));
-        return contentService.create(null, c);
+        return contentFixtures.create(c);
     }
 
     private Content series() {
@@ -108,7 +110,7 @@ class ContentLikeTest {
         c.setAccessPolicy(AccessPolicy.FREE);
         c.setStatus(PublicationStatus.PUBLISHED);
         c.setTranslations(Translations.all("Serial " + SEQ.incrementAndGet()));
-        return contentService.create(null, c);
+        return contentFixtures.create(c);
     }
 
     private Episode episode(Content content, int number) {

@@ -345,6 +345,7 @@
     "episodes": "Episodes",
     "season": "Season {{number}}",
     "episodesEmpty": "No episodes in this season yet",
+    "episodesSoon": "Episodes coming soon",
     "episodeCount": "{{count}} episodes",
     "share": "Share",
     "copyLink": "Copy link",
@@ -360,7 +361,11 @@
     "donateAmount": "Send {{amount}} stars",
     "donateHint": "Support with stars",
     "donateSoon": "Payments are not connected in the app yet — coming soon.",
-    "yourStars": "You have {{amount}} stars"
+    "yourStars": "You have {{amount}} stars",
+    "coinsTotal": "{{amount}} coins in total",
+    "donateAmountCoins": "Send {{amount}} coins",
+    "donateHintCoins": "Support with UZCASTING coins",
+    "yourCoins": "You have {{amount}} coins"
   },
   "contentType": {
     "SHORT_FILM": "Short film",
