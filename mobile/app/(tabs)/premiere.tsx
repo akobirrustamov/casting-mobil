@@ -191,6 +191,12 @@ export default function PremiereScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        // ⚠️ `flexGrow: 0` обязателен. У ScrollView он по умолчанию 1, а
+        // контейнер `Screen` растягивается на весь экран (`flexGrow: 1`).
+        // При коротком списке ряд вкладок забирал всё свободное место и
+        // вырастал в огромный пустой прямоугольник между вкладками и
+        // карточками (10.09.2026).
+        style={{ flexGrow: 0 }}
         contentContainerClassName="gap-2 pr-4"
       >
         {TABS.map((item, i) => (

@@ -110,5 +110,59 @@ public interface CommentRepo extends JpaRepository<Comment, Long> {
      */
     long countByContentIdAndStatus(Long contentId, CommentStatus status);
 
+    /**
+     * Ilovadagi izohlar ro'yxati — MEHMON uchun: faqat ko'rinadiganlari.
+     *
+     * Yangisi tepada. {@code id} ikkinchi kalit: bir soniyada yozilgan
+     * ikki izoh sahifadan sahifaga o'rin almashib, biri ikki marta, biri
+     * umuman ko'rinmay qolmasin.
+     *
+     * ⚠️ Qism izohlari ham kiradi: kartochkadagi sanoq
+     * ({@link #countByContentIdAndStatus}) ularni ham sanaydi, ro'yxat
+     * boshqacha bo'lsa «12 ta izoh» deb 9 tasi chiqardi.
+     */
+    @Query(value = """
+            select c from Comment c
+            left join fetch c.author
+            where c.content.id = :contentId and c.status = :visible
+            order by c.createdAt desc, c.id desc
+            """,
+            countQuery = """
+            select count(c) from Comment c
+            where c.content.id = :contentId and c.status = :visible
+            """)
+    Page<Comment> findForApp(@Param("contentId") Long contentId,
+                             @Param("visible") CommentStatus visible,
+                             Pageable pageable);
+
+    /**
+     * Xuddi shu ro'yxat — KIRGAN foydalanuvchi uchun: unga moderator
+     * yashirgan O'Z izohlari ham ko'rinadi ({@link CommentStatus#HIDDEN}
+     * izohidagi qoida). Aks holda odam izohi yo'qolib qolganini ko'rib,
+     * uni qayta-qayta yozardi.
+     *
+     * ⚠️ Mehmon uchun alohida so'rov, bitta so'rovga {@code :viewerId is
+     * null} qo'yilmadi: PostgreSQL null UUID parametrining turini aniqlay
+     * olmaydi (moderatsiya ro'yxatidagi {@code cast(...)} aynan shu
+     * sababdan).
+     */
+    @Query(value = """
+            select c from Comment c
+            left join fetch c.author
+            where c.content.id = :contentId
+              and (c.status = :visible or (c.status = :hidden and c.author.id = :viewerId))
+            order by c.createdAt desc, c.id desc
+            """,
+            countQuery = """
+            select count(c) from Comment c
+            where c.content.id = :contentId
+              and (c.status = :visible or (c.status = :hidden and c.author.id = :viewerId))
+            """)
+    Page<Comment> findForAppWithOwnHidden(@Param("contentId") Long contentId,
+                                          @Param("visible") CommentStatus visible,
+                                          @Param("hidden") CommentStatus hidden,
+                                          @Param("viewerId") UUID viewerId,
+                                          Pageable pageable);
+
     long countByStatus(CommentStatus status);
 }

@@ -160,6 +160,11 @@ public class SecurityConfig {
                         // aynan shu odamniki bo'ladi.
                         .requestMatchers(HttpMethod.GET, "/api/v1/app/content/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/app/content/*/donors").permitAll()
+                        // Izohlar ro'yxati — kartochkadagi «Izohlar» sonini
+                        // mehmon ham ko'radi, mazmunini ham ko'rishi kerak.
+                        // ⚠️ Faqat GET: yozish va o'chirish kim qilgani bilan
+                        // bog'liq, ular `/api/**` qoidasiga tushadi (401).
+                        .requestMatchers(HttpMethod.GET, "/api/v1/app/content/*/comments").permitAll()
                         // Bosh sahifa (§31). Mehmon ham ko'ra oladi - aks holda
                         // odam ilovada nima borligini bilmasdan ro'yxatdan
                         // o'tishi kerak bo'lardi. Tomosha qilish esa baribir

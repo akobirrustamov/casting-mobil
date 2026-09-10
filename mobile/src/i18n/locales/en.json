@@ -354,6 +354,8 @@
     "less": "Less",
     "scenes": "Scenes",
     "topDonors": "Top supporters",
+    "topDonorsTitle": "Top 100 donors",
+    "donorsUnavailable": "Rankings aren't enabled on this server yet. They'll appear after the server update.",
     "starsTotal": "{{amount}} stars in total",
     "noDonors": "No one has supported this yet",
     "anonymousDonor": "Unknown user",
@@ -399,5 +401,23 @@
     "ru": "Russian",
     "tr": "Turkish",
     "uz": "Uzbek"
+  },
+  "comments": {
+    "title": "Comments",
+    "placeholder": "Write a comment…",
+    "send": "Send",
+    "signInToComment": "Sign in to comment",
+    "empty": "No comments yet. Be the first!",
+    "unavailable": "Comments aren't enabled on this server yet. They'll appear after the server update.",
+    "hidden": "Hidden by a moderator — only you can see it",
+    "delete": "Delete",
+    "deleteConfirmTitle": "Delete this comment?",
+    "anonymous": "Unknown user",
+    "justNow": "just now",
+    "minutesAgo": "{{count}} min ago",
+    "hoursAgo": "{{count}} h ago",
+    "daysAgo": "{{count}} d ago",
+    "sendFailed": "Couldn't send the comment. Try again.",
+    "blocked": "Your account is blocked — you can't comment."
   }
 }

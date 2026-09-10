@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useIsFocused } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -21,7 +21,7 @@ import { ScreenState } from '@/components/states/ScreenState';
 import { trackContentView } from '@/features/analytics/api';
 import { useAuthStore } from '@/features/auth/store';
 import { useContentFavorites, useIsContentSaved } from '@/features/favorites/content';
-import { contentCards, useHomeFeed } from '@/features/home/api';
+import { contentCards, useContentCard, useHomeFeed } from '@/features/home/api';
 import type { ContentCard } from '@/features/home/types';
 import {
   ContentIsMultiPartError,
@@ -32,13 +32,20 @@ import {
 import { Player, playbackSource } from '@/features/watch/Player';
 import type { VideoSource, WatchInfo } from '@/features/watch/types';
 import { mediaUrl } from '@/lib/api';
+import { pushOnce } from '@/lib/navigation';
 import { useIsOffline } from '@/lib/network';
 import { TOUCH_TARGET, colors, radius } from '@/theme/tokens';
 
 import { CastRail, ScenesRail, TrailerCard } from './ContentExtras';
-import { useContentDetail, type ContentDetail } from './detail';
+import {
+  ContentDetailUnavailableError,
+  serverLacksContentDetail,
+  useContentDetail,
+  type ContentDetail,
+} from './detail';
 import { LockedPanel } from './LockedPanel';
 import { PlayerActions } from './PlayerActions';
+import { useSerialCountersFallback } from './serialCounters';
 import { StatsRow } from './StatsRow';
 
 /**
@@ -82,6 +89,21 @@ export function ContentScreen({ contentId }: { contentId: number | null }) {
   const isMultiPart =
     (detail.data?.structureType != null && detail.data.structureType !== 'SINGLE') ||
     watch.error instanceof ContentIsMultiPartError;
+
+  // Счётчики сериала на сервере без карточки — см. `serialCounters`.
+  // ⚠️ Только для плиток: в `info` страницы это НЕ идёт.
+  //
+  // ⚠️ Скорость (10.09.2026): если сервер УЖЕ отказал в карточке раньше,
+  // а карточка ряда говорит «это сериал» (у неё есть число серий),
+  // обходная дорога стартует сразу — не дожидаясь, пока откажут ещё раз
+  // карточка и `/watch`. Минус один поход в сеть на каждом сериале.
+  const card = useContentCard(contentId);
+  const knownSerial = isMultiPart || (card?.episodeCount ?? null) !== null;
+  const serialCounters = useSerialCountersFallback(
+    contentId,
+    knownSerial &&
+      (detail.error instanceof ContentDetailUnavailableError || serverLacksContentDetail())
+  );
 
   // Открытие карточки — отдельное от запуска видео событие: человек может
   // зайти, увидеть цену и уйти, и в отчётах это разные вещи.
@@ -140,6 +162,7 @@ export function ContentScreen({ contentId }: { contentId: number | null }) {
       detail={detail.data}
       info={watch.data}
       isMultiPart={isMultiPart}
+      counters={serialCounters}
       refreshing={detail.isRefetching || watch.isRefetching}
       onRefresh={refresh}
       onRetryPlayback={() => watch.refetch()}
@@ -186,6 +209,7 @@ function Loaded({
   detail,
   info,
   isMultiPart,
+  counters,
   refreshing,
   onRefresh,
   onRetryPlayback,
@@ -195,6 +219,8 @@ function Loaded({
   detail: ContentDetail | undefined;
   info: WatchInfo | undefined;
   isMultiPart: boolean;
+  /** Запасной источник счётчиков сериала — только для плиток. */
+  counters: WatchInfo | undefined;
   refreshing: boolean;
   onRefresh: () => void;
   onRetryPlayback: () => Promise<unknown>;
@@ -260,7 +286,7 @@ function Loaded({
             <SaveButton contentId={contentId} />
           </View>
 
-          <StatsRow contentId={contentId} detail={detail} info={info} />
+          <StatsRow contentId={contentId} detail={detail} info={info ?? counters} />
 
           <Synopsis detail={detail} contentId={contentId} />
 
@@ -329,9 +355,20 @@ function WatchScreen({
 }) {
   const insets = useSafeAreaInsets();
 
+  /**
+   * ⚠️ Окно видно, только пока страница в фокусе.
+   *
+   * `Modal` рисуется поверх ВСЕГО приложения. Значок звезды на кадре ведёт
+   * на страницу рейтинга, «нравится» у гостя — на вход; без этого условия
+   * новая страница открывалась бы ПОД плеером, и человеку казалось бы, что
+   * кнопка не сработала. Вернулся назад — окно снова открыто, просмотр
+   * продолжается с сохранённого места.
+   */
+  const focused = useIsFocused();
+
   return (
     <Modal
-      visible={open}
+      visible={open && focused}
       animationType="fade"
       onRequestClose={onClose}
       statusBarTranslucent
@@ -680,7 +717,8 @@ function WatchCta({
   if (info && !info.allowed) return null;
 
   const goToEpisodes = () => {
-    if (contentId !== null) router.push(`/episodes/${contentId}`);
+    // `pushOnce`: быстрые повторные нажатия не открывают список дважды.
+    if (contentId !== null) pushOnce(`/episodes/${contentId}`);
   };
 
   // Подпись одна и та же у фильма и у сериала — так на макете. Разный

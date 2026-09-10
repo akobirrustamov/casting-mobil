@@ -106,6 +106,9 @@ export function EpisodeListScreen({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          // Не растягиваться по высоте — причина та же, что у вкладок
+          // «Media»: см. `flexGrow` в `components/ui/Screen`.
+          style={{ flexGrow: 0 }}
           contentContainerStyle={{ gap: 8, paddingRight: 16 }}
         >
           {seasons.map((s) => (

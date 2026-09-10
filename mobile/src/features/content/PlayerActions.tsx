@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import type { WatchInfo } from '@/features/watch/types';
@@ -9,8 +8,10 @@ import { colors } from '@/theme/tokens';
 
 import coinIcon from '../../../assets/brand/coin.png';
 
-import type { ContentDetail, DonationCurrency } from './detail';
-import { DonorsSheet } from './DonorsSheet';
+import { openComments } from '@/features/comments/CommentsScreen';
+
+import type { ContentDetail } from './detail';
+import { openDonors } from './DonorsScreen';
 import { useContentLike } from './like';
 
 /**
@@ -36,8 +37,6 @@ export function PlayerActions({
   detail: ContentDetail | undefined;
   info: WatchInfo | undefined;
 }) {
-  const [sheet, setSheet] = useState<DonationCurrency | null>(null);
-
   const like = useContentLike(contentId, detail, info);
 
   const stars = detail?.starsReceived ?? info?.starsReceived ?? null;
@@ -58,13 +57,15 @@ export function PlayerActions({
         selected={like.liked}
       />
 
-      {/* ⚠️ Облачко без нажатия: списка комментариев в `/api/v1/app/**`
-          пока нет — только счётчик. Кнопка вела бы в пустоту. */}
+      {/* Облачко ведёт в ленту комментариев. Окно плеера при этом
+          прячется само — см. `WatchScreen` в `ContentScreen`. */}
       <Action
         icon="chatbubble-outline"
         color={colors.white}
         value={comments}
         label="Izohlar"
+        onPress={() => contentId !== null && openComments(contentId)}
+        disabled={contentId === null}
       />
 
       <Action
@@ -72,7 +73,7 @@ export function PlayerActions({
         color={colors.white}
         value={stars}
         label="Yulduzlar"
-        onPress={() => setSheet('STARS')}
+        onPress={() => contentId !== null && openDonors(contentId, 'STARS')}
         disabled={contentId === null}
       />
       <Action
@@ -80,16 +81,8 @@ export function PlayerActions({
         color={colors.white}
         value={coins}
         label="Uzcasting"
-        onPress={() => setSheet('UZCASTING_COIN')}
+        onPress={() => contentId !== null && openDonors(contentId, 'UZCASTING_COIN')}
         disabled={contentId === null}
-      />
-
-      <DonorsSheet
-        open={sheet !== null}
-        contentId={contentId}
-        title={detail?.title ?? info?.title ?? null}
-        currency={sheet ?? 'STARS'}
-        onClose={() => setSheet(null)}
       />
     </>
   );
@@ -127,11 +120,9 @@ function Action({
         <Ionicons name={icon} size={18} color={color} />
       )}
       {/* Число рядом, а не под знаком: на кадре высоты под вторую строку
-          нет — ряд стоит в одной полосе с «на весь экран».
-          Прочерка здесь нет: пустое место честнее и тише. */}
-      {value === null ? null : (
-        <Text className="text-micro text-white">{groupDigits(value)}</Text>
-      )}
+          нет — ряд стоит в одной полосе с «на весь экран». Пустое — «0»,
+          как и на плитках страницы (заказчик, 10.09.2026). */}
+      <Text className="text-micro text-white">{groupDigits(value ?? 0)}</Text>
     </>
   );
 

@@ -354,6 +354,8 @@
     "less": "Yopish",
     "scenes": "Qiziq sahnalar",
     "topDonors": "Top donatchilar",
+    "topDonorsTitle": "Top 100 donatchilar",
+    "donorsUnavailable": "Reyting bu serverda hali yoqilmagan. Server yangilangach ko'rinadi.",
     "starsTotal": "Jami {{amount}} yulduz",
     "noDonors": "Hali hech kim qo'llab-quvvatlamagan",
     "anonymousDonor": "Noma'lum foydalanuvchi",
@@ -399,5 +401,23 @@
     "ru": "Ruscha",
     "tr": "Turkcha",
     "uz": "O'zbekcha"
+  },
+  "comments": {
+    "title": "Izohlar",
+    "placeholder": "Izoh yozing…",
+    "send": "Yuborish",
+    "signInToComment": "Izoh yozish uchun kiring",
+    "empty": "Hali izoh yo'q. Birinchi bo'lib yozing!",
+    "unavailable": "Izohlar bu serverda hali yoqilmagan. Server yangilangach ko'rinadi.",
+    "hidden": "Moderator yashirgan — faqat sizga ko'rinadi",
+    "delete": "O'chirish",
+    "deleteConfirmTitle": "Izohni o'chirasizmi?",
+    "anonymous": "Noma'lum foydalanuvchi",
+    "justNow": "hozirgina",
+    "minutesAgo": "{{count}} daqiqa oldin",
+    "hoursAgo": "{{count}} soat oldin",
+    "daysAgo": "{{count}} kun oldin",
+    "sendFailed": "Izoh yuborilmadi. Qayta urinib ko'ring.",
+    "blocked": "Hisobingiz bloklangan — izoh yozib bo'lmaydi."
   }
 }

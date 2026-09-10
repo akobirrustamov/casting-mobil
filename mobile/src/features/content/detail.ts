@@ -123,12 +123,48 @@ export type DonorList = {
   donors: Donor[];
 };
 
+/**
+ * Сервер уже сказал, что карточки `/content/{id}` у него нет.
+ *
+ * <h2>⚠️ Зачем помнить (10.09.2026, «лайки приходят слишком медленно»)</h2>
+ * На такой сборке счётчики сериала собираются обходной дорогой
+ * (`serialCounters`), и до этой находки она шла ЦЕПОЧКОЙ: сначала ждём
+ * отказа карточки, потом список серий, потом серию — три похода в сеть
+ * подряд, секунда-две на мобильной сети. Сервер за время работы
+ * приложения не меняется, поэтому достаточно узнать это один раз: дальше
+ * обходная дорога стартует сразу, параллельно с карточкой.
+ *
+ * Живёт до перезапуска приложения. Обновят сервер посреди сеанса — лишние
+ * запросы продолжатся до перезапуска, но числа останутся верными:
+ * ответ карточки всё равно главнее.
+ *
+ * ⚠️ 404 на ДЕЙСТВИТЕЛЬНО удалённый контент новой сборки тоже ставит
+ * флаг: по ответу его не отличить от «адреса нет». Цена — два лишних
+ * запроса на сериалах до конца сеанса, числа при этом верные.
+ */
+let detailMissingOnServer = false;
+
+export function serverLacksContentDetail(): boolean {
+  return detailMissingOnServer;
+}
+
+/** ⚠️ Только для тестов: флаг живёт на уровне модуля. */
+export function resetContentDetailMemoryForTests() {
+  detailMissingOnServer = false;
+}
+
 /** Старая сборка бэкенда отдаёт на этот адрес index.html со статусом 200. */
 export class ContentDetailUnavailableError extends Error {
   constructor() {
     super('/api/v1/app/content/{id} недоступен на этом сервере');
     this.name = 'ContentDetailUnavailableError';
   }
+}
+
+/** Запомнить, что карточки нет, — и отказать тем же типом ошибки. */
+function unavailable(): ContentDetailUnavailableError {
+  detailMissingOnServer = true;
+  return new ContentDetailUnavailableError();
 }
 
 const LOCALE_PARAM: Record<Language, 'UZ' | 'RU' | 'EN'> = {
@@ -240,7 +276,8 @@ export function mapDonors(raw: unknown): DonorList {
   };
 }
 
-async function fetchDetail(
+/** ⚠️ Экспортируется ради теста — как `mapDetail`. */
+export async function fetchDetail(
   contentId: number,
   language: Language
 ): Promise<ContentDetail> {
@@ -248,10 +285,25 @@ async function fetchDetail(
     const { data } = await api.get<unknown>(`/api/v1/app/content/${contentId}`, {
       params: { locale: LOCALE_PARAM[language] },
     });
-    return mapDetail(data);
+    try {
+      return mapDetail(data);
+    } catch (mapError) {
+      // index.html со статусом 200 — тот же «адреса нет», только молча.
+      if (mapError instanceof ContentDetailUnavailableError) throw unavailable();
+      throw mapError;
+    }
   } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status === 404) {
-      throw new ContentDetailUnavailableError();
+    if (error instanceof ContentDetailUnavailableError) throw error;
+    // ⚠️ 401 — тоже «адреса нет». Карточка открыта всем (`permitAll`), и
+    // 401 на неё отвечает только сборка без неё: незнакомый путь попадает
+    // под общее правило `/api/**`. Так отвечал боевой сервер 10.09.2026.
+    // Без этого гость получал бы обычную ошибку с двумя повторами, а
+    // обходной путь для счётчиков сериала (`serialCounters`) не включался.
+    if (
+      axios.isAxiosError(error) &&
+      (error.response?.status === 404 || error.response?.status === 401)
+    ) {
+      throw unavailable();
     }
     throw error;
   }
@@ -262,10 +314,29 @@ async function fetchDonors(
   limit: number,
   currency: DonationCurrency
 ): Promise<DonorList> {
-  const { data } = await api.get<unknown>(`/api/v1/app/content/${contentId}/donors`, {
-    params: { limit, currency },
-  });
-  return mapDonors(data);
+  try {
+    const { data } = await api.get<unknown>(`/api/v1/app/content/${contentId}/donors`, {
+      params: { limit, currency },
+    });
+    return mapDonors(data);
+  } catch (error) {
+    /**
+     * ⚠️ 401 здесь — НЕ «войдите в аккаунт».
+     *
+     * Рейтинг открыт всем (`permitAll` в `SecurityConfig`). 401 на него
+     * отвечает только сборка бэкенда, где адреса ещё нет: неизвестный
+     * путь попадает под общее правило `/api/**` и требует входа. Так
+     * отвечал боевой сервер 10.09.2026 — и страница показала бы гостю
+     * «войдите», хотя вход ничего бы не изменил.
+     */
+    if (
+      axios.isAxiosError(error) &&
+      (error.response?.status === 404 || error.response?.status === 401)
+    ) {
+      throw new ContentDetailUnavailableError();
+    }
+    throw error;
+  }
 }
 
 /**
@@ -308,33 +379,27 @@ export function useContentDetail(contentId: number | null) {
   });
 }
 
-/** Сколько строк рейтинга помещается на макете. */
-export const TOP_DONORS = 10;
+/**
+ * Сколько строк рейтинга.
+ *
+ * Рейтинг — отдельная страница «Top 100» (требование заказчика от
+ * 10.09.2026), а не блок из десяти строк на странице фильма. Сервер
+ * отдаёт не больше `ContentDetailService.MAX_DONORS`.
+ */
+export const TOP_DONORS = 100;
 
 /**
- * Кто больше всех поддержал контент.
+ * Кто больше всех поддержал контент — страница «Top 100».
  *
- * Отдельный запрос: блок стоит в самом низу страницы, и класть его в
- * карточку значило бы делать группировку по донатам при каждом открытии
- * любого фильма.
+ * Отдельный запрос, а не поле карточки: рейтинг открывают нажатием на
+ * плитку, и класть его в карточку значило бы делать группировку по
+ * донатам при каждом открытии любого фильма.
  */
-export function useContentDonors(
-  contentId: number | null,
-  currency: DonationCurrency,
-  /**
-   * ⚠️ По умолчанию ВЫКЛЮЧЕН.
-   *
-   * Рейтинг больше не стоит на странице — он открывается нажатием на
-   * плитку «Yulduzlar» или «Uzcasting». Запрашивать оба списка при каждом
-   * открытии любого фильма значило бы делать две группировки по донатам
-   * ради окна, которое чаще всего не откроют.
-   */
-  enabled = false
-) {
+export function useContentDonors(contentId: number | null, currency: DonationCurrency) {
   return useQuery({
     queryKey: ['content-donors', contentId, currency],
     queryFn: () => fetchDonors(contentId as number, TOP_DONORS, currency),
-    enabled: enabled && contentId !== null,
+    enabled: contentId !== null,
     staleTime: 60 * 1000,
     retry: (failureCount, error) =>
       !(error instanceof ContentDetailUnavailableError) && failureCount < 2,

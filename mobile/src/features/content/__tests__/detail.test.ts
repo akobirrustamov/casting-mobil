@@ -17,11 +17,27 @@
  * Ни одна из них не роняет экран и не пишет ошибку в консоль.
  */
 
-jest.mock('@/lib/api', () => ({ api: {} }));
+const mockGet = jest.fn();
+jest.mock('@/lib/api', () => ({ api: { get: (...a: unknown[]) => mockGet(...a) } }));
 jest.mock('@/features/home/api', () => ({ useFeedLanguage: jest.fn() }));
 jest.mock('@/features/watch/api', () => ({ useViewerKey: jest.fn() }));
 
-import { ContentDetailUnavailableError, mapDetail, mapDonors } from '../detail';
+import {
+  ContentDetailUnavailableError,
+  fetchDetail,
+  mapDetail,
+  mapDonors,
+  resetContentDetailMemoryForTests,
+  serverLacksContentDetail,
+} from '../detail';
+
+/** Ответ axios с ошибкой — ровно те поля, что читает `fetchDetail`. */
+function httpError(status: number) {
+  return Object.assign(new Error(`HTTP ${status}`), {
+    isAxiosError: true,
+    response: { status, data: {} },
+  });
+}
 
 /** Минимальный ответ, который сервер обязан прислать. */
 function card(over: Record<string, unknown> = {}) {
@@ -148,5 +164,52 @@ describe('mapDonors', () => {
 
   it('старый сервер без `total` — итог из `starsReceived`, а не ноль', () => {
     expect(mapDonors({ starsReceived: 1000, donors: [] }).total).toBe(1000);
+  });
+});
+
+/**
+ * Память «на сервере карточки нет» (10.09.2026, «лайки слишком медленно»).
+ *
+ * ⚠️ От неё зависит скорость: узнав это однажды, страница сериала
+ * запускает обходную дорогу для счётчиков сразу, а не после второго
+ * отказа. Ошибись флаг в сторону «нет» — вернётся цепочка из трёх
+ * запросов подряд; в сторону «да» на новом сервере — лишние запросы.
+ */
+describe('fetchDetail и память о старом сервере', () => {
+  beforeEach(() => {
+    mockGet.mockReset();
+    resetContentDetailMemoryForTests();
+  });
+
+  it('401 на открытую карточку — «адреса нет», и это запоминается', async () => {
+    mockGet.mockRejectedValue(httpError(401));
+
+    await expect(fetchDetail(7, 'uz')).rejects.toBeInstanceOf(
+      ContentDetailUnavailableError
+    );
+    expect(serverLacksContentDetail()).toBe(true);
+  });
+
+  it('index.html со статусом 200 — тоже запоминается', async () => {
+    mockGet.mockResolvedValue({ data: '<!doctype html>' });
+
+    await expect(fetchDetail(7, 'uz')).rejects.toBeInstanceOf(
+      ContentDetailUnavailableError
+    );
+    expect(serverLacksContentDetail()).toBe(true);
+  });
+
+  it('обрыв сети — НЕ повод считать сервер старым', async () => {
+    mockGet.mockRejectedValue(new Error('Network Error'));
+
+    await expect(fetchDetail(7, 'uz')).rejects.toThrow('Network Error');
+    expect(serverLacksContentDetail()).toBe(false);
+  });
+
+  it('нормальный ответ флаг не трогает', async () => {
+    mockGet.mockResolvedValue({ data: card() });
+
+    await expect(fetchDetail(7, 'uz')).resolves.toMatchObject({ id: 7 });
+    expect(serverLacksContentDetail()).toBe(false);
   });
 });

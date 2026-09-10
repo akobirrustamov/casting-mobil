@@ -89,6 +89,8 @@ export function mapContent(raw: unknown): ContentCard | null {
     // иначе старая сборка бэкенда нарисовала бы «0 просмотров» под
     // каждой карточкой ленты.
     viewCount: num(r.viewCount),
+    // Для страницы контента, на карточке не рисуется — см. `types`.
+    likeCount: num(r.likeCount),
   };
 }
 

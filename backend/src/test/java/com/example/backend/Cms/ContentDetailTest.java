@@ -302,6 +302,27 @@ class ContentDetailTest {
                     .andExpect(jsonPath("$.donors").isEmpty());
         }
 
+        /**
+         * Ilovadagi «Top 100» sahifasi (10.09.2026). Ilgari chegara 50 edi
+         * va 100 so'ralganda jimgina 50 qaytardi — xato ham chiqmasdi.
+         */
+        @Test
+        @DisplayName("100 tagacha qator beriladi, undan ortig'i kesiladi")
+        void upToHundredRows() {
+            Content content = movie(c -> {
+            });
+            for (int i = 0; i < 101; i++) {
+                donationService.donate(userWith(1_000L), DonationTargetType.CONTENT,
+                        content.getId(), CurrencyKind.STARS, 1L + i);
+            }
+
+            assertThat(detailService.topDonors(content.getId(), 100, CurrencyKind.STARS))
+                    .hasSize(100);
+            assertThat(detailService.topDonors(content.getId(), 500, CurrencyKind.STARS))
+                    .as("chegaradan oshgan so'rov kesiladi, xato bermaydi")
+                    .hasSize(ContentDetailService.MAX_DONORS);
+        }
+
         @Test
         @DisplayName("Hech kim yubormagan bo'lsa — bo'sh ro'yxat, xato emas")
         void emptyBoardIsNotAnError() throws Exception {

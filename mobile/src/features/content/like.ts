@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 
 import { useAuthStore } from '@/features/auth/store';
+import { useContentCard } from '@/features/home/api';
 import { setLike } from '@/features/watch/api';
 import type { WatchInfo } from '@/features/watch/types';
 
@@ -46,8 +47,22 @@ export function useContentLike(
   const [own, setOwn] = useState<{ liked: boolean; likeCount: number } | null>(null);
   const [busy, setBusy] = useState(false);
 
+  /**
+   * Карточка, на которую нажали, чтобы сюда попасть.
+   *
+   * ⚠️ Последний источник, но САМЫЙ БЫСТРЫЙ: она уже в кэше главной, и
+   * число с неё видно сразу, до ответа сети («лайки приходят слишком
+   * медленно», 10.09.2026). Свежие ответы страницы стоят раньше и
+   * заменяют его, как только придут.
+   *
+   * «Нравится ли МНЕ» с карточки не берётся: лента общая для всех, и
+   * сердце вошедшего человека закрасится ответом страницы.
+   */
+  const card = useContentCard(contentId);
+
   const liked = own?.liked ?? detail?.liked ?? info?.liked ?? false;
-  const likes = own?.likeCount ?? detail?.likeCount ?? info?.likeCount ?? null;
+  const likes =
+    own?.likeCount ?? detail?.likeCount ?? info?.likeCount ?? card?.likeCount ?? null;
 
   const publish = useCallback(
     (state: { liked: boolean; likeCount: number }) => {
@@ -58,6 +73,14 @@ export function useContentLike(
       queryClient.setQueriesData<WatchInfo>(
         { queryKey: ['watch', 'content', contentId] },
         (old) => (old ? { ...old, liked: state.liked, likeCount: state.likeCount } : old)
+      );
+      // Серии этого же контента: в их ответе «нравится» — контента, а не
+      // серии, и на старом сервере счётчики сериала берутся именно оттуда
+      // (`serialCounters`). Ключ — по серии, поэтому сверяем contentId.
+      queryClient.setQueriesData<WatchInfo>({ queryKey: ['watch', 'episode'] }, (old) =>
+        old && old.contentId === contentId
+          ? { ...old, liked: state.liked, likeCount: state.likeCount }
+          : old
       );
     },
     [contentId, queryClient]

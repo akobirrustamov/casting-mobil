@@ -100,13 +100,28 @@ public class HomeFeedDto {
          * yig'ish kerak bo'lardi. Bu ustunni {@code AnalyticsService}
          * har besh daqiqada oshirib boradi.
          *
-         * ⚠️ «Yoqdi» soni bu yerda YO'Q. Kartochka eni uch ustunli
-         * qatorda ~105px, va uning pastki chetida allaqachon davomiylik
-         * turadi: ikkinchi ko'rsatkich u yerga sig'masdi. Yurak baribir
-         * bosiladigan tugma — uning o'rni kontent sahifasi
-         * ({@code watch/StatChips}).
+         * ⚠️ «Yoqdi» soni kartochkada CHIZILMAYDI. Kartochka eni uch
+         * ustunli qatorda ~105px, va uning pastki chetida allaqachon
+         * davomiylik turadi: ikkinchi ko'rsatkich u yerga sig'masdi. U
+         * pastdagi {@link #likeCount} da faqat MA'LUMOT sifatida keladi.
          */
         private Long viewCount;
+
+        /**
+         * «Yoqdi» soni — kartochkada ko'rsatish uchun EMAS (yuqoriga qarang),
+         * kontent sahifasi uchun (10.09.2026).
+         *
+         * <h2>Nima uchun kerak</h2>
+         * Sahifadagi yurak soni kontent kartochkasi ({@code /content/{id}})
+         * kelguncha bo'sh turardi — buyurtmachi «like soni juda sekin
+         * chiqyapti» dedi. Odam sahifaga aynan shu kartochkani bosib
+         * kiradi, ya'ni son uning telefonida ALLAQACHON bor: ilova uni
+         * darhol chizadi, keyin sahifa javobi bilan yangilaydi.
+         *
+         * Qo'shimcha so'rov yo'q: {@code cms_content.like_count} ustuni,
+         * {@link #viewCount} kabi.
+         */
+        private Long likeCount;
     }
 
     /** Reklama va premyera — bir xil ko'rinishdagi kartochka. */

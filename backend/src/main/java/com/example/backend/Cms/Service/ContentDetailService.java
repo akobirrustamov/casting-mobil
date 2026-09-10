@@ -61,6 +61,15 @@ public class ContentDetailService {
     /** Maketda «Top 10 Donatchilar» — o'ntadan ortig'i ro'yxatga sig'maydi. */
     public static final int TOP_DONORS = 10;
 
+    /**
+     * Bitta so'rovda eng ko'pi bilan nechta qator.
+     *
+     * Ilovada reyting 10.09.2026 dan ALOHIDA sahifada va «Top 100» —
+     * buyurtmachi talabi. Undan ortig'i sahifada o'qilmaydi, guruhlash
+     * so'rovi esa har qatorga qimmatlashadi.
+     */
+    public static final int MAX_DONORS = 100;
+
     private final EpisodeRepo episodeRepo;
     private final SeasonRepo seasonRepo;
     private final CommentRepo commentRepo;
@@ -130,7 +139,7 @@ public class ContentDetailService {
      */
     @Transactional(readOnly = true)
     public List<ContentDetailDto.Donor> topDonors(Long contentId, int limit, CurrencyKind kind) {
-        int safe = Math.min(Math.max(limit, 1), 50);
+        int safe = Math.min(Math.max(limit, 1), MAX_DONORS);
 
         List<DonationRepo.SenderTotal> totals = donationRepo.topSenders(
                 DonationTargetType.CONTENT, contentId,

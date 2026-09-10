@@ -534,6 +534,23 @@ class HomeFeedTest {
         }
 
         /**
+         * Kontent sahifasidagi yurak shu son bilan DARHOL chiziladi
+         * (10.09.2026: «like soni juda sekin chiqyapti»). Kartochkada
+         * bo'lmasa, sahifa uni alohida so'rov bilan kutardi.
+         */
+        @Test
+        @DisplayName("Kartochka «yoqdi» sonini beradi — sahifa uni kutmasin")
+        void cardCarriesLikeCount() {
+            Content movie = contentWith(ContentType.MOVIE, 90, null);
+            movie.setLikeCount(7L);
+            contentRepo.saveAndFlush(movie);
+
+            HomeFeedDto.ContentCard card = cardOf(movie.getId());
+            assertThat(card).isNotNull();
+            assertThat(card.getLikeCount()).isEqualTo(7L);
+        }
+
+        /**
          * Serialning «davomiyligi» degan narsa yo'q — har qismning o'ziniki
          * bor. O'rtachasini hisoblab yozish son o'ylab topish bo'lardi.
          */
