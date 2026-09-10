@@ -34,10 +34,23 @@ jest.mock('@/features/watch/api', () => ({
 
 jest.mock('@/lib/money', () => ({ groupDigits: (n: number) => String(n) }));
 
+/*
+ * ⚠️ «Нравится» переехало из `StatsRow` в `PlayerActions` (слияние
+ * 10.09.2026): счётчик остался в ряду фактов, а нажатие ушло на кадр
+ * плеера. Проверка переехала следом — гарантия та же, компонент другой.
+ *
+ * Ниже — только то, что тянет за собой новый дом и к лайку отношения
+ * не имеет: лента (источник числа до ответа сети), окна комментариев
+ * и донатов, картинка монеты.
+ */
+jest.mock('@/features/home/api', () => ({ useContentCard: () => undefined }));
+jest.mock('@/features/comments/CommentsScreen', () => ({ openComments: jest.fn() }));
+jest.mock('../DonorsScreen', () => ({ openDonors: jest.fn() }));
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 
-import { StatsRow } from '../StatsRow';
+import { PlayerActions } from '../PlayerActions';
 
 import type { ContentDetail } from '../detail';
 
@@ -60,7 +73,7 @@ function render(client: QueryClient): ReactTestRenderer {
   act(() => {
     tree = create(
       <QueryClientProvider client={client}>
-        <StatsRow contentId={13} detail={detail()} info={undefined} />
+        <PlayerActions contentId={13} detail={detail()} info={undefined} />
       </QueryClientProvider>
     );
   });
@@ -70,7 +83,9 @@ function render(client: QueryClient): ReactTestRenderer {
 function heart(tree: ReactTestRenderer) {
   return tree.root.find(
     (node) =>
-      node.props?.accessibilityLabel === 'content.likes' &&
+      // ⚠️ Подпись у кнопки на кадре своя («Yoqdi»), не ключ перевода:
+      // на видео надписи не переводятся через `t`, они часть кадра.
+      node.props?.accessibilityLabel === 'Yoqdi' &&
       typeof node.props?.onPress === 'function'
   );
 }
