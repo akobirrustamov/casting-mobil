@@ -1,3 +1,4 @@
+import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View, type ViewStyle } from 'react-native';
@@ -6,7 +7,13 @@ import Svg, { Defs, Path, RadialGradient, Stop } from 'react-native-svg';
 import { colors } from '@/theme/tokens';
 
 import { CUTOUT, CUTOUT_VIEWBOX, CUTOUT_VIEW, LOGO_PAD } from './logoCutout';
-import { LOGO_GRADIENT, LOGO_PLAY, LOGO_SPROCKETS, LOGO_VIEWBOX } from './logoPaths';
+import {
+  LOGO_GRADIENT,
+  LOGO_PATHS,
+  LOGO_PLAY,
+  LOGO_SPROCKETS,
+  LOGO_VIEWBOX,
+} from './logoPaths';
 
 /**
  * Загрузка фирменным знаком: плёнка бежит, кнопка плея дышит, по знаку
@@ -20,9 +27,14 @@ import { LOGO_GRADIENT, LOGO_PLAY, LOGO_SPROCKETS, LOGO_VIEWBOX } from './logoPa
  * которого сам знак оказывается дыркой. Что бы ни двигалось под
  * трафаретом, видно это только в границах знака.
  *
- * Плата за приём — трафарет НЕПРОЗРАЧЕН и обязан совпадать с фоном под
- * ним (`background`). На картинке или градиенте загрузчик выдаст себя
- * квадратом; для тёмных экранов приложения это ровно `colors.ink`.
+ * ⚠️ Раньше здесь был ОБРАТНЫЙ приём: непрозрачный трафарет с дыркой в
+ * форме знака. Он дешевле, но требовал, чтобы цвет трафарета совпадал с
+ * фоном под ним. На шторке донатов фон светлее `ink`, и загрузчик
+ * выдавал себя тёмным прямоугольником (скриншот заказчика, 10.09.2026).
+ *
+ * Маска снимает это требование целиком: вне знака ничего не рисуется, и
+ * загрузчик одинаково честно ложится на любой фон — карточку, шторку,
+ * афишу.
  *
  * <h2>Почему не маска SVG</h2>
  * `<Mask>` сняла бы это ограничение, но тогда двигать блик пришлось бы
@@ -82,11 +94,8 @@ export function BrandLoader({
    * поле вокруг знака отдано ореолу.
    */
   size = 104,
-  /** Цвет трафарета. Обязан совпадать с фоном под загрузчиком. */
-  background = colors.ink,
 }: {
   size?: number;
-  background?: string;
 }) {
   const box = Math.round((size * CUTOUT_VIEW) / LOGO_VIEWBOX);
 
@@ -102,45 +111,57 @@ export function BrandLoader({
       // Блик выезжает за пределы холста — без обрезки он лёг бы на соседей.
       style={{ width: box, height: box, overflow: 'hidden' }}
     >
-      {/* Заливка знака. Видна только сквозь вырез, но лежит на весь холст:
-          так градиент идёт по знаку непрерывно, а не по каждой детали. */}
-      <LinearGradient
-        colors={LOGO_GRADIENT}
-        start={{ x: 0, y: 1 }}
-        end={{ x: 1, y: 0 }}
+      {/*
+        Всё движение — внутри маски по форме знака.
+
+        ⚠️ Маска СТАТИЧНА, движутся только слои под ней: и заливка, и
+        блик, и подсветка плея едут через `transform`/`opacity`, то есть
+        в нативном потоке. Загрузчик показывают ровно тогда, когда JS
+        занят, — анимируй мы саму маску, он бы дёргался именно в тот
+        момент, ради которого нужен.
+      */}
+      <MaskedView
         style={StyleSheet.absoluteFill}
-      />
-
-      <PlayPulse
-        style={{
-          position: 'absolute',
-          left: at(LOGO_PLAY.x),
-          top: at(LOGO_PLAY.y),
-          width: LOGO_PLAY.w * unit,
-          height: LOGO_PLAY.h * unit,
-        }}
-      />
-
-      <Sheen
-        box={box}
-        color="rgba(255,255,255,0.72)"
-        duration={SHEEN_MS}
-        delay={SHEEN_DELAY_MS}
-      />
-
-      <Svg
-        width={box}
-        height={box}
-        viewBox={CUTOUT_VIEWBOX}
-        style={StyleSheet.absoluteFill}
+        maskElement={
+          <Svg width={box} height={box} viewBox={CUTOUT_VIEWBOX}>
+            {/* ⚠️ `evenodd` обязателен: перфорация плёнки нарисована
+                квадратами ПОВЕРХ ленты, и с `nonzero` лента станет
+                сплошной. */}
+            <Path d={LOGO_PATHS.join(' ')} fill="#fff" fillRule="evenodd" />
+          </Svg>
+        }
       >
-        <Path d={CUTOUT} fill={background} fillRule="evenodd" />
-      </Svg>
+        {/* Заливка лежит на весь холст: так градиент идёт по знаку
+            непрерывно, а не по каждой детали отдельно. */}
+        <LinearGradient
+          colors={LOGO_GRADIENT}
+          start={{ x: 0, y: 1 }}
+          end={{ x: 1, y: 0 }}
+          style={StyleSheet.absoluteFill}
+        />
+
+        <PlayPulse
+          style={{
+            position: 'absolute',
+            left: at(LOGO_PLAY.x),
+            top: at(LOGO_PLAY.y),
+            width: LOGO_PLAY.w * unit,
+            height: LOGO_PLAY.h * unit,
+          }}
+        />
+
+        <Sheen
+          box={box}
+          color="rgba(255,255,255,0.72)"
+          duration={SHEEN_MS}
+          delay={SHEEN_DELAY_MS}
+        />
+      </MaskedView>
 
       <Halo box={box} />
 
-      {/* Огонёк ПОВЕРХ трафарета: перфорация — это фон, а не вырез, и
-          подсветить её снизу нечем. */}
+      {/* Огонёк ПОВЕРХ маски: перфорация — это дырки в знаке, снизу их
+          подсветить нечем. */}
       <FilmRun unit={unit} at={at} />
     </View>
   );
