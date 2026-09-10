@@ -7,9 +7,12 @@ import com.example.backend.Cms.Entity.Episode;
 import com.example.backend.Cms.Entity.EpisodeTranslation;
 import com.example.backend.Cms.Entity.Season;
 import com.example.backend.Cms.Entity.SeasonTranslation;
+import com.example.backend.Cms.Enums.CurrencyKind;
+import com.example.backend.Cms.Enums.DonationTargetType;
 import com.example.backend.Cms.Enums.Locale;
 import com.example.backend.Cms.Enums.StructureType;
 import com.example.backend.Cms.Repository.ContentRepo;
+import com.example.backend.Cms.Repository.DonationRepo;
 import com.example.backend.Cms.Repository.EpisodeRepo;
 import com.example.backend.Cms.Repository.SeasonRepo;
 import com.example.backend.Cms.Service.AccessDecision;
@@ -63,6 +66,7 @@ public class ContentController {
     private final SeasonRepo seasonRepo;
     private final AccessService accessService;
     private final ContentDetailService contentDetailService;
+    private final DonationRepo donationRepo;
 
     /**
      * Kontent kartochkasi — ilovaning kontent sahifasi (ТЗ §14, §46).
@@ -111,7 +115,8 @@ public class ContentController {
     @Transactional(readOnly = true)
     public ResponseEntity<DonorListResponse> donors(
             @PathVariable Long contentId,
-            @RequestParam(defaultValue = "10") int limit) {
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(defaultValue = "STARS") CurrencyKind currency) {
 
         Content content = contentRepo.findById(contentId)
                 .orElseThrow(() -> BusinessException.notFound("Content", contentId));
@@ -120,11 +125,23 @@ public class ContentController {
             throw BusinessException.notFound("Content", contentId);
         }
 
+        // Yulduzlar kontentning O'Z ustunida yig'ilib boradi (tez), tanga
+        // esa faqat tranzaksiyalarda yotadi — shuning uchun ikki manba.
+        long total = currency == CurrencyKind.UZCASTING_COIN
+                ? donationRepo.sumForTarget(
+                        DonationTargetType.CONTENT, contentId, CurrencyKind.UZCASTING_COIN)
+                : (content.getStarsReceived() == null ? 0L : content.getStarsReceived());
+
         return ResponseEntity.ok(DonorListResponse.builder()
                 .contentId(content.getId())
-                .starsReceived(content.getStarsReceived() == null
-                        ? 0L : content.getStarsReceived())
-                .donors(contentDetailService.topDonors(contentId, limit))
+                .currency(currency.name())
+                .total(total)
+                // ⚠️ Eski ilova bu maydonni o'qiydi va u YULDUZ deb kutadi.
+                // Tanga so'ralganda unga yulduzlar yig'indisini yozib
+                // qo'yish ikki reytingni aralashtirardi — shuning uchun
+                // faqat yulduzlarda to'ladi.
+                .starsReceived(currency == CurrencyKind.STARS ? total : null)
+                .donors(contentDetailService.topDonors(contentId, limit, currency))
                 .build());
     }
 
@@ -268,6 +285,10 @@ public class ContentController {
          * ikkalasini qo'shmasligi kerak.
          */
         private Long starsReceived;
+        /** So'ralgan valyuta: {@code STARS} yoki {@code UZCASTING_COIN}. */
+        private String currency;
+        /** Shu valyutadagi UMUMIY yig'indi. {@code starsReceived} ning umumlashgani. */
+        private Long total;
         private List<ContentDetailDto.Donor> donors;
     }
 

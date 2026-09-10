@@ -88,6 +88,9 @@
     "otpExpired": "Code expired, request a new one",
     "otpLocked": "Too many attempts, request a new code",
     "otpCooldown": "Code already sent, please wait",
+    "tooManyRequests": "Too many requests, try again in a minute",
+    "networkFailed": "Cannot reach the server — check your connection",
+    "phoneInvalid": "Invalid phone number: +998 XX XXX XX XX",
     "smsUnavailable": "SMS sign-in is not configured yet",
     "phoneSubtitle": "Enter your number to sign in or sign up",
     "finishSignUp": "DONE",
@@ -345,6 +348,7 @@
     "episodes": "Episodes",
     "season": "Season {{number}}",
     "episodesEmpty": "No episodes in this season yet",
+    "episodesSoon": "Episodes coming soon",
     "episodeCount": "{{count}} episodes",
     "share": "Share",
     "copyLink": "Copy link",
@@ -353,6 +357,8 @@
     "less": "Less",
     "scenes": "Scenes",
     "topDonors": "Top supporters",
+    "topDonorsTitle": "Top 100 donors",
+    "donorsUnavailable": "Rankings aren't enabled on this server yet. They'll appear after the server update.",
     "starsTotal": "{{amount}} stars in total",
     "noDonors": "No one has supported this yet",
     "anonymousDonor": "Unknown user",
@@ -360,7 +366,11 @@
     "donateAmount": "Send {{amount}} stars",
     "donateHint": "Support with stars",
     "donateSoon": "Payments are not connected in the app yet — coming soon.",
-    "yourStars": "You have {{amount}} stars"
+    "yourStars": "You have {{amount}} stars",
+    "coinsTotal": "{{amount}} coins in total",
+    "donateAmountCoins": "Send {{amount}} coins",
+    "donateHintCoins": "Support with UZCASTING coins",
+    "yourCoins": "You have {{amount}} coins"
   },
   "contentType": {
     "SHORT_FILM": "Short film",
@@ -394,5 +404,24 @@
     "ru": "Russian",
     "tr": "Turkish",
     "uz": "Uzbek"
+  },
+  "comments": {
+    "title": "Comments",
+    "placeholder": "Write a comment…",
+    "send": "Send",
+    "signInToComment": "Sign in to comment",
+    "empty": "No comments yet. Be the first!",
+    "unavailable": "Comments aren't enabled on this server yet. They'll appear after the server update.",
+    "hidden": "Hidden by a moderator — only you can see it",
+    "delete": "Delete",
+    "deleteConfirmTitle": "Delete this comment?",
+    "anonymous": "Unknown user",
+    "justNow": "just now",
+    "minutesAgo": "{{count}} min ago",
+    "hoursAgo": "{{count}} h ago",
+    "daysAgo": "{{count}} d ago",
+    "sendFailed": "Couldn't send the comment. Try again.",
+    "blocked": "Your account is blocked — you can't comment.",
+    "alreadyCommented": "You've already commented here. Delete it to write a new one."
   }
 }

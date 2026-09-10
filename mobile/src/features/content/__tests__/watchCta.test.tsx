@@ -29,6 +29,8 @@ jest.mock('expo-linear-gradient', () => ({ LinearGradient: 'LinearGradient' }));
 jest.mock('expo-linking', () => ({ createURL: (p: string) => `uzcasting:/${p}` }));
 jest.mock('expo-router', () => ({
   router: { push: (...a: unknown[]) => mockPush(...a), back: jest.fn() },
+  // Окно плеера видно только на странице в фокусе — в тесте она всегда в нём.
+  useIsFocused: () => true,
 }));
 
 jest.mock('react-i18next', () => ({
@@ -43,11 +45,25 @@ jest.mock('react-native-safe-area-context', () => ({
 // баланс, донаты и плеер — здесь это лишний шум.
 jest.mock('../ContentExtras', () => ({
   CastRail: () => null,
-  DonorsBoard: () => null,
   ScenesRail: () => null,
   TrailerCard: () => null,
 }));
-jest.mock('../StatsRow', () => ({ StatsRow: () => null }));
+const mockStatsRow = jest.fn();
+jest.mock('../StatsRow', () => ({
+  StatsRow: (props: unknown) => {
+    mockStatsRow(props);
+    return null;
+  },
+}));
+const mockSerialFallback = jest.fn();
+let mockSerialCounters: Record<string, unknown> | undefined;
+jest.mock('../serialCounters', () => ({
+  useSerialCountersFallback: (...args: unknown[]) => {
+    mockSerialFallback(...args);
+    return mockSerialCounters;
+  },
+}));
+jest.mock('../PlayerActions', () => ({ PlayerActions: () => null }));
 jest.mock('../LockedPanel', () => ({ LockedPanel: () => null }));
 
 jest.mock('@/features/watch/Player', () => ({
@@ -57,16 +73,19 @@ jest.mock('@/features/watch/Player', () => ({
 
 jest.mock('@/components/states/ScreenState', () => ({ ScreenState: () => null }));
 jest.mock('@/features/analytics/api', () => ({ trackContentView: jest.fn() }));
+let mockCard: Record<string, unknown> | undefined;
 jest.mock('@/features/home/api', () => ({
   useHomeFeed: () => ({ data: undefined }),
   contentCards: () => [],
+  useContentCard: () => mockCard,
 }));
 jest.mock('@/lib/api', () => ({ mediaUrl: () => undefined }));
 jest.mock('@/lib/network', () => ({ useIsOffline: () => false }));
 
 jest.mock('@/features/auth/store', () => ({
-  useAuthStore: (select: (s: { isAuthorized: boolean; token: string | null }) => unknown) =>
-    select({ isAuthorized: false, token: null }),
+  useAuthStore: (
+    select: (s: { isAuthorized: boolean; token: string | null }) => unknown
+  ) => select({ isAuthorized: false, token: null }),
 }));
 
 jest.mock('@/features/favorites/content', () => ({
@@ -92,11 +111,16 @@ jest.mock('@/features/watch/api', () => ({
   }),
 }));
 
+let mockDetailError: unknown = null;
+let mockDetailPending = false;
+let mockServerLacksDetail = false;
 jest.mock('../detail', () => ({
+  ContentDetailUnavailableError: class extends Error {},
+  serverLacksContentDetail: () => mockServerLacksDetail,
   useContentDetail: () => ({
     data: mockDetailData,
-    error: null,
-    isPending: false,
+    error: mockDetailError,
+    isPending: mockDetailPending,
     isRefetching: false,
     refetch: jest.fn().mockResolvedValue(undefined),
   }),
@@ -104,6 +128,8 @@ jest.mock('../detail', () => ({
 
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { Text } from 'react-native';
+
+import { resetPushOnceForTests } from '@/lib/navigation';
 
 import { ContentScreen } from '../ContentScreen';
 
@@ -166,7 +192,13 @@ function watch(over: Record<string, unknown> = {}) {
     likeCount: 0,
     liked: false,
     sources: [
-      { partNumber: null, mediaId: 5, url: '/api/v1/app/media/5/raw', hlsUrl: null, durationSeconds: 5400 },
+      {
+        partNumber: null,
+        mediaId: 5,
+        url: '/api/v1/app/media/5/raw',
+        hlsUrl: null,
+        durationSeconds: 5400,
+      },
     ],
     ...over,
   };
@@ -187,7 +219,8 @@ function render(): ReactTestRenderer {
  * своей обёрткой, и `findByType` не находит ничего.
  */
 function watchButton(tree: ReactTestRenderer) {
-  const labelled = tree.root.findAllByType(Text)
+  const labelled = tree.root
+    .findAllByType(Text)
     .filter((n) => String(n.props.children) === 'content.watch');
 
   if (labelled.length === 0) return null;
@@ -200,8 +233,35 @@ function watchButton(tree: ReactTestRenderer) {
   );
 }
 
+/**
+ * Окно полноэкранного плеера.
+ *
+ * Ищется по `onRequestClose` + `supportedOrientations`: это единственное
+ * окно страницы, которому разрешён ландшафт, — окна донатов живут только
+ * в портрете.
+ */
+function playerWindow(tree: ReactTestRenderer) {
+  return (
+    tree.root.findAll(
+      (node) =>
+        typeof node.props?.onRequestClose === 'function' &&
+        Array.isArray(node.props?.supportedOrientations)
+    )[0] ?? null
+  );
+}
+
 beforeEach(() => {
+  // Замок от повторных нажатий общий на модуль — без сброса каждый тест
+  // после первого упирался бы в «только что уже переходили».
+  resetPushOnceForTests();
   mockPush.mockClear();
+  mockStatsRow.mockClear();
+  mockSerialFallback.mockClear();
+  mockSerialCounters = undefined;
+  mockDetailError = null;
+  mockDetailPending = false;
+  mockServerLacksDetail = false;
+  mockCard = undefined;
   mockDetailData = undefined;
   mockWatchData = undefined;
   mockWatchError = null;
@@ -211,6 +271,45 @@ describe('развилка «фильм или сериал»', () => {
   it('у сериала кнопка ведёт в список серий, а не в плеер', () => {
     mockDetailData = detail({ structureType: 'SEASONAL', contentType: 'SERIES' });
     // У многосерийного `/watch/content/{id}` отвечает «спрашивай серию».
+    mockWatchError = new watchApi.ContentIsMultiPartError();
+
+    const tree = render();
+    act(() => watchButton(tree)?.props.onPress());
+
+    expect(mockPush).toHaveBeenCalledWith('/episodes/42');
+  });
+
+  /**
+   * Сериал, у которого ещё нет ни одной опубликованной серии.
+   *
+   * ⚠️ Раньше кнопка вела в пустой список — и со стороны это выглядело
+   * как «видео загружено, но не открывается» (10.09.2026).
+   */
+  it('у сериала без серий вместо кнопки — «скоро», и никуда не ведёт', () => {
+    mockDetailData = detail({
+      structureType: 'EPISODIC',
+      contentType: 'SERIES',
+      episodeCount: 0,
+    });
+    mockWatchError = new watchApi.ContentIsMultiPartError();
+
+    const tree = render();
+
+    expect(watchButton(tree)).toBeNull();
+    expect(
+      tree.root
+        .findAllByType(Text)
+        .some((n) => String(n.props.children) === 'content.episodesSoon')
+    ).toBe(true);
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('число серий неизвестно (старый сервер) — кнопка ведёт в список, как раньше', () => {
+    mockDetailData = detail({
+      structureType: 'EPISODIC',
+      contentType: 'SERIES',
+      episodeCount: null,
+    });
     mockWatchError = new watchApi.ContentIsMultiPartError();
 
     const tree = render();
@@ -230,7 +329,7 @@ describe('развилка «фильм или сериал»', () => {
     expect(mockPush).toHaveBeenCalledWith('/episodes/42');
   });
 
-  it('у фильма кнопка никуда не уводит — включает плеер на месте', () => {
+  it('у фильма кнопка никуда не уводит — открывает плеер во весь экран', () => {
     mockDetailData = detail();
     mockWatchData = watch();
 
@@ -238,11 +337,17 @@ describe('развилка «фильм или сериал»', () => {
     const button = watchButton(tree);
     expect(button).not.toBeNull();
 
+    // До нажатия окно плеера закрыто: иначе видео начинало бы грузиться
+    // от одного открытия страницы.
+    expect(playerWindow(tree)?.props.visible).toBe(false);
+
     act(() => button?.props.onPress());
 
     expect(mockPush).not.toHaveBeenCalled();
-    // Плеер занял место афиши, и второй кнопки «смотреть» на экране нет.
-    expect(watchButton(tree)).toBeNull();
+    // Плеер открылся ОКНОМ поверх страницы (требование от 10.09.2026), а
+    // не отдельным маршрутом: `/watch` уже получен, спрашивать его заново
+    // незачем.
+    expect(playerWindow(tree)?.props.visible).toBe(true);
   });
 });
 
@@ -258,5 +363,75 @@ describe('закрытый контент', () => {
     });
 
     expect(watchButton(render())).toBeNull();
+  });
+});
+
+/**
+ * Сериал на сборке бэкенда без `/content/{id}` (боевой сервер, 10.09.2026).
+ *
+ * ⚠️ «Нравится» не было видно, пока его не нажмёшь: у сериала не
+ * оставалось ни одного источника числа. Теперь оно берётся из ответа
+ * первой серии — но ТОЛЬКО для плиток: доступ к первой серии ничего не
+ * говорит о сериале целиком.
+ */
+describe('счётчики сериала на старом сервере', () => {
+  const detailMock = jest.requireMock('../detail') as {
+    ContentDetailUnavailableError: new () => Error;
+  };
+
+  it('плитки получают «нравится» из серии, а замок страницы — нет', () => {
+    mockDetailData = undefined;
+    mockDetailError = new detailMock.ContentDetailUnavailableError();
+    mockWatchError = new watchApi.ContentIsMultiPartError();
+    // Первая серия платная: для неё `allowed: false`.
+    mockSerialCounters = watch({
+      likeCount: 7,
+      liked: true,
+      allowed: false,
+      sources: [],
+    });
+
+    const tree = render();
+
+    expect(mockSerialFallback).toHaveBeenLastCalledWith(42, true);
+    const props = mockStatsRow.mock.calls.at(-1)?.[0] as { info?: { likeCount: number } };
+    expect(props.info?.likeCount).toBe(7);
+    // Кнопка на месте: закрытая первая серия не закрывает весь сериал.
+    expect(watchButton(tree)).not.toBeNull();
+  });
+
+  /**
+   * ⚠️ Скорость: сервер уже отказал в карточке на прошлом сериале. Ждать
+   * отказа ещё раз незачем — обходная дорога стартует сразу, пока
+   * карточка и `/watch` ещё в пути.
+   */
+  it('сервер уже известен как старый — обходная дорога стартует сразу', () => {
+    mockServerLacksDetail = true;
+    mockDetailPending = true;
+    mockCard = { id: 42, title: 'Serial', episodeCount: 12 };
+    mockWatchData = watch();
+
+    render();
+
+    expect(mockSerialFallback).toHaveBeenLastCalledWith(42, true);
+  });
+
+  it('фильм на старом сервере — обходной дороги нет: у него есть /watch', () => {
+    mockServerLacksDetail = true;
+    mockCard = { id: 42, title: 'Film', episodeCount: null };
+    mockWatchData = watch();
+
+    render();
+
+    expect(mockSerialFallback).toHaveBeenLastCalledWith(42, false);
+  });
+
+  it('на новом сервере обходной путь не включается вовсе', () => {
+    mockDetailData = detail({ structureType: 'EPISODIC', likeCount: 3 });
+    mockWatchError = new watchApi.ContentIsMultiPartError();
+
+    render();
+
+    expect(mockSerialFallback).toHaveBeenLastCalledWith(42, false);
   });
 });

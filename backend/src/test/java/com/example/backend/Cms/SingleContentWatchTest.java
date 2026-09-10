@@ -6,6 +6,7 @@ import com.example.backend.Cms.Entity.Content;
 import com.example.backend.Cms.Entity.MediaAsset;
 import com.example.backend.Cms.Enums.*;
 import com.example.backend.Cms.Enums.Locale;
+import com.example.backend.support.ContentFixtures;
 import com.example.backend.support.Translations;
 import com.example.backend.Cms.Repository.MediaAssetRepo;
 import com.example.backend.Cms.Service.AccessService;
@@ -60,6 +61,7 @@ class SingleContentWatchTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private ContentService contentService;
+    @Autowired private ContentFixtures contentFixtures;
     @Autowired private MediaAssetRepo mediaAssetRepo;
     @Autowired private AccessService accessService;
 
@@ -97,7 +99,7 @@ class SingleContentWatchTest {
         }
         c.setTranslations(Translations.all("Film " + SEQ.incrementAndGet()));
         c.setMedia(media);
-        return contentService.create(null, c);
+        return contentFixtures.create(c);
     }
 
     // ------------------------------------------------------------ bepul film
@@ -249,7 +251,7 @@ class SingleContentWatchTest {
             c.setAccessPolicy(AccessPolicy.FREE);
             c.setStatus(PublicationStatus.PUBLISHED);
             c.setTranslations(Translations.all("Serial"));
-            Content series = contentService.create(null, c);
+            Content series = contentFixtures.create(c);
 
             // Klient qaysi qismni so'rayotganini aytishi kerak.
             mockMvc.perform(get("/api/v1/app/watch/content/" + series.getId()))
@@ -267,7 +269,7 @@ class SingleContentWatchTest {
             c.setStatus(PublicationStatus.DRAFT);
             c.setTranslations(Translations.all("Qoralama film"));
             c.setMedia(List.of(link(MediaRole.VIDEO, file.getId(), 0)));
-            Content film = contentService.create(null, c);
+            Content film = contentFixtures.create(c);
 
             mockMvc.perform(get("/api/v1/app/watch/content/" + film.getId()))
                     .andExpect(jsonPath("$.allowed").value(false))

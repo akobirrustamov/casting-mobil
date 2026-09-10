@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +11,10 @@ import { useAuthStore } from '@/features/auth/store';
 import { useBalance } from '@/features/profile/api';
 import { groupDigits } from '@/lib/money';
 import { TOUCH_TARGET, colors } from '@/theme/tokens';
+
+import coinIcon from '../../../assets/brand/coin.png';
+
+import type { DonationCurrency } from './detail';
 
 /**
  * Окно доната — открывается кнопкой «Donat qilish» на странице контента.
@@ -42,16 +47,27 @@ export function DonateSheet({
   open,
   contentId,
   title,
+  currency = 'STARS',
   onClose,
 }: {
   open: boolean;
   contentId: number | null;
   title: string | null;
+  /**
+   * Чем поддерживают.
+   *
+   * ⚠️ Окно открывается из рейтинга ТОЙ ЖЕ валюты: человек посмотрел, кто
+   * прислал монеты, и нажал «поддержать» — предложить ему звёзды значило
+   * бы молча сменить валюту у него под рукой.
+   */
+  currency?: DonationCurrency;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const signedIn = useAuthStore((s) => s.token !== null);
+
+  const stars = currency === 'STARS';
 
   const [amount, setAmount] = useState<number>(PRESETS[1]);
   const [note, setNote] = useState(false);
@@ -106,9 +122,15 @@ export function DonateSheet({
 
           {signedIn && balance.data ? (
             <View className="flex-row items-center gap-2 rounded-card bg-surface-2 px-3 py-2">
-              <Ionicons name="star" size={14} color={colors.gold} />
+              <Mark
+                stars={stars}
+                size={14}
+                color={stars ? colors.gold : colors.textMuted}
+              />
               <Text className="text-caption text-text-muted">
-                {t('content.yourStars', { amount: groupDigits(balance.data.stars) })}
+                {t(stars ? 'content.yourStars' : 'content.yourCoins', {
+                  amount: groupDigits(stars ? balance.data.stars : balance.data.coins),
+                })}
               </Text>
             </View>
           ) : null}
@@ -124,10 +146,16 @@ export function DonateSheet({
                   value === amount ? 'bg-purple' : 'bg-surface-2'
                 }`}
               >
-                <Ionicons
-                  name="star"
+                <Mark
+                  stars={stars}
                   size={13}
-                  color={value === amount ? colors.white : colors.gold}
+                  color={
+                    value === amount
+                      ? colors.white
+                      : stars
+                        ? colors.gold
+                        : colors.textMuted
+                  }
                 />
                 <Text
                   className={`text-caption ${
@@ -147,7 +175,9 @@ export function DonateSheet({
               leading={<Ionicons name="heart" size={16} color={colors.white} />}
               disabled={contentId === null}
             >
-              {t('content.donateAmount', { amount: groupDigits(amount) })}
+              {t(stars ? 'content.donateAmount' : 'content.donateAmountCoins', {
+                amount: groupDigits(amount),
+              })}
             </Button>
           ) : (
             <Button
@@ -163,10 +193,32 @@ export function DonateSheet({
           {note ? (
             <Text className="text-micro text-text-muted">{t('content.donateSoon')}</Text>
           ) : (
-            <Text className="text-micro text-text-disabled">{t('content.donateHint')}</Text>
+            <Text className="text-micro text-text-disabled">
+              {t(stars ? 'content.donateHint' : 'content.donateHintCoins')}
+            </Text>
           )}
         </Pressable>
       </Pressable>
     </Modal>
+  );
+}
+
+/**
+ * Знак валюты.
+ *
+ * ⚠️ У UZCASTING Coin СВОЙ фирменный знак — картинка, а не значок из
+ * набора. Залит он белым, цвет даёт `tintColor`: тогда он живёт по тем же
+ * правилам, что и соседняя звезда, — одна линия, один цвет.
+ */
+function Mark({ stars, size, color }: { stars: boolean; size: number; color: string }) {
+  return stars ? (
+    <Ionicons name="star" size={size} color={color} />
+  ) : (
+    <Image
+      source={coinIcon}
+      tintColor={color}
+      style={{ width: size, height: size }}
+      contentFit="contain"
+    />
   );
 }

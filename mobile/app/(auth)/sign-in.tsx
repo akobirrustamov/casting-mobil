@@ -83,21 +83,30 @@ export default function SignInScreen() {
    * просто кладём сессию и уходим на главную.
    */
   const onDevSession = async ({ token, user }: DevLoginResult) => {
-    await signIn(token, user);
-    router.replace('/(tabs)');
+    const status = await signIn(token, user);
+
+      // ⚠️ Переход РОВНО ОДИН и зависит от того, нашлось ли место
+      // устройству. Раньше экран уходил на `(tabs)` не дожидаясь ответа,
+      // а `app/_layout` вторым переходом уводил на `/devices` — в
+      // собранной APK это давало чёрный экран.
+      router.replace(status === 'limit' ? '/devices' : '/(tabs)');
   };
 
   const onGoogleSuccess = async (idToken: string) => {
     setGoogleError(null);
     try {
       const { token, refreshToken, user } = await exchangeGoogleToken(idToken);
-      await signIn(token, user, refreshToken);
+      const status = await signIn(token, user, refreshToken);
 
       // Телефон после Google не спрашиваем: по ТЗ аккаунт можно создать
       // «telefon/email orqali», а соцвход указан как optional. Номер нужен
       // только для выплат — попросим его в Creator Studio, когда дойдём.
       // Бэкенд по-прежнему шлёт phone_required, но это подсказка, не запрет.
-      router.replace('/(tabs)');
+      // ⚠️ Переход РОВНО ОДИН и зависит от того, нашлось ли место
+      // устройству. Раньше экран уходил на `(tabs)` не дожидаясь ответа,
+      // а `app/_layout` вторым переходом уводил на `/devices` — в
+      // собранной APK это давало чёрный экран.
+      router.replace(status === 'limit' ? '/devices' : '/(tabs)');
     } catch (e) {
       setGoogleError(t(googleErrorKey(e)));
     }

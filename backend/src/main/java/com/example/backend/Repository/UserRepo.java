@@ -1,7 +1,9 @@
 package com.example.backend.Repository;
 
 import com.example.backend.Entity.User;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
@@ -187,4 +189,26 @@ public interface UserRepo extends JpaRepository<User, UUID> {
         java.time.LocalDate getDay();
         Long getValue();
     }
+
+    /**
+     * Foydalanuvchi qatorini QULFLAB oladi — {@code select ... for update}.
+     *
+     * <h2>Nima uchun (10.09.2026)</h2>
+     * «Bitta odam — bitta kontentga bitta izoh» qoidasi shunday
+     * tekshiriladi: bormi — yo'qmi — yozish. Bir odamning ikkita so'rovi
+     * (ikki marta tez bosish, tarmoq qayta yuborishi) bir vaqtda kelsa,
+     * ikkalasi ham «yo'q» ni ko'rib, ikkita izoh yozardi. Qulf ikkinchisini
+     * birinchisi tugaguncha kuttiradi — u endi «bor» ni ko'radi.
+     *
+     * ⚠️ Nima uchun unique indeks emas: qoida faqat O'CHIRILMAGAN
+     * izohlarga tegishli, qisman indeks ({@code where status <> ...})
+     * esa testlardagi H2 da yo'q. Bundan tashqari production'da ikkitadan
+     * izohi borlar bo'lsa, indeks yaratish migratsiyasi yiqilardi.
+     *
+     * Qulf faqat SHU odamni navbatga qo'yadi, boshqalar izoh yozishda
+     * kutmaydi. Tranzaksiya ichida chaqirilishi SHART.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from User u where u.id = :id")
+    Optional<User> lockById(@Param("id") UUID id);
 }

@@ -128,7 +128,17 @@ export function EpisodeListScreen({
 
       {visible.length === 0 ? (
         <View className="h-64">
-          <ScreenState kind="empty" body={t('content.episodesEmpty')} />
+          {/* ⚠️ Две разные пустоты. «В этом сезоне пока нет серий» при
+              сериале, где серий нет ВООБЩЕ, звучит как ошибка вёрстки:
+              сезонов человек не видит, и непонятно, о каком речь. */}
+          <ScreenState
+            kind="empty"
+            body={t(
+              list.episodes.length === 0
+                ? 'content.episodesSoon'
+                : 'content.episodesEmpty'
+            )}
+          />
         </View>
       ) : (
         <View className="gap-3">

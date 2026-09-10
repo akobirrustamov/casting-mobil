@@ -28,6 +28,7 @@ import com.example.backend.Entity.User;
 import com.example.backend.Repository.RoleRepo;
 import com.example.backend.Repository.UserRepo;
 import com.example.backend.Enums.UserRoles;
+import com.example.backend.support.ContentFixtures;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -82,6 +83,7 @@ class ContentDetailTest {
     private static final AtomicInteger SEQ = new AtomicInteger();
 
     @Autowired private ContentService contentService;
+    @Autowired private ContentFixtures contentFixtures;
     @Autowired private ContentDetailService detailService;
     @Autowired private TaxonomyService taxonomyService;
     @Autowired private DonationService donationService;
@@ -239,7 +241,8 @@ class ContentDetailTest {
             donationService.donate(small, DonationTargetType.CONTENT, content.getId(),
                     CurrencyKind.STARS, 20L);
 
-            List<ContentDetailDto.Donor> donors = detailService.topDonors(content.getId(), 10);
+            List<ContentDetailDto.Donor> donors =
+                    detailService.topDonors(content.getId(), 10, CurrencyKind.STARS);
 
             assertThat(donors).hasSize(2);
             assertThat(donors.get(0).getRank()).isEqualTo(1);
@@ -260,9 +263,64 @@ class ContentDetailTest {
             donationService.donate(user, DonationTargetType.CONTENT, content.getId(),
                     CurrencyKind.UZCASTING_COIN, 900L);
 
-            assertThat(detailService.topDonors(content.getId(), 10))
+            assertThat(detailService.topDonors(content.getId(), 10, CurrencyKind.STARS))
                     .as("valyutalar aralashsa, 900 tanga 700 yulduzdan yuqori turardi")
                     .isEmpty();
+        }
+
+        /**
+         * Ilovada ikkita reyting bor: «Yulduzlar» va «Uzcasting» plitkalari
+         * har biri o'z oynasini ochadi (10.09.2026).
+         *
+         * ⚠️ {@code starsReceived} tanga so'ralganda BO'SH qoladi: eski
+         * ilova uni yulduz deb o'qiydi, va unga tanga yig'indisi yozilsa,
+         * yulduz belgisi ostida tangalar chiqib qolardi.
+         */
+        @Test
+        @DisplayName("Tanga reytingi alohida so'raladi va o'z yig'indisini qaytaradi")
+        void coinBoardIsServedSeparately() throws Exception {
+            Content content = movie(c -> {
+            });
+            User user = userWith(1_000L);
+
+            donationService.donate(user, DonationTargetType.CONTENT, content.getId(),
+                    CurrencyKind.UZCASTING_COIN, 900L);
+
+            mockMvc.perform(get("/api/v1/app/content/" + content.getId() + "/donors")
+                            .param("currency", "UZCASTING_COIN"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.currency").value("UZCASTING_COIN"))
+                    .andExpect(jsonPath("$.total").value(900))
+                    .andExpect(jsonPath("$.starsReceived").doesNotExist())
+                    .andExpect(jsonPath("$.donors.length()").value(1))
+                    .andExpect(jsonPath("$.donors[0].stars").value(900));
+
+            // Standart — yulduzlar: eski ilova parametrsiz so'raydi.
+            mockMvc.perform(get("/api/v1/app/content/" + content.getId() + "/donors"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.currency").value("STARS"))
+                    .andExpect(jsonPath("$.donors").isEmpty());
+        }
+
+        /**
+         * Ilovadagi «Top 100» sahifasi (10.09.2026). Ilgari chegara 50 edi
+         * va 100 so'ralganda jimgina 50 qaytardi — xato ham chiqmasdi.
+         */
+        @Test
+        @DisplayName("100 tagacha qator beriladi, undan ortig'i kesiladi")
+        void upToHundredRows() {
+            Content content = movie(c -> {
+            });
+            for (int i = 0; i < 101; i++) {
+                donationService.donate(userWith(1_000L), DonationTargetType.CONTENT,
+                        content.getId(), CurrencyKind.STARS, 1L + i);
+            }
+
+            assertThat(detailService.topDonors(content.getId(), 100, CurrencyKind.STARS))
+                    .hasSize(100);
+            assertThat(detailService.topDonors(content.getId(), 500, CurrencyKind.STARS))
+                    .as("chegaradan oshgan so'rov kesiladi, xato bermaydi")
+                    .hasSize(ContentDetailService.MAX_DONORS);
         }
 
         @Test
@@ -306,7 +364,7 @@ class ContentDetailTest {
                 Locale.EN, translation("Movie " + n)));
 
         tune.accept(c);
-        return contentService.create(null, c);
+        return contentFixtures.create(c);
     }
 
     private TranslationDto translation(String title) {

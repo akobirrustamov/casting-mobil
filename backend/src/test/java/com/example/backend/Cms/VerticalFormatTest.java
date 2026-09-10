@@ -16,6 +16,7 @@ import com.example.backend.Cms.Service.ContentService;
 import com.example.backend.Cms.Service.EpisodeService;
 import com.example.backend.Cms.Service.HomeFeedService;
 import com.example.backend.Cms.Service.HomepageService;
+import com.example.backend.support.ContentFixtures;
 import com.example.backend.support.Translations;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -62,6 +63,7 @@ class VerticalFormatTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private ContentService contentService;
+    @Autowired private ContentFixtures contentFixtures;
     @Autowired private EpisodeService episodeService;
     @Autowired private HomeFeedService homeFeedService;
     @Autowired private HomepageService homepageService;
@@ -86,7 +88,7 @@ class VerticalFormatTest {
             c.setPremierePrice(new BigDecimal("15000"));
         }
         c.setTranslations(Translations.all("Format " + SEQ.incrementAndGet()));
-        return contentService.create(null, c);
+        return contentFixtures.create(c);
     }
 
     private Episode episode(Content content, int number) {

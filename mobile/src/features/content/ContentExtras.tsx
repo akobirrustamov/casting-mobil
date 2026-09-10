@@ -9,18 +9,19 @@ import { StoryCircle } from '@/components/ui/StoryCircle';
 import { Player } from '@/features/watch/Player';
 import type { VideoSource, WatchInfo } from '@/features/watch/types';
 import { mediaUrl } from '@/lib/api';
-import { groupDigits } from '@/lib/money';
 import { colors } from '@/theme/tokens';
 
-import { DonateSheet } from './DonateSheet';
-import { useContentDonors, type CastMember, type ContentDetail } from './detail';
+import type { CastMember, ContentDetail } from './detail';
 
 /**
- * Нижние блоки страницы контента: актёры, трейлер, кадры и донаты.
+ * Нижние блоки страницы контента: актёры, трейлер и кадры.
  *
  * Вынесены из `ContentScreen` не ради размера файла: каждый из них
  * появляется ТОЛЬКО при своих данных и молча исчезает без них. Держать
- * четыре таких правила в одном экране — значит потерять их из виду.
+ * три таких правила в одном экране — значит потерять их из виду.
+ *
+ * ⚠️ Рейтинг донатов жил здесь же и 10.09.2026 УЕХАЛ на отдельную страницу —
+ * см. `DonorsScreen`, там сказано почему.
  */
 
 /** Заголовок блока с необязательной ссылкой «Barchasi ›». */
@@ -232,124 +233,6 @@ export function ScenesRail({ mediaIds }: { mediaIds: number[] }) {
           </View>
         ))}
       </ScrollView>
-    </View>
-  );
-}
-
-/** Знаки первых трёх мест. Дальше — просто номер. */
-const MEDALS: Record<number, string> = {
-  1: colors.gold,
-  2: '#C0C6D8',
-  3: '#CD7F32',
-};
-
-/**
- * «Top 10 Donatchilar» — кто больше всех поддержал контент.
- *
- * <h2>⚠️ Блок исчезает, пока донатов нет</h2>
- * Пустая таблица с заголовком «топ 10» читается как поломка, а не как
- * «ещё никто не donat qilmagan». Кнопка «Donat qilish» при этом остаётся:
- * поддержать можно и первым.
- *
- * <h2>Сумма контента и сумма списка — разные числа</h2>
- * В строках только верхушка рейтинга, а `starsReceived` — весь контент.
- * Складывать их нельзя, поэтому общая сумма стоит отдельной строкой над
- * списком.
- */
-export function DonorsBoard({
-  contentId,
-  title,
-}: {
-  contentId: number | null;
-  title: string | null;
-}) {
-  const { t } = useTranslation();
-  const donors = useContentDonors(contentId);
-  const [sheet, setSheet] = useState(false);
-
-  const list = donors.data?.donors ?? [];
-  const total = donors.data?.starsReceived ?? 0;
-
-  /**
-   * ⚠️ Рейтинг РИСУЕТСЯ, только если сервер ответил.
-   *
-   * На старой сборке бэкенда этого адреса нет, и запрос падает. Показать
-   * тогда «ещё никто не поддержал» значило бы соврать: платформа могла
-   * собрать миллион звёзд, а человек прочитал бы, что контент никому не
-   * нужен. Кнопка при этом остаётся — поддержать можно и молча.
-   */
-  const answered = donors.data !== undefined;
-
-  return (
-    <View className="gap-3">
-      <SectionHead title={t('content.topDonors')} />
-
-      {answered ? (
-      <View className="gap-3 rounded-card bg-surface p-3">
-        {total > 0 ? (
-          <View className="flex-row items-center gap-2">
-            <Ionicons name="star" size={14} color={colors.gold} />
-            <Text className="text-caption text-text-muted">
-              {t('content.starsTotal', { amount: groupDigits(total) })}
-            </Text>
-          </View>
-        ) : null}
-
-        {list.length === 0 ? (
-          <Text className="text-caption text-text-muted">{t('content.noDonors')}</Text>
-        ) : (
-          list.map((d) => (
-            <View key={d.rank} className="flex-row items-center gap-3">
-              <View className="w-6 items-center">
-                {MEDALS[d.rank] ? (
-                  <Ionicons name="trophy" size={14} color={MEDALS[d.rank]} />
-                ) : (
-                  <Text className="text-caption text-text-muted">{d.rank}</Text>
-                )}
-              </View>
-
-              <View className="h-8 w-8 overflow-hidden rounded-pill bg-surface-2">
-                {d.avatarUrl ? (
-                  <Image
-                    source={{ uri: d.avatarUrl }}
-                    style={{ width: '100%', height: '100%' }}
-                    contentFit="cover"
-                  />
-                ) : null}
-              </View>
-
-              <Text numberOfLines={1} className="flex-1 text-caption text-text">
-                {/* Удалённый или безымянный аккаунт остаётся в рейтинге:
-                    звёзды он действительно отправил, и выбросить строку
-                    значило бы спрятать часть суммы. */}
-                {d.name ?? t('content.anonymousDonor')}
-              </Text>
-
-              <Text className="text-caption font-semibold text-text">
-                {groupDigits(d.stars)}
-              </Text>
-              <Ionicons name="star" size={13} color={colors.gold} />
-            </View>
-          ))
-        )}
-      </View>
-      ) : null}
-
-      <Pressable
-        onPress={() => setSheet(true)}
-        accessibilityRole="button"
-        className="flex-row items-center justify-center gap-2 rounded-card bg-purple px-5 py-3.5 active:opacity-80"
-      >
-        <Ionicons name="heart" size={18} color={colors.white} />
-        <Text className="text-body font-semibold text-white">{t('content.donate')}</Text>
-      </Pressable>
-
-      <DonateSheet
-        open={sheet}
-        contentId={contentId}
-        title={title}
-        onClose={() => setSheet(false)}
-      />
     </View>
   );
 }

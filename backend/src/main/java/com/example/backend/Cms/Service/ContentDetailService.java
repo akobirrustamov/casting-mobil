@@ -61,6 +61,15 @@ public class ContentDetailService {
     /** Maketda «Top 10 Donatchilar» — o'ntadan ortig'i ro'yxatga sig'maydi. */
     public static final int TOP_DONORS = 10;
 
+    /**
+     * Bitta so'rovda eng ko'pi bilan nechta qator.
+     *
+     * Ilovada reyting 10.09.2026 dan ALOHIDA sahifada va «Top 100» —
+     * buyurtmachi talabi. Undan ortig'i sahifada o'qilmaydi, guruhlash
+     * so'rovi esa har qatorga qimmatlashadi.
+     */
+    public static final int MAX_DONORS = 100;
+
     private final EpisodeRepo episodeRepo;
     private final SeasonRepo seasonRepo;
     private final CommentRepo commentRepo;
@@ -120,13 +129,21 @@ public class ContentDetailService {
      * Reyting kartochkaga kirmaydi: u sahifaning eng pastida turadi va
      * har bir kontent ochilganda kerak emas. Ilova uni sahifa
      * ochilgandan keyin alohida so'raydi — kartochka esa darhol chiqadi.
+     *
+     * <h2>⚠️ Valyuta CHAQIRUVCHIDAN keladi</h2>
+     * Ilovada ikkita alohida reyting bor: «Yulduzlar» va «Uzcasting».
+     * Ular BIR ro'yxatga qo'shilmaydi — {@link DonationRepo#topSenders}
+     * dagi sabab bilan bir xil: kurs boshqa, ma'no boshqa, va 100 tanga
+     * yuborgan odam 100 yulduz yuborgandan yuqori turib qolardi.
+     * {@code null} — eskicha xatti-harakat, ya'ni yulduzlar.
      */
     @Transactional(readOnly = true)
-    public List<ContentDetailDto.Donor> topDonors(Long contentId, int limit) {
-        int safe = Math.min(Math.max(limit, 1), 50);
+    public List<ContentDetailDto.Donor> topDonors(Long contentId, int limit, CurrencyKind kind) {
+        int safe = Math.min(Math.max(limit, 1), MAX_DONORS);
 
         List<DonationRepo.SenderTotal> totals = donationRepo.topSenders(
-                DonationTargetType.CONTENT, contentId, CurrencyKind.STARS,
+                DonationTargetType.CONTENT, contentId,
+                kind == null ? CurrencyKind.STARS : kind,
                 PageRequest.of(0, safe));
 
         if (totals.isEmpty()) {

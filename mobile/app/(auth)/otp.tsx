@@ -78,8 +78,13 @@ export default function OtpScreen() {
       }
 
       const { token, user, refreshToken } = result.session;
-      await signIn(token, user, refreshToken);
-      router.replace('/(tabs)');
+      const status = await signIn(token, user, refreshToken);
+
+      // ⚠️ Переход РОВНО ОДИН и зависит от того, нашлось ли место
+      // устройству. Раньше экран уходил на `(tabs)` не дожидаясь ответа,
+      // а `app/_layout` вторым переходом уводил на `/devices` — в
+      // собранной APK это давало чёрный экран.
+      router.replace(status === 'limit' ? '/devices' : '/(tabs)');
     } catch (e) {
       setError(t(authErrorKey(e)));
       setCode('');

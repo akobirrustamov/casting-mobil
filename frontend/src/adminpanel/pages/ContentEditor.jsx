@@ -317,7 +317,8 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
         )}
 
         {tab === 'media' && (
-          <MediaTab form={form} set={set} t={t} locale={locale} isSingle={!hasParts} />
+          <MediaTab form={form} set={set} t={t} locale={locale} isSingle={!hasParts}
+                    onGoToEpisodes={hasParts ? () => setTab('episodes') : undefined} />
         )}
 
         {tab === 'creators' && (
@@ -340,7 +341,8 @@ export default function ContentEditor({ open, contentId, onClose, onSaved }) {
         )}
 
         {tab === 'publish' && (
-          <PublishTab form={form} set={set} t={t} can={can} />
+          <PublishTab form={form} set={set} t={t} can={can} isSingle={!hasParts}
+                      onGoToEpisodes={hasParts ? () => setTab('episodes') : undefined} />
         )}
       </div>
 

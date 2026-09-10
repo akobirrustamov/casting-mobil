@@ -43,6 +43,7 @@ function card(over: Partial<ContentCard> = {}): ContentCard {
     episodeCount: null,
     genre: null,
     viewCount: null,
+    likeCount: null,
     ...over,
   };
 }

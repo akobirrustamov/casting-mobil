@@ -401,6 +401,9 @@ public class HomeFeedService {
                 // ilova «server aytmadi» ni «hech kim ko'rmagan» dan
                 // ajratadi, va bu yerda javob aniq.
                 .viewCount(nz(c.getViewCount()))
+                // Sahifadagi yurak shu son bilan darhol chiziladi — kontent
+                // kartochkasini kutmasdan (HomeFeedDto.likeCount izohi).
+                .likeCount(nz(c.getLikeCount()))
                 .build();
     }
 

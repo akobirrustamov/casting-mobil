@@ -102,23 +102,43 @@ export function PosterCard({
           />
         ) : null}
 
-        {/* Таймкод — правый НИЖНИЙ угол обложки, как на макете «Media».
-            Сверху там метка доступа, а на макете ещё и меню карточки;
-            внизу таймкод никому не мешает и читается привычно, как в
-            видеосервисах. Подложка сквозная: под ней виден кадр. */}
-        {duration ? (
-          <View className="absolute bottom-2 right-2 rounded-pill bg-ink/70 px-2 py-0.5">
-            <Text className="text-micro font-semibold text-text">{duration}</Text>
-          </View>
-        ) : null}
+        {/*
+          Таймкод и просмотры — ОДНОЙ строкой по нижнему краю кадра.
 
-        {/* Просмотры — напротив таймкода, в левом нижнем углу. Подложка
-            та же, что у таймкода: два счётчика на кадре должны читаться
-            как одна пара, а не как метка и что-то ещё. */}
-        {views ? (
-          <View className="absolute bottom-2 left-2 flex-row items-center gap-1 rounded-pill bg-ink/70 px-2 py-0.5">
-            <Ionicons name="eye-outline" size={11} color={colors.white} />
-            <Text className="text-micro font-semibold text-text">{views}</Text>
+          ⚠️ Раньше это были две независимые «абсолютные» метки: просмотры
+          прижаты влево, таймкод вправо. На узкой карточке ряда (около 120
+          точек) они сходились в середине и налезали друг на друга —
+          «1 234 567» и «1:23:45» просто не помещаются в такую ширину.
+          Заметно это становилось только на реальных числах, поэтому на
+          макете и на тестовых данных всё выглядело правильно.
+
+          Общая строка с `justify-between` и зазором развести их не
+          позволяет по построению: между метками всегда остаётся `gap`, а
+          при нехватке места каждая ужимается сама (`shrink` + одна
+          строка), а не заезжает на соседа.
+        */}
+        {views || duration ? (
+          <View className="absolute bottom-2 left-2 right-2 flex-row items-center justify-between gap-2">
+            {views ? (
+              <View className="max-w-[62%] shrink flex-row items-center gap-1 rounded-pill bg-ink/70 px-2 py-0.5">
+                <Ionicons name="eye-outline" size={11} color={colors.white} />
+                <Text numberOfLines={1} className="text-micro font-semibold text-text">
+                  {views}
+                </Text>
+              </View>
+            ) : (
+              // Пустая распорка: без неё единственный таймкод уехал бы
+              // влево, хотя его место — справа.
+              <View />
+            )}
+
+            {duration ? (
+              <View className="shrink-0 rounded-pill bg-ink/70 px-2 py-0.5">
+                <Text numberOfLines={1} className="text-micro font-semibold text-text">
+                  {duration}
+                </Text>
+              </View>
+            ) : null}
           </View>
         ) : null}
 

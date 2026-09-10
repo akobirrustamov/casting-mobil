@@ -6,7 +6,11 @@ import Select from '../../components/Select';
  * ⚠️ SCHEDULED holati NASHR SANASINI talab qiladi: usiz kontent
  * «rejalashtirilgan» bo'lib turadi, lekin qachon chiqishi noma'lum.
  */
-export default function PublishTab({ form, set, t, can }) {
+export default function PublishTab({ form, set, t, can, isSingle = true, onGoToEpisodes }) {
+  // Serial nashrga (yoki rejaga) qo'yilyapti — shart oldindan aytiladi.
+  const publishingSerial = !isSingle
+    && (form.status === 'PUBLISHED' || form.status === 'SCHEDULED');
+
   return (
     <div className="uz-row">
       <div className="uz-col">
@@ -20,6 +24,24 @@ export default function PublishTab({ form, set, t, can }) {
             </option>
           ))}
         </Select>
+
+        {/*
+          ⚠️ Server qismsiz serialni nashr qilmaydi (10.09.2026,
+          `ContentService.requirePlayableEpisode`). Shart shu yerda
+          OLDINDAN aytiladi: aks holda admin uni faqat «Saqlash» dan
+          keyin, xato sifatida bilardi.
+        */}
+        {publishingSerial && (
+          <div className="uz-field-warn mt-2">
+            <p style={{ margin: 0 }}>{t('editor.serialNeedsEpisode')}</p>
+            {onGoToEpisodes && (
+              <button type="button" className="uz-btn uz-btn-ghost mt-2"
+                      onClick={onGoToEpisodes}>
+                {t('editor.goToEpisodes')}
+              </button>
+            )}
+          </div>
+        )}
       </div>
       <div className="uz-col">
         {/* ⚠️ NASHR sanasi — rejalashtirish uchun (ТЗ §53).

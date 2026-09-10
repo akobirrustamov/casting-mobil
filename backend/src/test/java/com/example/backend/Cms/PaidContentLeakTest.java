@@ -9,6 +9,7 @@ import com.example.backend.Cms.Entity.MediaAsset;
 import com.example.backend.Cms.Enums.AccessPolicy;
 import com.example.backend.Cms.Enums.ContentType;
 import com.example.backend.Cms.Enums.Locale;
+import com.example.backend.support.ContentFixtures;
 import com.example.backend.support.Translations;
 import com.example.backend.Cms.Enums.MediaStatus;
 import com.example.backend.Cms.Enums.MediaType;
@@ -63,6 +64,11 @@ class PaidContentLeakTest {
     @Autowired
     private ContentService contentService;
 
+
+    @Autowired
+
+    private ContentFixtures contentFixtures;
+
     @Autowired
     private EpisodeService episodeService;
 
@@ -109,7 +115,7 @@ class PaidContentLeakTest {
             c.setPremierePrice(new BigDecimal("50000"));
         }
         c.setTranslations(Translations.all(title));
-        Content content = contentService.create(null, c);
+        Content content = contentFixtures.create(c);
 
         EpisodeSaveRequest e = new EpisodeSaveRequest();
         e.setEpisodeNumber(1);

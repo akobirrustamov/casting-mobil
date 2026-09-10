@@ -44,7 +44,7 @@
     "subtitle": "Ijodkorlar uchun platforma"
   },
   "onboarding": {
-    "skip": "Skip",
+    "skip": "O'tkazib yuborish",
     "next": "KEYINGI",
     "start": "BOSHLASH",
     "casting": {
@@ -88,6 +88,9 @@
     "otpExpired": "Kod muddati tugagan, qaytadan so'rang",
     "otpLocked": "Urinishlar soni tugadi, qaytadan so'rang",
     "otpCooldown": "Kod allaqachon yuborilgan, biroz kuting",
+    "tooManyRequests": "Juda tez-tez so'ralmoqda, bir daqiqadan keyin urinib ko'ring",
+    "networkFailed": "Serverga ulanib bo'lmadi — internetni tekshiring",
+    "phoneInvalid": "Telefon raqam noto'g'ri: +998 XX XXX XX XX",
     "smsUnavailable": "SMS xizmati hozircha sozlanmagan",
     "phoneSubtitle": "Kirish yoki ro'yxatdan o'tish uchun raqamingizni kiriting",
     "finishSignUp": "TUGATISH",
@@ -345,6 +348,7 @@
     "episodes": "Qismlar",
     "season": "{{number}}-mavsum",
     "episodesEmpty": "Bu mavsumda hali qism yo'q",
+    "episodesSoon": "Qismlar tez orada",
     "episodeCount": "{{count}} qism",
     "share": "Ulashish",
     "copyLink": "Havolani nusxalash",
@@ -353,6 +357,8 @@
     "less": "Yopish",
     "scenes": "Qiziq sahnalar",
     "topDonors": "Top donatchilar",
+    "topDonorsTitle": "Top 100 donatchilar",
+    "donorsUnavailable": "Reyting bu serverda hali yoqilmagan. Server yangilangach ko'rinadi.",
     "starsTotal": "Jami {{amount}} yulduz",
     "noDonors": "Hali hech kim qo'llab-quvvatlamagan",
     "anonymousDonor": "Noma'lum foydalanuvchi",
@@ -360,7 +366,11 @@
     "donateAmount": "{{amount}} yulduz yuborish",
     "donateHint": "Yulduzlar bilan qo'llab-quvvatlang",
     "donateSoon": "To'lov ilovada hali ulanmagan — tez orada ishga tushadi.",
-    "yourStars": "Sizda {{amount}} yulduz bor"
+    "yourStars": "Sizda {{amount}} yulduz bor",
+    "coinsTotal": "Jami {{amount}} tanga",
+    "donateAmountCoins": "{{amount}} tanga yuborish",
+    "donateHintCoins": "UZCASTING tangalari bilan qo'llab-quvvatlang",
+    "yourCoins": "Sizda {{amount}} tanga bor"
   },
   "contentType": {
     "SHORT_FILM": "Qisqa metraj",
@@ -394,5 +404,24 @@
     "ru": "Ruscha",
     "tr": "Turkcha",
     "uz": "O'zbekcha"
+  },
+  "comments": {
+    "title": "Izohlar",
+    "placeholder": "Izoh yozing…",
+    "send": "Yuborish",
+    "signInToComment": "Izoh yozish uchun kiring",
+    "empty": "Hali izoh yo'q. Birinchi bo'lib yozing!",
+    "unavailable": "Izohlar bu serverda hali yoqilmagan. Server yangilangach ko'rinadi.",
+    "hidden": "Moderator yashirgan — faqat sizga ko'rinadi",
+    "delete": "O'chirish",
+    "deleteConfirmTitle": "Izohni o'chirasizmi?",
+    "anonymous": "Noma'lum foydalanuvchi",
+    "justNow": "hozirgina",
+    "minutesAgo": "{{count}} daqiqa oldin",
+    "hoursAgo": "{{count}} soat oldin",
+    "daysAgo": "{{count}} kun oldin",
+    "sendFailed": "Izoh yuborilmadi. Qayta urinib ko'ring.",
+    "blocked": "Hisobingiz bloklangan — izoh yozib bo'lmaydi.",
+    "alreadyCommented": "Siz bu kontentga izoh qoldirgansiz. Yangisini yozish uchun avvalgisini o'chiring."
   }
 }

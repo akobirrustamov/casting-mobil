@@ -272,6 +272,10 @@ function Stage({
           contentId={info.contentId}
           episodeId={info.episodeId}
           onError={() => setFailed(true)}
+          // Сюда приходят, выбрав серию из списка, — «смотреть» уже
+          // сказано. Поэтому и воспроизведение, и полный экран сразу.
+          autoPlay
+          autoFullscreen
         />
 
         {info.sources.length > 1 ? (

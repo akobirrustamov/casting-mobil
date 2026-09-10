@@ -227,3 +227,92 @@ describe('SINGLE kontent — asosiy video', () => {
     expect(sentMedia('POSTER')).toHaveLength(1);
   });
 });
+
+/**
+ * Serial — video QISMGA biriktiriladi (10.09.2026).
+ *
+ * <h2>⚠️ Qanday xato edi</h2>
+ * Kontent film sifatida video bilan yaratilib, keyin serialga
+ * o'zgartirilsa, film videosi YASHIRIN qolib saqlanaverardi. Ilova
+ * serialda uni hech qachon ochmaydi — faqat qismlarni. Admin buni
+ * ko'rmasdi, tomoshabin esa «video yuklangan, ammo ochilmayapti» deb
+ * yozardi.
+ */
+describe('Serial — film videosi va qismlar', () => {
+  const SERIAL = { ...FILM, structureType: 'EPISODIC', contentType: 'SERIES' };
+  const SERIAL_NO_VIDEO = {
+    ...SERIAL,
+    media: FILM.media.filter((m) => m.role !== 'VIDEO'),
+  };
+
+  it('yashirin qolgan film videosi haqida ogohlantiradi', async () => {
+    const user = userEvent.setup();
+    adminApi.contentById.mockResolvedValue(SERIAL);
+    setup(7);
+    await waitFor(() => expect(adminApi.contentById).toHaveBeenCalled());
+
+    await openTab(user, 'Media');
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/ilova uni ochmaydi/i);
+  });
+
+  /**
+   * ⚠️ Maydon serialda yashirin — tugmasiz bu bog'lanishni panelda
+   * uzishning YO'LI yo'q edi (faqat tuzilishni filmga qaytarib).
+   */
+  it('film videosini olib tashlasa — saqlashda VIDEO yuborilmaydi', async () => {
+    const user = userEvent.setup();
+    adminApi.contentById.mockResolvedValue(SERIAL);
+    adminApi.updateContent.mockResolvedValue({ ...SERIAL });
+    setup(7);
+    await waitFor(() => expect(adminApi.contentById).toHaveBeenCalled());
+
+    await openTab(user, 'Media');
+    await user.click(screen.getByRole('button', { name: /Film videosini olib tashlash/i }));
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    await user.click(saveButton());
+    await waitFor(() => expect(adminApi.updateContent).toHaveBeenCalled());
+
+    expect(sentMedia('VIDEO')).toEqual([]);
+    // Boshqa bog'lanishlar joyida: faqat bittasi uziladi.
+    expect(sentMedia('TRAILER')).toHaveLength(1);
+  });
+
+  it("videosiz serialda ogohlantirish yo'q, tugma qismlarga olib boradi", async () => {
+    const user = userEvent.setup();
+    adminApi.contentById.mockResolvedValue(SERIAL_NO_VIDEO);
+    setup(7);
+    await waitFor(() => expect(adminApi.contentById).toHaveBeenCalled());
+
+    await openTab(user, 'Media');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Qismlar bo'limiga o'tish/i }));
+
+    expect(screen.getByRole('tab', { selected: true })).toHaveTextContent(/Qism/i);
+  });
+
+  it("serialni nashrga qo'yganda shart oldindan aytiladi", async () => {
+    const user = userEvent.setup();
+    adminApi.contentById.mockResolvedValue(SERIAL_NO_VIDEO);
+    setup(7);
+    await waitFor(() => expect(adminApi.contentById).toHaveBeenCalled());
+
+    await openTab(user, 'Nashr');
+
+    // SERIAL `status: 'PUBLISHED'` bilan keladi.
+    expect(screen.getByText(/videoli, nashr qilingan qism/i)).toBeInTheDocument();
+  });
+
+  it("filmda nashr sharti ko'rsatilmaydi", async () => {
+    const user = userEvent.setup();
+    setup(7);
+    await waitFor(() => expect(adminApi.contentById).toHaveBeenCalled());
+
+    await openTab(user, 'Nashr');
+
+    expect(screen.queryByText(/videoli, nashr qilingan qism/i)).not.toBeInTheDocument();
+  });
+});
