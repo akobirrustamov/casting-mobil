@@ -119,7 +119,16 @@ export function Screen({
         // 60 вызовов в секунду через мост не нужны ни одному экрану.
         scrollEventThrottle={200}
         contentContainerClassName="px-4 gap-4"
-        contentContainerStyle={{ paddingBottom: bottomPad }}
+        // flexGrow, а не только padding: иначе ScrollView отдаёт контейнеру
+        // высоту содержимого, и `flex-1` внутри (загрузка, пустое состояние)
+        // растягиваться не на что — центр съезжает под самую шапку.
+        //
+        // ⚠️ Обратная сторона: свободное место забирает ЛЮБОЙ растущий
+        // ребёнок, а у ScrollView `flexGrow: 1` стоит по умолчанию.
+        // Горизонтальному ряду внутри экрана нужен `style={{ flexGrow: 0 }}`,
+        // иначе при коротком содержимом он вырастает по высоте (так было с
+        // вкладками «Media», 10.09.2026).
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: bottomPad }}
         refreshControl={
           onRefresh ? (
             <RefreshControl

@@ -13,7 +13,8 @@ import { api } from '@/lib/api';
  * <h2>Кто что может</h2>
  * <pre>
  *   читать    — все, и гость тоже (как счётчик на плитке)
- *   писать    — только вошедший; заблокированный получает 403
+ *   писать    — только вошедший; заблокированный получает 403;
+ *               ОДИН комментарий на человека на фильм/сериал (409)
  *   удалять   — только своё; удаление мягкое, для модерации запись остаётся
  * </pre>
  */
@@ -46,6 +47,14 @@ export type CommentPage = {
   page: number;
   totalItems: number;
   hasMore: boolean;
+  /**
+   * У зрителя уже есть комментарий к этому контенту — второй не пустят
+   * (заказчик, 10.09.2026: «один человек — один комментарий»).
+   *
+   * ⚠️ Считает сервер, а не лента: своя запись может лежать на пятой
+   * странице, которую человек ещё не листал.
+   */
+  alreadyCommented: boolean;
 };
 
 /**
@@ -67,7 +76,7 @@ export class CommentsUnavailableError extends Error {
 /** Отказ сервера при отправке — с его собственным текстом. */
 export class CommentRejectedError extends Error {
   constructor(
-    readonly reason: 'blocked' | 'invalid' | 'signIn',
+    readonly reason: 'blocked' | 'invalid' | 'signIn' | 'duplicate',
     message: string
   ) {
     super(message);
@@ -116,6 +125,7 @@ export function mapCommentPage(raw: unknown): CommentPage {
     page: num(r.page) ?? 0,
     totalItems: num(r.totalItems) ?? 0,
     hasMore: r.hasMore === true,
+    alreadyCommented: r.alreadyCommented === true,
   };
 }
 
@@ -160,6 +170,7 @@ export async function postComment(contentId: number, text: string): Promise<AppC
       const message = serverMessage(error) ?? '';
       if (status === 401) throw new CommentRejectedError('signIn', message);
       if (status === 403) throw new CommentRejectedError('blocked', message);
+      if (status === 409) throw new CommentRejectedError('duplicate', message);
       if (status === 400 || status === 422)
         throw new CommentRejectedError('invalid', message);
       // ⚠️ 405 — тоже «адреса нет». Старая сборка отдаёт на незнакомые GET

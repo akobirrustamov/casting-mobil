@@ -44,7 +44,7 @@
     "subtitle": "Ijodkorlar uchun platforma"
   },
   "onboarding": {
-    "skip": "Skip",
+    "skip": "O'tkazib yuborish",
     "next": "KEYINGI",
     "start": "BOSHLASH",
     "casting": {
@@ -88,6 +88,9 @@
     "otpExpired": "Kod muddati tugagan, qaytadan so'rang",
     "otpLocked": "Urinishlar soni tugadi, qaytadan so'rang",
     "otpCooldown": "Kod allaqachon yuborilgan, biroz kuting",
+    "tooManyRequests": "Juda tez-tez so'ralmoqda, bir daqiqadan keyin urinib ko'ring",
+    "networkFailed": "Serverga ulanib bo'lmadi — internetni tekshiring",
+    "phoneInvalid": "Telefon raqam noto'g'ri: +998 XX XXX XX XX",
     "smsUnavailable": "SMS xizmati hozircha sozlanmagan",
     "phoneSubtitle": "Kirish yoki ro'yxatdan o'tish uchun raqamingizni kiriting",
     "finishSignUp": "TUGATISH",
@@ -418,6 +421,7 @@
     "hoursAgo": "{{count}} soat oldin",
     "daysAgo": "{{count}} kun oldin",
     "sendFailed": "Izoh yuborilmadi. Qayta urinib ko'ring.",
-    "blocked": "Hisobingiz bloklangan — izoh yozib bo'lmaydi."
+    "blocked": "Hisobingiz bloklangan — izoh yozib bo'lmaydi.",
+    "alreadyCommented": "Siz bu kontentga izoh qoldirgansiz. Yangisini yozish uchun avvalgisini o'chiring."
   }
 }

@@ -253,6 +253,124 @@ class AppCommentTest {
         }
     }
 
+    // ------------------------------------------------- bitta odam, bitta izoh
+
+    /**
+     * Buyurtmachi talabi (10.09.2026): bitta odam bitta kino yoki serialga
+     * bitta izoh. Qoida {@code AppCommentService} sinf izohida.
+     */
+    @Nested
+    @DisplayName("Bitta odam — bitta izoh")
+    class OnePerPerson {
+
+        private void postOk(Content film, String text) throws Exception {
+            mockMvc.perform(post(url(film))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body(text)))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("Ikkinchi izoh rad etiladi — 409, birinchisi joyida")
+        void secondCommentIsRejected() throws Exception {
+            Content film = film(PublicationStatus.PUBLISHED);
+            signIn(person("Takrorchi"));
+
+            postOk(film, "Birinchi fikrim");
+            mockMvc.perform(post(url(film))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body("Ikkinchi fikrim")))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.code").value("COMMENT_EXISTS"));
+
+            assertThat(commentRepo.countByContentIdAndStatus(film.getId(), CommentStatus.VISIBLE))
+                    .isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("O'z izohini o'chirgach — yangisini yoza oladi")
+        void canWriteAgainAfterDeleting() throws Exception {
+            Content film = film(PublicationStatus.PUBLISHED);
+            User author = person("Qayta yozuvchi");
+            Comment old = comment(film, author, "Eski fikr", CommentStatus.VISIBLE);
+
+            signIn(author);
+            mockMvc.perform(delete("/api/v1/app/comments/" + old.getId()))
+                    .andExpect(status().isNoContent());
+
+            postOk(film, "Yangi fikr");
+        }
+
+        /** Aks holda moderator yashirgan gapni qayta yozib, moderatsiyani aylanib o'tardi. */
+        @Test
+        @DisplayName("Moderator yashirgan izohi bo'lsa ham — yangisi rad etiladi")
+        void hiddenCommentAlsoCounts() throws Exception {
+            Content film = film(PublicationStatus.PUBLISHED);
+            User author = person("Yashirilgan");
+            comment(film, author, "Yashirilgan gap", CommentStatus.HIDDEN);
+
+            signIn(author);
+            mockMvc.perform(post(url(film))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body("Xuddi shu gap qayta")))
+                    .andExpect(status().isConflict());
+        }
+
+        @Test
+        @DisplayName("Qoida KONTENT bo'yicha: boshqa filmga yoza oladi")
+        void ruleIsPerContent() throws Exception {
+            Content first = film(PublicationStatus.PUBLISHED);
+            Content second = film(PublicationStatus.PUBLISHED);
+            signIn(person("Ikki film"));
+
+            postOk(first, "Birinchi filmga");
+            postOk(second, "Ikkinchi filmga");
+        }
+
+        /**
+         * Ilova yozish maydoni o'rniga «siz izoh qoldirgansiz» ni shu belgi
+         * bo'yicha ko'rsatadi — o'z izohi beshinchi sahifada bo'lsa ham.
+         *
+         * ⚠️ Har tomoshabin — ALOHIDA test. Bitta test ichida foydalanuvchini
+         * almashtirib bo'lmaydi: MockMvc xavfsizlik kontekstini birinchi
+         * so'rovda eslab qoladi va keyingi so'rovlar o'sha odam nomidan
+         * ketadi — test «boshqa odamni» tekshirgandek bo'lib, aslida
+         * birinchisini tekshirardi.
+         */
+        @Test
+        @DisplayName("Ro'yxat muallifga «siz yozgansiz» belgisini beradi")
+        void listTellsAuthorAlreadyCommented() throws Exception {
+            Content film = film(PublicationStatus.PUBLISHED);
+            User author = person("Belgili");
+            comment(film, author, "Mening fikrim", CommentStatus.VISIBLE);
+
+            signIn(author);
+            mockMvc.perform(get(url(film)))
+                    .andExpect(jsonPath("$.alreadyCommented").value(true));
+        }
+
+        @Test
+        @DisplayName("Boshqa odamga belgi yo'q — u yoza oladi")
+        void otherUserHasNoFlag() throws Exception {
+            Content film = film(PublicationStatus.PUBLISHED);
+            comment(film, person("Muallif"), "Fikr", CommentStatus.VISIBLE);
+
+            signIn(person("Boshqasi"));
+            mockMvc.perform(get(url(film)))
+                    .andExpect(jsonPath("$.alreadyCommented").value(false));
+        }
+
+        @Test
+        @DisplayName("Mehmonga belgi yo'q")
+        void guestHasNoFlag() throws Exception {
+            Content film = film(PublicationStatus.PUBLISHED);
+            comment(film, person("Muallif"), "Fikr", CommentStatus.VISIBLE);
+
+            mockMvc.perform(get(url(film)))
+                    .andExpect(jsonPath("$.alreadyCommented").value(false));
+        }
+    }
+
     // ------------------------------------------------------------ o'chirish
 
     @Nested

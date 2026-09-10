@@ -4,7 +4,7 @@ import '../global.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // SDK 56+: react-navigation импортируется только через expo-router.
 // Прямой @react-navigation/native ломает бандл.
-import { Stack, router, useRootNavigationState } from 'expo-router';
+import { Stack, router, useRootNavigationState, usePathname } from 'expo-router';
 import { ThemeProvider } from 'expo-router/react-navigation';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -13,6 +13,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { SplashOverlay } from '@/components/SplashOverlay';
+import { DebugOverlay } from '@/components/states/DebugOverlay';
 import { OfflineBanner } from '@/components/states/OfflineBanner';
 import { useAuthStore } from '@/features/auth/store';
 import { useDeviceStore } from '@/features/devices/store';
@@ -21,6 +22,21 @@ import { isOnboardingSeen } from '@/features/onboarding/store';
 import i18nInstance from '@/i18n';
 import { loadLanguage } from '@/i18n/storage';
 import { colors, navigationTheme } from '@/theme/tokens';
+
+/**
+ * ⚠️ Экран ошибки вместо чёрного прямоугольника.
+ *
+ * expo-router берёт этот экспорт из файла маршрута и показывает его
+ * вместо упавшего поддерева. Стоит в КОРНЕВОЙ раскладке, поэтому
+ * накрывает всё приложение разом — иначе пришлось бы помнить про него
+ * в каждом новом `_layout`, а забытый файл снова давал бы чёрный экран.
+ *
+ * ⚠️ Это диагностика, а не «починка»: боевую ошибку она не убирает, но
+ * превращает молчаливый чёрный экран в текст, который тестировщик может
+ * переслать. До этого единственным способом узнать причину был
+ * `adb logcat`.
+ */
+export { AppErrorBoundary as ErrorBoundary } from '@/components/states/AppErrorBoundary';
 
 /** По подписи к макету splash висит 1–2 секунды. */
 const SPLASH_MIN_MS = 1300;
@@ -65,6 +81,10 @@ export default function RootLayout() {
             <OfflineBanner />
 
             {showSplash ? <SplashOverlay subtitle={t('splash.subtitle')} /> : null}
+
+            {/* ⚠️ ВРЕМЕННО: полоса диагностики чёрного экрана. Удалить
+                вместе с `DebugOverlay`, как только причина найдена. */}
+            <DebugOverlay />
           </ThemeProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
@@ -166,9 +186,26 @@ function useDeviceGuard(splashVisible: boolean): void {
   const status = useDeviceStore((s) => s.status);
   const navigationState = useRootNavigationState();
   const isNavigatorReady = Boolean(navigationState?.key);
+  const pathname = usePathname();
 
   useEffect(() => {
     if (status !== 'limit' || splashVisible || !isNavigatorReady) return;
+
+    /**
+     * ⚠️ Уже на месте — второй переход не нужен.
+     *
+     * Со входа сюда приводит сам экран входа: он дожидается регистрации
+     * устройства и уходит на `/devices` сам (`features/auth/store`).
+     * Без этой проверки следом шёл бы ВТОРОЙ `router.replace` на тот же
+     * адрес — а два перехода по корневому стеку в один кадр и давали
+     * чёрный экран в собранной APK.
+     *
+     * За этим сторожем остаётся его настоящая работа: запуск
+     * приложения, которое вошло раньше. Там экрана входа нет и увести
+     * человека больше некому.
+     */
+    if (pathname === '/devices') return;
+
     router.replace('/devices');
-  }, [status, splashVisible, isNavigatorReady]);
+  }, [status, splashVisible, isNavigatorReady, pathname]);
 }

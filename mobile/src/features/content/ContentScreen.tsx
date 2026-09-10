@@ -901,6 +901,9 @@ function Stage({
         controls="custom"
         fill
         autoPlay
+        // Человек нажал «Tomosha qilish» — второго нажатия ради полного
+        // экрана быть не должно.
+        autoFullscreen
         title={detail?.title ?? info.title}
         actions={<PlayerActions contentId={contentId} detail={detail} info={info} />}
       />

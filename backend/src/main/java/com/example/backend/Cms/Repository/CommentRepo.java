@@ -111,6 +111,13 @@ public interface CommentRepo extends JpaRepository<Comment, Long> {
     long countByContentIdAndStatus(Long contentId, CommentStatus status);
 
     /**
+     * Shu odamning shu kontentda FAOL izohi bormi — «bitta odam, bitta
+     * izoh» qoidasi uchun ({@code AppCommentService.post}).
+     */
+    boolean existsByContentIdAndAuthorIdAndStatusIn(Long contentId, UUID authorId,
+                                                    java.util.Collection<CommentStatus> statuses);
+
+    /**
      * Ilovadagi izohlar ro'yxati — MEHMON uchun: faqat ko'rinadiganlari.
      *
      * Yangisi tepada. {@code id} ikkinchi kalit: bir soniyada yozilgan

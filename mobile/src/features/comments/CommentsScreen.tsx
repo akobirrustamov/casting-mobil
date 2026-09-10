@@ -86,6 +86,13 @@ export function CommentsScreen({ contentId }: { contentId: number | null }) {
    */
   const unavailable = comments.error instanceof CommentsUnavailableError;
 
+  /**
+   * Уже писал сюда — второй комментарий не пустят (один человек — один
+   * комментарий, заказчик 10.09.2026). Вместо поля ввода — объяснение и
+   * путь: удалить свой и написать заново.
+   */
+  const alreadyCommented = comments.data?.pages[0]?.alreadyCommented ?? false;
+
   const confirmDelete = (comment: AppComment) => {
     Alert.alert(t('comments.deleteConfirmTitle'), comment.text.slice(0, 120), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -167,7 +174,18 @@ export function CommentsScreen({ contentId }: { contentId: number | null }) {
             className="border-t border-border px-4 pt-3"
             style={{ paddingBottom: Math.max(insets.bottom, 12) }}
           >
-            {signedIn ? (
+            {signedIn && alreadyCommented ? (
+              <View className="flex-row items-center gap-2 rounded-card bg-surface px-4 py-3">
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={18}
+                  color={colors.textMuted}
+                />
+                <Text className="flex-1 text-caption text-text-muted">
+                  {t('comments.alreadyCommented')}
+                </Text>
+              </View>
+            ) : signedIn ? (
               <Composer contentId={contentId} />
             ) : (
               <Pressable
@@ -257,6 +275,7 @@ function Composer({ contentId }: { contentId: number | null }) {
 function errorText(error: unknown, t: TFunction): string {
   if (error instanceof CommentRejectedError) {
     if (error.reason === 'blocked') return t('comments.blocked');
+    if (error.reason === 'duplicate') return t('comments.alreadyCommented');
     if (error.reason === 'signIn') return t('comments.signInToComment');
     return error.message || t('comments.sendFailed');
   }

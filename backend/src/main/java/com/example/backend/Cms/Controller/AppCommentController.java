@@ -26,7 +26,8 @@ import java.util.List;
  *
  * <pre>
  *   GET    /api/v1/app/content/{id}/comments   ro'yxat — mehmonga ham ochiq
- *   POST   /api/v1/app/content/{id}/comments   yozish — kirish talab qilinadi
+ *   POST   /api/v1/app/content/{id}/comments   yozish — kirish talab qilinadi,
+ *                                               bitta odamga bitta izoh (409)
  *   DELETE /api/v1/app/comments/{id}           o'z izohini o'chirish
  * </pre>
  *
@@ -59,6 +60,7 @@ public class AppCommentController {
                 .size(result.getSize())
                 .totalItems(result.getTotalElements())
                 .hasMore(result.hasNext())
+                .alreadyCommented(commentService.hasActiveComment(viewer, contentId))
                 .build());
     }
 
@@ -94,6 +96,12 @@ public class AppCommentController {
         private long totalItems;
         /** Keyingi sahifa bormi — ilova shunga qarab pastga yetganda so'raydi. */
         private boolean hasMore;
+
+        /**
+         * So'rayotgan odamning bu kontentda faol izohi bor — ikkinchisini
+         * yoza olmaydi (bitta odam, bitta izoh). Mehmonda doim {@code false}.
+         */
+        private boolean alreadyCommented;
     }
 
     @Data

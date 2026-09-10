@@ -9,6 +9,7 @@ import com.example.backend.Cms.Repository.CommentRepo;
 import com.example.backend.Cms.Repository.ContentRepo;
 import com.example.backend.Cms.Repository.UserAccountRepo;
 import com.example.backend.Entity.User;
+import com.example.backend.Repository.UserRepo;
 import com.example.backend.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -16,6 +17,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * Ilovadagi izohlar — ro'yxat, yozish, o'z izohini o'chirish (10.09.2026).
@@ -33,6 +36,16 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * O'chirish ham HARD DELETE emas — {@link CommentStatus#DELETED}: shikoyat
  * tarixi va moderator qarori saqlanadi (§58).
+ *
+ * <h2>Bitta odam — bitta kontentga bitta izoh (buyurtmachi, 10.09.2026)</h2>
+ * <pre>
+ *   VISIBLE izohi bor  → ikkinchisi rad etiladi (409)
+ *   HIDDEN izohi bor   → ham rad etiladi: aks holda moderator yashirgan
+ *                        gapni qayta yozib, moderatsiyani aylanib o'tardi
+ *   DELETED            → yangisini yoza oladi: o'chirish odamni bu
+ *                        kontentdan butunlay bloklab qo'ymasligi kerak
+ * </pre>
+ * Serial — bitta kontent: qism izohlari ham shu bitta hisobga kiradi.
  */
 @Service
 @RequiredArgsConstructor
@@ -44,8 +57,13 @@ public class AppCommentService {
     /** Bitta sahifada eng ko'pi bilan — ilova 20 tadan so'raydi. */
     static final int MAX_PAGE_SIZE = 50;
 
+    /** «Allaqachon yozgan» deb hisoblanadigan holatlar — sinf izohiga qarang. */
+    private static final List<CommentStatus> ACTIVE =
+            List.of(CommentStatus.VISIBLE, CommentStatus.HIDDEN);
+
     private final CommentRepo commentRepo;
     private final ContentRepo contentRepo;
+    private final UserRepo userRepo;
     private final UserAccountRepo accountRepo;
     private final AccessService accessService;
 
@@ -68,6 +86,20 @@ public class AppCommentService {
                         CommentStatus.HIDDEN, viewer.getId(), pageable);
     }
 
+    /**
+     * Shu odam bu kontentga yozib bo'lganmi — ilova yozish maydoni o'rniga
+     * «siz izoh qoldirgansiz» ni ko'rsatishi uchun.
+     *
+     * ⚠️ Ro'yxatdan hisoblab bo'lmaydi: u sahifalab keladi, odamning
+     * izohi esa beshinchi sahifada bo'lishi mumkin.
+     */
+    @Transactional(readOnly = true)
+    public boolean hasActiveComment(User viewer, Long contentId) {
+        return viewer != null
+                && commentRepo.existsByContentIdAndAuthorIdAndStatusIn(
+                        contentId, viewer.getId(), ACTIVE);
+    }
+
     @Transactional
     public Comment post(User author, Long contentId, String text) {
         Content content = visibleContent(author, contentId);
@@ -77,6 +109,17 @@ public class AppCommentService {
         UserAccount account = accountRepo.findByUserId(author.getId()).orElse(null);
         if (account != null && account.getStatus() == UserStatus.BLOCKED) {
             throw BusinessException.accessDenied("Hisobingiz bloklangan");
+        }
+
+        // ⚠️ Avval qulf, keyin tekshiruv: aks holda bir odamning ikkita
+        // parallel so'rovi ikkalasi ham «izoh yo'q» ni ko'rardi
+        // (UserRepo.lockById izohi).
+        userRepo.lockById(author.getId());
+        if (commentRepo.existsByContentIdAndAuthorIdAndStatusIn(
+                contentId, author.getId(), ACTIVE)) {
+            throw BusinessException.duplicate("COMMENT_EXISTS",
+                    "Siz bu kontentga izoh qoldirgansiz. Yangisini yozish uchun "
+                    + "avvalgisini o'chiring.");
         }
 
         String clean = text == null ? "" : text.strip();

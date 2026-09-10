@@ -68,12 +68,22 @@ jest.mock('../api', () => {
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { Text, TextInput } from 'react-native';
 
-import { CommentsUnavailableError, mapComment, mapCommentPage } from '../api';
+import {
+  CommentRejectedError,
+  CommentsUnavailableError,
+  mapComment,
+  mapCommentPage,
+  postComment,
+} from '../api';
 import { CommentsScreen, openComments } from '../CommentsScreen';
 
-function page(items: unknown[]) {
+function page(items: unknown[], alreadyCommented = false) {
   return {
-    data: { pages: [{ items, page: 0, totalItems: items.length, hasMore: false }] },
+    data: {
+      pages: [
+        { items, page: 0, totalItems: items.length, hasMore: false, alreadyCommented },
+      ],
+    },
     error: null,
     isPending: false,
     isError: false,
@@ -146,6 +156,32 @@ describe('разбор ответа', () => {
     expect(() => mapCommentPage({ totalItems: 0 })).toThrow(CommentsUnavailableError);
   });
 
+  it('«уже писал» читается строго: только true', () => {
+    expect(mapCommentPage({ items: [], alreadyCommented: true }).alreadyCommented).toBe(
+      true
+    );
+    expect(mapCommentPage({ items: [], alreadyCommented: 'yes' }).alreadyCommented).toBe(
+      false
+    );
+    // Старая сборка поля не присылает — поле ввода остаётся.
+    expect(mapCommentPage({ items: [] }).alreadyCommented).toBe(false);
+  });
+
+  it('409 при отправке — «уже писал», а не «попробуйте ещё раз»', async () => {
+    const { api } = jest.requireMock('@/lib/api') as { api: { post: jest.Mock } };
+    api.post.mockRejectedValueOnce(
+      Object.assign(new Error('409'), {
+        isAxiosError: true,
+        response: { status: 409, data: { code: 'COMMENT_EXISTS', message: 'bor' } },
+      })
+    );
+
+    const failure = await postComment(42, 'Ikkinchi').catch((e: unknown) => e);
+
+    expect(failure).toBeInstanceOf(CommentRejectedError);
+    expect((failure as CommentRejectedError).reason).toBe('duplicate');
+  });
+
   it('mapComment не падает на null', () => {
     expect(mapComment(null)).toBeNull();
   });
@@ -201,6 +237,22 @@ describe('лента', () => {
     };
 
     expect(render().root.findAllByType(TextInput)).toHaveLength(0);
+  });
+
+  /**
+   * Один человек — один комментарий (заказчик, 10.09.2026). Поле ввода,
+   * которое заведомо откажет, хуже объяснения, что делать.
+   */
+  it('уже писал — вместо поля объяснение, как написать заново', () => {
+    mockSignedIn = true;
+    mockComments = page([mine, theirs], true);
+
+    const tree = render();
+
+    expect(tree.root.findAllByType(TextInput)).toHaveLength(0);
+    expect(texts(tree)).toContain('comments.alreadyCommented');
+    // Путь назад — удалить свой — на месте.
+    expect(deleteButtons(tree)).toHaveLength(1);
   });
 
   it('пустая лента — приглашение написать первым', () => {

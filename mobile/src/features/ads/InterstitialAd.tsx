@@ -4,7 +4,7 @@ import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { trackAdClick, trackAdImpression } from '@/features/analytics/api';
 import { bannerTarget } from '@/features/home/sections';
@@ -79,7 +79,20 @@ export function InterstitialAd() {
   return (
     <Modal visible transparent animationType="fade" onRequestClose={() => setOpen(false)}>
       <View className="flex-1 items-center justify-center bg-ink/90 px-6">
-        <View className="w-full overflow-hidden rounded-card-lg bg-surface">
+        {/*
+        ⚠️ Высота ограничена, содержимое прокручивается.
+
+        Картинка идёт в пропорции 3:4 от ШИРИНЫ экрана, а под ней ещё
+        бейдж, заголовок, подзаголовок и кнопка. На узком телефоне и на
+        длинном заголовке карточка перерастала экран, а так как она
+        отцентрована — срезало её С ОБЕИХ сторон: сверху уезжал крестик,
+        снизу кнопка. Реклама, которую нечем ни закрыть, ни открыть,
+        читается как зависшее приложение.
+      */}
+        <View
+          className="w-full overflow-hidden rounded-card-lg bg-surface"
+          style={{ maxHeight: '88%' }}
+        >
           {/*
             ⚠️ Крестик — первым в разметке и всегда на месте.
 
@@ -96,46 +109,56 @@ export function InterstitialAd() {
             <Ionicons name="close" size={20} color={colors.white} />
           </Pressable>
 
-          {image ? (
-            <Image
-              source={{ uri: image }}
-              style={{ width: '100%', aspectRatio: 3 / 4 }}
-              contentFit="cover"
-              transition={150}
-            />
-          ) : null}
+          {/* ⚠️ Крестик ОСТАЁТСЯ снаружи прокрутки — он всегда на месте,
+              куда бы человек ни отлистал содержимое. */}
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            {image ? (
+              <Image
+                source={{ uri: image }}
+                style={{ width: '100%', aspectRatio: 3 / 4 }}
+                contentFit="cover"
+                transition={150}
+              />
+            ) : null}
 
-          <View className="gap-2 p-4">
-            {/*
+            <View className="gap-2 p-4">
+              {/*
               Бейдж «Reklama» — только у платного размещения. Собственный
               анонс платформы им не помечается: называть свой же анонс
               рекламой значит сбивать человека с толку (то же правило,
               что и в ленте — `bannerBadgeKey`).
             */}
-            {banner.audience === 'ADVERTISEMENT' ? (
-              <View className="self-start rounded-pill bg-surface-2 px-2.5 py-1">
-                <Text className="text-micro uppercase text-text-muted">{t('common.ad')}</Text>
-              </View>
-            ) : null}
+              {banner.audience === 'ADVERTISEMENT' ? (
+                <View className="self-start rounded-pill bg-surface-2 px-2.5 py-1">
+                  <Text className="text-micro uppercase text-text-muted">
+                    {t('common.ad')}
+                  </Text>
+                </View>
+              ) : null}
 
-            {banner.title ? (
-              <Text className="text-h2 text-text">{banner.title}</Text>
-            ) : null}
-            {banner.subtitle ? (
-              <Text className="text-body text-text-muted">{banner.subtitle}</Text>
-            ) : null}
+              {banner.title ? (
+                <Text className="text-h2 text-text">{banner.title}</Text>
+              ) : null}
+              {banner.subtitle ? (
+                <Text className="text-body text-text-muted">{banner.subtitle}</Text>
+              ) : null}
 
-            {cta ? (
-              <Pressable
-                onPress={go}
-                accessibilityRole="button"
-                accessibilityLabel={cta}
-                className="mt-1 items-center rounded-card bg-purple px-4 py-3 active:opacity-80"
-              >
-                <Text className="text-body font-semibold text-white">{cta}</Text>
-              </Pressable>
-            ) : null}
-          </View>
+              {cta ? (
+                <Pressable
+                  onPress={go}
+                  accessibilityRole="button"
+                  accessibilityLabel={cta}
+                  className="mt-1 items-center rounded-card bg-purple px-4 py-3 active:opacity-80"
+                >
+                  <Text className="text-body font-semibold text-white">{cta}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </ScrollView>
         </View>
       </View>
     </Modal>

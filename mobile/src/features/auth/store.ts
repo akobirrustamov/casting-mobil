@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { useDeviceStore } from '@/features/devices/store';
+import { useDeviceStore, type DeviceStatus } from '@/features/devices/store';
 import { setAuthToken, setTokenRefresher } from '@/lib/api';
 import { getItem, removeItem, setItem } from '@/lib/storage';
 
@@ -76,8 +76,10 @@ type AuthState = {
   /**
    * @param refreshToken необязателен: dev-вход выдаёт только access-токен.
    *        Без него сессия живёт 15 минут — как и раньше.
+   * @returns чем закончилась регистрация устройства — по ней экран входа
+   *          решает, куда вести человека.
    */
-  signIn: (token: string, user: AuthUser, refreshToken?: string | null) => Promise<void>;
+  signIn: (token: string, user: AuthUser, refreshToken?: string | null) => Promise<DeviceStatus>;
   signOut: () => Promise<void>;
 };
 
@@ -100,6 +102,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthorized: false,
 
   restore: async () => {
+    /**
+     * ⚠️ Ключ установки — ПЕРВЫМ ДЕЛОМ, до чтения токена и до любого запроса.
+     *
+     * <h2>Что было сломано</h2>
+     * `prime()` был написан, снабжён пояснением «вызывается ДО входа» —
+     * и не вызывался НИОТКУДА. То есть `setDeviceId` не срабатывал
+     * никогда, и заголовок `X-Device-Id` не уходил ни в одном запросе.
+     *
+     * Наружу это выходило дважды, и оба раза выглядело как ерунда в
+     * другом месте:
+     *
+     * 1. `GET /api/v1/app/devices` не мог отметить `current` — метка
+     *    «Bu qurilma» не появлялась ни у кого. А раз своё устройство
+     *    не опознано, то и «выйти с этого устройства» не выводило из
+     *    аккаунта: экран проверяет именно `device.current`.
+     * 2. Бэкенд записывает этот заголовок в выданный refresh-токен
+     *    (`RefreshTokenService.issue`). Без него токен оставался ничей,
+     *    и закрытие устройства не закрывало его сессию — ровно то, о
+     *    чём предупреждает комментарий в `lib/api`.
+     *
+     * ⚠️ Именно `await`, а не фоном: следом идёт `ensureRegistered`, и
+     * запрос без заголовка снова остался бы «ничьим».
+     */
+    await useDeviceStore.getState().prime();
+
     const [token, refreshToken, rawUser] = await Promise.all([
       getItem(TOKEN_KEY),
       getItem(REFRESH_KEY),
@@ -174,9 +201,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     ]);
     set({ token, refreshToken, user, isAuthorized: true });
 
-    // Без await: экран входа уже уводит человека дальше. Если мест нет,
-    // `app/_layout` увидит статус `limit` и покажет выбор устройства.
-    void useDeviceStore.getState().ensureRegistered();
+    /**
+     * ⚠️ Регистрацию устройства ЖДЁМ, а не запускаем в фоне.
+     *
+     * <h2>Что здесь ломалось</h2>
+     * Раньше стоял `void`: экран входа тут же делал
+     * `router.replace('/(tabs)')`, а ответ `409 DEVICE_LIMIT_REACHED`
+     * приходил через сотню миллисекунд и поднимал ВТОРОЙ переход —
+     * `router.replace('/devices')` из `app/_layout`. Два `replace` по
+     * корневому стеку в один кадр, и в собранной APK человек получал
+     * ЧЁРНЫЙ экран: ошибки нет, `ErrorBoundary` молчит, а навигатор не
+     * показывает ничего. При следующем запуске всё работало — там
+     * стартовый маршрут уже `(tabs)` и второго перехода не возникает.
+     *
+     * Поэтому переход теперь ровно один, и делает его тот, кто знает
+     * результат. Цена — те же сто миллисекунд, но ДО перехода, а не
+     * после.
+     *
+     * ⚠️ Метод не бросает: `ensureRegistered` возвращает `error`, если
+     * сеть отвалилась. Вход из-за этого срываться не должен — лимит
+     * всё равно применит бэкенд на обновлении токена.
+     */
+    return useDeviceStore.getState().ensureRegistered();
   },
 
   signOut: async () => {
