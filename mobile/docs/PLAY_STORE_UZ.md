@@ -313,9 +313,21 @@ Mexanizm `OtpService` da: bitta raqamga SMS yuborilmaydi, kod esa o'zgarmas.
 **Sukut bo'yicha o'chiq** — faqat ikkala sozlama ham berilganda ishlaydi:
 
 ```properties
-app.otp.demo.phone=+998900000000
+app.otp.demo.phone=+998901234567
 app.otp.demo.code=0000
 ```
+
+Tekshiruvchi uchun bu shunday ko'rinadi: kirish ekraniga raqamni teradi,
+odatdagi SMS kodi maydonini oladi, `0000` yozadi va ilovaga kiradi. SMS
+umuman yuborilmaydi. 13.09.2026 da local profilda tekshirildi: `send` →
+`{"sent":true}` va logda SMS yo'q, `0000` bilan `verify` → sessiya, boshqa
+kod bilan → `422`, ikkinchi kirishda ism so'ralmaydi.
+
+⚠️ **Prodda BOSHQA raqam va kod oling.** Yuqoridagi juftlik
+`application-local.properties` va `application-dev.properties` da, ya'ni
+repozitoriyda turadi — u bilan GitHub'ni ochgan har kim productionga
+Premium hisob bilan kirardi. Jangovar qiymatlar faqat
+`/opt/uzcasting/application.properties` da va App access maydonida.
 
 ⚠️ **Kod aynan 4 xonali** — ilovadagi maydon 4 katakli, olti xonalisini
 terib bo'lmaydi. Test buni qulflab qo'ygan.

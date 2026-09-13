@@ -193,11 +193,18 @@ o'zgarmadi.
 Yoqish uchun `/opt/uzcasting/application.properties` ga ikki qator:
 
 ```properties
-app.otp.demo.phone=+998900000000
+app.otp.demo.phone=+998901234567
 app.otp.demo.code=0000
 ```
 
-Raqam va kodni Play'ga yuborishdan oldin tanlang — yuqoridagilar MISOL.
+⚠️ **Prodda BOSHQA raqam va kod tanlang.** Yuqoridagi juftlik ishlab
+chiqish profillarida (`application-local`, `application-dev`) yoqilgan va
+repozitoriyda turadi: prodda ham shu bo'lsa, kodni o'qigan har kim
+Premium hisob bilan kira olardi. Jangovar qiymatlar faqat serverdagi
+faylda va Play Console'ning App access maydonida bo'ladi.
+
+Stend uchun esa hech narsa sozlash kerak emas: `local` va `dev`
+profillarida `+998 90 123 45 67` / `0000` allaqachon ishlaydi.
 
 ⚠️ **Kod AYNAN 4 XONALI bo'lishi shart.** Ilovadagi kod maydoni 4 katakli
 (`mobile/app/(auth)/otp.tsx`, `CODE_LENGTH = 4`): besh yoki olti xonali kod
