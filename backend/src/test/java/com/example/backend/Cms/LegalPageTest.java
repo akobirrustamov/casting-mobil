@@ -67,6 +67,30 @@ class LegalPageTest {
         }
 
         /**
+         * Hisobni o'chirish sahifasi (13.09.2026).
+         *
+         * ⚠️ Google Play uchun MAJBURIY: «Data deletion» siyosati ilova
+         * ichidagi tugmadan tashqari ilovasiz ochiladigan sahifani ham
+         * talab qiladi. Manzil Play Console'ga yoziladi, tekshiruvchi uni
+         * brauzerda ochadi — SPA qobig'ini ko'rsa, rad javobi keladi.
+         *
+         * Sahifada ikkita ro'yxat bo'lishi shart: nima o'chiriladi va nima
+         * qancha muddat saqlanadi. Google aynan shularni qidiradi.
+         */
+        @Test
+        @DisplayName("/hisobni-ochirish — o'chirish yo'riqnomasi, SPA emas")
+        void accountDeletionIsServed() throws Exception {
+            String body = mockMvc.perform(get("/hisobni-ochirish"))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            assertThat(body).contains("Hisobni o'chirish");
+            assertThat(body).contains("Qaysi ma'lumotlar o'chiriladi");
+            assertThat(body).contains("Qaysilari qoladi");
+            assertThat(body).doesNotContain(SPA_MARKER);
+        }
+
+        /**
          * Kodlash — bu tafsilot emas: sahifalar o'zbekcha, ularda apostrof
          * va «o'» bor. Charset yo'qolsa matn brauzerda buziladi.
          */

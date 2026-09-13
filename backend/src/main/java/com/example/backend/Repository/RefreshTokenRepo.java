@@ -12,6 +12,15 @@ import java.util.UUID;
 
 public interface RefreshTokenRepo extends JpaRepository<RefreshToken, UUID> {
 
+    /**
+     * Hisob o'chirilganda barcha sessiyalar bekor qilinadi (13.09.2026).
+     *
+     * ⚠️ Bu ENG MUHIM qadam. Foydalanuvchi ma'lumotini tozalab, tokenni
+     * qoldirsak — telefonidagi ilova o'chirilgan hisob nomidan ishlashda
+     * davom etardi.
+     */
+    long deleteByUserId(UUID userId);
+
     List<RefreshToken> findAllByUserId(UUID userId);
 
     /**

@@ -70,6 +70,61 @@ public class OtpService {
     @Value("${app.otp.verified-ttl-seconds:900}")
     private int verifiedTtlSeconds;
 
+    /**
+     * Google Play tekshiruvchisi uchun demo raqam (13.09.2026).
+     *
+     * <h2>Nima uchun bu kerak</h2>
+     * Ilovaga kirish — o'zbek raqamiga keladigan SMS kod orqali. Google
+     * tekshiruvchisi boshqa mamlakatda o'tiradi va SMS ololmaydi: u
+     * ilovani ochib, kirish ekranidan nariga o'ta olmaydi va «ilova
+     * ishlamaydi» deb rad javobini yozadi.
+     *
+     * Bu raqam uchun SMS YUBORILMAYDI, kod esa oldindan ma'lum.
+     *
+     * ⚠️ IKKALA sozlama ham to'ldirilmasa, mexanizm butunlay o'chiq.
+     * Sukut bo'yicha bo'sh — ya'ni oddiy holatda hech qanday «orqa eshik»
+     * yo'q. Prodda u faqat Play'ga yuborish vaqtida yoqiladi.
+     *
+     * ⚠️ Raqamni ommaviy joyda e'lon qilmang: u faqat Play Console'ning
+     * «App access» bo'limiga yoziladi va tekshiruvchidan boshqa hech kim
+     * ko'rmaydi.
+     */
+    @Value("${app.otp.demo.phone:}")
+    private String demoPhone;
+
+    @Value("${app.otp.demo.code:}")
+    private String demoCode;
+
+    /**
+     * Normallashtirilgan demo raqam yoki {@code null} — mexanizm o'chiq.
+     *
+     * ⚠️ Bir marta hisoblanadi: {@link #normalize} noto'g'ri raqamda
+     * istisno tashlaydi, va uni HAR bir kirishda ushlab yurish
+     * xizmatning issiq yo'liga keraksiz xavf qo'shardi.
+     */
+    private String demoNormalized;
+
+    @jakarta.annotation.PostConstruct
+    void resolveDemoPhone() {
+        if (demoPhone == null || demoPhone.isBlank() || demoCode == null || demoCode.isBlank()) {
+            return;
+        }
+        try {
+            demoNormalized = normalize(demoPhone);
+            // ⚠️ Ogohlantirish ATAYLAB: bu sozlama prodda tasodifan
+            // qolib ketmasligi kerak, va log uni ko'rsatib turadi.
+            log.warn("Demo telefon raqami YOQILGAN — bu raqamga SMS yuborilmaydi. "
+                    + "Google Play tekshiruvidan keyin app.otp.demo.* ni o'chiring.");
+        } catch (RuntimeException e) {
+            log.error("app.otp.demo.phone noto'g'ri formatda, demo raqam o'chiq qoldi", e);
+        }
+    }
+
+    /** Shu raqam demo raqammi. */
+    private boolean isDemo(String normalizedPhone) {
+        return demoNormalized != null && demoNormalized.equals(normalizedPhone);
+    }
+
     private final Map<String, Entry> codes = new ConcurrentHashMap<>();
 
     /** Kodi tasdiqlangan raqamlar → belgi qachongacha amal qiladi. */
@@ -79,6 +134,12 @@ public class OtpService {
     public int send(String rawPhone) {
         String phone = normalize(rawPhone);
         Instant now = Instant.now();
+
+        // ⚠️ Demo raqam SMS ham olmaydi, kutish ham yo'q: tekshiruvchi
+        // kodni allaqachon biladi va ikki daqiqa kutishning ma'nosi yo'q.
+        if (isDemo(phone)) {
+            return ttlSeconds;
+        }
 
         Entry existing = codes.get(phone);
         if (existing != null) {
@@ -111,6 +172,16 @@ public class OtpService {
     /** @throws BusinessException kod noto'g'ri, muddati o'tgan yoki urinishlar tugagan bo'lsa */
     public void verify(String rawPhone, String code) {
         String phone = normalize(rawPhone);
+
+        // Demo raqam uchun kod o'zgarmas va muddati tugamaydi.
+        if (isDemo(phone)) {
+            if (!demoCode.equals(code)) {
+                throw new BusinessException("OTP_INVALID", "Kod noto'g'ri",
+                        HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+            return;
+        }
+
         Entry entry = codes.get(phone);
 
         if (entry == null || entry.expiresAt.isBefore(Instant.now())) {

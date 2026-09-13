@@ -13,6 +13,9 @@ import java.util.UUID;
 
 public interface WatchProgressRepo extends JpaRepository<WatchProgress, Long> {
 
+    /** Hisob o'chirilganda — nima ko'rilgani odamning o'zi haqidagi ma'lumot. */
+    long deleteByUserId(java.util.UUID userId);
+
     /**
      * Bitta video uchun joriy holat.
      *

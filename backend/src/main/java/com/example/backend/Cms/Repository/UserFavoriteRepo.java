@@ -12,6 +12,9 @@ import java.util.UUID;
 
 public interface UserFavoriteRepo extends JpaRepository<UserFavorite, Long> {
 
+    /** Hisob o'chirilganda — shaxsiy ro'yxat, egasidan boshqa hech kimga kerak emas. */
+    long deleteByUserId(java.util.UUID userId);
+
     /**
      * Bitta foydalanuvchining shu turdagi sevimlilari.
      *
