@@ -55,6 +55,9 @@ jest.mock('../api', () => {
     ...actual,
     useComments: () => mockComments,
     useDeleteComment: () => ({ mutate: mockMutate }),
+    // Жалоба на комментарий (13.09.2026): без этой заглушки настоящий
+    // хук ищет QueryClient, которого в этом тесте нет.
+    useReportComment: () => ({ mutateAsync: jest.fn(), isPending: false }),
     usePostComment: () => ({
       mutate: jest.fn(),
       reset: jest.fn(),

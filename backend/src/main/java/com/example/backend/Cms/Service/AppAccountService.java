@@ -1,5 +1,7 @@
 package com.example.backend.Cms.Service;
 
+import com.example.backend.Cms.Entity.UserAccount;
+import com.example.backend.Cms.Enums.SubscriptionSource;
 import com.example.backend.Entity.Role;
 import com.example.backend.Entity.User;
 import com.example.backend.Enums.UserRoles;
@@ -11,10 +13,13 @@ import com.example.backend.Sms.OtpService;
 import com.example.backend.exceptions.BusinessException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +73,17 @@ public class AppAccountService {
     private final OtpService otpService;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final PremiumGrantService premiumGrantService;
+
+    /**
+     * Demo hisobga beriladigan Premium — kunlarda. {@code 0} bo'lsa berilmaydi.
+     *
+     * Sukut bo'yicha 90 kun: Play tekshiruvi bir necha kun davom etadi,
+     * yangilanish yuborilsa qayta tekshiriladi, va har safar sozlamani
+     * eslab o'tirish kerak bo'lmasin.
+     */
+    @Value("${app.otp.demo.premium-days:90}")
+    private int demoPremiumDays;
 
     /**
      * 1-qadam: raqamga SMS kod.
@@ -103,6 +119,7 @@ public class AppAccountService {
 
         Optional<User> found = userRepo.findByPhone(phone);
         if (found.isPresent() && hasName(found.get())) {
+            grantDemoPremium(found.get(), phone);
             Map<String, Object> response = session(found.get(), request);
             response.put("name_required", false);
             return response;
@@ -143,9 +160,45 @@ public class AppAccountService {
         // eski ism uning o'z yozuvidan ustun turmaydi.
         user.setName(name);
 
-        Map<String, Object> response = session(userRepo.save(user), request);
+        User saved = userRepo.save(user);
+        grantDemoPremium(saved, phone);
+
+        Map<String, Object> response = session(saved, request);
         response.put("name_required", false);
         return response;
+    }
+
+    /**
+     * Google Play tekshiruvchisining hisobiga Premium beradi (13.09.2026).
+     *
+     * <h2>Nima uchun kerak</h2>
+     * Katalogning bir qismi Premium ostida. Tekshiruvchi oddiy hisob bilan
+     * kirsa, u yopiq kartochkalarga uriladi va «to'lov tez orada» degan
+     * yozuvni ko'radi — ya'ni ilovaning yarmini umuman baholay olmaydi.
+     * Bundan tashqari yopiq kontent va ishlamaydigan to'lov birga
+     * «ilovada tashqi to'lov bormi?» degan keraksiz savolni tug'diradi.
+     *
+     * ⚠️ FAQAT demo raqam uchun. Boshqa hech kimga tegmaydi: shart
+     * {@link OtpService#isDemoPhone} da, u esa sozlama berilmaganda
+     * hamisha {@code false}.
+     *
+     * ⚠️ Har kirishda uzaytirilmaydi — muddati tugayotgan bo'lsagina.
+     * Aks holda o'nta kirish o'n yillik obunaga aylanardi va obunalar
+     * tarixi ma'nosiz yozuvlar bilan to'lardi.
+     */
+    private void grantDemoPremium(User user, String normalizedPhone) {
+        if (demoPremiumDays <= 0 || !otpService.isDemoPhone(normalizedPhone)) {
+            return;
+        }
+
+        UserAccount account = premiumGrantService.accountOf(user.getId());
+        LocalDateTime until = account.getPremiumUntil();
+        if (until != null && until.isAfter(LocalDateTime.now().plusDays(7))) {
+            return;
+        }
+
+        premiumGrantService.extend(user, Period.ofDays(demoPremiumDays),
+                SubscriptionSource.ADMIN_GIFT, null, null);
     }
 
     /** Bo'sh satr ham «ismi yo'q» degani — u profilda bo'shliq bo'lib ko'rinadi. */

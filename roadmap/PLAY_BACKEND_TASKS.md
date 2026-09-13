@@ -89,8 +89,8 @@ muallif «O'chirilgan foydalanuvchi» bo'ladi; to'lov va obuna yozuvlari
 qoladi. Telefon bo'shaydi — o'sha raqam bilan qayta ro'yxatdan o'tish
 ishlaydi (test bilan qulflangan).
 
-⚠️ **Mobil ilovada ekran hali yo'q** — u alohida ish
-(mobile/docs/PLAY_STORE_UZ.md §6).
+✅ **Mobil ilovadagi ekran ham tayyor** (13.09.2026):
+`Profil → Hisobni o'chirish`.
 
 ---
 
@@ -151,7 +151,7 @@ Qoidalar: bitta odam bitta izohga bir marta (409), o'z izohiga shikoyat
 qilib bo'lmaydi (422), o'chirilgan izoh — 404. Shikoyat izohni AVTOMATIK
 yashirmaydi: qarorni moderator qabul qiladi.
 
-⚠️ **Mobil ilovada tugma hali yo'q** — alohida ish.
+✅ **Mobil ilovadagi tugma ham tayyor** (13.09.2026): begona izohdagi bayroqcha.
 
 ### 2.2. Muallifni yashirish (ixtiyoriy, lekin tavsiya etiladi)
 
@@ -175,8 +175,7 @@ tekshiruvchisi boshqa mamlakatda o'tiradi va SMS ololmaydi. Kira olmasa —
 Kerak: **prodda bitta o'zgarmas test raqami**, uning uchun server:
 
 - haqiqiy SMS **yubormaydi**;
-- oldindan kelishilgan kodni qabul qiladi (masalan `+998 90 000 00 00` →
-  `000000`);
+- oldindan kelishilgan kodni qabul qiladi (masalan `+998 90 000 00 00` → `0000`);
 - oddiy foydalanuvchi huquqlarini beradi (katalog, kasting, video).
 
 ⚠️ Hozir bunday narsa faqat `DevDataSeeder` da bor, u esa serverda yoqilmaydi
@@ -195,10 +194,20 @@ Yoqish uchun `/opt/uzcasting/application.properties` ga ikki qator:
 
 ```properties
 app.otp.demo.phone=+998900000000
-app.otp.demo.code=000000
+app.otp.demo.code=0000
 ```
 
 Raqam va kodni Play'ga yuborishdan oldin tanlang — yuqoridagilar MISOL.
+
+⚠️ **Kod AYNAN 4 XONALI bo'lishi shart.** Ilovadagi kod maydoni 4 katakli
+(`mobile/app/(auth)/otp.tsx`, `CODE_LENGTH = 4`): besh yoki olti xonali kod
+sozlansa, tekshiruvchi uni terib ham ko'ra olmaydi. Test buni qulflab
+qo'ygan.
+
+**Demo hisobga Premium beriladi** (`app.otp.demo.premium-days`, sukut
+bo'yicha 90 kun). Sababi: katalogning bir qismi Premium ostida, va oddiy
+hisob bilan tekshiruvchi ilovaning yarmini umuman ko'rmasdi. Har kirishda
+uzaytirilmaydi — muddati tugayotgan bo'lsagina. `0` qo'yilsa berilmaydi.
 
 ⚠️ Yoqilganda ishga tushishda `WARN` chiqadi: «Demo telefon raqami
 YOQILGAN». Bu ataylab — sozlama prodda tasodifan qolib ketmasin.
@@ -242,8 +251,8 @@ yig'ilib, serverga chiqqandan keyin ko'rinadi.
 |---|---|
 | **Backend/DevOps** | `V38` migratsiyasi bilan deploy; `/maxfiylik` va `/hisobni-ochirish` sahifalari faqat shundan keyin yangilanadi |
 | **Backend/DevOps** | Play'ga yuborishdan oldin `app.otp.demo.*` ni yoqish, keyin o'chirish |
-| **Mobil** | Sozlamalarda «Hisobni o'chirish» ekrani |
-| **Mobil** | Izohda «Shikoyat qilish» tugmasi va sabablar ro'yxati |
+| ~~**Mobil**~~ | ~~Sozlamalarda «Hisobni o'chirish» ekrani~~ — 13.09.2026 da tayyor |
+| ~~**Mobil**~~ | ~~Izohda «Shikoyat qilish» tugmasi~~ — 13.09.2026 da tayyor |
 
 ---
 

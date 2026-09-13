@@ -183,6 +183,68 @@ export async function postComment(contentId: number, text: string): Promise<AppC
   }
 }
 
+/**
+ * Причины жалобы. Список короткий намеренно: в приложении это кнопки, и
+ * из десяти вариантов человек не выбирает вовсе. Коды совпадают с
+ * `CommentReportReason` на бэкенде.
+ */
+export const REPORT_REASONS = ['SPAM', 'INSULT', 'ADULT', 'OTHER'] as const;
+
+export type ReportReason = (typeof REPORT_REASONS)[number];
+
+/** Отказ сервера на жалобу — экран показывает разный текст. */
+export class ReportRejectedError extends Error {
+  constructor(
+    readonly reason: 'already' | 'signIn' | 'gone' | 'own',
+    message: string
+  ) {
+    super(message);
+    this.name = 'ReportRejectedError';
+  }
+}
+
+/**
+ * Пожаловаться на чужой комментарий — `POST /comments/{id}/report`.
+ *
+ * <h2>Зачем это есть</h2>
+ * Требование политики Google Play для приложений с пользовательским
+ * контентом: должен быть способ сообщить о недопустимом. Ревьюер
+ * открывает список комментариев и ищет эту кнопку.
+ *
+ * <h2>⚠️ Жалоба ничего не скрывает</h2>
+ * Комментарий остаётся на месте, он лишь попадает в очередь модерации.
+ * Иначе несколько сговорившихся аккаунтов удаляли бы любого — поэтому и
+ * текст в приложении обещает «отправлено модератору», а не «удалено».
+ */
+export async function reportComment(
+  commentId: number,
+  reason: ReportReason
+): Promise<void> {
+  try {
+    await api.post(`/api/v1/app/comments/${commentId}/report`, { reason });
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      const status = error.response.status;
+      const message = serverMessage(error) ?? '';
+      if (status === 401) throw new ReportRejectedError('signIn', message);
+      if (status === 409) throw new ReportRejectedError('already', message);
+      // 422 — «на свой комментарий нельзя»: кнопки у своего и нет, но
+      // ответ мог прийти на устаревший список.
+      if (status === 422) throw new ReportRejectedError('own', message);
+      if (status === 404 || status === 405)
+        throw new ReportRejectedError('gone', message);
+    }
+    throw error;
+  }
+}
+
+export function useReportComment() {
+  return useMutation({
+    mutationFn: ({ commentId, reason }: { commentId: number; reason: ReportReason }) =>
+      reportComment(commentId, reason),
+  });
+}
+
 export async function deleteComment(commentId: number): Promise<void> {
   await api.delete(`/api/v1/app/comments/${commentId}`);
 }

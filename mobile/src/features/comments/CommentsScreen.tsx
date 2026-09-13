@@ -29,11 +29,15 @@ import {
   COMMENT_MAX_LENGTH,
   CommentRejectedError,
   CommentsUnavailableError,
+  ReportRejectedError,
   useComments,
   useDeleteComment,
   usePostComment,
+  useReportComment,
   type AppComment,
+  type ReportReason,
 } from './api';
+import { ReportSheet } from './ReportSheet';
 import { ago } from './time';
 
 /**
@@ -73,6 +77,10 @@ export function CommentsScreen({ contentId }: { contentId: number | null }) {
 
   const comments = useComments(contentId);
   const remove = useDeleteComment(contentId);
+  const report = useReportComment();
+
+  /** На какой комментарий жалуемся — `null` закрывает шторку. */
+  const [reporting, setReporting] = useState<AppComment | null>(null);
 
   const items = comments.data?.pages.flatMap((p) => p.items) ?? [];
   const total = comments.data?.pages[0]?.totalItems ?? null;
@@ -102,6 +110,34 @@ export function CommentsScreen({ contentId }: { contentId: number | null }) {
         onPress: () => remove.mutate(comment.id),
       },
     ]);
+  };
+
+  /**
+   * ⚠️ Итог показываем ВСЕГДА, в том числе при отказе.
+   *
+   * Жалоба — действие без видимого результата: комментарий остаётся на
+   * месте. Без ответного сообщения человек решает, что нажатие не
+   * сработало, и жмёт ещё раз — а сервер на второй раз честно отвечает
+   * «вы уже жаловались».
+   */
+  const sendReport = async (comment: AppComment, reason: ReportReason) => {
+    setReporting(null);
+    try {
+      await report.mutateAsync({ commentId: comment.id, reason });
+      Alert.alert(t('comments.reportSent'));
+    } catch (error) {
+      if (error instanceof ReportRejectedError) {
+        const text =
+          error.reason === 'already'
+            ? t('comments.reportAlready')
+            : error.reason === 'signIn'
+              ? t('comments.reportSignIn')
+              : t('comments.reportFailed');
+        Alert.alert(text);
+        return;
+      }
+      Alert.alert(t('comments.reportFailed'));
+    }
   };
 
   const body = (() => {
@@ -148,7 +184,11 @@ export function CommentsScreen({ contentId }: { contentId: number | null }) {
           ) : null
         }
         renderItem={({ item }) => (
-          <CommentRow comment={item} onDelete={() => confirmDelete(item)} />
+          <CommentRow
+            comment={item}
+            onDelete={() => confirmDelete(item)}
+            onReport={() => setReporting(item)}
+          />
         )}
       />
     );
@@ -203,6 +243,15 @@ export function CommentsScreen({ contentId }: { contentId: number | null }) {
           </View>
         )}
       </KeyboardAvoidingView>
+
+      <ReportSheet
+        open={reporting !== null}
+        pending={report.isPending}
+        onClose={() => setReporting(null)}
+        onPick={(reason) => {
+          if (reporting) void sendReport(reporting, reason);
+        }}
+      />
     </Screen>
   );
 }
@@ -286,9 +335,11 @@ function errorText(error: unknown, t: TFunction): string {
 function CommentRow({
   comment,
   onDelete,
+  onReport,
 }: {
   comment: AppComment;
   onDelete: () => void;
+  onReport: () => void;
 }) {
   const { t } = useTranslation();
   const when = ago(comment.createdAt);
@@ -336,6 +387,15 @@ function CommentRow({
         ) : null}
       </View>
 
+      {/*
+        ⚠️ У своего комментария — «удалить», у чужого — «пожаловаться».
+        Вместе они не появляются: пожаловаться на себя сервер не даст
+        (422), а чужой комментарий удалить нельзя.
+
+        Кнопка жалобы — требование политики Google Play для приложений с
+        пользовательским контентом. Ревьюер открывает список и ищет
+        именно её.
+      */}
       {comment.mine ? (
         <Pressable
           onPress={onDelete}
@@ -346,7 +406,17 @@ function CommentRow({
         >
           <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
         </Pressable>
-      ) : null}
+      ) : (
+        <Pressable
+          onPress={onReport}
+          accessibilityRole="button"
+          accessibilityLabel={t('comments.report')}
+          hitSlop={10}
+          className="pt-0.5 active:opacity-60"
+        >
+          <Ionicons name="flag-outline" size={16} color={colors.textMuted} />
+        </Pressable>
+      )}
     </View>
   );
 }

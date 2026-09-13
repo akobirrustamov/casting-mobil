@@ -40,7 +40,7 @@ https://uzcasting.com/maxfiylik
 |---|---|
 | Name | `Demo account (phone OTP)` |
 | Username | `+998 90 000 00 00` ← заменить на реальный демо-номер |
-| Password | `000000` ← заменить на реальный код |
+| Password | `0000` ← ровно 4 цифры, поле в приложении четырёхзначное |
 
 **Any other instructions:**
 
@@ -52,6 +52,7 @@ The app requires sign-in to show any content.
 3. Tap the confirm button. No real SMS is sent for this number.
 4. Enter the code from the "Password" field.
 5. Full catalog, casting listings and video playback are available after this step.
+6. This demo account has an active Premium subscription, so paid content is unlocked for review.
 
 The interface language can be switched to English in Profile -> Settings -> Language.
 

@@ -37,13 +37,13 @@ emas, bu rad javobi yoki tirik foydalanuvchilarda ishlamaydigan kirish.
 
 | # | To'siq | Kim hal qiladi | Batafsil |
 |---|---|---|---|
-| 1 | Hisobni o'chirish: **backend 13.09.2026 da tayyor**, ilovada ekran kerak | **[MEN]** | §6 |
+| ~~1~~ | ~~Hisobni o'chirish~~ — **13.09.2026 da yopildi**: endpoint, sahifa va ilovadagi ekran | — | §6 |
 | ~~2~~ | ~~Google Cloud OAuth `Testing` holatida~~ — **13.09.2026 da hal qilindi**, holat `In production` | — | §7 |
 | 3 | Play App Signing kalitining SHA-1'i Google Android-klientiga yozilmagan | **[SIZ]** | §9 |
 | 4 | Demo-kirish: **kod 13.09.2026 da tayyor**, yuborishdan oldin prodda yoqiladi | **[SIZ]** | §5.4 |
 | 5 | Skrinshotlar yo'q | **[SIZ]** | §8.3 |
 | 6 | Play Console hisobi yo'q | **[BUYURTMACHI]** | §1 |
-| 7 | Izohga shikoyat: **endpoint 13.09.2026 da tayyor**, ilovada tugma kerak | **[MEN]** | §6a |
+| ~~7~~ | ~~Izohga shikoyat~~ — **13.09.2026 da yopildi**: endpoint va lentadagi tugma | — | §6a |
 
 ---
 
@@ -305,7 +305,7 @@ Tayyor inglizcha matn — `FORMS.md` da.
 Ilovaga kirish — o'zbek raqamiga keladigan SMS kod orqali. Google tekshiruvchisi
 boshqa mamlakatda o'tiradi va SMS ololmaydi. Prodda **o'zgarmas test raqami**
 kerak: server u uchun oldindan ma'lum kodni qabul qiladi (masalan
-`+998 90 000 00 00` → `000000`) va haqiqiy SMS yubormaydi.
+`+998 90 000 00 00` → `0000`) va haqiqiy SMS yubormaydi.
 
 ### ✅ 13.09.2026 da bajarildi — lekin prodda o'chiq
 
@@ -314,8 +314,16 @@ Mexanizm `OtpService` da: bitta raqamga SMS yuborilmaydi, kod esa o'zgarmas.
 
 ```properties
 app.otp.demo.phone=+998900000000
-app.otp.demo.code=000000
+app.otp.demo.code=0000
 ```
+
+⚠️ **Kod aynan 4 xonali** — ilovadagi maydon 4 katakli, olti xonalisini
+terib bo'lmaydi. Test buni qulflab qo'ygan.
+
+⚠️ **Demo hisobga Premium beriladi** (`app.otp.demo.premium-days`, sukut
+bo'yicha 90 kun): katalogning bir qismi obuna ostida, usiz tekshiruvchi
+ilovaning yarmini ko'rmasdi va ustiga ishlamaydigan to'lov tugmasiga
+urilardi. Faqat shu raqamga va faqat muddat tugayotganda.
 
 ⚠️ Raqam va kodni o'zingiz tanlang, bular MISOL. Tekshiruvga yuborishdan
 oldin yoqing, **tekshiruvdan keyin o'chiring**. Yoqilganda logga `WARN`
@@ -409,12 +417,23 @@ sessiyalar bekor qilinadi, qurilmalar/saqlanganlar/ko'rish joyi o'chadi.
 Izohlar qoladi, muallif «O'chirilgan foydalanuvchi» bo'ladi. **Telefon
 bo'shaydi** — u bilan qaytadan ro'yxatdan o'tish mumkin.
 
+### ✅ Ilovadagi ekran 13.09.2026 da tayyor
+
+`Profil → Hisobni o'chirish` («Chiqish» yonida, qizil). Ekran nima
+o'chirilishi va nima qolishini tushuntiradi, tasdiqlash — tizim oynasi.
+Sessiya **faqat server javobidan keyin** o'chiriladi: aks holda aloqa
+uzilsa, odam hisobi butun turib, kirishdan mahrum bo'lardi. Testlar:
+`deleteAccount.test.tsx`.
+
+⚠️ O'chirishda parol ham, SMS kod ham **ataylab so'ralmaydi** — siyosat
+o'chirish oson bo'lishini talab qiladi, ortiqcha to'siqlar rad javobiga
+sabab bo'ladi.
+
 Qoldi:
 
 | Kim | Nima |
 |---|---|
 | **[BEK]** | `V38` migratsiyasi bilan deploy — shusiz saytda sahifa yo'q |
-| **[MEN]** | sozlamalarda «Hisobni o'chirish» ekrani: tasdiqlash, endpointga so'rov, chiqish, uz/ru/en tarjimalar, test |
 
 Hamkasb uchun endpointlarning aniq shartnomasi alohida yozilgan:
 [roadmap/PLAY_BACKEND_TASKS.md](../../roadmap/PLAY_BACKEND_TASKS.md) §1.
@@ -458,11 +477,23 @@ qilib bo'lmaydi (`422`), o'chirilgan izoh — `404`. Shikoyat izohni
 qilinganlar» filtri va shikoyatlar bo'yicha saralash boshidan bor edi —
 shunchaki `reports_count` ni hech kim oshirmasdi va filtr doim bo'sh edi.
 
+### ✅ Ilovadagi tugma 13.09.2026 da tayyor
+
+Begona izohda — bayroqcha «Shikoyat qilish», o'zinikida — savat; ikkalasi
+birga chiqmaydi. Bosilganda to'rtta sababli parda ochiladi. Testlar:
+`report.test.tsx`.
+
+⚠️ **Tizim oynasi emas, parda** — Android'dagi `Alert` ga ko'pi bilan
+uchta tugma sig'adi, sabablar esa to'rtta va yana bekor qilish: ikkitasi
+umuman chizilmasdi.
+
+⚠️ Javob har doim ko'rsatiladi, rad etilganda ham: shikoyat ekranda hech
+narsani o'zgartirmaydi, va sukut «tugma ishlamadi» dan farq qilmaydi.
+
 Qoldi:
 
 | Kim | Nima |
 |---|---|
-| **[MEN]** | izoh kartochkasida «…» → «Shikoyat qilish» (sabablar ro'yxati); uz/ru/en tarjimalar; testlar |
 | **[BEK]** | «muallifni yashirish» bo'yicha qaror: qilamizmi yoki shikoyat yetarli deb yozib qo'yamizmi |
 
 Shikoyat endpointi shartnomasi va sabablar ro'yxati —
@@ -713,9 +744,9 @@ o'zgarishlarni ham Google tekshiradi, lekin tezroq.
 | Sabab | Bizda |
 |---|---|
 | Maxfiylik siyosati ochilmaydi / boshqa | ✅ `/maxfiylik`, 200, o'sha domen |
-| Hisobni o'chirish yo'q | ⏳ §6 — asosiy to'siq |
-| Foydalanuvchi kontenti shikoyat va bloklashsiz | ⏳ §6a — izohlar |
-| Tekshiruvchi kira olmadi | ⏳ §5.4 — demo-kirish |
+| Hisobni o'chirish yo'q | ✅ §6 — endpoint, sahifa va ekran tayyor |
+| Foydalanuvchi kontenti shikoyatsiz | ✅ §6a — izohga shikoyat tayyor |
+| Tekshiruvchi kira olmadi | ✅ §5.4 — Premiumli demo raqam (prodda yoqiladi) |
 | Reklama e'lon qilinmagan | ✅ «Yes» deb e'lon qilamiz (§5.2) |
 | Data safety ilova xatti-harakatiga mos emas | ✅ javoblar kod bilan solishtirilgan (§5.7) |
 | Raqamli kontent uchun to'lov Google Play Billing'dan tashqarida | ✅ buildda to'lov yo'q |
@@ -751,16 +782,17 @@ qabul qilish kerak.
 - [ ] Productionga chiqarish, rollout 20%
 
 **Hamkasb (backend)**
-- [ ] Hisobni o'chirish endpointi
-- [ ] `/hisobni-ochirish` sahifasi
-- [ ] Prodda o'zgarmas kodli demo raqam
-- [ ] Izohga shikoyat + moderatsiya navbati (§6a)
+- [x] Hisobni o'chirish endpointi — 13.09.2026
+- [x] `/hisobni-ochirish` sahifasi — 13.09.2026
+- [x] O'zgarmas kodli demo raqam — 13.09.2026 (yuborishdan oldin prodda yoqiladi)
+- [x] Izohga shikoyat — 13.09.2026
+- [ ] **`V38` migratsiyasi bilan deploy** — shusiz bularning hech biri prodda yo'q
 
 **Men**
 - [x] Ruxsatlar `INTERNET` gacha qisqartirildi
 - [x] `eas.json` dagi `submit` profili
 - [x] 512 ikonka va feature graphic
 - [x] Listing matnlari va anketa javoblari
-- [ ] Hisobni o'chirish ekrani (endpointdan keyin)
-- [ ] Izohlarda «Shikoyat qilish» va «Muallifni yashirish» tugmalari (§6a)
+- [x] Hisobni o'chirish ekrani — 13.09.2026
+- [x] Izohlarda «Shikoyat qilish» tugmasi (§6a) — 13.09.2026
 - [ ] `production` build va Play'ga yuborish

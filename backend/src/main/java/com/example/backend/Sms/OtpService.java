@@ -120,9 +120,19 @@ public class OtpService {
         }
     }
 
-    /** Shu raqam demo raqammi. */
-    private boolean isDemo(String normalizedPhone) {
+    /**
+     * Shu raqam demo raqammi.
+     *
+     * ⚠️ Ochiq: kirish oqimi ham buni so'raydi — demo hisobga Premium
+     * beriladi, aks holda tekshiruvchi yopiq kontentga urilib, ilovani
+     * «ishlamaydi» deb baholaydi ({@code AppAccountService}).
+     */
+    public boolean isDemoPhone(String normalizedPhone) {
         return demoNormalized != null && demoNormalized.equals(normalizedPhone);
+    }
+
+    private boolean isDemo(String normalizedPhone) {
+        return isDemoPhone(normalizedPhone);
     }
 
     private final Map<String, Entry> codes = new ConcurrentHashMap<>();

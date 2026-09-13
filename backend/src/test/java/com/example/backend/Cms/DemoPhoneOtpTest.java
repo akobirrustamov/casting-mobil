@@ -17,10 +17,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -53,15 +58,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {
         "app.ratelimit.enabled=false",
         "app.otp.demo.phone=+998900000000",
-        "app.otp.demo.code=000000"
+        "app.otp.demo.code=0000"
 })
 class DemoPhoneOtpTest {
 
     private static final String SEND = "/api/v1/app/auth/otp/send";
     private static final String VERIFY = "/api/v1/app/auth/otp/verify";
+    private static final String COMPLETE = "/api/v1/app/auth/otp/complete";
 
     private static final String DEMO_PHONE = "+998900000000";
-    private static final String DEMO_CODE = "000000";
+    private static final String DEMO_CODE = "0000";
 
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
@@ -103,8 +109,45 @@ class DemoPhoneOtpTest {
         void wrongCodeFails() throws Exception {
             call(SEND, Map.of("phone", DEMO_PHONE)).andExpect(status().isOk());
 
-            call(VERIFY, Map.of("phone", DEMO_PHONE, "code", "1234"))
+            call(VERIFY, Map.of("phone", DEMO_PHONE, "code", "9999"))
                     .andExpect(status().isUnprocessableEntity());
+        }
+
+        /**
+         * ⚠️ Kod 4 XONALI. Ilovadagi maydon ham 4 katakli
+         * ({@code mobile/app/(auth)/otp.tsx}, {@code CODE_LENGTH = 4}) —
+         * olti xonali kod sozlansa, tekshiruvchi uni terib ham ko'ra
+         * olmasdi.
+         */
+        @Test
+        @DisplayName("Kod 4 xonali — ilovadagi maydonga sig'adi")
+        void codeFitsTheInput() {
+            assertThat(DEMO_CODE).hasSize(4);
+        }
+
+        /**
+         * Tekshiruvchi katalogning yopiq qismini ham ko'rishi kerak, aks
+         * holda ilovaning yarmini baholay olmaydi — shuning uchun demo
+         * hisobga Premium beriladi.
+         */
+        @Test
+        @DisplayName("Demo hisob Premium bilan kiradi")
+        void demoAccountGetsPremium() throws Exception {
+            call(SEND, Map.of("phone", DEMO_PHONE)).andExpect(status().isOk());
+            call(VERIFY, Map.of("phone", DEMO_PHONE, "code", DEMO_CODE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.name_required").value(true));
+
+            String body = call(COMPLETE, Map.of("phone", DEMO_PHONE, "name", "Play Reviewer"))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            JsonNode json = objectMapper.readTree(body);
+            String token = json.get("access_token").asText();
+
+            mockMvc.perform(get("/api/v1/app/me").header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.premium.active").value(true));
         }
 
         /**
