@@ -813,7 +813,7 @@ shu jumladan saytda mahalliy usullar bilan sotish.
 ## 15. To'lovlar: Google Play nimaga ruxsat beradi va O'zbekistonda nimasi ishlaydi
 
 > Alohida tadqiqot, 14.09.2026. «Tekshirildi» deb belgilangan hamma narsa o'sha
-> kuni Google'ning rasmiy sahifalaridan olingan — havolalar §15.9 da.
+> kuni Google'ning rasmiy sahifalaridan olingan — havolalar §15.11 da.
 >
 > Bu yo'riqnomaning eng qimmat bo'limi: bu yerdagi xato nashrdan rad javobi
 > emas, balki **nashr qilingan ilovani olib tashlash** va to'lovlarni
@@ -970,7 +970,84 @@ ketadi» sharti ham bajarilmaydi.
 **Xulosa:** ilovada Stars — faqat Play Billing orqali. Yoki B varianti bo'yicha
 saytda sotiladi.
 
-### 15.7. Mening tavsiyam
+### 15.7. «Axir Payme, Click va Uzum ham Google Play'da turibdi-ku»
+
+Savol o'rinli va birinchi bo'lib paydo bo'ladi. Javob: Google qoidasi **siz
+kimligingizga** emas, **nima sotilayotganiga va u qayerda iste'mol
+qilinishiga** qaraydi. Ustiga-ustak, tekshiruv **har bir tovar bo'yicha
+alohida** boradi, ilova bo'yicha emas:
+
+> «Google Play's billing system must be used for the SKUs in your app that
+> include more digital goods or services than physical goods or services, and
+> for the SKUs in your app that are marketed to users as digital goods or
+> services»
+
+Hammasi shundan kelib chiqadi:
+
+| Ilova | Odam unda nima sotib oladi | Qaysi qoida ostiga tushadi |
+|---|---|---|
+| Payme, Click | odamlar o'rtasidagi o'tkazmalar, kommunal, internet, aloqa, jarima to'lovlari | siyosatda **to'g'ridan-to'g'ri istisno**: peer-to-peer, «payment of a credit card or utility bill», jismoniy xizmatlar |
+| Uzum Market | yetkazib beriladigan jismoniy tovarlar | **istisno**: physical goods |
+| Uzum Tezkor | ovqat yetkazish | **istisno**: food delivery siyosatda nomma-nom bor |
+| Uzum Bank | bank operatsiyalari | raqamli kontent xaridi emas |
+| **UzCasting** | serialga, qismga, Premium'ga, Stars'ga kirish | **ilovada iste'mol qilinadigan raqamli kontent** → Play Billing |
+
+Ya'ni Payme va Click «Play'da o'z to'lov tizimini ishlatishga ruxsat olgan»
+emas — ular shunchaki **ilova ichida raqamli kontent sotmaydi**. U yerdagi pul
+real dunyodagi narsalar uchun ketadi: yorug'lik, aloqa, tovar, boshqa odamga
+o'tkazma.
+
+⚠️ **Tekshiruv oddiy.** Bitta savol bering: «odam to'layotgan narsa ilova
+ichida iste'mol qilinadimi yoki tashqarida?» Yorug'lik, aloqa, yetkazib
+beriladigan tovar — tashqarida. Serialning qismi — ichkarida. Bizniki
+ikkinchisi, va uni boshqacha o'qishning iloji yo'q.
+
+⚠️ Teskarisi ham to'g'ri: ertaga Uzum o'z ilovasida o'zining video obunasini
+sota boshlasa, **aynan o'sha tovar** Play Billing orqali o'tishi shart bo'ladi
+— ilovadagi qolgan hamma narsa mahalliy to'lovda qolgani holda. Qoida
+kompaniyaga emas, tovarga qo'llanadi.
+
+### 15.8. Bizga to'g'ri kelishi mumkin bo'lgan uchta istisno — va nega ular qutqarmaydi
+
+Gap ketganda, faqat asosiy eshikni emas, hammasini tekshirib chiqqan ma'qul.
+
+**1. «Bir kishiga bir kishi» onlayn xizmatlar.** Google o'z billingini talab
+qilmaydi, agar:
+
+> «the paid service is between two individuals» va «the paid service is not
+> available for replay afterwards (that is, the session is not recorded and
+> cannot be accessed or used again) in any Play-distributed app»
+
+Google misollari: musiqa va rasm darslari, murabbiy bilan mashg'ulotlar,
+mutaxassis maslahati. Bizda bu, masalan, **kasting-direktor bilan pullik jonli
+maslahat** bo'lishi mumkin edi — lekin faqat yozib olinmasa va keyin hech
+qayerda ochilmasa. Seriallar katalogiga bunday narsa umuman taalluqli emas.
+
+**2. Aloqa operatori va IPTV.** Telekom operatorlari uchun alohida eshik bor:
+kontentni Play Billing'siz sotish mumkin, agar u **jismoniy xizmat hisobi**
+(aloqa, kabel, IPTV) bilan to'lansa va faqat o'sha xizmat abonentlariga
+sotilsa. UzCasting o'zi bunga tushmaydi — lekin **operator bilan bog'lanma**
+tushadi: Premium shartli Uztelecom tarifiga kirsa va uning hisobi bilan
+to'lansa. Bu kod emas, biznes-muzokara va Google'ga alohida ariza.
+
+**3. Sovg'a kartalari.** Rasman:
+
+> «No. Google Play's billing system is not required for the sale of in-app gift
+> cards, regardless of whether the gift card is an eGift or physically mailed
+> to the user.»
+
+⚠️ **Va bu eshikdan foydalanmaslik kerak.** O'z obunangizni ilova ichida
+«UzCasting sovg'a kartasi» deb atab sotish — bu istisno emas, siyosatni
+aylanib o'tish. Bu band oddiy sovg'a kartalari (do'konlar, brendlar) uchun
+yozilgan, o'z Premium'ini qayta o'rash uchun emas. Tekshiruv bunday sxemalarni
+ko'radi, xatoning narxi esa tuzatish emas — ilovani olib tashlash.
+
+**Uchalasi bo'yicha xulosa:** seriallar katalogi va Premium uchun ilova
+**ichida** Play Billing'dan boshqa qonuniy yo'l yo'q. Payme/Click/Uzum orqali
+to'lashning halol yagona usuli — §15.5 dagi B varianti: to'lov saytda, ilova
+esa faqat sotib olinganini ko'rsatadi.
+
+### 15.9. Mening tavsiyam
 
 Hozir buildda bitta ham ishlaydigan to'lov tugmasi yo'q, va bu **yaxshi
 boshlang'ich holat**: birinchi versiya to'lov xavfisiz tekshiruvdan o'tadi.
@@ -990,7 +1067,7 @@ Keyin yo'l ayrilishi, va uni buyurtmachi hal qiladi:
 emas. Aynan u eng tabiiy ko'rinadi — va aynan u ilovani nashrdan olib
 tashlashga kafolatli olib boradi.
 
-### 15.8. To'lov kodini yozishdan oldin buyurtmachidan nima kerak
+### 15.10. To'lov kodini yozishdan oldin buyurtmachidan nima kerak
 
 - [ ] Variantni tanlash: A (Play Billing), B (saytda to'lov) yoki C (gibrid)
 - [ ] Agar A yoki C: ТЗ dagi narxlarni USD ga qayta hisoblab tasdiqlash
@@ -1000,7 +1077,7 @@ tashlashga kafolatli olib boradi.
       ilovada darhol paydo bo'lishini ta'minlash
 - [ ] Stars bo'yicha qaror: Play Billing, saytda sotish yoki keyinga qoldirish
 
-### 15.9. Manbalar (14.09.2026 da tekshirildi)
+### 15.11. Manbalar (14.09.2026 da tekshirildi)
 
 - To'lovlar siyosati — https://support.google.com/googleplay/android-developer/answer/9858738
 - Siyosat tahlili va FAQ (reader-ilovalar, donatlar, anti-stiring) — https://support.google.com/googleplay/android-developer/answer/10281818
