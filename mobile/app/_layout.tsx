@@ -4,11 +4,11 @@ import '../global.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // SDK 56+: react-navigation импортируется только через expo-router.
 // Прямой @react-navigation/native ломает бандл.
+import { useFonts } from 'expo-font';
 import { Stack, router, useRootNavigationState, usePathname } from 'expo-router';
 import { ThemeProvider } from 'expo-router/react-navigation';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -22,6 +22,7 @@ import { isOnboardingSeen } from '@/features/onboarding/store';
 import i18nInstance from '@/i18n';
 import { loadLanguage } from '@/i18n/storage';
 import { colors, navigationTheme } from '@/theme/tokens';
+import { FONT_ASSETS } from '@/theme/typography';
 
 /**
  * ⚠️ Экран ошибки вместо чёрного прямоугольника.
@@ -42,7 +43,6 @@ export { AppErrorBoundary as ErrorBoundary } from '@/components/states/AppErrorB
 const SPLASH_MIN_MS = 1300;
 
 export default function RootLayout() {
-  const { t } = useTranslation();
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -80,7 +80,7 @@ export default function RootLayout() {
             {/* Поверх навигатора, но под splash — на splash сеть ещё не нужна */}
             <OfflineBanner />
 
-            {showSplash ? <SplashOverlay subtitle={t('splash.subtitle')} /> : null}
+            {showSplash ? <SplashOverlay /> : null}
 
             {/* ⚠️ ВРЕМЕННО: полоса диагностики чёрного экрана. Удалить
                 вместе с `DebugOverlay`, как только причина найдена. */}
@@ -106,6 +106,18 @@ function useBootstrap(): boolean {
   const restoreFavorites = useFavoritesStore((s) => s.restore);
   const navigationState = useRootNavigationState();
   const isNavigatorReady = Boolean(navigationState?.key);
+
+  /**
+   * Фирменный шрифт (заказчик, 14.09.2026) — читается с диска, а не из
+   * системы, поэтому первый кадр его ждёт.
+   *
+   * ⚠️ Ошибка чтения НЕ держит экран. Не прочитавшийся шрифт — это
+   * системное начертание вместо Manrope; вечный splash из-за него был бы
+   * несоизмеримо хуже. `useFonts` возвращает ошибку вторым значением,
+   * поэтому мы её именно учитываем, а не игнорируем.
+   */
+  const [fontsLoaded, fontsError] = useFonts(FONT_ASSETS);
+  const fontsReady = fontsLoaded || fontsError !== null;
 
   const [target, setTarget] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -151,7 +163,7 @@ function useBootstrap(): boolean {
   }, [restore, restoreFavorites]);
 
   useEffect(() => {
-    if (!target || !isNavigatorReady || done) return;
+    if (!target || !isNavigatorReady || !fontsReady || done) return;
 
     // '/(tabs)' — стартовый маршрут, переходить никуда не нужно
     if (target !== '/(tabs)') {
@@ -162,7 +174,7 @@ function useBootstrap(): boolean {
     // иначе на мгновение мелькает то, что было под ним.
     const frame = requestAnimationFrame(() => setDone(true));
     return () => cancelAnimationFrame(frame);
-  }, [target, isNavigatorReady, done]);
+  }, [target, isNavigatorReady, fontsReady, done]);
 
   return !done;
 }

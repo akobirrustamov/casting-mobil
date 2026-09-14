@@ -40,9 +40,6 @@
     "close": "Close",
     "more": "More"
   },
-  "splash": {
-    "subtitle": "A platform for creators"
-  },
   "onboarding": {
     "skip": "Skip",
     "next": "NEXT",
@@ -188,6 +185,7 @@
     "notifications": "Notifications",
     "language": "Til / Language",
     "about": "About the app",
+    "support": "Support",
     "soon": "Coming soon",
     "guestBody": "Sign in to see your balance, purchases and favorites here",
     "subscriptionActive": "Active",
@@ -314,7 +312,6 @@
     "empty": "Tap the heart to collect creators here.",
     "add": "Save",
     "remove": "Remove from saved",
-    "contentTitle": "Saved content",
     "creatorsTitle": "Saved creators"
   },
   "content": {

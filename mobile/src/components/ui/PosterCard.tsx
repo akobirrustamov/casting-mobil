@@ -18,6 +18,20 @@ import { Badge } from './Badge';
  */
 export type PosterBadge = 'premiere' | 'locked' | 'purchased' | null;
 
+/**
+ * Высота строки подписи и строк помельче — `lineHeight` классов
+ * `text-caption` и `text-micro` из `tailwind.config.js`.
+ *
+ * ⚠️ Числа продублированы здесь, потому что раскладке нужна ВЫСОТА, а её
+ * из класса не прочитать. Поменяется `lineHeight` в конфиге — поменять и
+ * тут, иначе подписи снова разъедутся по уровням.
+ */
+const CAPTION_LINE = 18;
+const MICRO_LINE = 14;
+
+/** Сколько строк отведено названию — столько же места у любого названия. */
+const TITLE_LINES = 2;
+
 export function PosterCard({
   title,
   subtitle,
@@ -26,8 +40,6 @@ export function PosterCard({
   badgeLabel,
   /** Знак в бейдже — пламя на «премьере». */
   badgeIcon,
-  /** Таймкод в углу обложки. Уже отформатирован — карточка не считает. */
-  duration,
   /**
    * Просмотры — левый НИЖНИЙ угол кадра. Уже отформатированы вызывающим.
    *
@@ -36,8 +48,8 @@ export function PosterCard({
    * (`railLayout.CARD_RATIO`) и утверждена заказчиком 01.09.2026.
    * Строка выросла бы разом в рядах, сетке и на «Barchasi».
    *
-   * ⚠️ «Нравится» здесь НЕТ: карточка в ряду ~105px шириной, и правый
-   * угол занят таймкодом. Сердце — кнопка, и живёт на экране контента.
+   * ⚠️ «Нравится» здесь НЕТ: карточка в ряду ~105px шириной. Сердце —
+   * кнопка, и живёт на экране контента.
    */
   views,
   /** Третья строка: жанр. */
@@ -64,7 +76,6 @@ export function PosterCard({
   badge?: PosterBadge;
   badgeLabel?: string;
   badgeIcon?: keyof typeof Ionicons.glyphMap;
-  duration?: string;
   views?: string;
   meta?: string;
   onMenu?: () => void;
@@ -103,42 +114,23 @@ export function PosterCard({
         ) : null}
 
         {/*
-          Таймкод и просмотры — ОДНОЙ строкой по нижнему краю кадра.
+          Просмотры — левый нижний угол кадра.
 
-          ⚠️ Раньше это были две независимые «абсолютные» метки: просмотры
-          прижаты влево, таймкод вправо. На узкой карточке ряда (около 120
-          точек) они сходились в середине и налезали друг на друга —
-          «1 234 567» и «1:23:45» просто не помещаются в такую ширину.
-          Заметно это становилось только на реальных числах, поэтому на
-          макете и на тестовых данных всё выглядело правильно.
+          ⚠️ Раньше правый угол занимал таймкод, и на узкой карточке ряда
+          (около 120 точек) две метки сходились в середине: «1 234 567» и
+          «1:23:45» в такую ширину просто не помещаются. Держала их врозь
+          общая строка с `justify-between`.
 
-          Общая строка с `justify-between` и зазором развести их не
-          позволяет по построению: между метками всегда остаётся `gap`, а
-          при нехватке места каждая ужимается сама (`shrink` + одна
-          строка), а не заезжает на соседа.
+          Заказчик (14.09.2026) таймкод убрал совсем — «video davomiyligi
+          qiymati ko'rsatish olib tashlash kerak, kerak emas», — поэтому
+          разводить больше нечего и строка снова одиночная.
         */}
-        {views || duration ? (
-          <View className="absolute bottom-2 left-2 right-2 flex-row items-center justify-between gap-2">
-            {views ? (
-              <View className="max-w-[62%] shrink flex-row items-center gap-1 rounded-pill bg-ink/70 px-2 py-0.5">
-                <Ionicons name="eye-outline" size={11} color={colors.white} />
-                <Text numberOfLines={1} className="text-micro font-semibold text-text">
-                  {views}
-                </Text>
-              </View>
-            ) : (
-              // Пустая распорка: без неё единственный таймкод уехал бы
-              // влево, хотя его место — справа.
-              <View />
-            )}
-
-            {duration ? (
-              <View className="shrink-0 rounded-pill bg-ink/70 px-2 py-0.5">
-                <Text numberOfLines={1} className="text-micro font-semibold text-text">
-                  {duration}
-                </Text>
-              </View>
-            ) : null}
+        {views ? (
+          <View className="absolute bottom-2 left-2 max-w-[70%] flex-row items-center gap-1 rounded-pill bg-ink/70 px-2 py-0.5">
+            <Ionicons name="eye-outline" size={11} color={colors.white} />
+            <Text numberOfLines={1} className="text-micro font-semibold text-text">
+              {views}
+            </Text>
           </View>
         ) : null}
 
@@ -163,8 +155,8 @@ export function PosterCard({
         ) : null}
 
         {/* Полоса досмотра — по нижнему краю кадра, во всю ширину.
-            Таймкод сидит чуть выше неё в том же углу и не перекрывается:
-            полоса тонкая и прижата к самому краю. */}
+            Счётчик просмотров сидит чуть выше неё в том же углу и не
+            перекрывается: полоса тонкая и прижата к самому краю. */}
         {typeof progressPercent === 'number' ? (
           <View className="absolute bottom-0 left-0 right-0 h-1 bg-ink/60">
             <View
@@ -185,22 +177,54 @@ export function PosterCard({
         ) : null}
       </View>
 
+      {/*
+        Подпись: три строки на ПОСТОЯННЫХ местах.
+
+        Заказчик (14.09.2026, скриншот с обведёнными «Drama», «1 qism» и
+        «Romantika»): «janr nomlari va qism raqamlari o'zgarmas bir xil
+        sathda bo'lishi kerak, media nomiga qarab balandligi o'zgarmasin».
+
+        <h2>Что было не так</h2>
+        Строки просто шли друг за другом, и каждая ехала за предыдущей:
+        у названия в одну строку жанр поднимался на 18 точек выше, чем у
+        соседа с названием в две; а если у контента не было ни числа
+        серий, ни описания, жанр подскакивал ещё на строку. В ряду из трёх
+        карточек жанры стояли на трёх разных уровнях.
+
+        <h2>Почему рамки, а не `minHeight` на тексте</h2>
+        Место занимает ОБЁРТКА, а текст лежит внутри по верхнему краю.
+        `height` на самом `<Text>` Android и iOS отрабатывают по-разному
+        (второй прижимает строку к середине отведённой высоты), и одна и
+        та же карточка выглядела бы на двух телефонах по-разному.
+
+        ⚠️ Пустая строка тоже занимает место. Иначе «постоянный уровень»
+        держался бы только у карточек с полным набором подписей — то
+        есть ровно до первого контента без жанра.
+      */}
       <View>
-        <Text numberOfLines={2} className="text-caption text-text">
-          {title}
-        </Text>
-        {subtitle ? (
-          <Text numberOfLines={1} className="text-micro text-text-muted">
-            {subtitle}
+        <View style={{ height: TITLE_LINES * CAPTION_LINE }}>
+          <Text numberOfLines={TITLE_LINES} className="text-caption text-text">
+            {title}
           </Text>
-        ) : null}
+        </View>
+
+        <View style={{ height: MICRO_LINE }}>
+          {subtitle ? (
+            <Text numberOfLines={1} className="text-micro text-text-muted">
+              {subtitle}
+            </Text>
+          ) : null}
+        </View>
+
         {/* Жанр отдельной строкой и фирменным фиолетовым — на макете
             «Media» это акцент под подписью, а не третий серый уровень. */}
-        {meta ? (
-          <Text numberOfLines={1} className="text-micro text-violet">
-            {meta}
-          </Text>
-        ) : null}
+        <View style={{ height: MICRO_LINE }}>
+          {meta ? (
+            <Text numberOfLines={1} className="text-micro text-violet">
+              {meta}
+            </Text>
+          ) : null}
+        </View>
       </View>
     </Pressable>
   );

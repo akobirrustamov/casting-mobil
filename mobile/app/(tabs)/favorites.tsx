@@ -181,8 +181,16 @@ function SavedContentRail({
 
   return (
     <View style={{ marginBottom: creatorsBelow ? 20 : 0 }} className="gap-3">
-      <Text className="text-h2 text-text">{t('favorites.contentTitle')}</Text>
+      {/*
+        ⚠️ Заголовка «Saqlangan kontent» здесь НЕТ: заказчик убрал его
+        14.09.2026 («saqlanganlardan saqlangan kontentlar yozuvini o'chirish
+        kerak»). Ряд и так стоит первым на экране, который называется
+        «Saqlanganlar», — подпись повторяла название экрана.
 
+        Заголовок анкет НИЖЕ остался: он появляется только когда под рядом
+        действительно есть вторая, непохожая сетка, и объясняет, почему
+        карточки вдруг сменили форму.
+      */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

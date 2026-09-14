@@ -17,3 +17,14 @@ declare module '*.jpg' {
   const source: number;
   export default source;
 }
+
+/**
+ * Шрифты — тоже ресурсы Metro (`assetExts` содержит `ttf`).
+ *
+ * `require`/`import` файла шрифта возвращает такое же число-ссылку, как у
+ * картинок, — именно его ждёт `useFonts` из `expo-font`.
+ */
+declare module '*.ttf' {
+  const source: number;
+  export default source;
+}

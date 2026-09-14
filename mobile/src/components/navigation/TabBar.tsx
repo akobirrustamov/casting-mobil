@@ -6,6 +6,7 @@ import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TOUCH_TARGET, colors, radius } from '@/theme/tokens';
+import { fonts } from '@/theme/typography';
 
 /**
  * Нижняя навигация.
@@ -105,7 +106,9 @@ function TabItem({ routeName, label, focused, onPress }: TabItemProps) {
             styles.label,
             {
               color: focused ? colors.purple : colors.textMuted,
-              fontWeight: focused ? '600' : '400',
+              // Вес — семейством, а не числом: у Manrope каждое
+              // начертание отдельный файл (см. `theme/typography`).
+              fontFamily: focused ? fonts.semibold : fonts.regular,
             },
           ]}
         >

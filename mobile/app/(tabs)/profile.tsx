@@ -10,7 +10,6 @@ import { Linking, Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { GlowCard } from '@/components/ui/GlowCard';
-import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { Screen } from '@/components/ui/Screen';
 import { useAuthStore } from '@/features/auth/store';
 import {
@@ -56,12 +55,32 @@ type Row = {
   danger?: boolean;
 };
 
-/** Ряд соцсетей внизу профиля — как у Yangi.TV. Ссылки уточняются у заказчика. */
-const SOCIALS: { key: string; icon: keyof typeof Ionicons.glyphMap; url: string }[] = [
+/**
+ * Ряд знаков внизу профиля — как у Yangi.TV.
+ *
+ * ⚠️ Последний знак — НЕ соцсеть: заказчик (14.09.2026) попросил заменить
+ * Facebook поддержкой («facebook o'rniga Support qo'yamiz va shunga mos
+ * icon qo'yish kerak»). Отсюда и знак: наушники с микрофоном, а не логотип
+ * мессенджера, — иначе ряд читался бы как «ещё один наш канал», а не как
+ * «здесь отвечают».
+ *
+ * Ведёт в Telegram: отдельного чата поддержки в приложении нет, а
+ * переписка в мессенджере не теряется при переустановке и не требует от
+ * нас экрана, который пришлось бы поддерживать.
+ *
+ * ⚠️ Адрес аккаунта согласован с заказчиком 14.09.2026. Если аккаунт
+ * переименуют, ссылка молча перестанет открываться — Telegram покажет
+ * «пользователь не найден», приложение об этом не узнает.
+ */
+const SOCIALS: {
+  key: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  url: string;
+}[] = [
   { key: 'telegram', icon: 'paper-plane-outline', url: 'https://t.me/uzcasting' },
   { key: 'instagram', icon: 'logo-instagram', url: 'https://instagram.com/uzcasting' },
   { key: 'youtube', icon: 'logo-youtube', url: 'https://youtube.com/@uzcasting' },
-  { key: 'facebook', icon: 'logo-facebook', url: 'https://facebook.com/uzcasting' },
+  { key: 'support', icon: 'headset-outline', url: 'https://t.me/uzcasting_support' },
 ];
 
 export default function ProfileScreen() {
@@ -69,8 +88,6 @@ export default function ProfileScreen() {
 
   const isAuthorized = useAuthStore((s) => s.isAuthorized);
   const signOut = useAuthStore((s) => s.signOut);
-
-  const [languageOpen, setLanguageOpen] = useState(false);
 
   /**
    * Выход — и сразу на экран входа.
@@ -177,7 +194,9 @@ export default function ProfileScreen() {
       label: t('profile.language'),
       icon: 'globe-outline',
       value: LANGUAGE_LABELS[language],
-      onPress: () => setLanguageOpen((open) => !open),
+      // Отдельный экран, а не раскрывающийся переключатель под рядом
+      // (заказчик, 14.09.2026). Разбор — в `app/settings/language.tsx`.
+      onPress: () => router.push('/settings/language'),
     },
     { key: 'about', label: t('profile.about'), icon: 'information-circle-outline', value: `v ${version}` },
     ...(isAuthorized
@@ -217,14 +236,15 @@ export default function ProfileScreen() {
       <RowGroup rows={account} />
 
       <RowGroup rows={settings} />
-      {languageOpen ? <LanguageSwitcher /> : null}
 
       <View className="flex-row justify-center gap-3">
         {SOCIALS.map((s) => (
           <Pressable
             key={s.key}
             accessibilityRole="link"
-            accessibilityLabel={s.key}
+            // «support» человеку в озвучке ничего не скажет; у соцсетей
+            // ключ и есть их название, поэтому перевод только у него.
+            accessibilityLabel={s.key === 'support' ? t('profile.support') : s.key}
             onPress={() => Linking.openURL(s.url).catch(() => {})}
             className="h-11 w-11 items-center justify-center rounded-pill bg-surface active:opacity-70"
           >

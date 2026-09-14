@@ -40,9 +40,6 @@
     "close": "Yopish",
     "more": "Yana"
   },
-  "splash": {
-    "subtitle": "Ijodkorlar uchun platforma"
-  },
   "onboarding": {
     "skip": "O'tkazib yuborish",
     "next": "KEYINGI",
@@ -188,6 +185,7 @@
     "notifications": "Bildirishnomalar",
     "language": "Til / Language",
     "about": "Ilova haqida",
+    "support": "Qo'llab-quvvatlash",
     "soon": "Tez orada",
     "guestBody": "Kirsangiz balans, xaridlar va sevimlilar shu yerda ko'rinadi",
     "subscriptionActive": "Faol",
@@ -314,7 +312,6 @@
     "empty": "Yurak belgisini bosib, yoqqan ijodkorlarni shu yerga qo'shing.",
     "add": "Saqlash",
     "remove": "Saqlanganlardan olib tashlash",
-    "contentTitle": "Saqlangan kontent",
     "creatorsTitle": "Saqlangan ijodkorlar"
   },
   "content": {

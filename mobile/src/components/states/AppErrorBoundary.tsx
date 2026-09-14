@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme/tokens';
+import { fonts } from '@/theme/typography';
 
 /**
  * Экран вместо чёрного прямоугольника.
@@ -67,7 +68,7 @@ export function AppErrorBoundary({ error, retry }: ErrorBoundaryProps) {
         gap: 16,
       }}
     >
-      <Text style={{ color: colors.white, fontSize: 22, fontWeight: '700' }}>
+      <Text style={{ color: colors.white, fontSize: 22, fontFamily: fonts.bold }}>
         Ilovada xatolik
       </Text>
       <Text style={{ color: colors.textMuted, fontSize: 14, lineHeight: 20 }}>
@@ -102,7 +103,7 @@ export function AppErrorBoundary({ error, retry }: ErrorBoundaryProps) {
             alignItems: 'center',
           }}
         >
-          <Text style={{ color: colors.white, fontSize: 15, fontWeight: '600' }}>
+          <Text style={{ color: colors.white, fontSize: 15, fontFamily: fonts.semibold }}>
             Qayta urinish
           </Text>
         </Pressable>
@@ -118,7 +119,7 @@ export function AppErrorBoundary({ error, retry }: ErrorBoundaryProps) {
             alignItems: 'center',
           }}
         >
-          <Text style={{ color: colors.white, fontSize: 15, fontWeight: '600' }}>
+          <Text style={{ color: colors.white, fontSize: 15, fontFamily: fonts.semibold }}>
             {copied ? 'Nusxalandi' : 'Xatoni nusxalash'}
           </Text>
         </Pressable>

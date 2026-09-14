@@ -47,7 +47,7 @@ function isActive(marker: string): boolean {
   return ACTIVE.includes(marker);
 }
 
-describe('главная: порядок блоков', () => {
+describe('главная: состав и порядок блоков', () => {
   it('«продолжить просмотр» стоит один раз', () => {
     const all = SCREEN.split('<ContinueRail />').length - 1;
     expect(all).toBe(1);
@@ -64,17 +64,30 @@ describe('главная: порядок блоков', () => {
       expect(at('<ContinueRail />')).toBeGreaterThan(at('<CategoryRows />'));
     }
 
-    expect(at('<ContinueRail />')).toBeGreaterThan(at("t('home.categories')"));
-  });
-
-  it('«продолжить просмотр» — ПЕРЕД кастингом', () => {
-    // Дословно «castingdan oldin». Кастинг на главной остался один —
-    // ряд анкет; выдуманные объявления убраны 06.09.2026.
-    expect(at('<ContinueRail />')).toBeLessThan(at("t('home.castingCreators')"));
-    expect(at('<ContinueRail />')).toBeLessThan(at("t('home.premiumTitle')"));
-  });
-
-  it('фид сервера идёт выше — витрину заказчик оставил наверху', () => {
     expect(at('<HomeFeedBlock')).toBeLessThan(at('<ContinueRail />'));
+  });
+
+  it('«продолжить просмотр» — последний блок экрана', () => {
+    // Дословно «buni eng oxiriga qoyish kk». Соседи, названные в той
+    // просьбе (направления и кастинг), с экрана ушли 14.09.2026 — значит
+    // «в конце» теперь проверяется буквально: после ряда нет ничего,
+    // кроме закрывающего `</Screen>`.
+    const after = at('<ContinueRail />') + '<ContinueRail />'.length;
+    const tail = ACTIVE.slice(after, ACTIVE.indexOf('</Screen>', after));
+
+    expect(tail.trim()).toBe('');
+  });
+
+  it('убранные заказчиком блоки на экран не вернулись', () => {
+    // ⚠️ Три блока убраны 14.09.2026: «kerak emas bu yo'nalishlar va
+    // casting ijodkorlari va yana home pagedagi eng oxirida premiumga
+    // o'tishni olib tashlash».
+    //
+    // Каждый из них легко «вернуть как было»: направления и анкеты
+    // выглядят как потеря функциональности, а Premium — как потеря
+    // денег. Поэтому решение заказчика держит тест, а не комментарий.
+    expect(isActive("t('home.categories')")).toBe(false);
+    expect(isActive("t('home.castingCreators')")).toBe(false);
+    expect(isActive("t('home.premiumTitle')")).toBe(false);
   });
 });

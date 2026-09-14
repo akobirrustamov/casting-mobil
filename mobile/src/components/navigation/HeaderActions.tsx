@@ -9,11 +9,15 @@ import { colors } from '@/theme/tokens';
  * Правая часть шапки главной: «Premium» и колокольчик (макет заказчика
  * 01.09.2026).
  *
- * Высота у обоих одна (`h-11`, это `TOUCH_TARGET` из ТЗ) — шапка `Screen`
- * выравнивает содержимое по ВЕРХУ (`items-start`, иначе на экранах с
- * подзаголовком кнопка уезжала бы на середину двух строк). Значит
- * одинаковая высота — единственное, что держит их на одной линии со
- * знаком слева.
+ * Шапка `Screen` выравнивает содержимое по ВЕРХУ (`items-start`, иначе на
+ * экранах с подзаголовком кнопка уезжала бы на середину двух строк).
+ * Значит держать оба знака на одной линии со словом слева может только
+ * их высота.
+ *
+ * ⚠️ Поэтому ОБЩАЯ строка ниже осталась `h-11` (`TOUCH_TARGET` из ТЗ), а
+ * уменьшенная по просьбе заказчика плашка «Premium» (14.09.2026, «20%
+ * kichraytirish») стоит внутри неё с `items-center`. Задай мы новую
+ * высоту самой строке — вниз уехал бы и колокольчик, и знак слева.
  */
 
 /**
@@ -32,10 +36,14 @@ export function PremiumChip() {
     <Pressable
       onPress={() => router.push('/profile')}
       accessibilityRole="button"
-      className="h-11 flex-row items-center gap-1.5 rounded-pill bg-surface px-3.5 active:opacity-70"
+      // Нажатие остаётся во всю высоту шапки (`hitSlop` добирает то, что
+      // недобрала уменьшенная плашка), поэтому попасть по ней не сложнее,
+      // чем было: по ТЗ минимум 44px, у плашки 36.
+      hitSlop={{ top: 4, bottom: 4 }}
+      className="h-9 flex-row items-center gap-1 rounded-pill bg-surface px-3 active:opacity-70"
     >
-      <MaterialCommunityIcons name="crown" size={17} color={colors.gold} />
-      <Text className="text-body font-semibold text-text">
+      <MaterialCommunityIcons name="crown" size={14} color={colors.gold} />
+      <Text className="text-label font-semibold text-text">
         {t('common.premium')}
       </Text>
     </Pressable>

@@ -21,6 +21,8 @@
  * purple и magenta на нём те же, добавился синий конец шкалы.
  */
 
+import { fonts } from './typography';
+
 export const colors = {
   // --- Фон и поверхности ---
   /** Почти чистый чёрный: на #07070D свечение выглядело грязно-серым пятном. */
@@ -121,10 +123,15 @@ export const navigationTheme = {
     border: colors.border,
     notification: colors.magenta,
   },
+  // Manrope вместо системного шрифта (заказчик, 14.09.2026). Здесь вес
+  // указан рядом с семейством, потому что этого требует тип темы
+  // react-navigation; число совпадает с начертанием, поэтому подбор на iOS
+  // приводит к тому же файлу. В остальном приложении вес не указывается —
+  // см. `theme/typography`.
   fonts: {
-    regular: { fontFamily: 'System', fontWeight: '400' as const },
-    medium: { fontFamily: 'System', fontWeight: '500' as const },
-    bold: { fontFamily: 'System', fontWeight: '700' as const },
-    heavy: { fontFamily: 'System', fontWeight: '800' as const },
+    regular: { fontFamily: fonts.regular, fontWeight: '400' as const },
+    medium: { fontFamily: fonts.medium, fontWeight: '500' as const },
+    bold: { fontFamily: fonts.bold, fontWeight: '700' as const },
+    heavy: { fontFamily: fonts.extrabold, fontWeight: '800' as const },
   },
 };

@@ -8,7 +8,6 @@ import { PosterCard, type PosterBadge } from '@/components/ui/PosterCard';
 import { Rail } from '@/components/ui/Rail';
 import { StoryCircle } from '@/components/ui/StoryCircle';
 import { trackAdClick, trackAdImpression } from '@/features/analytics/api';
-import { formatDuration } from '@/features/content/duration';
 import { CARD_RATIO, useRailCardWidth } from '@/features/content/railLayout';
 import { mediaUrl } from '@/lib/api';
 import { groupDigits } from '@/lib/money';
@@ -96,7 +95,11 @@ export function ContentPoster({
       title={card.title ?? ''}
       subtitle={subtitle}
       meta={card.genre ?? undefined}
-      duration={formatDuration(card.durationSeconds) ?? undefined}
+      // ⚠️ Длительности на карточке НЕТ: заказчик убрал её со всей витрины
+      // (14.09.2026). Она по-прежнему приходит в `card.durationSeconds` и
+      // показывается на экране контента — там это ответ на вопрос «хватит
+      // ли времени посмотреть», а в ряду из трёх обложек она была просто
+      // третьей цифрой на кадре.
       // ⚠️ Ноль НЕ показываем, и это осознанное отличие от экрана
       // контента (`watch/StatChips`), где ноль как раз рисуется. Там
       // счётчик один и человек смотрит на него; здесь «0» повторилось бы

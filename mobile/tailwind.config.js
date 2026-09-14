@@ -5,6 +5,63 @@
 //
 // ⚠️ Тот же набор продублирован в src/theme/tokens.ts для мест без className.
 // Меняем палитру — правим ОБА файла.
+const plugin = require('tailwindcss/plugin');
+
+/**
+ * Начертания Manrope. Имена обязаны совпадать с `src/theme/typography.ts` —
+ * там они регистрируются в `useFonts`, здесь раздаются классам.
+ */
+const FONT = {
+  regular: 'Manrope-Regular',
+  medium: 'Manrope-Medium',
+  semibold: 'Manrope-SemiBold',
+  bold: 'Manrope-Bold',
+  extrabold: 'Manrope-ExtraBold',
+};
+
+/**
+ * Шрифт на размерных классах: `text-body`, `text-h1` и т.д.
+ *
+ * Так фирменный шрифт достаётся ВСЕМ надписям разом, без правки двух сотен
+ * `<Text>` по экранам. Крупным заголовкам сразу даётся жирное начертание —
+ * раньше его давал `fontWeight` внутри `fontSize`, а с нестандартным
+ * шрифтом вес выбирается только именем файла (см. `theme/typography`).
+ */
+const fontBySize = plugin(({ addUtilities }) => {
+  addUtilities({
+    '.text-display': { 'font-family': FONT.extrabold },
+    '.text-h1': { 'font-family': FONT.bold },
+    '.text-h2': { 'font-family': FONT.bold },
+    '.text-body': { 'font-family': FONT.regular },
+    '.text-caption': { 'font-family': FONT.regular },
+    '.text-micro': { 'font-family': FONT.regular },
+    '.text-label': { 'font-family': FONT.regular },
+    '.text-badge': { 'font-family': FONT.regular },
+  });
+});
+
+/**
+ * Классы насыщенности — вместо стандартных `font-*` из Tailwind.
+ *
+ * ⚠️ Они НЕ ставят `font-weight`, а меняют семейство. Стандартные утилиты
+ * отключены ниже (`theme.fontWeight = {}`): `fontWeight: '600'` поверх
+ * имени `Manrope-SemiBold` — это не «сделать жирнее», а сломать подбор
+ * начертания (разбор — в `theme/typography`).
+ *
+ * Плагин идёт ВТОРЫМ в списке: CSS-правила складываются по порядку, и при
+ * `class="text-h2 font-medium"` побеждает то, что ближе к концу, — то есть
+ * насыщенность, заданная вручную, а не подразумеваемая размером.
+ */
+const fontByWeight = plugin(({ addUtilities }) => {
+  addUtilities({
+    '.font-normal': { 'font-family': FONT.regular },
+    '.font-medium': { 'font-family': FONT.medium },
+    '.font-semibold': { 'font-family': FONT.semibold },
+    '.font-bold': { 'font-family': FONT.bold },
+    '.font-extrabold': { 'font-family': FONT.extrabold },
+  });
+});
+
 module.exports = {
   content: ['./app/**/*.{js,jsx,ts,tsx}', './src/**/*.{js,jsx,ts,tsx}'],
   presets: [require('nativewind/preset')],
@@ -12,6 +69,10 @@ module.exports = {
   // «Cannot manually set color scheme, as dark mode is type 'media'».
   darkMode: 'class',
   theme: {
+    // ⚠️ Пусто намеренно: стандартные `font-thin … font-black` выключены.
+    // Насыщенность у нестандартного шрифта выбирается ИМЕНЕМ начертания, а
+    // не числом, и свои `font-*` даёт плагин `fontByWeight` выше.
+    fontWeight: {},
     extend: {
       colors: {
         // --- Фон и поверхности ---
@@ -46,14 +107,27 @@ module.exports = {
         touch: '44px', // минимальный touch target из ТЗ
       },
       fontSize: {
-        display: ['32px', { lineHeight: '38px', fontWeight: '800' }],
-        h1: ['24px', { lineHeight: '30px', fontWeight: '700' }],
-        h2: ['20px', { lineHeight: '26px', fontWeight: '700' }],
+        // ⚠️ Без `fontWeight`: жирность заголовков теперь приходит
+        // начертанием шрифта (плагин `fontBySize`), а не числом.
+        display: ['32px', { lineHeight: '38px' }],
+        h1: ['24px', { lineHeight: '30px' }],
+        h2: ['20px', { lineHeight: '26px' }],
         body: ['15px', { lineHeight: '21px' }],
         caption: ['13px', { lineHeight: '18px' }],
         micro: ['11px', { lineHeight: '14px' }],
+        /**
+         * Мелкая метка: бейдж на обложке и «Premium» в шапке.
+         *
+         * Заказчик (14.09.2026) про оба: «20% kichraytirish kerak».
+         * 11 → 9 и 15 → 12 — это и есть те самые 20%, но числа должны
+         * лежать в одном месте, иначе следующая правка размера разведёт
+         * бейдж и шапку в разные стороны.
+         */
+        badge: ['9px', { lineHeight: '12px' }],
+        label: ['12px', { lineHeight: '16px' }],
       },
     },
   },
-  plugins: [],
+  // ⚠️ Порядок важен: `fontByWeight` должен идти ПОСЛЕ `fontBySize`.
+  plugins: [fontBySize, fontByWeight],
 };

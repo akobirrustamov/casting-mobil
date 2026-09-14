@@ -5,17 +5,11 @@ import { Pressable, Text, View } from 'react-native';
 
 import { HomeHeaderActions } from '@/components/navigation/HeaderActions';
 import { ScreenState } from '@/components/states/ScreenState';
-import { Button } from '@/components/ui/Button';
-import { CategoryTile } from '@/components/ui/CategoryTile';
-import { Rail } from '@/components/ui/Rail';
 import { Screen } from '@/components/ui/Screen';
 import { Skeleton, SkeletonRail } from '@/components/ui/Skeleton';
-import { StoryCircle } from '@/components/ui/StoryCircle';
 import { Wordmark } from '@/components/ui/Wordmark';
-import { CATEGORIES } from '@/features/catalog/categories';
 // ⚠️ Вместе с блоком ниже: см. «ВРЕМЕННО ОТКЛЮЧЕНО».
 // import { CategoryRows } from '@/features/catalog/CategoryRows';
-import { useCreators, withPhotos } from '@/features/creators/api';
 import { HomeFeedUnavailableError, useHomeFeed } from '@/features/home/api';
 import { HomeSectionView } from '@/features/home/sections';
 import { ContinueRail } from '@/features/watch/ContinueRail';
@@ -32,31 +26,36 @@ import { colors } from '@/theme/tokens';
  * или переставить его местами можно без релиза в стор.
  *
  * <h2>Что НЕ приходит из фида</h2>
- * Ниже идут блоки кастинга — это старый продукт на боевом API сайта:
- * 10 направлений (ведут в каталог анкет) и популярные анкеты. Фид про них
- * не знает, поэтому они собраны здесь.
+ * Ниже фида остался один блок — «Ko'rishda davom eting». Всё остальное
+ * заказчик со главной убрал (14.09.2026):
  *
- * ⚠️ Здесь было написано, что объявления о кастинге — «единственные
- * оставшиеся временные данные» из `src/lib/placeholder.ts`. Ни того ряда,
- * ни самого файла больше нет (06.09.2026): выдуманные объявления убраны,
- * а комментарий на них ссылался ещё сутки.
+ *   - ряд «Yo'nalishlar» (10 направлений кастинга, вели в каталог анкет);
+ *   - ряд «Casting ijodkorlari» (популярные анкеты того же продукта);
+ *   - блок «Premiumga o'tish» в самом низу экрана.
  *
- * <h2>Порядок блоков задан заказчиком</h2>
+ * Дословно: «kerak emas bu yo'nalishlar va casting ijodkorlari va yana
+ * home pagedagi eng oxirida premiumga o'tishni olib tashlash».
+ *
+ * ⚠️ Вместе с двумя первыми с главной ушёл и старый API сайта: запроса
+ * анкет (`useCreators`) здесь больше нет. Сам он жив и работает — на него
+ * опираются «Saqlanganlar» и экран анкеты.
+ *
+ * Про Premium это не значит «продавать подписку негде»: плашка в шапке и
+ * баннер в «Profil» на месте, оба ведут на тарифы. Ушёл третий призыв,
+ * стоявший в конце ленты.
+ *
+ * <h2>Состав и порядок блоков задан заказчиком</h2>
  * Он не выводится из кода и легко «чинится» обратно, поэтому закреплён
  * тестом — `features/home/__tests__/homeOrder.test.ts`.
  */
 export default function HomeScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const feed = useHomeFeed();
-  const creators = useCreators();
   const isOffline = useIsOffline();
   // Вкладка остаётся смонтированной, когда человек ушёл в «Профиль».
   // Без этого рекламная карусель продолжала бы листаться и записывать
   // показы баннерам, которых никто в этот момент не видел.
   const isFocused = useIsFocused();
-
-  const isRu = i18n.language === 'ru';
-  const popular = withPhotos(creators.data).slice(0, 12);
 
   return (
     <Screen
@@ -65,11 +64,8 @@ export default function HomeScreen() {
       // макете он прижат к левому краю, как в большинстве витрин.
       titleContent={<Wordmark variant="compact" shine />}
       headerRight={<HomeHeaderActions />}
-      onRefresh={() => {
-        void feed.refetch();
-        void creators.refetch();
-      }}
-      refreshing={feed.isRefetching || creators.isRefetching}
+      onRefresh={() => void feed.refetch()}
+      refreshing={feed.isRefetching}
     >
       {/* Поиск: по ТЗ это строка на главной, а не отдельная вкладка */}
       <Pressable
@@ -88,118 +84,51 @@ export default function HomeScreen() {
 
           Разделы каталога контента: «Drama», под ним карточки — такой же
           ряд, как «Podkastlar» из фида. Стоят сразу под фидом, потому что
-          это продолжение того же списка контента; блоки кастинга ниже —
-          другой продукт и другой бэкенд.
+          это продолжение того же списка контента.
 
-          ⚠️ Не путать со следующим рельсом: там 10 направлений КАСТИНГА
-          (анкеты людей), здесь разделы каталога КОНТЕНТА (фильмы).
+          ⚠️ Не путать с рядом «Yo'nalishlar», который стоял здесь до
+          14.09.2026: там были 10 направлений КАСТИНГА (анкеты людей),
+          здесь — разделы каталога КОНТЕНТА (фильмы).
 
           Блок сам по себе рабочий: он тянет `/api/v1/app/catalog/categories`
           и по запросу на каждый раздел — карточки. Отключение убирает
           и эти запросы. */}
       {/* <CategoryRows /> */}
 
-      <Rail title={t('home.categories')} onSeeAll={() => router.push('/catalog/all')}>
-        {CATEGORIES.map((c) => (
-          <CategoryTile
-            key={c.id}
-            title={isRu ? c.titleRu : c.titleUz}
-            accent={c.accent}
-            icon={c.icon}
-            onPress={() => router.push(`/catalog/${c.id}`)}
-          />
-        ))}
-      </Rail>
-
-      {/* «Ko'rishda davom eting» — ВНИЗУ: после разделов каталога и
-          перед кастингом.
+      {/* «Ko'rishda davom eting» — В САМОМ НИЗУ.
 
           Заказчик (07.09.2026, скриншотом со стрелкой): «buni eng
-          oxiriga qoyish kk categoriyalardan keyin castingdan oldin».
-          «Кастинг» здесь — ряд анкет ниже, единственный оставшийся на
-          главной блок того продукта.
+          oxiriga qoyish kk categoriyalardan keyin castingdan oldin». Тех
+          двух соседей, между которыми ряд тогда поставили, на экране
+          больше нет (14.09.2026) — но смысл просьбы был в другом: верх
+          отдан витрине, а незаконченное лежит в конце, куда доходят
+          осознанно. Поэтому ряд остался последним.
 
-          ⚠️ Раньше ряд стоял ПЕРВЫМ, и довод был обратный: кто не
-          досмотрел, открывает приложение ради этого. Заказчик решил
-          иначе — верх отдан витрине, а незаконченное лежит там, куда
-          доходят осознанно. Его слово сильнее нашего довода: вернуть
-          наверх — одна строка, но только по его просьбе.
+          ⚠️ Раньше он стоял ПЕРВЫМ, и довод был обратный: кто не
+          досмотрел, открывает приложение ради этого. Слово заказчика
+          сильнее нашего довода: вернуть наверх — одна строка, но только
+          по его просьбе.
 
           ⚠️ Блока нет совсем, когда продолжать нечего — пустой
           заголовок читался бы как сломанная загрузка. */}
       <ContinueRail />
 
-      {/* Анкеты кастинга — боевой API сайта */}
-      <View className="gap-3">
-        {creators.isPending ? (
-          <View className="gap-3">
-            <Text className="text-h2 text-text">{t('home.castingCreators')}</Text>
-            {/* Круглые аватары — поэтому и заглушки круглые */}
-            <View className="-mx-4">
-              <SkeletonRail count={5} width={64} height={64} />
-            </View>
-          </View>
-        ) : creators.isError ? (
-          <View className="h-40">
-            <ScreenState
-              // При пропавшей сети «ошибка» вводит в заблуждение
-              kind={isOffline ? 'offline' : 'error'}
-              onRetry={() => creators.refetch()}
-            />
-          </View>
-        ) : (
-          <Rail
-            title={t('home.castingCreators')}
-            onSeeAll={() => router.push('/catalog/all')}
-          >
-            {popular.map((c) => (
-              <StoryCircle
-                key={c.id}
-                name={c.name}
-                role={c.age ? t('common.years', { count: c.age }) : undefined}
-                imageUrl={c.photoUrls[0]}
-                onPress={() => router.push(`/creator/${c.id}`)}
-              />
-            ))}
-          </Rail>
-        )}
-      </View>
-
       {/*
-        ⚠️ Здесь был ряд «Кастинги» — три ВЫДУМАННЫХ объявления из
-        `lib/placeholder`, с городами, сроками подачи и кнопкой
-        «откликнуться», у которой не было обработчика.
+        ⚠️ Здесь стояли ещё три блока, и все три убрал заказчик
+        (14.09.2026): ряд анкет «Casting ijodkorlari», ряд направлений
+        «Yo'nalishlar» выше и призыв «Premiumga o'tish» в самом конце.
 
-        К 06.09.2026 все три срока истекли (25.08, 30.08, 02.09), а
-        сборка лежала у тестировщиков. Пустой ряд рисовать нельзя —
-        заголовок без карточек читается как сломанная загрузка, —
-        поэтому блока нет совсем.
+        Ещё раньше отсюда ушёл ряд «Кастинги» — три ВЫДУМАННЫХ объявления
+        из `lib/placeholder`, с городами, сроками подачи и кнопкой
+        «откликнуться» без обработчика. К 06.09.2026 все три срока
+        истекли (25.08, 30.08, 02.09), а сборка лежала у тестировщиков.
 
-        ⚠️ Он и по ТЗ был здесь чужим: §31 требует, чтобы состав
-        главной задавал сервер (`GET /api/v1/app/home`). Этот ряд был
-        единственным захардкоженным блоком на экране.
-
-        Вернётся, когда появится `GET /api/v1/app/castings`: разметка
-        карточек — в истории, в коммите с этим сообщением.
+        ⚠️ Ряд объявлений и по ТЗ был здесь чужим: §31 требует, чтобы
+        состав главной задавал сервер (`GET /api/v1/app/home`), а он был
+        единственным захардкоженным блоком на экране. Вернётся, когда
+        появится `GET /api/v1/app/castings`: разметка карточек — в
+        истории, в коммите с этим сообщением.
       */}
-
-      {/* Premium CTA — обязательный блок по ТЗ */}
-      <View className="gap-2 rounded-card-lg bg-surface p-4">
-        <Text className="text-h2 text-gold">{t('home.premiumTitle')}</Text>
-        <Text className="text-caption text-text-muted">{t('home.premiumBody')}</Text>
-        {/*
-          ⚠️ У кнопки не было `onPress` — она молчала на нажатие. Экран
-          тарифов при этом существует и открывается из профиля, то есть
-          на главной, где стоит сам призыв купить, дороги к нему не было.
-        */}
-        <Button
-          variant="gold"
-          className="mt-2 self-start"
-          onPress={() => router.push('/subscription/tariffs')}
-        >
-          {t('home.premiumCta')}
-        </Button>
-      </View>
     </Screen>
   );
 }

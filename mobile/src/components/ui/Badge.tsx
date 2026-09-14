@@ -55,13 +55,18 @@ export function Badge({
   const { bg, fg, icon: iconColor } = TONE[tone];
 
   return (
+    // Размер уменьшен на 20% (заказчик, 14.09.2026: «bularni ham 20%
+    // kichraytirish keri» — со скриншотом, где обведены «BEPUL» и «YOPIQ»
+    // на обложках). Уменьшены ВСЕ три составляющих разом: буквы 11 → 9,
+    // поля 12/4 → 10/2, знак 11 → 9. Сожми мы только текст, бейдж остался
+    // бы прежней плашкой с мелкой надписью посередине.
     <View
-      className={`flex-row items-center gap-1 self-start rounded-pill px-3 py-1 ${
+      className={`flex-row items-center gap-1 self-start rounded-pill px-2.5 py-0.5 ${
         translucent ? TONE_SOFT[tone] : bg
       } ${className}`}
     >
-      {icon ? <Ionicons name={icon} size={11} color={iconColor} /> : null}
-      <Text className={`text-micro font-bold uppercase ${fg}`}>{children}</Text>
+      {icon ? <Ionicons name={icon} size={9} color={iconColor} /> : null}
+      <Text className={`text-badge font-bold uppercase ${fg}`}>{children}</Text>
     </View>
   );
 }

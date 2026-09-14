@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, type ReactElement } from 'react';
 import {
   Animated,
   Easing,
-  Platform,
   StyleSheet,
   Text,
   View,
@@ -21,6 +20,7 @@ import Svg, {
 } from 'react-native-svg';
 
 import { colors, gradients, radius } from '@/theme/tokens';
+import { fonts } from '@/theme/typography';
 
 import { Logo } from './Logo';
 
@@ -115,27 +115,23 @@ const CAP_HEIGHT_RATIO = 0.72;
 const TAGLINE = 'PLAY.   WATCH.   INSPIRE.';
 
 /**
- * ⚠️ Системные шрифты, а не тот, что на референсе.
+ * Начертания знака — те же, что у всего приложения (`theme/typography`).
  *
- * В проекте нет ни одного своего шрифта (`expo-font` подключён, но ничего
- * не грузит), а по картинке шрифт не опознать. Взяты ближайшие системные:
- * засечковый для названия и моноширинный для слогана — начертания те же,
- * рисунок букв другой.
+ * ⚠️ Раньше здесь стояли СИСТЕМНЫЕ шрифты: засечковый Georgia/serif для
+ * названия и моноширинный Courier/monospace для слогана. Своего шрифта в
+ * проекте не было вовсе, а по референсу заказчика его было не опознать —
+ * взяли ближайшее из того, что есть в любой системе.
  *
- * Когда заказчик пришлёт `.ttf`, подключается через `expo-font` и меняется
- * здесь в двух строках.
+ * С приходом Manrope (заказчик, 14.09.2026) держать их дальше нельзя:
+ * знак стоит в шапке главной прямо над рядами карточек, и засечки рядом с
+ * гротеском читались бы как чужая, случайно попавшая надпись.
+ *
+ * Слоган набран тем же шрифтом, но самым лёгким начертанием: на референсе
+ * он отличается от названия ВЕСОМ и разрядкой, а не рисунком букв.
  */
-const BRAND_FONT = Platform.select({
-  ios: 'Georgia',
-  android: 'serif',
-  default: 'serif',
-});
+const BRAND_FONT = fonts.extrabold;
 
-const TAGLINE_FONT = Platform.select({
-  ios: 'Courier',
-  android: 'monospace',
-  default: 'monospace',
-});
+const TAGLINE_FONT = fonts.regular;
 
 export function Wordmark({
   size = 'md',
@@ -181,9 +177,11 @@ function CompactWordmark({ shine }: { shine: boolean }) {
     setFrame({ width, height });
   };
 
+  // ⚠️ Начертание задаётся семейством, а не `fontWeight`: с Manrope вес
+  // числом ломает подбор файла (см. `theme/typography`).
   const word = {
     fontSize: COMPACT.font,
-    fontWeight: '700' as const,
+    fontFamily: BRAND_FONT,
     color: colors.white,
   };
 
@@ -478,7 +476,7 @@ function InlineWordmark({
 
   const typography = {
     fontSize: s.font,
-    fontWeight: '700' as const,
+    fontFamily: BRAND_FONT,
     letterSpacing: s.tracking,
   };
 
@@ -514,7 +512,7 @@ function InlineWordmark({
               y={(box.height + s.font * CAP_HEIGHT_RATIO) / 2}
               fill={plain ? colors.white : 'url(#wordmark)'}
               fontSize={s.font}
-              fontWeight="700"
+              fontFamily={BRAND_FONT}
               letterSpacing={s.tracking}
             >
               UZCASTING
