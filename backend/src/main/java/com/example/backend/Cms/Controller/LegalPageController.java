@@ -12,7 +12,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 /**
- * Huquqiy sahifalar: foydalanuvchi kelishuvi va maxfiylik siyosati.
+ * Huquqiy sahifalar: foydalanuvchi kelishuvi, maxfiylik siyosati va
+ * hisobni o'chirish yo'riqnomasi.
  *
  * <h2>Nima uchun bu kontroller kerak, sahifa oddiy HTML bo'lsa ham</h2>
  * {@code WebMvcConfig.PushStateResourceResolver} kengaytmasi yo'q har qanday
@@ -61,6 +62,22 @@ public class LegalPageController {
     @GetMapping({"/maxfiylik", "/maxfiylik/"})
     public ResponseEntity<Resource> privacy() {
         return page("maxfiylik");
+    }
+
+    /**
+     * Hisobni o'chirish yo'riqnomasi (13.09.2026).
+     *
+     * ⚠️ Bu sahifa Google Play uchun MAJBURIY va u ilova ichidagi tugmani
+     * ALMASHTIRMAYDI — «Data deletion» siyosati ikkalasini ham talab
+     * qiladi: ilovada va ilovasiz. Manzil Play Console'ning App content
+     * bo'limiga yoziladi, tekshiruvchi uni brauzerda ochadi.
+     *
+     * Shuning uchun sahifada ikkita ro'yxat bor — nima o'chiriladi va nima
+     * qancha muddat saqlanadi. Google aynan shularni qidiradi.
+     */
+    @GetMapping({"/hisobni-ochirish", "/hisobni-ochirish/"})
+    public ResponseEntity<Resource> accountDeletion() {
+        return page("hisobni-ochirish");
     }
 
     /**

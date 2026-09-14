@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.UUID;
@@ -18,6 +19,23 @@ public interface CommentRepo extends JpaRepository<Comment, Long> {
 
     @EntityGraph(attributePaths = {"author", "content"})
     Page<Comment> findAllByContentId(Long contentId, Pageable pageable);
+
+    /**
+     * Shikoyat hisoblagichini bittaga oshirish (13.09.2026).
+     *
+     * ⚠️ Obyektni o'qib, {@code setReportsCount(n + 1)} qilish MUMKIN EMAS:
+     * bitta izohga bir vaqtda ikki kishi shikoyat qilsa, ikkalasi ham eski
+     * qiymatni o'qib, bir xil yangisini yozardi — natijada ikki shikoyat
+     * hisoblagichda bitta bo'lib qolardi. Bu yerda o'sish bazaning o'zida
+     * sodir bo'ladi.
+     *
+     * {@code clearAutomatically} — chaqiruvchi shu tranzaksiyada izoh
+     * obyektini ushlab turadi, va u eski hisoblagich bilan qolib ketmasligi
+     * kerak.
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("update Comment c set c.reportsCount = c.reportsCount + 1 where c.id = :id")
+    void addReport(@Param("id") Long id);
 
     /** Shikoyat qilinganlar — moderator birinchi shularni ko'radi. */
     @EntityGraph(attributePaths = {"author", "content"})

@@ -52,3 +52,6 @@ yarn-error.*
 credentials.json
 credentials/
 
+
+# Google Play - kalit repoga tushmaydi
+play-service-account.json

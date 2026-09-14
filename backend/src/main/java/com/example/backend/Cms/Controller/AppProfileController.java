@@ -6,6 +6,7 @@ import com.example.backend.Cms.Enums.Locale;
 import com.example.backend.Cms.Enums.UserStatus;
 import com.example.backend.Cms.Repository.UserAccountRepo;
 import com.example.backend.Cms.Service.AccessService;
+import com.example.backend.Cms.Service.AccountDeletionService;
 import com.example.backend.Cms.Service.PersonName;
 import com.example.backend.Repository.UserRepo;
 import com.example.backend.Entity.Role;
@@ -15,6 +16,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -72,6 +74,30 @@ public class AppProfileController {
      * bu kod yozilganda uni darhol ushladi.
      */
     private final AccessService accessService;
+
+    private final AccountDeletionService accountDeletionService;
+
+    /**
+     * Hisobni o'chirish — odamning o'z so'rovi bilan (13.09.2026).
+     *
+     * <h2>Nima uchun bu endpoint bor</h2>
+     * Google Play'ning «Data deletion» siyosati: hisob yaratish mumkin
+     * bo'lgan ilovada uni o'chirish yo'li ham bo'lishi SHART, va aynan
+     * ilova ichida. Ikkinchi yo'l — {@code /hisobni-ochirish} sahifasi,
+     * u ilovasiz ochiladi ({@code LegalPageController}).
+     *
+     * ⚠️ Tasdiqlash SO'RALMAYDI — na parol, na SMS kod. Buni qo'shish
+     * to'g'ri ko'rinadi, lekin siyosat «o'chirish oson bo'lsin» deydi va
+     * qo'shimcha to'siqlar tekshiruvda e'tirozga sabab bo'ladi. Tasdiqlash
+     * ilova tomonida: ekranda «ishonchingiz komilmi» oynasi chiqadi.
+     *
+     * Qoidalar va nima o'chirilishi — {@link AccountDeletionService}.
+     */
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAccount() {
+        accountDeletionService.delete(CurrentUser.get());
+        return ResponseEntity.noContent().build();
+    }
 
     /**
      * Joriy foydalanuvchi.

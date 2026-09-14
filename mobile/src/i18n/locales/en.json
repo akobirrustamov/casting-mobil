@@ -272,7 +272,20 @@
     "phoneNote": "The number is verified by SMS and used to sign in — it cannot be changed.",
     "saved": "Saved",
     "saveFailed": "Not saved. Please try again.",
-    "signInRequired": "Sign in to edit your profile."
+    "signInRequired": "Sign in to edit your profile.",
+    "deleteAccount": "Delete account",
+    "deleteTitle": "Delete account",
+    "deleteSubtitle": "This cannot be undone",
+    "deleteWhatGoes": "What gets deleted",
+    "deleteWhatGoesBody": "Phone number, email, name and photo. Saved items, playback position and the device list. You will be signed out everywhere.",
+    "deleteWhatStays": "What stays",
+    "deleteWhatStaysBody": "The text of your comments stays, but the author name is hidden. Payment records are kept as required by law.",
+    "deletePhoneNote": "Your number is released — you can sign up with it again later.",
+    "deleteAction": "Delete my account",
+    "deleteConfirmTitle": "Delete account?",
+    "deleteConfirmBody": "Your data cannot be restored.",
+    "deleteFailed": "Could not delete the account. Please try again.",
+    "deleteWebNote": "Delete without the app: uzcasting.com/hisobni-ochirish"
   },
   "notifications": {
     "empty": "No messages yet.",
@@ -419,6 +432,17 @@
     "daysAgo": "{{count}} d ago",
     "sendFailed": "Couldn't send the comment. Try again.",
     "blocked": "Your account is blocked — you can't comment.",
-    "alreadyCommented": "You've already commented here. Delete it to write a new one."
+    "alreadyCommented": "You've already commented here. Delete it to write a new one.",
+    "report": "Report",
+    "reportTitle": "Report comment",
+    "reportSubtitle": "Pick a reason — a moderator will review it",
+    "reasonSpam": "Advertising or spam",
+    "reasonInsult": "Insult or threat",
+    "reasonAdult": "Inappropriate content",
+    "reasonOther": "Other reason",
+    "reportSent": "Report sent. A moderator will review it.",
+    "reportAlready": "You have already reported this comment.",
+    "reportSignIn": "Sign in to report a comment.",
+    "reportFailed": "Could not send the report. Please try again."
   }
 }

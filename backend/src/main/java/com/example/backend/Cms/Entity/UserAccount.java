@@ -47,6 +47,19 @@ public class UserAccount {
     private String blockedReason;
 
     /**
+     * Hisob qachon o'chirilgan (V38). {@code null} — o'chirilmagan.
+     *
+     * <h2>Nega sana kerak, {@link UserStatus#DELETED} ning o'zi yetmaydimi</h2>
+     * Holat «hozir qanday» ekanini aytadi, sana esa «qachon» degan savolga
+     * javob beradi. U ikki joyda kerak bo'ladi: foydalanuvchi «men
+     * o'chirgandim, nega ma'lumotim qoldi» deb yozsa va Google
+     * so'rovlarning ko'rib chiqilish muddatini tekshirsa (maxfiylik
+     * siyosatida 30 kun deyilgan).
+     */
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    /**
      * Premium qachongacha amal qiladi. null — obuna yo'q.
      *
      * Denormalizatsiya: har safar Subscription jadvalidan hisoblash o'rniga

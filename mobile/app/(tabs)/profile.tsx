@@ -208,6 +208,17 @@ export default function ProfileScreen() {
             onPress: onSignOut,
             danger: true,
           },
+          // ⚠️ Требование Google Play: путь к удалению аккаунта должен
+          // быть В ПРИЛОЖЕНИИ и находиться без подсказок. Профиль —
+          // первое место, где его ищут, поэтому пункт стоит здесь, а не
+          // внутри «Profil».
+          {
+            key: 'deleteAccount',
+            label: t('settings.deleteAccount'),
+            icon: 'trash-outline' as const,
+            onPress: () => router.push('/settings/delete-account'),
+            danger: true,
+          },
         ]
       : []),
   ];

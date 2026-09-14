@@ -2,6 +2,7 @@ package com.example.backend.Cms.Controller;
 
 import com.example.backend.Admin.CurrentUser;
 import com.example.backend.Cms.Entity.Comment;
+import com.example.backend.Cms.Enums.CommentReportReason;
 import com.example.backend.Cms.Enums.CommentStatus;
 import com.example.backend.Cms.Service.AppCommentService;
 import com.example.backend.Entity.User;
@@ -29,6 +30,7 @@ import java.util.List;
  *   POST   /api/v1/app/content/{id}/comments   yozish — kirish talab qilinadi,
  *                                               bitta odamga bitta izoh (409)
  *   DELETE /api/v1/app/comments/{id}           o'z izohini o'chirish
+ *   POST   /api/v1/app/comments/{id}/report    begona izohga shikoyat
  * </pre>
  *
  * <h2>Nima uchun ro'yxat ochiq</h2>
@@ -80,11 +82,40 @@ public class AppCommentController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Begona izohga shikoyat (13.09.2026).
+     *
+     * Google Play'ning UGC siyosati talabi — usiz ilova rad etiladi
+     * (roadmap/PLAY_BACKEND_TASKS.md §2). Qoidalar
+     * {@link AppCommentService#report} da.
+     *
+     * ⚠️ Javob BO'SH: shikoyatdan keyin izoh o'zgarmaydi, uni moderator
+     * ko'rib chiqadi. Ilova shu bo'shlikni «shikoyatingiz yuborildi» deb
+     * ko'rsatadi — «izoh o'chirildi» deb emas.
+     */
+    @PostMapping("/api/v1/app/comments/{commentId}/report")
+    public ResponseEntity<Void> report(@PathVariable Long commentId,
+                                       @RequestBody(required = false) ReportRequest body) {
+        commentService.report(CurrentUser.get(), commentId,
+                body == null ? null : body.getReason());
+        return ResponseEntity.noContent().build();
+    }
+
     // ------------------------------------------------------------------ DTO
 
     @Data
     public static class CommentRequest {
         private String text;
+    }
+
+    /**
+     * ⚠️ Sabab MAJBURIY EMAS: yuborilmasa {@code OTHER} bo'ladi. Shikoyat
+     * qilingani sababdan muhimroq, va eski ilova versiyasi sababsiz
+     * yuborsa ham so'rov yo'qolmasligi kerak.
+     */
+    @Data
+    public static class ReportRequest {
+        private CommentReportReason reason;
     }
 
     @Data

@@ -1,10 +1,13 @@
 package com.example.backend.Cms.Service;
 
 import com.example.backend.Cms.Entity.Comment;
+import com.example.backend.Cms.Entity.CommentReport;
 import com.example.backend.Cms.Entity.Content;
 import com.example.backend.Cms.Entity.UserAccount;
+import com.example.backend.Cms.Enums.CommentReportReason;
 import com.example.backend.Cms.Enums.CommentStatus;
 import com.example.backend.Cms.Enums.UserStatus;
+import com.example.backend.Cms.Repository.CommentReportRepo;
 import com.example.backend.Cms.Repository.CommentRepo;
 import com.example.backend.Cms.Repository.ContentRepo;
 import com.example.backend.Cms.Repository.UserAccountRepo;
@@ -62,6 +65,7 @@ public class AppCommentService {
             List.of(CommentStatus.VISIBLE, CommentStatus.HIDDEN);
 
     private final CommentRepo commentRepo;
+    private final CommentReportRepo reportRepo;
     private final ContentRepo contentRepo;
     private final UserRepo userRepo;
     private final UserAccountRepo accountRepo;
@@ -160,6 +164,62 @@ public class AppCommentService {
         if (comment.getStatus() != CommentStatus.DELETED) {
             comment.setStatus(CommentStatus.DELETED);
         }
+    }
+
+    /**
+     * Begona izohga shikoyat (13.09.2026).
+     *
+     * <h2>Nima uchun kerak</h2>
+     * Google Play'ning UGC siyosati talabi: foydalanuvchi yozgan matn
+     * ko'rinadigan ilovada shikoyat qilish yo'li bo'lishi SHART. Tekshiruvchi
+     * izohlar ro'yxatini ochib aynan shu tugmani qidiradi.
+     *
+     * Moderatsiya tomonida hammasi tayyor edi: {@code reports_count} ustuni,
+     * admin paneldagi «faqat shikoyat qilinganlar» filtri va shikoyatlar
+     * bo'yicha saralash. Yetishmagani — hisoblagichni oshiradigan odam.
+     *
+     * <h2>Qoidalar</h2>
+     * <pre>
+     *   o'z izohi         → 422: o'ziga shikoyat qilishning ma'nosi yo'q,
+     *                       va bu hisoblagichni bo'yashning eng oson yo'li
+     *   allaqachon qilgan → 409: bitta odam bitta izohga bir marta
+     *   o'chirilgan izoh  → 404: u hech kimga ko'rinmaydi, shikoyat
+     *                       qiladigan narsa qolmagan
+     * </pre>
+     *
+     * ⚠️ Shikoyat izohni AVTOMATIK yashirmaydi. Aks holda bir-biriga
+     * kelishib olgan bir nechta hisob istalgan izohni o'chira olardi —
+     * qarorni moderator qabul qiladi, tizim faqat navbatga qo'yadi.
+     */
+    @Transactional
+    public void report(User actor, Long commentId, CommentReportReason reason) {
+        Comment comment = commentRepo.findById(commentId)
+                .orElseThrow(() -> BusinessException.notFound("Comment", commentId));
+
+        if (comment.getStatus() == CommentStatus.DELETED) {
+            throw BusinessException.notFound("Comment", commentId);
+        }
+
+        // Izoh ko'rinadigan kontentga tegishli bo'lishi kerak — qoralama
+        // kontentning borligini shikoyat orqali ham bilib bo'lmasin.
+        visibleContent(actor, comment.getContent().getId());
+
+        if (comment.getAuthor() != null && comment.getAuthor().getId().equals(actor.getId())) {
+            throw BusinessException.validation("O'z izohingizga shikoyat qila olmaysiz");
+        }
+
+        if (reportRepo.existsByCommentIdAndUserId(commentId, actor.getId())) {
+            throw BusinessException.duplicate("COMMENT_ALREADY_REPORTED",
+                    "Siz bu izohga allaqachon shikoyat qilgansiz");
+        }
+
+        reportRepo.save(CommentReport.builder()
+                .comment(comment)
+                .user(actor)
+                .reason(reason == null ? CommentReportReason.OTHER : reason)
+                .build());
+
+        commentRepo.addReport(commentId);
     }
 
     /**

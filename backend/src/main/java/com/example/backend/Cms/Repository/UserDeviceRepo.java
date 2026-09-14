@@ -10,6 +10,16 @@ import java.util.UUID;
 
 public interface UserDeviceRepo extends JpaRepository<UserDevice, Long> {
 
+    /**
+     * Hisob o'chirilganda qurilmalar ro'yxati ham ketadi (13.09.2026).
+     *
+     * Bu shaxsiy ma'lumot: u yerda odam telefoniga qo'ygan nom turadi
+     * («Ali iPhone»). Hisob bilan birga o'chirilmasa, maxfiylik
+     * siyosatidagi «shaxsiy ma'lumotlar o'chiriladi» degan va'da
+     * yolg'on bo'lardi.
+     */
+    long deleteByUserId(java.util.UUID userId);
+
     List<UserDevice> findAllByUserIdOrderByLastActiveAtDesc(UUID userId);
 
     List<UserDevice> findAllByUserIdAndActiveTrueOrderByLastActiveAtAsc(UUID userId);
