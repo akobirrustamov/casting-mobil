@@ -813,7 +813,7 @@ shu jumladan saytda mahalliy usullar bilan sotish.
 ## 15. To'lovlar: Google Play nimaga ruxsat beradi va O'zbekistonda nimasi ishlaydi
 
 > Alohida tadqiqot, 14.09.2026. «Tekshirildi» deb belgilangan hamma narsa o'sha
-> kuni Google'ning rasmiy sahifalaridan olingan — havolalar §15.11 da.
+> kuni Google'ning rasmiy sahifalaridan olingan — havolalar §15.12 da.
 >
 > Bu yo'riqnomaning eng qimmat bo'limi: bu yerdagi xato nashrdan rad javobi
 > emas, balki **nashr qilingan ilovani olib tashlash** va to'lovlarni
@@ -1047,7 +1047,83 @@ ko'radi, xatoning narxi esa tuzatish emas — ilovani olib tashlash.
 to'lashning halol yagona usuli — §15.5 dagi B varianti: to'lov saytda, ilova
 esa faqat sotib olinganini ko'rsatadi.
 
-### 15.9. Mening tavsiyam
+### 15.9. «Yangi TV'da hammasi ishlayapti-ku» — tirik misol tahlili
+
+Eng kuchli qarshi dalil: o'zbek video-xizmatlari **allaqachon Play'da turibdi**,
+ilova ichida Payme, Click, UzCard va Humo bilan pul oladi, narxlari esa so'mda.
+Demak, mumkinmi?
+
+`uz.plus.app` kartochkasi bo'yicha tekshirdim (Yangi.TV+, Kinolar TV LLC,
+500 000+ o'rnatish, 21.02.2026 da yangilangan) — 14.09.2026 da ko'rildi.
+
+**Ilovada nima ko'rinadi** (buyurtmachining skrinshotlari): «Tarif sotib olish»
+ekrani `15 000 / 42 000 / 80 000 UZS` tariflari va «Sotib olish» tugmasi bilan,
+keyin «Balansni to'ldirish» — o'n uchta to'lov usuli: Payme, Click,
+Visa/Mastercard/UnionPay, UzCard/Humo, Paynet, BeePul, trastpay, SQB, alif,
+Openbank, xazna, Mavrid va naqd pul.
+
+**Google Play kartochkasida nima ko'rinadi:**
+
+| Nimaga qaradim | U yerda nima bor |
+|---|---|
+| «In-app purchases» belgisi | **yo'q** — konsolda birorta ham Play Billing tovari yaratilmagan |
+| Ilova tavsifi | filmlar, seriallar, obuna va to'lov haqida bitta ham so'z yo'q: «interaktiv platforma», «media materiallar», «raqamli xizmatlar» |
+| Foydalanuvchi izohlari | «app for movie lovers», «please upload original versions of movies» — ya'ni odamlar aynan kino uchun kelgan |
+| Yosh reytingi | **3+** |
+| Data safety | «Data isn't encrypted» |
+
+Javob shu. Ilova «Payme orqali sotishga ruxsat olgan» emas — **u shunchaki
+do'konga pullik video sotayotganini aytmaydi**. Tavsif shunday yozilganki,
+kartochkaga qarab na filmlar katalogini, na pullik tariflarni bilib bo'lmaydi.
+
+⚠️ **«Bor va ishlayapti» degani «ruxsat etilgan» degani emas.** Google tekshiruvi
+hammaning to'lov ekranini ketma-ket skanerlamaydi: u shikoyat bo'yicha, tanlab
+o'tkaziladigan tekshiruvda yoki tirik tekshiruvchiga tushadigan navbatdagi
+yangilanishda ishga tushadi. Ilova shu holatda yillab yashashi mumkin — keyin
+bir sutkada yo'q bo'ladi.
+
+**Bunday dasturchi to'lovdan tashqari yana nima bilan xavf ostida:**
+
+- **Store listing.** Ilovaning mohiyatini yashiradigan tavsif — alohida
+  qoidabuzarlik (chalg'ituvchi metama'lumotlar).
+- **Yosh reytingi.** Jangari va Netflix seriallari katalogi uchun 3+ — IARC
+  anketasi haqiqiy kontent bo'yicha to'ldirilmagan.
+- **Data safety.** Odam karta kiritsa, forma esa «moliyaviy ma'lumot
+  yig'ilmaydi» desa — bu forma bilan ilova xatti-harakatining nomuvofiqligi.
+
+Bularning har biri mustaqil olib tashlash sababi, uchalasi esa qo'shiladi.
+
+⚠️ **Ilova ichidagi balans hech narsani o'zgartirmaydi.** «Balansni to'ldir,
+keyin filmga sarfla» sxemasi qoidadan chetlab o'tishdek ko'rinadi, lekin siyosat
+Play Billing talab qiladigan ro'yxatning birinchi bandida aynan
+`virtual currencies` ni sanaydi. Hamyon — chetlab o'tish emas, yana bitta
+raqamli tovar.
+
+**Nega bizga bu yo'ldan bormaslik kerak — qisqa va ishga oid:**
+
+1. **Xavf assimetriyasi.** Yangi TV'da yarim million o'rnatish va ishlayotgan
+   tushum bor: ularda yo'qotadigan narsa ham, himoya qiladigan narsa ham bor.
+   Bizda esa nol o'rnatish — birovning xavfini takrorlab hech narsa yutmaymiz,
+   birinchi kundanoq toza turishimiz esa mumkin.
+2. **Muvaffaqiyatsizlik narxi — ilova emas, hisob.** Hisob **buyurtmachi**
+   nomiga, D-U-N-S va yuridik shaxs tekshiruvi bilan rasmiylashtiriladi (§1).
+   Takroriy buzilishlar dasturchi hisobini butunlay bloklashga olib keladi —
+   kompaniyaning kelajakdagi barcha ilovalari bilan birga. Tiklash to'lovni
+   qayta yozishdan qimmatroq turadi.
+3. **To'lovni qayta qilish do'konga qaytishdan arzon.** Olib tashlangan ilova
+   apellyatsiya va qayta tekshiruv orqali qaytadi, va har doim ham qaytmaydi.
+
+**Amalda bu nimani anglatadi:** qaror buyurtmachiniki — hisob ham, pul ham
+uniki. Lekin uni ko'zi ochiq holda qabul qilish kerak: «raqobatchida ham
+shunday» — bu Google ruxsati emas, balki ularni hali ushlamaganining izohi.
+Qonuniy variantlar §15.5 dagi o'sha uchtasi, va B varianti (saytda to'lov)
+aynan o'sha Payme, Click va UzCard'ni beradi — faqat hisob uchun xavfsiz.
+
+⚠️ Kirish haqidagi savolga: **avtorizatsiya usuli to'lov siyosatiga hech qanday
+ta'sir qilmaydi.** Faqat telefon raqami bilan kirish — Yangi TV'dagidek va
+bizdagidek — to'lov qoidalariga aloqador emas.
+
+### 15.10. Mening tavsiyam
 
 Hozir buildda bitta ham ishlaydigan to'lov tugmasi yo'q, va bu **yaxshi
 boshlang'ich holat**: birinchi versiya to'lov xavfisiz tekshiruvdan o'tadi.
@@ -1067,7 +1143,7 @@ Keyin yo'l ayrilishi, va uni buyurtmachi hal qiladi:
 emas. Aynan u eng tabiiy ko'rinadi — va aynan u ilovani nashrdan olib
 tashlashga kafolatli olib boradi.
 
-### 15.10. To'lov kodini yozishdan oldin buyurtmachidan nima kerak
+### 15.11. To'lov kodini yozishdan oldin buyurtmachidan nima kerak
 
 - [ ] Variantni tanlash: A (Play Billing), B (saytda to'lov) yoki C (gibrid)
 - [ ] Agar A yoki C: ТЗ dagi narxlarni USD ga qayta hisoblab tasdiqlash
@@ -1077,7 +1153,7 @@ tashlashga kafolatli olib boradi.
       ilovada darhol paydo bo'lishini ta'minlash
 - [ ] Stars bo'yicha qaror: Play Billing, saytda sotish yoki keyinga qoldirish
 
-### 15.11. Manbalar (14.09.2026 da tekshirildi)
+### 15.12. Manbalar (14.09.2026 da tekshirildi)
 
 - To'lovlar siyosati — https://support.google.com/googleplay/android-developer/answer/9858738
 - Siyosat tahlili va FAQ (reader-ilovalar, donatlar, anti-stiring) — https://support.google.com/googleplay/android-developer/answer/10281818
