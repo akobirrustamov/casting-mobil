@@ -17,7 +17,7 @@ import { mediaUrl } from '@/lib/api';
 import { colors } from '@/theme/tokens';
 import { LockedPanel } from '@/features/content/LockedPanel';
 import { useIsOffline } from '@/lib/network';
-import { formatSum } from '@/lib/money';
+import { compactCount, formatSum } from '@/lib/money';
 
 import {
   ContentNotFoundError,
@@ -416,7 +416,15 @@ function Facts({ info, card }: { info: WatchInfo; card: ContentCard | undefined 
     minutes !== null ? t('content.minutes', { count: minutes }) : null,
     // Просмотры ушли сюда, в мелкую строку: на референсе их нет среди
     // плиток, но цифра полезная, а места в строке фактов достаточно.
-    views !== null ? t('content.views', { count: views }) : null,
+    // ⚠️ Раньше здесь стоял `{ count: views }`, а в переводе — просто
+    // слово «Ko'rishlar» без места под число: `content.views` не имел
+    // ни `{{count}}`, ни форм множественного числа. То есть в строке
+    // фактов годами висело слово БЕЗ цифры, и выглядело это как
+    // подпись, а не как счётчик.
+    //
+    // Число сокращённое («1.2k»), как и на обложках: заказчик просил
+    // одно правило на все счётчики (14.09.2026).
+    views !== null ? t('content.views', { value: compactCount(views) }) : null,
   ].filter((f): f is string => Boolean(f));
 
   const badge = info.allowed ? accessBadge(info.reason) : null;

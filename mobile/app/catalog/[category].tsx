@@ -305,7 +305,9 @@ function FilterRow({
 }) {
   return (
     <View className="gap-2">
-      <Text className="text-micro uppercase text-text-muted">{label}</Text>
+      {/* Прописные из JS: `textTransform` на Android срезает последнюю
+          букву — разбор в `components/ui/Badge`. */}
+      <Text className="text-micro text-text-muted">{label.toUpperCase()}</Text>
       {scrollable ? (
         // Городов может быть много — прокручиваем, а не переносим в несколько рядов
         <FlatList

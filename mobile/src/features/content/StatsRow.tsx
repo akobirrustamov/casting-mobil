@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import type { WatchInfo } from '@/features/watch/types';
-import { groupDigits } from '@/lib/money';
+import { compactCount } from '@/lib/money';
 
 import coinIcon from '../../../assets/brand/coin.png';
 import { colors } from '@/theme/tokens';
@@ -147,7 +147,7 @@ function Tile({
         <Ionicons name={icon} size={18} color={color} />
       )}
       <Text numberOfLines={1} className="text-caption font-semibold text-text">
-        {groupDigits(value ?? 0)}
+        {compactCount(value ?? 0)}
       </Text>
       <Text numberOfLines={1} className="text-micro text-text-muted">
         {label}

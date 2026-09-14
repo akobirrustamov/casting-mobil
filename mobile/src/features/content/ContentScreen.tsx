@@ -32,6 +32,7 @@ import {
 import { Player, playbackSource } from '@/features/watch/Player';
 import type { VideoSource, WatchInfo } from '@/features/watch/types';
 import { mediaUrl } from '@/lib/api';
+import { compactCount } from '@/lib/money';
 import { pushOnce } from '@/lib/navigation';
 import { useIsOffline } from '@/lib/network';
 import { TOUCH_TARGET, colors, radius } from '@/theme/tokens';
@@ -537,8 +538,9 @@ function TypeBadge({
 
   return (
     <View className="self-start rounded-pill bg-magenta px-3 py-1">
-      <Text className="text-micro font-bold uppercase text-white">
-        {t(`contentType.${type}`, { defaultValue: type })}
+      {/* Прописные из JS — см. `components/ui/Badge`. */}
+      <Text numberOfLines={1} className="text-micro font-bold text-white">
+        {t(`contentType.${type}`, { defaultValue: type }).toUpperCase()}
       </Text>
     </View>
   );
@@ -578,7 +580,15 @@ function FactsRow({
     // ⚠️ Просмотры переехали сюда из плиток: на референсе третья плитка —
     // монеты, а пять плиток в ряд не помещаются. Цифра при этом нужна,
     // заказчик просил её отдельно (07.09.2026).
-    views !== null ? t('content.views', { count: views }) : null,
+    // ⚠️ Раньше здесь стоял `{ count: views }`, а в переводе — просто
+    // слово «Ko'rishlar» без места под число: `content.views` не имел
+    // ни `{{count}}`, ни форм множественного числа. То есть в строке
+    // фактов годами висело слово БЕЗ цифры, и выглядело это как
+    // подпись, а не как счётчик.
+    //
+    // Число сокращённое («1.2k»), как и на обложках: заказчик просил
+    // одно правило на все счётчики (14.09.2026).
+    views !== null ? t('content.views', { value: compactCount(views) }) : null,
   ].filter((f): f is string => Boolean(f));
 
   if (facts.length === 0) return null;

@@ -337,7 +337,7 @@
     "likes": "Likes",
     "stars": "Stars",
     "coins": "Uzcasting",
-    "views": "Views",
+    "views": "{{value}} views",
     "comments": "Comments",
     "cast": "Cast",
     "like": "Like",

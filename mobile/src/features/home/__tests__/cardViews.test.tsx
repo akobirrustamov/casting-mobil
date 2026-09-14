@@ -63,9 +63,18 @@ function texts(data: ContentCard): string[] {
     .filter(Boolean);
 }
 
-/** Всё, кроме названия и метки доступа: их карточка рисует всегда. */
+/**
+ * Всё, кроме названия и метки доступа: их карточка рисует всегда.
+ *
+ * ⚠️ Метка сравнивается БЕЗ учёта регистра: бейдж переводит подпись в
+ * прописные сам (`components/ui/Badge`, `toUpperCase()` вместо
+ * `textTransform`), и ключ `common.free` приезжает сюда как
+ * «COMMON.FREE».
+ */
 function extras(data: ContentCard): string[] {
-  return texts(data).filter((s) => s !== 'Film' && !s.startsWith('common.'));
+  return texts(data).filter(
+    (s) => s !== 'Film' && !s.toLowerCase().startsWith('common.')
+  );
 }
 
 describe('счётчик на карточке', () => {
@@ -80,8 +89,16 @@ describe('счётчик на карточке', () => {
     expect(extras(card({ viewCount: 0 }))).toEqual([]);
   });
 
-  it('число — с разрядами, как на экране контента', () => {
-    expect(extras(card({ viewCount: 12345 }))).toEqual(['12 345']);
+  it('длинное число сокращается — на обложке нет места', () => {
+    // ⚠️ Заказчик 14.09.2026: «view larni uzun bo'lib ketsa 1.2k 1.5m
+    // qilib ber». Правило целиком — в `lib/compactCount`; здесь важно,
+    // что карточка берёт именно его, а не разбиение по разрядам.
+    expect(extras(card({ viewCount: 12345 }))).toEqual(['12k']);
+    expect(extras(card({ viewCount: 5606 }))).toEqual(['5.6k']);
+  });
+
+  it('короткое число остаётся точным', () => {
+    expect(extras(card({ viewCount: 340 }))).toEqual(['340']);
   });
 
   it('длительности на карточке нет — её убрал заказчик', () => {

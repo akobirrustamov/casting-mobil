@@ -10,7 +10,7 @@ import { StoryCircle } from '@/components/ui/StoryCircle';
 import { trackAdClick, trackAdImpression } from '@/features/analytics/api';
 import { CARD_RATIO, useRailCardWidth } from '@/features/content/railLayout';
 import { mediaUrl } from '@/lib/api';
-import { groupDigits } from '@/lib/money';
+import { compactCount } from '@/lib/money';
 
 import type { AccessPolicy, BannerCard, ContentCard, HomeSection } from './types';
 
@@ -105,7 +105,7 @@ export function ContentPoster({
       // счётчик один и человек смотрит на него; здесь «0» повторилось бы
       // под каждой новинкой ленты и читалось бы как «этого никто не
       // смотрит», хотя контент просто вчерашний.
-      views={card.viewCount ? groupDigits(card.viewCount) : undefined}
+      views={card.viewCount ? compactCount(card.viewCount) : undefined}
       imageUrl={mediaUrl(card.posterMediaId)}
       badge={badge?.tone ?? null}
       badgeLabel={badge ? t(badge.key) : undefined}

@@ -337,7 +337,7 @@
     "likes": "Yoqdi",
     "stars": "Yulduzlar",
     "coins": "Uzcasting",
-    "views": "Ko'rishlar",
+    "views": "{{value}} ko'rish",
     "comments": "Izohlar",
     "cast": "Aktyorlar",
     "like": "Yoqdi deb belgilash",

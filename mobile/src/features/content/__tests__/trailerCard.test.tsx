@@ -56,6 +56,7 @@ jest.mock('@/features/auth/store', () => ({
 jest.mock('@/lib/money', () => ({
   formatSum: (n: number) => String(n),
   groupDigits: (n: number) => String(n),
+  compactCount: (n: number) => String(n),
 }));
 
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';

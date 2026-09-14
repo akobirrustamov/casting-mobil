@@ -32,7 +32,13 @@ jest.mock('@/features/watch/api', () => ({
   setLike: (...a: unknown[]) => mockSetLike(...a),
 }));
 
-jest.mock('@/lib/money', () => ({ groupDigits: (n: number) => String(n) }));
+jest.mock('@/lib/money', () => ({
+  groupDigits: (n: number) => String(n),
+  // ⚠️ Счётчики на экране контента сокращаются («1.2k»), но проверяется
+  // здесь не вид числа, а попадание ответа сервера в кэш. Мок оставляет
+  // цифру как есть, иначе ожидания читались бы как проверка форматирования.
+  compactCount: (n: number) => String(n),
+}));
 
 /*
  * ⚠️ «Нравится» переехало из `StatsRow` в `PlayerActions` (слияние

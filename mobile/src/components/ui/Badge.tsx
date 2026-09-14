@@ -66,7 +66,22 @@ export function Badge({
       } ${className}`}
     >
       {icon ? <Ionicons name={icon} size={9} color={iconColor} /> : null}
-      <Text className={`text-badge font-bold uppercase ${fg}`}>{children}</Text>
+      {/*
+        ⚠️ Прописные делает JS, а НЕ `uppercase` (`textTransform`).
+
+        Заказчик 14.09.2026: «bazi yozuvlar nega bepu yopi bo'lib qolgan».
+        На Android при `textTransform` ширину строки успевают померить по
+        ИСХОДНОМУ тексту: «Bepul» узнаётся заметно уже, чем «BEPUL», и
+        последняя буква не влезала в измеренную ширину. С системным
+        шрифтом разница укладывалась в запас, с Manrope — перестала.
+
+        `toUpperCase()` снимает вопрос по построению: меряется и рисуется
+        одна и та же строка. `numberOfLines` — чтобы в узком месте слово
+        не переносилось на вторую строку, растягивая плашку.
+      */}
+      <Text numberOfLines={1} className={`text-badge font-bold ${fg}`}>
+        {children.toUpperCase()}
+      </Text>
     </View>
   );
 }

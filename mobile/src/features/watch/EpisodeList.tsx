@@ -13,7 +13,7 @@ import { isVertical } from '@/features/content/orientation';
 import { feedLocale, useContentCard, useFeedLanguage } from '@/features/home/api';
 import { DEFAULT_LANGUAGE } from '@/i18n';
 import { mediaUrl } from '@/lib/api';
-import { formatSum, groupDigits } from '@/lib/money';
+import { compactCount, formatSum } from '@/lib/money';
 import { useIsOffline } from '@/lib/network';
 import { colors, radius } from '@/theme/tokens';
 
@@ -291,7 +291,7 @@ function EpisodeRow({
             <View className="flex-row items-center gap-1">
               <Ionicons name="eye-outline" size={11} color={colors.textMuted} />
               <Text className="text-micro text-text-muted">
-                {groupDigits(episode.viewCount)}
+                {compactCount(episode.viewCount)}
               </Text>
             </View>
           ) : null}

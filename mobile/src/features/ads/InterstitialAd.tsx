@@ -134,8 +134,9 @@ export function InterstitialAd() {
             */}
               {banner.audience === 'ADVERTISEMENT' ? (
                 <View className="self-start rounded-pill bg-surface-2 px-2.5 py-1">
-                  <Text className="text-micro uppercase text-text-muted">
-                    {t('common.ad')}
+                  {/* Прописные из JS — см. `components/ui/Badge`. */}
+                  <Text className="text-micro text-text-muted">
+                    {t('common.ad').toUpperCase()}
                   </Text>
                 </View>
               ) : null}

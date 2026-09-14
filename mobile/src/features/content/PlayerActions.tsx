@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
 
 import type { WatchInfo } from '@/features/watch/types';
-import { groupDigits } from '@/lib/money';
+import { compactCount } from '@/lib/money';
 import { colors } from '@/theme/tokens';
 
 import coinIcon from '../../../assets/brand/coin.png';
@@ -122,7 +122,7 @@ function Action({
       {/* Число рядом, а не под знаком: на кадре высоты под вторую строку
           нет — ряд стоит в одной полосе с «на весь экран». Пустое — «0»,
           как и на плитках страницы (заказчик, 10.09.2026). */}
-      <Text className="text-micro text-white">{groupDigits(value ?? 0)}</Text>
+      <Text className="text-micro text-white">{compactCount(value ?? 0)}</Text>
     </>
   );
 
