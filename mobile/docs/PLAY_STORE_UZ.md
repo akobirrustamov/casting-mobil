@@ -3,7 +3,7 @@
 > Hisob turi: **tashkilot (Organization)**, **buyurtmachi nomiga** rasmiylashtiriladi.
 > Shu faylning ruscha varianti — [PLAY_STORE_RU.md](./PLAY_STORE_RU.md).
 >
-> Oxirgi yangilanish: 13.09.2026
+> Oxirgi yangilanish: 14.09.2026
 
 Belgilar: **[MEN]** — men koddа va EAS'da bajaraman. **[SIZ]** — brauzerda
 qo'lda bajariladi. **[BUYURTMACHI]** — faqat hisob egasi bajara oladi.
@@ -28,7 +28,7 @@ qo'lda bajariladi. **[BUYURTMACHI]** — faqat hisob egasi bajara oladi.
 | Foydalanuvchi kelishuvi | https://uzcasting.com/kelishuv — 200 qaytaradi |
 | 512×512 ikonka | `store/play/play-icon-512.png` — tayyorladim |
 | 1024×500 grafika | `store/play/feature-graphic-1024x500.png` — tayyorladim |
-| To'lovlar | ilovada ishlaydigan to'lov tugmasi yo'q → Google Play Billing **talab qilinmaydi** |
+| To'lovlar | ilovada ishlaydigan to'lov tugmasi yo'q → Google Play Billing **talab qilinmaydi** (kelajak variantlari tahlili — §15) |
 
 ### Nashrni to'sib turgan narsalar
 
@@ -761,17 +761,16 @@ o'zgarishlarni ham Google tekshiradi, lekin tezroq.
 | Tekshiruvchi kira olmadi | ✅ §5.4 — Premiumli demo raqam (prodda yoqiladi) |
 | Reklama e'lon qilinmagan | ✅ «Yes» deb e'lon qilamiz (§5.2) |
 | Data safety ilova xatti-harakatiga mos emas | ✅ javoblar kod bilan solishtirilgan (§5.7) |
-| Raqamli kontent uchun to'lov Google Play Billing'dan tashqarida | ✅ buildda to'lov yo'q |
+| Raqamli kontent uchun to'lov Google Play Billing'dan tashqarida | ✅ buildda to'lov yo'q (§15) |
 | Bo'sh yoki kesilgan skrinshotlar | ⏳ §8.3 |
 | Target API talabdan past | ✅ API 36 |
 | Ilova ishlatmaydigan ruxsatlar | ✅ faqat `INTERNET` qoldi |
 
-⚠️ **To'lovlar haqida alohida.** Ilovada obuna, qismlar yoki Stars uchun
-haqiqiy sotib olish paydo bo'lishi bilan Google uni **Google Play Billing**
-orqali o'tkazishni talab qiladi (komissiya bilan). Raqamli kontent uchun ilova
-ichida tashqi to'lov (Payme/Click/Uzum) taqiqlanadi va olib tashlashga olib
-keladi. Bu mahsulot bo'yicha qaror va uni to'lov kodini yozishdan **oldin**
-qabul qilish kerak.
+⚠️ **To'lovlar uchun alohida §15 bo'limi.** U yerda Google'ning rasmiy
+sahifalari bo'yicha tahlil qilingan: siyosat nimani talab qiladi, nega
+Payme/Click/Uzum ilova ichida taqiqlangan, Play o'zbek foydalanuvchilarga
+qaysi valyutada sotadi (faqat USD) va bizda qanday uchta qonuniy variant bor —
+shu jumladan saytda mahalliy usullar bilan sotish.
 
 ---
 
@@ -808,3 +807,209 @@ qabul qilish kerak.
 - [x] Hisobni o'chirish ekrani — 13.09.2026
 - [x] Izohlarda «Shikoyat qilish» tugmasi (§6a) — 13.09.2026
 - [ ] `production` build va Play'ga yuborish
+
+---
+
+## 15. To'lovlar: Google Play nimaga ruxsat beradi va O'zbekistonda nimasi ishlaydi
+
+> Alohida tadqiqot, 14.09.2026. «Tekshirildi» deb belgilangan hamma narsa o'sha
+> kuni Google'ning rasmiy sahifalaridan olingan — havolalar §15.9 da.
+>
+> Bu yo'riqnomaning eng qimmat bo'limi: bu yerdagi xato nashrdan rad javobi
+> emas, balki **nashr qilingan ilovani olib tashlash** va to'lovlarni
+> muzlatishga olib keladi.
+
+### 15.1. Asosiy qoida
+
+Ilova **ichida** sotiladigan va **ichida** iste'mol qilinadigan hamma narsa
+Google Play Billing orqali o'tishi shart. Siyosatdan aynan:
+
+> «Play-distributed apps requiring or accepting payment for access to in-app
+> features or services… must use Google Play's billing system»
+
+Talab ostiga bevosita tushadi: **obunalar** (video/content subscription
+services), **virtual valyuta**, **kontent va funksiyalarni ochish**.
+
+Tushmaydi — bularni istalgan to'lov tizimi bilan o'tkazsa bo'ladi:
+
+- jismoniy tovarlar;
+- jismoniy xizmatlar: transport, ovqat yetkazish, sport zali abonementi,
+  tadbirga chiptalar;
+- kommunal va karta hisoblarini to'lash;
+- odamlar o'rtasidagi o'tkazmalar (peer-to-peer);
+- ro'yxatdan o'tgan xayriya tashkilotlariga ehsonlar.
+
+Bizning katalogimizga bu istisnolarning birortasi ham tegishli emas:
+seriallar, qismlar va Premium — bu ilovada iste'mol qilinadigan raqamli
+kontent.
+
+### 15.2. Bu UzCasting'ning har bir mahsuloti uchun nimani anglatadi
+
+| Mahsulot | Google tasnifi bo'yicha nima | Ilovada nima bilan sotish mumkin |
+|---|---|---|
+| UzCasting Premium (24 000 / 49 999 / 99 000 / 159 900 so'm) | Subscription service | **faqat Play Billing** |
+| Bitta qism — 3 000 so'm | Digital content | **faqat Play Billing** |
+| Bitta premyera — 15 000 so'm | Digital content | **faqat Play Billing** |
+| Stars (10 · 50 · 100 · 500 · 1 000) | Virtual valyuta | **faqat Play Billing** — tahlil §15.6 da |
+| Reklamasiz tomosha | App functionality | **faqat Play Billing** |
+| Kasting e'lonlari (hozir bepul) | — | to'lov yo'q |
+
+⚠️ **Payme, Click, Uzum, UzCard va Humo ilova ichida bularning hammasi uchun
+taqiqlangan.** Taqiq ko'ringanidan kengroq: bu faqat to'lov tugmasi emas,
+balki to'lov formasi bilan webview, bank ilovasiga deeplink, QR-kod va hatto
+«Payme orqali to'lang» degan matn ham.
+
+### 15.3. O'zbekiston Google Play'da — tekshirilgan faktlar
+
+| Savol | Javob |
+|---|---|
+| O'zbek kompaniyasi **sotuvchi** (merchant) bo'la oladimi? | **Ha.** O'zbekiston ham dasturchilar, ham merchant ro'yxatida bor; to'lov valyutasi sukut bo'yicha — **USD** |
+| O'zbekistondagi foydalanuvchilar Play'da **sotib ola oladimi**? | **Ha**: pullik ilovalar ham, ilova ichidagi xaridlar ham, obunalar ham |
+| Narxlar qaysi valyutada bo'ladi? | **Faqat USD**, oralig'i `0.05 – 999.99`. Jadvalda O'zbekiston yonida ★ turibdi — «foydalanuvchilar narxni USD yoki EUR da ko'radi va tranzaksiya shu valyutada o'tadi» |
+| Foydalanuvchi nima bilan to'laydi? | Xalqaro kartalar: **Visa, Mastercard**, Amex, Discover. O'zbekiston uchun aloqa operatori orqali to'lov yordamda **ko'rsatilmagan** |
+| **User Choice Billing** — Play yonida o'z to'lov tizimi — mavjudmi? | **Yo'q.** Dastur YeIH, Avstraliya, Braziliya, Indoneziya, Yaponiya, JAR, Buyuk Britaniya va AQShda ishlaydi. O'zbekiston ro'yxatda yo'q |
+
+⚠️ **Mahsulot iqtisodini o'zgartiradigan ikkita oqibat.**
+
+1. **Narxlar dollarda bo'ladi.** 24 000 so'm deb qo'yib bo'lmaydi: Play narxni
+   USD da so'raydi (masalan `1.99`), odam esa dollarni ko'radi. ТЗ dagi barcha
+   narxlarni qayta hisoblab, dollar to'riga moslash kerak, kurs o'zgarganda
+   esa qaytadan ko'rib chiqiladi.
+2. **UzCard va Humo to'g'ri kelmaydi.** Chet elda to'lovga ruxsat berilgan
+   karta kerak. Auditoriyaning sezilarli qismida bunday karta yo'q — bu
+   konversiyaga to'g'ridan-to'g'ri zarba, va buni integratsiyadan keyin emas,
+   hozir bilgan yaxshiroq.
+
+### 15.4. Google qancha oladi
+
+| Nima | Komissiya |
+|---|---|
+| Kalendar yilidagi birinchi $1 mln tushum | **15 %** |
+| $1 mln dan yuqorisi | **30 %** |
+| Avtomatik uzaytiriladigan obunalar | birinchi kundan **15 %**, aylanmadan qat'i nazar |
+
+⚠️ 30.06.2026 dan kuchga kiradigan yangi sxema (10 % + 5 % billing fee,
+new/existing installs bo'yicha bo'linish) **faqat YeIH, Buyuk Britaniya va
+AQSh uchun**. O'zbek trafigiga u tegishli emas — bizda odatdagi 15 / 30 %.
+
+### 15.5. Uchta qonuniy arxitektura varianti
+
+#### A varianti. Ilova ichida Play Billing
+
+Ilova **ichida** sotishning yagona yo'li. Ustunligi: bir bosishda to'lov,
+avtomatik uzaytirish, qaytarish va nizolar — Google tomonida. Kamchiligi:
+komissiya, USD dagi narxlar, UzCard va Humo egalarining chetda qolishi.
+
+#### B varianti. Consumption-only («reader»): to'lov saytda
+
+Google bunga to'g'ridan-to'g'ri ruxsat beradi:
+
+> «Yes. Google Play allows any app to be consumption-only, even if it is part
+> of a paid service. For example, a user could log in when the app opens and
+> access content paid for somewhere else.»
+
+Lekin qattiq shart bilan:
+
+> «Remember, consumption-only means that any product(s) or service(s), whether
+> digital or physical, cannot be purchased from within the app.»
+
+Ya'ni: odam `uzcasting.com` da **Payme, Click, Uzum, UzCard, Humo — xohlagan
+narsasi** bilan to'laydi, ilova esa faqat sotib olinganini ochadi. Google
+komissiyasi umuman yo'q, narxlar — so'mda.
+
+⚠️ **Bunda ilovada nima yozish mumkin.** Bosiladigan havolalar taqiqlangan,
+matn esa ruxsat etilgan — va Google o'zi misollar keltiradi:
+
+> «You can purchase this book directly on our website»
+> «Go to our website to upgrade your subscription to Premium»
+> «This movie isn't available to rent in the app. However, any movie you rent
+> through our website.com will be immediately available to view in the app»
+
+Ya'ni tariflar ekrani halol yozishi mumkin: «Premium'ni uzcasting.com da
+rasmiylashtirasiz — ilovada darhol ochiladi», **tugmasiz va havolasiz**.
+
+⚠️ «Hech narsa sotib olib bo'lmaydi» sharti so'zma-so'z hech narsani
+anglatadi. Bitta ishlaydigan xarid tugmasi — va ilova consumption-only
+bo'lishdan to'xtaydi, sayt haqidagi matn esa anti-stiring buzilishiga
+aylanadi.
+
+#### C varianti. Gibrid
+
+Ilovada Play Billing **va** saytda Payme/Click — parallel. Bunga ruxsat bor:
+ilovadan tashqarida Google hech narsani cheklamaydi —
+
+> «Yes. Outside of your app, you are free to communicate with your users about
+> alternative purchase options. You can use email marketing and other channels
+> outside of the app to provide subscription offers and even special pricing.»
+
+Narxi: ikkita obuna tizimi va ikkita huquq manbai, qaytarishlar turli
+joylarda, hamda ilova **ichida** saytni tilga olish taqiqi — B variantidagi
+yon berish bu yerda ishlamaydi, chunki ichkarida xarid bor.
+
+### 15.6. Stars va donatlar — bu yerda xato qilish oson
+
+Aktyorga donat odamlar o'rtasidagi o'tkazmaga o'xshaydi, u esa istisnolarda
+bor. Lekin shart qattiq yozilgan:
+
+> «In cases where 100% of the tip or contribution from a user goes to the
+> creator and the payment does not grant access to any digital content or
+> services (including stickers, badges, special emojis etc.), then we regard
+> this as a peer-to-peer payment… If any of these things is not true, then
+> Google Play's billing system must be used»
+
+Bizning modelimiz (MONETIZATION.md) ikkala band bo'yicha ham o'tmaydi:
+
+- Stars **oldindan paketlab sotib olinadi** — bu virtual valyuta, ya'ni
+  raqamli tovar, odamdan odamga o'tkazma emas;
+- Stars **ko'rinadigan maqom** beradi: kreator profiliga, reytingga va oylik
+  marosimga tushadi — mazmunan bu o'sha «badges».
+
+Bunga platforma komissiyasini qo'shing, agar u bo'lsa — «100 % kreatorga
+ketadi» sharti ham bajarilmaydi.
+
+**Xulosa:** ilovada Stars — faqat Play Billing orqali. Yoki B varianti bo'yicha
+saytda sotiladi.
+
+### 15.7. Mening tavsiyam
+
+Hozir buildda bitta ham ishlaydigan to'lov tugmasi yo'q, va bu **yaxshi
+boshlang'ich holat**: birinchi versiya to'lov xavfisiz tekshiruvdan o'tadi.
+Keyin yo'l ayrilishi, va uni buyurtmachi hal qiladi:
+
+1. **Birinchi reliz — borligicha.** Tariflar ekrani to'lovsiz vitrina bo'lib
+   qoladi.
+2. **Agar asosiy bozor O'zbekiston bo'lsa** va odamlar UzCard bilan
+   Payme/Click orqali to'lashi kerak bo'lsa, **B varianti** mahalliy to'lov
+   usullarini, so'mdagi narxlarni va nol komissiyani beradi. Buning evaziga —
+   ilovada umuman hech narsa sotib bo'lmaydi.
+3. **Play Billing (A varianti)** bir bosishli konversiya muhim bo'lganda va
+   auditoriyada xalqaro kartalar bo'lganda o'zini oqlaydi — masalan, chet
+   eldagi diaspora uchun.
+
+⚠️ «Ilova ichida, lekin Payme orqali» varianti hech qanday ko'rinishda mumkin
+emas. Aynan u eng tabiiy ko'rinadi — va aynan u ilovani nashrdan olib
+tashlashga kafolatli olib boradi.
+
+### 15.8. To'lov kodini yozishdan oldin buyurtmachidan nima kerak
+
+- [ ] Variantni tanlash: A (Play Billing), B (saytda to'lov) yoki C (gibrid)
+- [ ] Agar A yoki C: ТЗ dagi narxlarni USD ga qayta hisoblab tasdiqlash
+- [ ] Agar A yoki C: merchant to'lov profilini va USD dagi bank rekvizitlarini
+      to'ldirish
+- [ ] Agar B: saytga Payme/Click/Uzum ni ulash va to'lovdan keyin huquqlar
+      ilovada darhol paydo bo'lishini ta'minlash
+- [ ] Stars bo'yicha qaror: Play Billing, saytda sotish yoki keyinga qoldirish
+
+### 15.9. Manbalar (14.09.2026 da tekshirildi)
+
+- To'lovlar siyosati — https://support.google.com/googleplay/android-developer/answer/9858738
+- Siyosat tahlili va FAQ (reader-ilovalar, donatlar, anti-stiring) — https://support.google.com/googleplay/android-developer/answer/10281818
+- Dasturchi va merchant mamlakatlari — https://support.google.com/googleplay/android-developer/answer/9306917
+- Mamlakatlar bo'yicha valyuta va narx oralig'i — https://play.google.com/supported-locations
+- Foydalanuvchining to'lov usullari — https://support.google.com/googleplay/answer/2651410
+- User Choice Billing — https://support.google.com/googleplay/android-developer/answer/12570971
+- Komissiyalar — https://support.google.com/googleplay/android-developer/answer/112622
+
+⚠️ App Store o'xshash mantiq bilan yashaydi (raqamli uchun o'z billingi,
+reader-ilovalar uchun alohida rejim), lekin u yerda qoidalar va ta'riflar
+boshqacha — bu tadqiqot ularni **qamrab olmaydi**.
