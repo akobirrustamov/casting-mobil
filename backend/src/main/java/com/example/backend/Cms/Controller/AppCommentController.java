@@ -142,6 +142,20 @@ public class AppCommentController {
         private String text;
         private LocalDateTime createdAt;
 
+        /**
+         * Muallif identifikatori — ilovada «muallifni yashirish» uchun (15.09.2026).
+         *
+         * <h2>Nega ism yetmaydi</h2>
+         * Ilova yoqimsiz muallifning izohlarini o'zida yashirib qo'yishi
+         * mumkin (Google'ning UGC siyosati bloklash imkonini so'raydi).
+         * Lekin ism — shaxs emas: bir xil ismli o'nta odam bo'lishi mumkin,
+         * va odam ismini almashtirsa yashirish ishlamay qolardi.
+         *
+         * ⚠️ Bu telefon raqami emas va email emas — faqat ichki UUID.
+         * Shaxsiy ma'lumot ochilmaydi.
+         */
+        private String authorId;
+
         /** Ism va rasm — {@code Donor} bilan bir xil manba ({@code User}). */
         private String authorName;
         private String authorAvatarUrl;
@@ -161,6 +175,7 @@ public class AppCommentController {
                     .id(c.getId())
                     .text(c.getText())
                     .createdAt(c.getCreatedAt())
+                    .authorId(author == null ? null : author.getId().toString())
                     .authorName(author == null ? null : author.getName())
                     .authorAvatarUrl(author == null ? null : author.getAvatarUrl())
                     .mine(viewer != null && author != null && author.getId().equals(viewer.getId()))

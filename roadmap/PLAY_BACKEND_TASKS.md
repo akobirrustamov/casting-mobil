@@ -153,7 +153,19 @@ yashirmaydi: qarorni moderator qabul qiladi.
 
 ✅ **Mobil ilovadagi tugma ham tayyor** (13.09.2026): begona izohdagi bayroqcha.
 
-### 2.2. Muallifni yashirish (ixtiyoriy, lekin tavsiya etiladi)
+### 2.2. `[x]` Muallifni yashirish — 15.09.2026 da ilova tomonida hal qilindi
+
+⚠️ **Backenddan endpoint KERAK EMAS.** Yashirish ro'yxati telefonda saqlanadi
+(`mobile/src/features/comments/mutedAuthors.ts`): bu moderatsiya vositasi emas,
+telefon egasining shaxsiy qulayligi. Serverda jadval, endpoint va har bir
+sahifada filtr qilish — shu foyda uchun juda qimmat.
+
+Backenddan faqat bitta maydon olindi: `CommentDto.authorId` (ism shaxs emas —
+ismdoshlar bor va ism o'zgaradi).
+
+Quyidagi variant ENDI KERAK EMAS, tarix uchun qoldirildi:
+
+#### Ilgari taklif qilingan variant (bajarilmaydi)
 
 ```
 POST   /api/v1/app/users/{userId}/mute

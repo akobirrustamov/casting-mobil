@@ -18,6 +18,7 @@ import { OfflineBanner } from '@/components/states/OfflineBanner';
 import { useAuthStore } from '@/features/auth/store';
 import { useDeviceStore } from '@/features/devices/store';
 import { useFavoritesStore } from '@/features/favorites/store';
+import { useMutedAuthors } from '@/features/comments/mutedAuthors';
 import { isOnboardingSeen } from '@/features/onboarding/store';
 import i18nInstance from '@/i18n';
 import { loadLanguage } from '@/i18n/storage';
@@ -153,6 +154,9 @@ function useBootstrap(): { showSplash: boolean; fontsReady: boolean } {
         loadLanguage(),
         restore(),
         restoreFavorites(),
+        // Скрытые авторы комментариев: поднимаем до первого экрана,
+        // иначе их записи успели бы мелькнуть в ленте.
+        useMutedAuthors.getState().restore(),
       ]);
       const { isAuthorized } = useAuthStore.getState();
 

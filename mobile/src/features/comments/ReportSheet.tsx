@@ -39,12 +39,18 @@ export function ReportSheet({
   pending,
   onClose,
   onPick,
+  onHideAuthor,
 }: {
   open: boolean;
   /** Запрос в пути — повторное нажатие отправило бы вторую жалобу. */
   pending: boolean;
   onClose: () => void;
   onPick: (reason: ReportReason) => void;
+  /**
+   * Скрыть автора у себя. `undefined` — если сервер не прислал
+   * `authorId` (старая сборка бэкенда): скрывать по имени нельзя.
+   */
+  onHideAuthor?: () => void;
 }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -91,6 +97,26 @@ export function ReportSheet({
               </Pressable>
             ))}
           </View>
+
+          {/*
+            ⚠️ «Скрыть автора» стоит ОТДЕЛЬНО от причин жалобы, за
+            разделителем. Это не жалоба: модератор о нём не узнает,
+            меняется только то, что видит этот человек на этом телефоне.
+            Стояли бы вместе — читалось бы как пятая причина.
+          */}
+          {onHideAuthor ? (
+            <Pressable
+              onPress={onHideAuthor}
+              accessibilityRole="button"
+              accessibilityLabel={t('comments.hideAuthor')}
+              className="flex-row items-center gap-3 border-t border-border px-4 pt-4 active:opacity-70"
+            >
+              <Ionicons name="eye-off-outline" size={18} color={colors.textMuted} />
+              <Text className="flex-1 text-body text-text">
+                {t('comments.hideAuthor')}
+              </Text>
+            </Pressable>
+          ) : null}
 
           <Pressable
             onPress={onClose}

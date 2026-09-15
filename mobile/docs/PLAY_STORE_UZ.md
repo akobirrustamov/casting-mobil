@@ -513,11 +513,24 @@ umuman chizilmasdi.
 ⚠️ Javob har doim ko'rsatiladi, rad etilganda ham: shikoyat ekranda hech
 narsani o'zgartirmaydi, va sukut «tugma ishlamadi» dan farq qilmaydi.
 
-Qoldi:
+### ✅ «Muallifni yashirish» 15.09.2026 da bajarildi
 
-| Kim | Nima |
-|---|---|
-| **[BEK]** | «muallifni yashirish» bo'yicha qaror: qilamizmi yoki shikoyat yetarli deb yozib qo'yamizmi |
+UGC siyosatining ikkinchi talabi — muallifni bloklash imkoni — **server
+qismisiz** yopildi: yashirilganlar ro'yxati telefonda yashaydi
+(`src/features/comments/mutedAuthors.ts`). Pardada alohida «Muallifni
+yashirish» bandi paydo bo'ldi, shikoyat sabablaridan ajratgich bilan
+ajratilgan: shikoyat moderatorga ketadi va hammaga ta'sir qiladi, yashirish
+esa — telefon egasining shaxsiy sozlamasi.
+
+Backenddan bitta maydon kerak bo'ldi: izoh kartochkasidagi `authorId`.
+⚠️ Ism bo'yicha yashirib bo'lmaydi — ismdoshlar qoidabuzar bilan birga
+yo'qolardi, o'zi esa profilda ismini almashtirib qaytib kelardi.
+
+Yashirilganlar jimgina yo'qolmaydi: lenta ustida «N ta izoh yashirilgan» va
+«Ko'rsatish» tugmasi chiqadi — aks holda odam lenta yuklanmadi deb o'ylardi va
+yashirishni bekor qiladigan joy ham bo'lmasdi. Testlar: `mutedAuthors.test.tsx`.
+
+§6a bo'yicha boshqa hech narsa qolmadi.
 
 Shikoyat endpointi shartnomasi va sabablar ro'yxati —
 [roadmap/PLAY_BACKEND_TASKS.md](../../roadmap/PLAY_BACKEND_TASKS.md) §2.

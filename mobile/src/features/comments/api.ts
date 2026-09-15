@@ -30,6 +30,13 @@ export type AppComment = {
   text: string;
   /** Время сервера без пояса («2026-09-10T14:25:55.495») — см. `./time`. */
   createdAt: string | null;
+  /**
+   * Идентификатор автора — нужен, чтобы скрыть его комментарии у себя
+   * (`./mutedAuthors`). Имя для этого не годится: оно не уникально и
+   * меняется. У старой сборки бэкенда поля нет — тогда `null`, и пункт
+   * «скрыть автора» не показывается.
+   */
+  authorId: string | null;
   authorName: string | null;
   /** Готовый адрес картинки (Google), а не id медиа — как у донатчиков. */
   authorAvatarUrl: string | null;
@@ -103,6 +110,7 @@ export function mapComment(raw: unknown): AppComment | null {
     id,
     text,
     createdAt: str(r.createdAt),
+    authorId: str(r.authorId),
     authorName: str(r.authorName),
     authorAvatarUrl: str(r.authorAvatarUrl),
     mine: r.mine === true,

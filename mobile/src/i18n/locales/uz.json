@@ -430,6 +430,9 @@
     "reportSent": "Shikoyat yuborildi. Moderator ko'rib chiqadi.",
     "reportAlready": "Siz bu izohga allaqachon shikoyat qilgansiz.",
     "reportSignIn": "Shikoyat qilish uchun hisobingizga kiring.",
-    "reportFailed": "Shikoyat yuborilmadi. Qaytadan urinib ko'ring."
+    "reportFailed": "Shikoyat yuborilmadi. Qaytadan urinib ko'ring.",
+    "hideAuthor": "Muallifni yashirish",
+    "mutedNotice": "{{count}} ta izoh yashirilgan",
+    "mutedUndo": "Ko'rsatish"
   }
 }

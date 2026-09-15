@@ -37,6 +37,7 @@ import {
   type AppComment,
   type ReportReason,
 } from './api';
+import { useMutedAuthors } from './mutedAuthors';
 import { ReportSheet } from './ReportSheet';
 import { ago } from './time';
 
@@ -82,7 +83,19 @@ export function CommentsScreen({ contentId }: { contentId: number | null }) {
   /** На какой комментарий жалуемся — `null` закрывает шторку. */
   const [reporting, setReporting] = useState<AppComment | null>(null);
 
-  const items = comments.data?.pages.flatMap((p) => p.items) ?? [];
+  const muted = useMutedAuthors((s) => s.ids);
+  const muteAuthor = useMutedAuthors((s) => s.mute);
+  const showEveryone = useMutedAuthors((s) => s.clear);
+
+  const all = comments.data?.pages.flatMap((p) => p.items) ?? [];
+
+  /**
+   * ⚠️ Прячем на КЛИЕНТЕ, а не запрашиваем у сервера отфильтрованное.
+   * Мьют личный и живёт только на этом телефоне (`./mutedAuthors`), а
+   * лента приходит страницами и кэшируется общим ключом.
+   */
+  const items = all.filter((c) => !(c.authorId && muted.has(c.authorId)));
+  const hiddenCount = all.length - items.length;
   const total = comments.data?.pages[0]?.totalItems ?? null;
 
   /**
@@ -162,6 +175,26 @@ export function CommentsScreen({ contentId }: { contentId: number | null }) {
         data={items}
         keyExtractor={(c) => String(c.id)}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16, gap: 12 }}
+        ListHeaderComponent={
+          hiddenCount > 0 ? (
+            <View className="flex-row items-center gap-2 rounded-card bg-surface px-4 py-3">
+              <Ionicons name="eye-off-outline" size={16} color={colors.textMuted} />
+              <Text className="flex-1 text-caption text-text-muted">
+                {t('comments.mutedNotice', { count: hiddenCount })}
+              </Text>
+              <Pressable
+                onPress={() => void showEveryone()}
+                accessibilityRole="button"
+                accessibilityLabel={t('comments.mutedUndo')}
+                hitSlop={8}
+              >
+                <Text className="text-caption font-semibold text-blue">
+                  {t('comments.mutedUndo')}
+                </Text>
+              </Pressable>
+            </View>
+          ) : null
+        }
         keyboardShouldPersistTaps="handled"
         onRefresh={() => void comments.refetch()}
         refreshing={comments.isRefetching && !comments.isFetchingNextPage}
@@ -251,6 +284,15 @@ export function CommentsScreen({ contentId }: { contentId: number | null }) {
         onPick={(reason) => {
           if (reporting) void sendReport(reporting, reason);
         }}
+        onHideAuthor={
+          reporting?.authorId
+            ? () => {
+                const authorId = reporting.authorId;
+                setReporting(null);
+                if (authorId) void muteAuthor(authorId);
+              }
+            : undefined
+        }
       />
     </Screen>
   );

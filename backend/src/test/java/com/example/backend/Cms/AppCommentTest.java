@@ -134,6 +134,10 @@ class AppCommentTest {
                     .andExpect(jsonPath("$.totalItems").value(1))
                     .andExpect(jsonPath("$.items[0].text").value("Zo'r film"))
                     .andExpect(jsonPath("$.items[0].authorName").value("Malika"))
+                    // ⚠️ Muallif ID'si ilovada «muallifni yashirish» uchun kerak
+                    // (15.09.2026): ism shaxs emas — bir xil ismlilar bor va
+                    // ism o'zgarishi mumkin.
+                    .andExpect(jsonPath("$.items[0].authorId").value(author.getId().toString()))
                     .andExpect(jsonPath("$.items[0].mine").value(false));
         }
 

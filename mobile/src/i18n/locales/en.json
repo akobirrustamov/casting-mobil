@@ -430,6 +430,9 @@
     "reportSent": "Report sent. A moderator will review it.",
     "reportAlready": "You have already reported this comment.",
     "reportSignIn": "Sign in to report a comment.",
-    "reportFailed": "Could not send the report. Please try again."
+    "reportFailed": "Could not send the report. Please try again.",
+    "hideAuthor": "Hide author",
+    "mutedNotice": "{{count}} comments hidden",
+    "mutedUndo": "Show"
   }
 }
