@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import {
+  LANGUAGE_FLAGS,
   LANGUAGE_LABELS,
   SUPPORTED_LANGUAGES,
   isSupportedLanguage,
@@ -47,11 +48,13 @@ export function LanguageSwitcher({
               void setLanguage(lang);
               onSelect?.();
             }}
-            className={`flex-1 items-center rounded-card py-2.5 ${
+            className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-card py-2.5 ${
               active ? 'bg-purple' : 'active:opacity-70'
             }`}
           >
+            <Text className="text-caption">{LANGUAGE_FLAGS[lang]}</Text>
             <Text
+              numberOfLines={1}
               className={`text-caption ${
                 active ? 'font-semibold text-white' : 'text-text-muted'
               }`}

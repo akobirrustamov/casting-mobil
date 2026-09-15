@@ -5,6 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Screen } from '@/components/ui/Screen';
 import {
+  LANGUAGE_FLAGS,
   LANGUAGE_LABELS,
   SUPPORTED_LANGUAGES,
   isSupportedLanguage,
@@ -70,6 +71,10 @@ export default function LanguageScreen() {
                 i > 0 ? 'border-t border-border' : ''
               }`}
             >
+              {/* Флаг — по просьбе заказчика (15.09.2026): язык узнаётся
+                  глазом раньше, чем прочитано слово. */}
+              <Text className="text-h2">{LANGUAGE_FLAGS[lang]}</Text>
+
               <Text
                 className={`flex-1 text-body text-text ${active ? 'font-semibold' : ''}`}
               >
