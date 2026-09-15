@@ -582,6 +582,114 @@ class ContentLikeTest {
     }
 
     /**
+     * V39 — allaqachon oshirib yuborilgan hisoblagichlarni qayta yozish.
+     *
+     * <h2>⚠️ Nima uchun migratsiyaning O'ZI sinovdan o'tkaziladi</h2>
+     * Bu SQL prod bazadagi har bir kontent va qismning raqamini ustidan
+     * yozadi. Flyway uni test bazasida bo'sh jadvallar ustida ham qo'llaydi —
+     * lekin bo'sh jadvalda noto'g'ri formula ham «xatosiz» o'tadi. Shuning
+     * uchun fayl shu yerda ma'lumot bilan qayta ishga tushiriladi.
+     */
+    @Nested
+    @DisplayName("V39: eski raqamlarni qayta hisoblash")
+    class Recompute {
+
+        @Test
+        @DisplayName("Kontent: bir odam — kuniga bitta, jamlanmagan hodisa sanalmaydi")
+        void contentCountIsRecomputedPerViewerPerDay() throws Exception {
+            Content film = movie();
+            LocalDate today = LocalDate.now();
+
+            // Ali bugun uch marta, kecha bir marta ochdi — bu 2 ko'rish.
+            for (int i = 0; i < 3; i++) {
+                event(film.getId(), null, "ali", today, true);
+            }
+            event(film.getId(), null, "ali", today.minusDays(1), true);
+            // Vali ham ochdi, lekin hodisa hali JAMLANMAGAN — uni keyingi
+            // 5 daqiqalik sikl qo'shadi, migratsiya esa tegmasligi kerak.
+            event(film.getId(), null, "vali", today, false);
+
+            setViewCount("cms_content", film.getId(), 99);
+            runMigration();
+
+            entityManager.clear();
+            assertThat(contentRepo.findById(film.getId()).orElseThrow().getViewCount())
+                    .as("99 xom son o'rniga: Ali kecha + Ali bugun")
+                    .isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("Qism: bir odam — kuniga bitta")
+        void episodeCountIsRecomputedPerViewerPerDay() throws Exception {
+            Content series = series();
+            Episode first = episode(series, 1);
+            LocalDate today = LocalDate.now();
+
+            event(series.getId(), first.getId(), "ali", today, true);
+            event(series.getId(), first.getId(), "ali", today, true);
+            event(series.getId(), first.getId(), "bobur", today, true);
+
+            setViewCount("cms_episode", first.getId(), 99);
+            runMigration();
+
+            entityManager.clear();
+            assertThat(episodeRepo.findById(first.getId()).orElseThrow().getViewCount())
+                    .isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("Hodisasi yo'q kontent nolga tushadi")
+        void contentWithoutEventsBecomesZero() throws Exception {
+            Content film = movie();
+
+            setViewCount("cms_content", film.getId(), 1234);
+            runMigration();
+
+            entityManager.clear();
+            assertThat(contentRepo.findById(film.getId()).orElseThrow().getViewCount())
+                    .isZero();
+        }
+
+        private void event(Long contentId, Long episodeId, String device,
+                           LocalDate day, boolean processed) {
+            eventRepo.save(com.example.backend.Cms.Entity.AnalyticsEvent.builder()
+                    .type(AnalyticsEventType.CONTENT_VIEW)
+                    .targetId(contentId)
+                    .episodeId(episodeId)
+                    .deviceKey(device)
+                    .eventDate(day)
+                    .processed(processed)
+                    .createdAt(java.time.LocalDateTime.now())
+                    .build());
+        }
+
+        private void setViewCount(String table, Long id, long value) {
+            entityManager.flush();
+            entityManager.createNativeQuery(
+                            "update " + table + " set view_count = :v where id = :id")
+                    .setParameter("v", value)
+                    .setParameter("id", id)
+                    .executeUpdate();
+        }
+
+        /** Migratsiya faylini aynan o'zini bajaradi — nusxasini emas. */
+        private void runMigration() throws Exception {
+            entityManager.flush();
+            String sql = new org.springframework.core.io.ClassPathResource(
+                    "db/migration/V39__recompute_view_counts.sql")
+                    .getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+            String withoutComments = java.util.Arrays.stream(sql.split("\\R"))
+                    .filter(line -> !line.trim().startsWith("--"))
+                    .collect(java.util.stream.Collectors.joining("\n"));
+            for (String statement : withoutComments.split(";")) {
+                if (!statement.isBlank()) {
+                    entityManager.createNativeQuery(statement).executeUpdate();
+                }
+            }
+        }
+    }
+
+    /**
      * Hisobot so'rovlari (admin panel statistikasi).
      *
      * <h2>Nima bu yerda tekshiriladi</h2>
