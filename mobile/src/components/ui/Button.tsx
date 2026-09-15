@@ -126,8 +126,21 @@ export function Button({
 
         Теперь ряд остаётся на месте и только гаснет, а кружок ложится
         поверх: размер кнопки и положение подписи не меняются никогда.
+
+        ⚠️ `collapsable={false}` — не украшение, а причина чёрного экрана
+        после кода из SMS (разбор 15.09.2026 по `adb logcat`).
+
+        Пока `opacity: 0`, Fabric держит ряд настоящим view. Стоит ей
+        стать `1`, ряд оказывается «чисто раскладочным», и Fabric его
+        сплющивает: подпись переезжает прямо в `Pressable`. Если экран в
+        этот же кадр уходит со стека — а после входа так и есть, — перенос
+        падает с «View already has a parent», и React Native гасит весь
+        инстанс. `ErrorBoundary` этого не видит: остаётся пустое окно.
+        Запрет сплющивания убирает сам перенос. Тест —
+        `__tests__/buttonFlattening.test.tsx`.
       */}
       <View
+        collapsable={false}
         className="flex-row items-center justify-center gap-2"
         style={{ opacity: loading ? 0 : 1, flexShrink: 1 }}
       >
