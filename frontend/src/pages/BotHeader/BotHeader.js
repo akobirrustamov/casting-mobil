@@ -108,10 +108,10 @@ function Header({ activeTab }) {
                             </select>
                         </div>
                         <div className="flex gap-4">
-                            <a href="https://www.instagram.com/uzcasting?igsh=c2M2ZHVoMWI1YzVi" target="_blank" rel="noopener noreferrer">
+                            <a href="https://www.instagram.com/uzcastingtv" target="_blank" rel="noopener noreferrer">
                                 <FaInstagram className={socialIconClass} />
                             </a>
-                            <a href="https://t.me/Uzcastinguz" target="_blank" rel="noopener noreferrer">
+                            <a href="https://t.me/uzcastingtvrasmiy" target="_blank" rel="noopener noreferrer">
                                 <FaTelegramPlane className={socialIconClass} />
                             </a>
                         </div>
@@ -185,7 +185,7 @@ function Header({ activeTab }) {
 
                 <div className="flex flex-col mt-8 gap-4 w-full">
                     <a
-                        href="https://www.instagram.com/uzcasting"
+                        href="https://www.instagram.com/uzcastingtv"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-[#f3f4f6] no-underline p-2 justify-center"
@@ -193,7 +193,7 @@ function Header({ activeTab }) {
                         <FaInstagram className={socialIconClass} /> Instagram
                     </a>
                     <a
-                        href="https://t.me/Uzcastinguz"
+                        href="https://t.me/uzcastingtvrasmiy"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-[#f3f4f6] no-underline p-2 justify-center"

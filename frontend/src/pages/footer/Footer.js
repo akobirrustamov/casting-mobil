@@ -65,19 +65,19 @@ const Footer = () => {
                             {t("footer.social.title")}
                             <span className="w-11 h-[3px] rounded-sm bg-[linear-gradient(90deg,#10b981,#f59e0b)] shadow-[0_0_10px_rgba(16,185,129,0.35)]"></span>
                         </h3>
-                        <a href="https://t.me/Uzcastinguz" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-[#e9f5ee] no-underline mt-0 mb-3 mx-0 py-1.5 transition-[color,transform] duration-200 hover:text-[blue] hover:-translate-y-px">
+                        <a href="https://t.me/uzcastingtvrasmiy" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-[#e9f5ee] no-underline mt-0 mb-3 mx-0 py-1.5 transition-[color,transform] duration-200 hover:text-[blue] hover:-translate-y-px">
                             <div className="w-9 h-9 rounded-full flex items-center justify-center border border-white/[0.14] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.1),rgba(255,255,255,0.04))]">
                                 <TelegramIcon />
                             </div>
                             <span>{t("footer.social.telegram")}</span>
                         </a>
-                        <a href="https://www.instagram.com/uzcasting" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-[#e9f5ee] no-underline mt-0 mb-3 mx-0 py-1.5 transition-[color,transform] duration-200 hover:text-[blue] hover:-translate-y-px">
+                        <a href="https://www.instagram.com/uzcastingtv" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-[#e9f5ee] no-underline mt-0 mb-3 mx-0 py-1.5 transition-[color,transform] duration-200 hover:text-[blue] hover:-translate-y-px">
                             <div className="w-9 h-9 rounded-full flex items-center justify-center border border-white/[0.14] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.1),rgba(255,255,255,0.04))]">
                                 <InstagramIcon />
                             </div>
                             <span>{t("footer.social.instagram")}</span>
                         </a>
-                        <a href="http://www.youtube.com/@Jasmaxstar" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-[#e9f5ee] no-underline mt-0 mb-3 mx-0 py-1.5 transition-[color,transform] duration-200 hover:text-[blue] hover:-translate-y-px">
+                        <a href="https://www.youtube.com/@Jasmaxstar" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-[#e9f5ee] no-underline mt-0 mb-3 mx-0 py-1.5 transition-[color,transform] duration-200 hover:text-[blue] hover:-translate-y-px">
                             <div className="w-9 h-9 rounded-full flex items-center justify-center border border-white/[0.14] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.1),rgba(255,255,255,0.04))]">
                                 <YouTubeIcon />
                             </div>
