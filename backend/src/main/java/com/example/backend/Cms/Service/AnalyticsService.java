@@ -114,13 +114,23 @@ public class AnalyticsService {
      * ⚠️ Faqat {@code CONTENT_VIEW}. Ijro va oxirigacha ko'rish
      * qism darajasida saqlanadigan joyga ega emas — ular kunlik
      * jamlanmada, u esa kontent bo'yicha.
+     *
+     * <h2>⚠️ Bir odam — sutkada bir ko'rish (15.09.2026)</h2>
+     * Buyurtmachi: «ko'rishlar sonini reallashtirish kerak». Ilova qism
+     * sahifasi har ochilganda hodisa yuboradi; ilgari hammasi qo'shilardi.
+     * Endi faqat shu kunda bu qismni hali SANALMAGAN odamlar qo'shiladi —
+     * so'rov qayta ishlangan hodisalarga qarab takrorni o'zi chiqarib
+     * tashlaydi. Kontent qatori uchun o'sha qoida {@link #applyContentRow}
+     * da.
      */
     private void applyEpisodeRows() {
-        for (AnalyticsEventRepo.EpisodeAggregateRow row : eventRepo.aggregateUnprocessedEpisodes()) {
-            if (row.getType() != AnalyticsEventType.CONTENT_VIEW || row.getEpisodeId() == null) {
+        for (AnalyticsEventRepo.EpisodeViewerRow row
+                : eventRepo.newEpisodeViewers(AnalyticsEventType.CONTENT_VIEW)) {
+            long viewers = nz(row.getViewers());
+            if (row.getEpisodeId() == null || viewers == 0) {
                 continue;
             }
-            episodeRepo.addViews(row.getEpisodeId(), nz(row.getTotal()));
+            episodeRepo.addViews(row.getEpisodeId(), viewers);
         }
     }
 
@@ -168,21 +178,41 @@ public class AnalyticsService {
 
         switch (row.getType()) {
             case CONTENT_VIEW -> {
+                // Kunlik jamlanmada XOM ochilishlar soni qoladi — admin
+                // paneldagi voronka (ochildi → o'ynatildi → tugatildi) shu
+                // songa tayanadi.
                 stat.setViews(nz(stat.getViews()) + total);
-                // ⚠️ Kontentning o'zidagi umumiy sanoq. 07.09.2026 gacha u
-                // hech qachon oshmasdi: hodisalar faqat shu kunlik
-                // jadvalga tushardi, ilova esa doim nol ko'rsatardi.
+
+                // Reklama bilan bir xil sabab: unikal qo'shilmaydi, qayta
+                // hisoblanadi. Aks holda bir soat ko'rgan foydalanuvchi
+                // 12 ta «unikal tomoshabin» bo'lib chiqardi.
+                long uniquesBefore = nz(stat.getUniqueViewers());
+                long uniquesNow = eventRepo.countUniquesForDay(
+                        row.getType(), row.getTargetId(), row.getDay());
+                stat.setUniqueViewers(uniquesNow);
+
+                // ⚠️ Kontentning o'zidagi umumiy sanoq — ilova shuni
+                // ko'rsatadi. 07.09.2026 gacha u hech qachon oshmasdi:
+                // hodisalar faqat shu kunlik jadvalga tushardi.
+                //
+                // ⚠️ 15.09.2026 gacha unga XOM son qo'shilardi: ilova
+                // kartochka va pleyer har ochilganda hodisa yuboradi, va
+                // bir odam filmni o'n marta ochsa — o'nta ko'rish edi.
+                // Buyurtmachi: «ko'rishlar sonini reallashtirish kerak».
+                // Endi faqat shu kungi YANGI tomoshabinlar qo'shiladi:
+                // bir odam (foydalanuvchi yoki qurilma) — sutkada bir
+                // ko'rish. Unikal sanoq to'plamlar orasida saqlanadi,
+                // shuning uchun takror keyingi to'plamda kelsa ham farq
+                // nol bo'ladi.
                 //
                 // Bu yerda oshiriladi, qabul qilishda emas: hodisa kelishi
                 // eng issiq yo'l, va u yerga qo'shimcha UPDATE qo'yish
                 // har bir kartochka ochilishida kontent qatorini
                 // qulflardi. Besh daqiqalik kechikish ekranda sezilmaydi.
-                contentRepo.addViews(row.getTargetId(), total);
-                // Reklama bilan bir xil sabab: unikal qo'shilmaydi, qayta
-                // hisoblanadi. Aks holda bir soat ko'rgan foydalanuvchi
-                // 12 ta «unikal tomoshabin» bo'lib chiqardi.
-                stat.setUniqueViewers(eventRepo.countUniquesForDay(
-                        row.getType(), row.getTargetId(), row.getDay()));
+                long newViewers = Math.max(0, uniquesNow - uniquesBefore);
+                if (newViewers > 0) {
+                    contentRepo.addViews(row.getTargetId(), newViewers);
+                }
             }
             case CONTENT_PLAY -> stat.setPlays(nz(stat.getPlays()) + total);
             case CONTENT_COMPLETE -> stat.setCompletes(nz(stat.getCompletes()) + total);

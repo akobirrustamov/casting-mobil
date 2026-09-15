@@ -78,6 +78,7 @@ class ContentLikeTest {
     @Autowired private AnalyticsService analyticsService;
     @Autowired private com.example.backend.Cms.Service.EpisodeService episodeService;
     @Autowired private com.example.backend.Cms.Repository.EpisodeRepo episodeRepo;
+    @Autowired private com.example.backend.Cms.Repository.AnalyticsEventRepo eventRepo;
     @Autowired private com.example.backend.Cms.Repository.ContentLikeRepo likeRepo;
     @Autowired private EntityManager entityManager;
 
@@ -343,6 +344,86 @@ class ContentLikeTest {
             assertThat(contentRepo.findById(film.getId()).orElseThrow().getViewCount())
                     .isZero();
         }
+
+        /**
+         * ⚠️ Buyurtmachi 15.09.2026: «ko'rishlar sonini reallashtirish
+         * kerak». Ilova kartochka va pleyer har OCHILGANDA hodisa
+         * yuboradi, server esa hammasini qo'shardi: bitta odam filmni
+         * o'n marta ochsa — o'nta ko'rish.
+         *
+         * Endi bitta odam (foydalanuvchi yoki qurilma) bitta kontentni
+         * sutkada BIR MARTA sanaladi.
+         */
+        @Test
+        @DisplayName("Bir qurilma bir kunda uch marta ochsa — bitta ko'rish")
+        void sameViewerSameDayCountsOnce() {
+            Content film = movie();
+
+            for (int i = 0; i < 3; i++) {
+                analyticsService.record(AnalyticsEventType.CONTENT_VIEW,
+                        film.getId(), null, null, "bitta-qurilma");
+            }
+            analyticsService.aggregate();
+
+            entityManager.clear();
+            assertThat(contentRepo.findById(film.getId()).orElseThrow().getViewCount())
+                    .isEqualTo(1);
+        }
+
+        /**
+         * Agregatsiya har 5 daqiqada ishlaydi va faqat YANGI hodisalarni
+         * ko'radi. Takror ikkinchi to'plamda kelsa ham qo'shilmasligi kerak
+         * — aks holda bir soat ichida qayta-qayta ochgan odam yana 12 ta
+         * ko'rish bo'lib chiqardi.
+         */
+        @Test
+        @DisplayName("Takror keyingi to'plamda kelsa ham qo'shilmaydi")
+        void repeatInLaterBatchIsNotCounted() {
+            Content film = movie();
+
+            analyticsService.record(AnalyticsEventType.CONTENT_VIEW,
+                    film.getId(), null, null, "ali");
+            analyticsService.aggregate();
+
+            analyticsService.record(AnalyticsEventType.CONTENT_VIEW,
+                    film.getId(), null, null, "ali");
+            analyticsService.record(AnalyticsEventType.CONTENT_VIEW,
+                    film.getId(), null, null, "vali");
+            analyticsService.aggregate();
+
+            entityManager.clear();
+            assertThat(contentRepo.findById(film.getId()).orElseThrow().getViewCount())
+                    .as("Ali ikkinchi marta sanalmaydi, Vali — yangi odam")
+                    .isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("Ertasi kuni o'sha odam yana bitta ko'rish beradi")
+        void sameViewerNextDayCountsAgain() {
+            Content film = movie();
+            LocalDate today = LocalDate.now();
+
+            viewEvent(film.getId(), null, "ali", today.minusDays(1));
+            viewEvent(film.getId(), null, "ali", today);
+            analyticsService.aggregate();
+
+            entityManager.clear();
+            assertThat(contentRepo.findById(film.getId()).orElseThrow().getViewCount())
+                    .isEqualTo(2);
+        }
+    }
+
+    /** Hodisani aniq kun bilan yozadi — {@code record} doim bugunni qo'yadi. */
+    private void viewEvent(Long contentId, Long episodeId, String device, LocalDate day) {
+        eventRepo.save(com.example.backend.Cms.Entity.AnalyticsEvent.builder()
+                .type(AnalyticsEventType.CONTENT_VIEW)
+                .targetId(contentId)
+                .episodeId(episodeId)
+                .deviceKey(device)
+                .eventDate(day)
+                .processed(false)
+                .createdAt(java.time.LocalDateTime.now())
+                .build());
     }
 
     /**
@@ -459,6 +540,44 @@ class ContentLikeTest {
             entityManager.clear();
             assertThat(episodeRepo.findById(first.getId()).orElseThrow().getViewCount())
                     .isZero();
+        }
+
+        @Test
+        @DisplayName("Qismni bir odam bir kunda qayta ochsa — bitta ko'rish")
+        void sameViewerSameDayCountsOnceForEpisode() {
+            Content series = series();
+            Episode first = episode(series, 1);
+
+            for (int i = 0; i < 3; i++) {
+                analyticsService.record(AnalyticsEventType.CONTENT_VIEW,
+                        series.getId(), first.getId(), null, "bitta-qurilma");
+            }
+            analyticsService.aggregate();
+
+            analyticsService.record(AnalyticsEventType.CONTENT_VIEW,
+                    series.getId(), first.getId(), null, "bitta-qurilma");
+            analyticsService.aggregate();
+
+            entityManager.clear();
+            assertThat(episodeRepo.findById(first.getId()).orElseThrow().getViewCount())
+                    .as("to'rt ochilish, ikki to'plam — lekin bitta odam, bitta kun")
+                    .isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("Qismni ertasi kuni ochsa — yana bitta ko'rish")
+        void sameViewerNextDayCountsAgainForEpisode() {
+            Content series = series();
+            Episode first = episode(series, 1);
+            LocalDate today = LocalDate.now();
+
+            viewEvent(series.getId(), first.getId(), "ali", today.minusDays(1));
+            viewEvent(series.getId(), first.getId(), "ali", today);
+            analyticsService.aggregate();
+
+            entityManager.clear();
+            assertThat(episodeRepo.findById(first.getId()).orElseThrow().getViewCount())
+                    .isEqualTo(2);
         }
     }
 

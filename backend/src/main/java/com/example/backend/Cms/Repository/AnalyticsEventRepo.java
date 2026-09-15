@@ -32,28 +32,49 @@ public interface AnalyticsEventRepo extends JpaRepository<AnalyticsEvent, Long> 
     List<AggregateRow> aggregateUnprocessed();
 
     /**
-     * O'sha hodisalar, lekin QISM bo'yicha jamlangan.
+     * QISM bo'yicha YANGI tomoshabinlar: har kun va har qism uchun shu
+     * to'plamda uchragan, lekin o'sha kunda shu qism bo'yicha hali
+     * sanalmagan odamlar soni.
      *
      * <h2>Nima uchun alohida so'rov</h2>
      * {@link #aggregateUnprocessed()} {@code episodeId} ni tashlab
      * yuboradi: u kontent darajasidagi jadvalni to'ldiradi va qismni
      * qo'shsa, bitta kontent qatori qismlar soniga bo'linib ketardi.
      *
-     * ⚠️ Ikkala so'rov ham {@code processed = false} ustidan
-     * ishlaydi, ya'ni ikkalasi ham belgilashdan OLDIN chaqirilishi shart.
-     * Aks holda qism sanog'i doim bo'sh qaytardi.
+     * <h2>⚠️ Nima uchun {@code not exists}</h2>
+     * Qismda kunlik jamlanma jadvali yo'q, ya'ni «bugun allaqachon nechta
+     * odam sanalgan» sonini saqlaydigan joy yo'q. Uning o'rniga
+     * qayta ishlangan hodisalarning o'zi xotira vazifasini bajaradi: odam
+     * shu kunda shu qism bo'yicha avvalroq sanalgan bo'lsa, u yerda
+     * {@code processed = true} hodisasi bor. Kontent uchun o'sha qoida
+     * {@code AnalyticsService.applyContentRow} da kunlik unikal sanoq
+     * farqi orqali ishlaydi.
+     *
+     * Unikal kalit — boshqa so'rovlardagidek: foydalanuvchida user_id,
+     * anonimda device_key.
+     *
+     * ⚠️ {@code processed = false} ustidan ishlaydi — belgilashdan OLDIN
+     * chaqirilishi shart. Aks holda qism sanog'i doim bo'sh qaytardi.
      *
      * Qismsiz hodisalar (kontent kartochkasi ochilgani) bu yerga
      * tushmaydi — ularning {@code episodeId} si null.
      */
     @Query("""
-            select e.eventDate as day, e.type as type, e.episodeId as episodeId,
-                   count(e) as total
+            select e.eventDate as day, e.episodeId as episodeId,
+                   count(distinct coalesce(cast(e.userId as string), e.deviceKey)) as viewers
             from AnalyticsEvent e
-            where e.processed = false and e.episodeId is not null
-            group by e.eventDate, e.type, e.episodeId
+            where e.processed = false and e.episodeId is not null and e.type = :type
+              and not exists (
+                  select p.id from AnalyticsEvent p
+                  where p.processed = true
+                    and p.type = e.type
+                    and p.episodeId = e.episodeId
+                    and p.eventDate = e.eventDate
+                    and coalesce(cast(p.userId as string), p.deviceKey)
+                        = coalesce(cast(e.userId as string), e.deviceKey))
+            group by e.eventDate, e.episodeId
             """)
-    List<EpisodeAggregateRow> aggregateUnprocessedEpisodes();
+    List<EpisodeViewerRow> newEpisodeViewers(@Param("type") AnalyticsEventType type);
 
     /**
      * Bir KUN ichidagi unikal foydalanuvchilar — qayta ishlanganidan qat'i nazar.
@@ -114,16 +135,14 @@ public interface AnalyticsEventRepo extends JpaRepository<AnalyticsEvent, Long> 
     }
 
     /**
-     * Qism bo'yicha qator.
+     * Qism bo'yicha qator: shu kunda shu qismning yangi tomoshabinlari.
      *
-     * ⚠️ Unikal sanoq bu yerda YO'Q: qism uchun kunlik jamlanma
-     * jadvali ham yo'q, ya'ni uni saqlaydigan joy yo'q. Qismda faqat
-     * umumiy hisoblagich bor.
+     * Qism uchun kunlik jamlanma jadvali yo'q — qismda faqat umumiy
+     * hisoblagich bor, va unga shu {@code viewers} qo'shiladi.
      */
-    interface EpisodeAggregateRow {
+    interface EpisodeViewerRow {
         LocalDate getDay();
-        AnalyticsEventType getType();
         Long getEpisodeId();
-        Long getTotal();
+        Long getViewers();
     }
 }
