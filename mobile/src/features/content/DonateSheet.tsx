@@ -172,7 +172,9 @@ export function DonateSheet({
             <Button
               variant="purchase"
               onPress={() => setNote(true)}
-              leading={<Ionicons name="heart" size={16} color={colors.white} />}
+              // Знак той валюты, которую дарят, а не сердце (заказчик,
+              // 15.09.2026): кнопка должна говорить, ЧТО уходит.
+              leading={<Mark stars={stars} size={16} color={colors.white} />}
               disabled={contentId === null}
             >
               {t(stars ? 'content.donateAmount' : 'content.donateAmountCoins', {

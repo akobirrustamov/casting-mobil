@@ -188,7 +188,8 @@ export function DonorsScreen({
               paddingHorizontal: 18,
             }}
           >
-            <Ionicons name="heart" size={18} color={colors.white} />
+            {/* Знак валюты этой вкладки, а не сердце (заказчик, 15.09.2026). */}
+            <Mark stars={stars} size={18} color={colors.white} />
             <Text className="flex-1 text-body font-semibold text-white">
               {t('content.donate')}
             </Text>
