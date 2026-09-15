@@ -55,7 +55,7 @@ export default function RootLayout() {
       })
   );
 
-  const showSplash = useBootstrap();
+  const { showSplash, fontsReady } = useBootstrap();
   useDeviceGuard(showSplash);
 
   return (
@@ -65,17 +65,37 @@ export default function RootLayout() {
           <ThemeProvider value={navigationTheme}>
             {/* ТЗ: dark mode первичен, светлой темы нет */}
             <StatusBar style="light" />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: colors.ink },
-              }}
-            >
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="onboarding" />
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="devices" />
-            </Stack>
+            {/*
+              ⚠️ Навигатор монтируется ТОЛЬКО после шрифтов.
+
+              Разбор 15.09.2026 по скриншоту с телефона: в таб-баре
+              «Med…» и «Casti…» обрезаны, а более длинное «Bosh sahifa» —
+              целое; в шапке главной «Premiu». Места хватало с запасом.
+
+              Раньше экраны рисовались ПОД splash сразу, а ждал шрифтов
+              только сам splash. Подписи успевали измериться, пока файла
+              Manrope ещё не было, — системным шрифтом, он уже. Имя
+              семейства после загрузки не меняется, и Fabric не
+              перемеряет текст: рисует Manrope в старую ширину. Целыми
+              оставались ровно те подписи, у которых позже сменилось
+              начертание (активная вкладка — semibold).
+
+              Пока шрифтов нет, сверху всё равно splash — пустота под ним
+              не видна.
+            */}
+            {fontsReady ? (
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: colors.ink },
+                }}
+              >
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="onboarding" />
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="devices" />
+              </Stack>
+            ) : null}
 
             {/* Поверх навигатора, но под splash — на splash сеть ещё не нужна */}
             <OfflineBanner />
@@ -99,9 +119,10 @@ export default function RootLayout() {
  * Splash — оверлей поверх навигатора, а не отдельный маршрут: «/» уже занят
  * под (tabs)/index, и отдельным экраном он остался бы в истории переходов.
  *
- * @returns показывать ли splash
+ * @returns `showSplash` — показывать ли splash; `fontsReady` — можно ли
+ *          монтировать навигатор (см. разбор над `<Stack>`)
  */
-function useBootstrap(): boolean {
+function useBootstrap(): { showSplash: boolean; fontsReady: boolean } {
   const restore = useAuthStore((s) => s.restore);
   const restoreFavorites = useFavoritesStore((s) => s.restore);
   const navigationState = useRootNavigationState();
@@ -176,7 +197,7 @@ function useBootstrap(): boolean {
     return () => cancelAnimationFrame(frame);
   }, [target, isNavigatorReady, fontsReady, done]);
 
-  return !done;
+  return { showSplash: !done, fontsReady };
 }
 
 /**
