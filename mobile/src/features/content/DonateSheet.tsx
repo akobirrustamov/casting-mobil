@@ -12,7 +12,7 @@ import { useBalance } from '@/features/profile/api';
 import { groupDigits } from '@/lib/money';
 import { TOUCH_TARGET, colors } from '@/theme/tokens';
 
-import coinIcon from '../../../assets/brand/coin.png';
+import coinIcon from '../../../assets/brand/uzcasting-coin.png';
 
 import type { DonationCurrency } from './detail';
 
@@ -208,19 +208,15 @@ export function DonateSheet({
 /**
  * Знак валюты.
  *
- * ⚠️ У UZCASTING Coin СВОЙ фирменный знак — картинка, а не значок из
- * набора. Залит он белым, цвет даёт `tintColor`: тогда он живёт по тем же
- * правилам, что и соседняя звезда, — одна линия, один цвет.
+ * ⚠️ У UZCASTING Coin СВОЙ фирменный знак — объёмный серебряный щит со
+ * звездой (заказчик, 15.09.2026: «uzcasting donatida iconni o'zini qo'y»).
+ * Он рисуется КАК ЕСТЬ, без `tintColor`: перекраска в один цвет убила бы
+ * металл и превратила знак обратно в плоский силуэт, от которого и уходили.
  */
 function Mark({ stars, size, color }: { stars: boolean; size: number; color: string }) {
   return stars ? (
     <Ionicons name="star" size={size} color={color} />
   ) : (
-    <Image
-      source={coinIcon}
-      tintColor={color}
-      style={{ width: size, height: size }}
-      contentFit="contain"
-    />
+    <Image source={coinIcon} style={{ width: size, height: size }} contentFit="contain" />
   );
 }

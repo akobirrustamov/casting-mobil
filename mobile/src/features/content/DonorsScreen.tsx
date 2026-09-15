@@ -15,7 +15,7 @@ import { pushOnce } from '@/lib/navigation';
 import { useIsOffline } from '@/lib/network';
 import { TOUCH_TARGET, colors, radius } from '@/theme/tokens';
 
-import coinIcon from '../../../assets/brand/coin.png';
+import coinIcon from '../../../assets/brand/uzcasting-coin.png';
 
 import { DonateSheet } from './DonateSheet';
 import {
@@ -313,19 +313,15 @@ function Row({
 /**
  * Знак валюты.
  *
- * ⚠️ У UZCASTING Coin СВОЙ фирменный знак — картинка, а не значок из
- * набора; цвет даёт `tintColor`, как у соседней звезды.
+ * ⚠️ У UZCASTING Coin СВОЙ фирменный знак — объёмный серебряный щит со
+ * звездой (заказчик, 15.09.2026). Рисуется без `tintColor`: перекраска
+ * превратила бы металл в плоский силуэт. `color` действует только на звезду.
  */
 function Mark({ stars, size, color }: { stars: boolean; size: number; color?: string }) {
   return stars ? (
     <Ionicons name="star" size={size} color={color ?? colors.gold} />
   ) : (
-    <Image
-      source={coinIcon}
-      tintColor={color ?? colors.violet}
-      style={{ width: size, height: size }}
-      contentFit="contain"
-    />
+    <Image source={coinIcon} style={{ width: size, height: size }} contentFit="contain" />
   );
 }
 
