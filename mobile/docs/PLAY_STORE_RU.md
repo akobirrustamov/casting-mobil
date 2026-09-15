@@ -20,7 +20,7 @@
 | Формат сборки | EAS профиль `production` собирает `.aab` — Play принимает только его |
 | Package name | `uz.uzcasting.app` — после первой загрузки не меняется никогда |
 | Версия | `1.0.0`, `versionCode` ведёт EAS (`appVersionSource: "remote"`, `autoIncrement: true`) |
-| Ключ подписи | хранится в EAS, не теряется вместе с машиной |
+| Ключ подписи | хранится в EAS. ⚠️ 15.09.2026 проект переехал на аккаунт `diyorbekjumayev1`, ключ у него **новый**: SHA-1 `6C:70:BF:FE:...:CE:C9` уже вписан в Android-клиент Google (проверено 15.09.2026) |
 | Target API | Expo SDK 57 → API 36. Требование Play для новых приложений с 31.08.2026 — ровно API 36 |
 | 16 KB page size | требование для новых приложений с 01.11.2025, Expo SDK 57 ему удовлетворяет |
 | Разрешения | обрезаны до одного `INTERNET` (13.09.2026, см. §2.1) |
@@ -686,9 +686,15 @@ Android-клиент Google перестаёт узнавать приложен
 
 ### 10.1. Собрать AAB [Я]
 
+⚠️ **С 15.09.2026 сборку запускает не тот аккаунт, что раньше.** EAS-проект
+переехал с `bukakish` на `diyorbekjumayev1` (`app.json` → `owner`, новый
+`projectId`), поэтому токен из `.env.local` больше не подходит — нужен вход
+`eas login` под новым аккаунтом. Разбор последствий переезда —
+[BUILDS_AND_UPDATES.md](./BUILDS_AND_UPDATES.md) §1.1.
+
 ```bash
 cd mobile
-export EXPO_TOKEN=$(grep '^EXPO_TOKEN=' .env.local | cut -d= -f2)
+eas login                 # diyorbekjumayev1
 eas build --platform android --profile production --non-interactive
 ```
 

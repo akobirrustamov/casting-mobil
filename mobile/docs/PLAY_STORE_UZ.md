@@ -20,7 +20,7 @@ qo'lda bajariladi. **[BUYURTMACHI]** — faqat hisob egasi bajara oladi.
 | Build formati | EAS `production` profili `.aab` yig'adi — Play faqat shuni qabul qiladi |
 | Package name | `uz.uzcasting.app` — birinchi yuklashdan keyin hech qachon o'zgarmaydi |
 | Versiya | `1.0.0`, `versionCode`ni EAS yuritadi (`appVersionSource: "remote"`, `autoIncrement: true`) |
-| Imzo kaliti | EAS'da saqlanadi, kompyuter bilan birga yo'qolmaydi |
+| Imzo kaliti | EAS'da saqlanadi. ⚠️ 15.09.2026 da loyiha `diyorbekjumayev1` akkauntiga ko'chdi, kalit **yangi**: SHA-1 `6C:70:BF:FE:...:CE:C9` Google Android-klientiga allaqachon yozilgan (15.09.2026 da tekshirildi) |
 | Target API | Expo SDK 57 → API 36. Play talabi (31.08.2026 dan yangi ilovalar uchun) — aynan API 36 |
 | 16 KB page size | 01.11.2025 dan yangi ilovalar uchun talab, Expo SDK 57 unga mos |
 | Ruxsatlar | bittagina `INTERNET` qoldirildi (13.09.2026, §2.1) |
@@ -691,9 +691,15 @@ kerak, diskdagi APK ustida emas — ularning imzosi har xil.
 
 ### 10.1. AAB yig'ish [MEN]
 
+⚠️ **15.09.2026 dan buildni boshqa akkaunt ishga tushiradi.** EAS loyihasi
+`bukakish` dan `diyorbekjumayev1` ga ko'chdi (`app.json` → `owner`, yangi
+`projectId`), shuning uchun `.env.local` dagi token endi to'g'ri kelmaydi —
+yangi akkaunt bilan `eas login` kerak. Ko'chishning oqibatlari —
+[BUILDS_AND_UPDATES.md](./BUILDS_AND_UPDATES.md) §1.1.
+
 ```bash
 cd mobile
-export EXPO_TOKEN=$(grep '^EXPO_TOKEN=' .env.local | cut -d= -f2)
+eas login                 # diyorbekjumayev1
 eas build --platform android --profile production --non-interactive
 ```
 
