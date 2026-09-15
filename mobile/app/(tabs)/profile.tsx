@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, Pressable, Text, View } from 'react-native';
+
+import coinIcon from '../../assets/brand/uzcasting-coin.png';
 
 import { Button } from '@/components/ui/Button';
 import { GlowCard } from '@/components/ui/GlowCard';
@@ -300,7 +300,6 @@ function ProfileCard() {
                 {t('profile.guestBody')}
               </Text>
             )}
-            {isAuthorized && user?.id ? <UserIdRow id={user.id} /> : null}
 
             {/* Метка подписчика — как на макете Screen 4. Показывается
                 только по ответу сервера: нарисовать её «на всякий случай»
@@ -334,6 +333,9 @@ function ProfileCard() {
             <Divider />
             <Stat
               icon="film-outline"
+              // Фирменный знак UZCASTING вместо плёнки (заказчик, 15.09.2026):
+              // монета везде одна и та же, что в донатах, что в балансе.
+              image={coinIcon}
               tint={colors.cyan}
               label={t('profile.coins')}
               value={balance.data ? String(balance.data.coins) : null}
@@ -390,11 +392,14 @@ function Divider() {
 /** Одно число из трёх. `null` — данных нет, и это видно. */
 function Stat({
   icon,
+  image,
   tint,
   label,
   value,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
+  /** Картинка вместо значка — у монеты UZCASTING свой объёмный знак. */
+  image?: number;
   tint: string;
   label: string;
   value: string | null;
@@ -402,7 +407,11 @@ function Stat({
   return (
     <View className="flex-1 items-center gap-1">
       <View className="flex-row items-center gap-1.5">
-        <Ionicons name={icon} size={13} color={tint} />
+        {image !== undefined ? (
+          <Image source={image} style={{ width: 16, height: 16 }} contentFit="contain" />
+        ) : (
+          <Ionicons name={icon} size={13} color={tint} />
+        )}
         <Text className="text-micro text-text-muted">{label}</Text>
       </View>
       <Text className={`text-h2 ${value === null ? 'text-text-disabled' : 'text-text'}`}>
@@ -508,38 +517,5 @@ function RowGroup({ rows }: { rows: Row[] }) {
         );
       })}
     </View>
-  );
-}
-
-/**
- * ID пользователя с копированием — у Yangi.TV он на видном месте
- * рядом с балансом: его диктуют в поддержку.
- */
-function UserIdRow({ id }: { id: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const onCopy = async () => {
-    await Clipboard.setStringAsync(id);
-    setCopied(true);
-    // Возвращаем подпись обратно, иначе «скопировано» висит навсегда
-    setTimeout(() => setCopied(false), 1500);
-  };
-
-  return (
-    <Pressable
-      onPress={onCopy}
-      accessibilityRole="button"
-      hitSlop={6}
-      className="mt-0.5 flex-row items-center gap-1.5 active:opacity-60"
-    >
-      <Text numberOfLines={1} className="text-micro text-text-disabled">
-        ID: {id}
-      </Text>
-      <Ionicons
-        name={copied ? 'checkmark' : 'copy-outline'}
-        size={13}
-        color={copied ? colors.success : colors.textDisabled}
-      />
-    </Pressable>
   );
 }

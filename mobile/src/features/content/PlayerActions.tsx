@@ -6,7 +6,7 @@ import type { WatchInfo } from '@/features/watch/types';
 import { compactCount } from '@/lib/money';
 import { colors } from '@/theme/tokens';
 
-import coinIcon from '../../../assets/brand/coin.png';
+import coinIcon from '../../../assets/brand/uzcasting-coin.png';
 
 import { openComments } from '@/features/comments/CommentsScreen';
 
@@ -110,12 +110,9 @@ function Action({
   const body = (
     <>
       {icon === 'coin' ? (
-        <Image
-          source={coinIcon}
-          tintColor={color}
-          style={{ width: 18, height: 18 }}
-          contentFit="contain"
-        />
+        // Фирменная серебряная монета как есть, без перекраски
+        // (заказчик, 15.09.2026) — та же, что в донатах и в профиле.
+        <Image source={coinIcon} style={{ width: 20, height: 20 }} contentFit="contain" />
       ) : (
         <Ionicons name={icon} size={18} color={color} />
       )}

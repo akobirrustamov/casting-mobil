@@ -6,7 +6,7 @@ import { Pressable, Text, View } from 'react-native';
 import type { WatchInfo } from '@/features/watch/types';
 import { compactCount } from '@/lib/money';
 
-import coinIcon from '../../../assets/brand/coin.png';
+import coinIcon from '../../../assets/brand/uzcasting-coin.png';
 import { colors } from '@/theme/tokens';
 
 import { openComments } from '@/features/comments/CommentsScreen';
@@ -134,13 +134,11 @@ function Tile({
       {icon === 'coin' ? (
         <Image
           source={coinIcon}
-          // ⚠️ Знак залит белым, цвет даёт `tintColor`: тогда он живёт по
-          // тем же правилам, что и соседние значки — одна линия, один
-          // цвет. Хромированный оригинал рядом с ними выглядел бы
-          // наклейкой из чужого приложения, а на 18 пунктах блики
-          // превращаются в грязь.
-          tintColor={color}
-          style={{ width: 18, height: 18 }}
+          // ⚠️ Объёмный серебряный знак БЕЗ `tintColor` (заказчик,
+          // 15.09.2026: «shunaqa iconlar ishlatishingiz kerak»). Раньше
+          // здесь стоял белый силуэт, перекрашенный под соседние значки, —
+          // заказчик хочет видеть фирменную монету, а не контур.
+          style={{ width: 20, height: 20 }}
           contentFit="contain"
         />
       ) : (
