@@ -272,20 +272,7 @@
     "phoneNote": "Telefon raqami SMS bilan tasdiqlangan va kirish uchun ishlatiladi — uni o'zgartirib bo'lmaydi.",
     "saved": "Saqlandi",
     "saveFailed": "Saqlanmadi. Qaytadan urinib ko'ring.",
-    "signInRequired": "Profilni tahrirlash uchun hisobingizga kiring.",
-    "deleteAccount": "Hisobni o'chirish",
-    "deleteTitle": "Hisobni o'chirish",
-    "deleteSubtitle": "Bu amalni ortga qaytarib bo'lmaydi",
-    "deleteWhatGoes": "Nima o'chiriladi",
-    "deleteWhatGoesBody": "Telefon raqami, email, ism va rasm. Saqlanganlar, ko'rish joyi va qurilmalar ro'yxati. Barcha qurilmalardan chiqarilasiz.",
-    "deleteWhatStays": "Nima qoladi",
-    "deleteWhatStaysBody": "Izohlaringiz matni qoladi, lekin muallif nomi ko'rinmaydi. To'lovlar yozuvi qonun talabiga ko'ra saqlanadi.",
-    "deletePhoneNote": "Raqamingiz bo'shaydi — kelajakda u bilan qaytadan ro'yxatdan o'tishingiz mumkin.",
-    "deleteAction": "Hisobimni o'chirish",
-    "deleteConfirmTitle": "Hisob o'chirilsinmi?",
-    "deleteConfirmBody": "Ma'lumotlaringiz qaytarilmaydi.",
-    "deleteFailed": "Hisob o'chirilmadi. Qaytadan urinib ko'ring.",
-    "deleteWebNote": "Ilovasiz o'chirish uchun: uzcasting.com/hisobni-ochirish"
+    "signInRequired": "Profilni tahrirlash uchun hisobingizga kiring."
   },
   "notifications": {
     "empty": "Hozircha xabar yo'q.",

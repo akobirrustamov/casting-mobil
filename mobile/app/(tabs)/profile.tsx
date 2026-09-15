@@ -208,17 +208,11 @@ export default function ProfileScreen() {
             onPress: onSignOut,
             danger: true,
           },
-          // ⚠️ Требование Google Play: путь к удалению аккаунта должен
-          // быть В ПРИЛОЖЕНИИ и находиться без подсказок. Профиль —
-          // первое место, где его ищут, поэтому пункт стоит здесь, а не
-          // внутри «Profil».
-          {
-            key: 'deleteAccount',
-            label: t('settings.deleteAccount'),
-            icon: 'trash-outline' as const,
-            onPress: () => router.push('/settings/delete-account'),
-            danger: true,
-          },
+          // ⚠️ Пункт «Hisobni o'chirish» убран по слову заказчика
+          // (15.09.2026): «umuman kerak emas». Google Play требует путь к
+          // удалению аккаунта В ПРИЛОЖЕНИИ — см. docs/PLAY_STORE_UZ.md §6,
+          // без него публикация упрётся в отказ. Экран и запрос живут в
+          // истории git, эндпоинт `DELETE /api/v1/app/me` на бэкенде цел.
         ]
       : []),
   ];

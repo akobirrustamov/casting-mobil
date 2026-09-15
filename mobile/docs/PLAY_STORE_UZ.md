@@ -37,7 +37,7 @@ emas, bu rad javobi yoki tirik foydalanuvchilarda ishlamaydigan kirish.
 
 | # | To'siq | Kim hal qiladi | Batafsil |
 |---|---|---|---|
-| ~~1~~ | ~~Hisobni o'chirish~~ — **13.09.2026 da yopildi**: endpoint, sahifa va ilovadagi ekran | — | §6 |
+| 1 | ⚠️ Hisobni o'chirish — 13.09.2026 da yopilgan edi, **15.09.2026 da qayta ochildi**: ilovadagi ekran buyurtmachi so'rovi bilan olib tashlandi. Endpoint va sahifa bor | **[SIZ]** | §6 |
 | ~~2~~ | ~~Google Cloud OAuth `Testing` holatida~~ — **13.09.2026 da hal qilindi**, holat `In production` | — | §7 |
 | 3 | Play App Signing kalitining SHA-1'i Google Android-klientiga yozilmagan | **[SIZ]** | §9 |
 | 4 | Demo-kirish: **kod 13.09.2026 da tayyor**, yuborishdan oldin prodda yoqiladi | **[SIZ]** | §5.4 |
@@ -429,7 +429,18 @@ sessiyalar bekor qilinadi, qurilmalar/saqlanganlar/ko'rish joyi o'chadi.
 Izohlar qoladi, muallif «O'chirilgan foydalanuvchi» bo'ladi. **Telefon
 bo'shaydi** — u bilan qaytadan ro'yxatdan o'tish mumkin.
 
-### ✅ Ilovadagi ekran 13.09.2026 da tayyor
+### ⚠️ Ilovadagi ekran 15.09.2026 da OLIB TASHLANDI
+
+Buyurtmachi: «hisobni o'chirish degani butunlay olib tashla profildan
+umuman kerak emas bu». Profildagi qator, `app/settings/delete-account.tsx`,
+`useDeleteAccount` va `settings.delete*` matnlari o'chirildi. Backenddagi
+`DELETE /api/v1/app/me` va `/hisobni-ochirish` sahifasi joyida.
+
+Oqibati: Google siyosatining **1-yo'li** (ilova ichida) yo'q, faqat veb-havola
+qoldi. Play'ga yuborishda bu rad javobiga sabab bo'lishi mumkin. Qaytarish —
+git tarixidan, quyida o'sha ekranning tavsifi.
+
+### Olib tashlangan ekran (13.09.2026 — 15.09.2026)
 
 `Profil → Hisobni o'chirish` («Chiqish» yonida, qizil). Ekran nima
 o'chirilishi va nima qolishini tushuntiradi, tasdiqlash — tizim oynasi.
