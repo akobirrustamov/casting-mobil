@@ -77,9 +77,11 @@ const SOCIALS: {
   icon: keyof typeof Ionicons.glyphMap;
   url: string;
 }[] = [
-  { key: 'telegram', icon: 'paper-plane-outline', url: 'https://t.me/uzcasting' },
-  { key: 'instagram', icon: 'logo-instagram', url: 'https://instagram.com/uzcasting' },
-  { key: 'youtube', icon: 'logo-youtube', url: 'https://youtube.com/@uzcasting' },
+  // Адреса от заказчика (15.09.2026). Из ссылки Instagram убран `?stkn=…` —
+  // это метка «кто поделился», аккаунт открывается и без неё.
+  { key: 'telegram', icon: 'paper-plane-outline', url: 'https://t.me/uzcastingtvrasmiy' },
+  { key: 'instagram', icon: 'logo-instagram', url: 'https://www.instagram.com/uzcastingtv' },
+  { key: 'youtube', icon: 'logo-youtube', url: 'https://www.youtube.com/@Jasmaxstar' },
   { key: 'support', icon: 'headset-outline', url: 'https://t.me/uzcasting_support' },
 ];
 
