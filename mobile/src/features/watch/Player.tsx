@@ -140,7 +140,10 @@ export function Player({
   actions = null,
   fill = false,
   autoPlay = false,
-  autoFullscreen = false,
+  paused = false,
+  landscape = false,
+  onLandscapeChange,
+  onBack,
 }: {
   source: VideoSource;
   orientation: Orientation | null;
@@ -163,7 +166,8 @@ export function Player({
    *
    * ⚠️ В ПОЛНОЭКРАННОМ режиме платформа всегда рисует свои — так
    * устроены и ExoPlayer, и AVPlayer (docs.expo.dev, SDK 57). Поэтому
-   * наша панель живёт до нажатия «на весь экран», а не после.
+   * там, где панель нужна и на весь экран, полный экран СВОЙ — см.
+   * `landscape`.
    */
   controls?: 'native' | 'custom';
 
@@ -208,26 +212,32 @@ export function Player({
   onError?: (message: string | null) => void;
 
   /**
-   * Открыть системное полноэкранное окно сразу, без второго нажатия.
-   *
-   * <h2>⚠️ Что здесь чинилось</h2>
-   * В описании `autoPlay` уже было написано, что полный экран
-   * открывается нажатием «Tomosha qilish». На деле не открывался
-   * НИКОГДА: `enterFullscreen()` вызывался только из своей панели, с
-   * кнопки. Человек нажимал «смотреть», получал кадр в треть экрана и
-   * должен был нажать ещё раз — ровно то, чего описание обещало
-   * избежать. Расхождение между текстом и кодом, а не задумка.
-   *
-   * ⚠️ Только там, где человек УЖЕ сказал «смотреть»: экран просмотра и
-   * выбранная серия. У трейлера на карточке этого нет — там кадр стоит
-   * в вёрстке страницы, и разворачивать его на весь экран без спроса
-   * значит отнимать страницу, которую человек читает.
-   *
-   * ⚠️ На вебе не сработает и это НЕ поломка: браузер разрешает
-   * полный экран только по жесту пользователя, программный вызов он
-   * отклоняет. Отказ гасится — плеер остаётся в странице.
+   * Поставить на паузу извне — например, экран ушёл из фокуса (открыли
+   * комментарии поверх серии). Без этого звук играл бы под чужой страницей.
    */
-  autoFullscreen?: boolean;
+  paused?: boolean;
+
+  /**
+   * НАШ полноэкранный режим: кадр повёрнут на 90° и занимает весь экран.
+   *
+   * <h2>⚠️ Почему не `enterFullscreen()` платформы</h2>
+   * В системном полноэкранном окне ExoPlayer и AVPlayer рисуют ТОЛЬКО свои
+   * кнопки — «нравится», комментарии и донаты там пропадали, а именно в
+   * полном экране их и ищут. Поэтому поворот делаем сами: та же панель,
+   * тот же ряд действий, просто кадр развёрнут.
+   *
+   * Поворот — трансформацией, а не сменой ориентации окна: приложение
+   * закреплено в портрете (`app.json`), и модуль ориентации потребовал бы
+   * новой нативной сборки.
+   *
+   * Работает, только если задан `onLandscapeChange` и `fill` — рамка
+   * должна быть размером с экран.
+   */
+  landscape?: boolean;
+  onLandscapeChange?: (next: boolean) => void;
+
+  /** Стрелка «назад» в верхнем углу панели — выход из просмотра. */
+  onBack?: () => void;
 }) {
   const { t } = useTranslation();
   const vertical = isVertical(orientation);
@@ -319,37 +329,13 @@ export function Player({
    * и на части сбоев платформа его не заполняет — условие по нему пропускало
    * бы их молча.
    */
-  /** Полный экран уже разворачивали — второй раз не навязываем. */
-  const fullscreenOpened = useRef(false);
-
   useEventListener(player, 'statusChange', ({ status, error }) => {
-    if (status === 'error') {
-      onError?.(error?.message ?? null);
-      return;
-    }
-
-    /*
-     * Полный экран сразу — ровно один раз за жизнь плеера.
-     *
-     * ⚠️ Обработчик здесь ОДИН на событие, и это не стилистика. Вторая
-     * подписка на `statusChange` затирала первую — падал не полный
-     * экран, а сообщение об ошибке воспроизведения, то есть сбой видео
-     * переставал доходить до экрана. Поймано тестом `player.test.tsx`.
-     *
-     * ⚠️ Ждём `readyToPlay`, а не монтирования: до готовности у нативного
-     * представления нет ни размеров, ни источника, и вызов молча
-     * отклоняется.
-     *
-     * ⚠️ Флаг обязателен: это состояние приходит СНОВА при смене ступени
-     * качества. Без него человек, свернувший полный экран и
-     * переключивший качество, получал бы его обратно.
-     */
-    if (!autoFullscreen || fullscreenOpened.current || status !== 'readyToPlay') return;
-
-    fullscreenOpened.current = true;
-    // Отказ — рабочий случай: на вебе браузер требует жест пользователя.
-    void view.current?.enterFullscreen().catch(() => {});
+    if (status === 'error') onError?.(error?.message ?? null);
   });
+
+  useEffect(() => {
+    if (paused) player.pause();
+  }, [paused, player]);
 
   /**
    * «Продолжить просмотр»: запоминает секунду, на которой остановились.
@@ -384,21 +370,6 @@ export function Player({
 
   const view = useRef<VideoView>(null);
 
-  /**
-   * Полный экран сразу — ровно один раз за жизнь плеера.
-   *
-   * <h2>⚠️ Почему по `readyToPlay`, а не на монтировании</h2>
-   * `enterFullscreen()` обращается к нативному представлению, у которого
-   * к моменту первого кадра рендера ещё нет ни размеров, ни источника, —
-   * вызов молча отклоняется. Дожидаемся готовности плеера: к этому
-   * моменту окно точно есть, чему разворачиваться.
-   *
-   * <h2>⚠️ Почему флаг, а не просто `status === 'readyToPlay'`</h2>
-   * Это состояние приходит СНОВА — при смене ступени качества плеер
-   * перезагружает источник. Без флага человек, свернувший полный экран
-   * и переключивший качество, получал бы его обратно, будто приложение
-   * ему перечит.
-   */
   const qualityMenu =
     ladder.length > 1 ? (
       <>
@@ -418,20 +389,43 @@ export function Player({
       </>
     ) : null;
 
+  // Свой полный экран возможен, только когда рамка уже размером с экран.
+  const rotatable = custom && fill && onLandscapeChange !== undefined;
+  const rotated = rotatable && landscape && boxWidth > 0 && boxHeight > 0;
+
+  // Повёрнутый кадр: ширина и высота меняются местами, центр — тот же.
+  const frameStyle = rotated
+    ? ({
+        position: 'absolute',
+        width: boxHeight,
+        height: boxWidth,
+        left: (boxWidth - boxHeight) / 2,
+        top: (boxHeight - boxWidth) / 2,
+        transform: [{ rotate: '90deg' }],
+      } as const)
+    : { width: size.width, height: size.height };
+
+  const toggleFullscreen = rotatable
+    ? () => onLandscapeChange(!landscape)
+    : () => void view.current?.enterFullscreen().catch(() => {});
+
   return (
     <View onLayout={onLayout} className={fill ? 'flex-1' : 'items-center'}>
-      <View style={{ width: size.width, height: size.height }}>
+      <View style={frameStyle}>
         <VideoView
           ref={view}
           player={player}
           style={{
-            width: size.width,
-            height: size.height,
+            width: frameStyle.width,
+            height: frameStyle.height,
             borderRadius: fill ? 0 : 16,
             backgroundColor: '#000',
           }}
           contentFit="contain"
           nativeControls={!custom}
+          // ⚠️ SurfaceView на Android не поворачивается трансформацией —
+          // кадр остался бы портретным под повёрнутой панелью.
+          surfaceType={rotatable ? 'textureView' : undefined}
           fullscreenOptions={{
             enable: true,
             // Ландшафт для обычного видео, портрет для рилса.
@@ -445,9 +439,13 @@ export function Player({
             player={player}
             title={title}
             actions={actions}
-            quality={qualityMenu}
+            ladder={ladder}
+            chosen={chosen}
+            onQuality={chooseQuality}
             fallbackDuration={source.durationSeconds}
-            onFullscreen={() => void view.current?.enterFullscreen().catch(() => {})}
+            fullscreen={rotated}
+            onFullscreen={toggleFullscreen}
+            onBack={onBack}
           />
         ) : null}
       </View>
@@ -473,7 +471,7 @@ export function Player({
  *
  * <h2>Что на ней стоит и почему именно это</h2>
  * Сверху название (в полноэкранном плеере больше неоткуда понять, что
- * играет), по центру перемотка на 10 секунд и пауза, снизу полоса
+ * играет), по центру перемотка на 5 секунд и пауза, снизу полоса
  * времени, а под ней — «нравится», комментарии, звёзды, монеты и «на
  * весь экран». Кнопки платформы этого ряда не знают вовсе: ни у
  * ExoPlayer, ни у AVPlayer нет места, куда его добавить.
@@ -487,20 +485,47 @@ function Controls({
   player,
   title,
   actions,
-  quality,
+  ladder,
+  chosen,
+  onQuality,
   fallbackDuration,
+  fullscreen,
   onFullscreen,
+  onBack,
 }: {
   player: ReturnType<typeof useVideoPlayer>;
   title: string | null;
   actions: React.ReactNode;
-  quality: React.ReactNode;
+  /** Ступени качества этого видео — пустой список значит «только Авто». */
+  ladder: Rung[];
+  chosen: Quality;
+  onQuality: (next: Quality) => void;
   /** Длительность из карточки — пока плеер не разобрал файл. */
   fallbackDuration: number | null;
+  /** Кадр развёрнут нашим полным экраном — кнопка становится «свернуть». */
+  fullscreen: boolean;
   onFullscreen: () => void;
+  onBack?: () => void;
 }) {
   const [shown, setShown] = useState(true);
   const [barWidth, setBarWidth] = useState(0);
+  const [boxWidth, setBoxWidth] = useState(0);
+
+  /** Открыто окно «Sozlamalar»: качество и скорость. */
+  const [settings, setSettings] = useState(false);
+
+  /**
+   * Скорость воспроизведения.
+   *
+   * ⚠️ Переставляется и после `sourceLoad`: смена ступени качества
+   * подменяет источник, и часть платформ при этом сбрасывает скорость на
+   * 1× — человек выбрал 2×, переключил на 480p и незаметно вернулся к 1×.
+   */
+  const [rate, setRate] = useState(1);
+  const chooseRate = (next: number) => {
+    setRate(next);
+    player.playbackRate = next;
+  };
 
   const { isPlaying } = useEvent(player, 'playingChange', {
     isPlaying: player.playing,
@@ -527,17 +552,75 @@ function Controls({
     if (Number.isFinite(payload.duration) && payload.duration > 0) {
       setDuration(payload.duration);
     }
+    if (player.playbackRate !== rate) player.playbackRate = rate;
   });
 
   const total = duration > 0 ? duration : (fallbackDuration ?? 0);
 
   // Панель уходит через три секунды после того, как видео пошло. На
   // паузе таймера нет вовсе — см. заголовок.
+  // Пока открыты настройки — тоже нет: панель не должна исчезать из-под
+  // пальца, выбирающего скорость.
   useEffect(() => {
-    if (!shown || !isPlaying) return;
+    if (!shown || !isPlaying || settings) return;
     const timer = setTimeout(() => setShown(false), 3000);
     return () => clearTimeout(timer);
-  }, [shown, isPlaying]);
+  }, [shown, isPlaying, settings]);
+
+  /**
+   * Нажатие по пустому месту кадра.
+   *
+   * Одно — показать/скрыть панель. Два подряд по левой или правой
+   * половине — перемотка на 5 секунд, как в привычных плеерах.
+   *
+   * ⚠️ Одиночное нажатие ждёт `DOUBLE_TAP_MS`: иначе первое касание
+   * двойного успевало бы спрятать панель, и перемотка мигала бы ею.
+   */
+  const lastTap = useRef<{ at: number; side: -1 | 1 } | null>(null);
+  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [flash, setFlash] = useState<{ side: -1 | 1; key: number } | null>(null);
+
+  useEffect(
+    () => () => {
+      if (tapTimer.current) clearTimeout(tapTimer.current);
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!flash) return;
+    const timer = setTimeout(() => setFlash(null), 600);
+    return () => clearTimeout(timer);
+  }, [flash]);
+
+  const skip = useCallback(
+    (side: -1 | 1) => {
+      player.seekBy(side * SKIP_SECONDS);
+      setFlash({ side, key: Date.now() });
+    },
+    [player]
+  );
+
+  const onSurfaceTap = (e: GestureResponderEvent) => {
+    const side: -1 | 1 = boxWidth > 0 && e.nativeEvent.locationX < boxWidth / 2 ? -1 : 1;
+    const now = Date.now();
+    const prev = lastTap.current;
+    lastTap.current = { at: now, side };
+
+    // Каждое следующее быстрое нажатие по той же стороне — ещё 5 секунд.
+    if (prev && now - prev.at < DOUBLE_TAP_MS && prev.side === side) {
+      if (tapTimer.current) clearTimeout(tapTimer.current);
+      tapTimer.current = null;
+      skip(side);
+      return;
+    }
+
+    if (tapTimer.current) clearTimeout(tapTimer.current);
+    tapTimer.current = setTimeout(() => {
+      tapTimer.current = null;
+      setShown((v) => !v);
+    }, DOUBLE_TAP_MS);
+  };
 
   const seekTo = useCallback(
     (e: GestureResponderEvent) => {
@@ -565,55 +648,91 @@ function Controls({
     кнопки нажиматься не должны.
   */
   return (
-    <View style={fillAll} pointerEvents="box-none">
+    <View
+      style={fillAll}
+      pointerEvents="box-none"
+      onLayout={(e) => setBoxWidth(e.nativeEvent.layout.width)}
+    >
       <Pressable
-        onPress={() => setShown((v) => !v)}
+        onPress={onSurfaceTap}
         accessibilityRole="button"
         accessibilityLabel={shown ? 'Boshqaruvni yashirish' : "Boshqaruvni ko'rsatish"}
         style={fillAll}
       />
+
+      {/* Подсказка двойного нажатия — видна и при скрытой панели. */}
+      {flash ? (
+        <View
+          key={flash.key}
+          pointerEvents="none"
+          style={[
+            { position: 'absolute', top: 0, bottom: 0, width: '35%' },
+            flash.side < 0 ? { left: 0 } : { right: 0 },
+          ]}
+          className="items-center justify-center"
+        >
+          <View className="flex-row items-center gap-1 rounded-pill bg-black/55 px-3 py-2">
+            <Ionicons
+              name={flash.side < 0 ? 'play-back' : 'play-forward'}
+              size={16}
+              color={colors.white}
+            />
+            <Text className="text-caption font-semibold text-white">
+              {`${flash.side < 0 ? '−' : '+'}${SKIP_SECONDS} s`}
+            </Text>
+          </View>
+        </View>
+      ) : null}
 
       <View
         pointerEvents={shown ? 'box-none' : 'none'}
         style={[fillAll, { opacity: shown ? 1 : 0 }]}
         className="justify-between bg-black/35"
       >
-        <Text numberOfLines={1} className="px-3 pt-3 text-center text-caption text-white">
-          {title ?? ''}
-        </Text>
+        <View
+          pointerEvents="box-none"
+          style={{ paddingHorizontal: fullscreen ? 24 : 12 }}
+          className="flex-row items-center gap-2 pt-3"
+        >
+          {onBack ? (
+            <Pressable
+              onPress={onBack}
+              accessibilityRole="button"
+              accessibilityLabel="Orqaga"
+              hitSlop={12}
+              className="active:opacity-60"
+            >
+              <Ionicons name="chevron-back" size={24} color={colors.white} />
+            </Pressable>
+          ) : null}
+          <Text numberOfLines={1} className="flex-1 text-center text-caption text-white">
+            {title ?? ''}
+          </Text>
+          {/* Противовес стрелке — чтобы название стояло по центру кадра. */}
+          {onBack ? <View style={{ width: 24 }} /> : null}
+        </View>
 
         <View
           pointerEvents="box-none"
           className="flex-row items-center justify-center gap-10"
         >
-          <GlyphButton
-            icon="play-back"
-            label="10 soniya orqaga"
-            onPress={() => player.seekBy(-10)}
-          />
+          <SkipButton side={-1} onPress={() => skip(-1)} />
           <GlyphButton
             icon={isPlaying ? 'pause' : 'play'}
             label={isPlaying ? 'Pauza' : 'Davom ettirish'}
             size={34}
             onPress={() => (isPlaying ? player.pause() : player.play())}
           />
-          <GlyphButton
-            icon="play-forward"
-            label="10 soniya oldinga"
-            onPress={() => player.seekBy(10)}
-          />
+          <SkipButton side={1} onPress={() => skip(1)} />
         </View>
 
-        <View pointerEvents="box-none" className="gap-2 px-3 pb-3">
-          {quality ? (
-            <View
-              pointerEvents="box-none"
-              className="flex-row flex-wrap justify-end gap-2"
-            >
-              {quality}
-            </View>
-          ) : null}
-
+        {/* В повёрнутом кадре края — это вырез и скругления экрана:
+            отступ шире, чтобы кнопки не уходили под них. */}
+        <View
+          pointerEvents="box-none"
+          style={{ paddingHorizontal: fullscreen ? 24 : 12 }}
+          className="gap-2 pb-3"
+        >
           <View pointerEvents="box-none" className="flex-row items-center gap-2">
             <Text className="text-micro text-white/80">{clock(currentTime)}</Text>
 
@@ -651,14 +770,149 @@ function Controls({
             </View>
 
             <Pressable
+              onPress={() => setSettings(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Sozlamalar"
+              hitSlop={10}
+              className="flex-row items-center gap-1 active:opacity-60"
+            >
+              <Ionicons name="settings-outline" size={20} color={colors.white} />
+              {rate !== 1 ? (
+                <Text className="text-micro font-semibold text-white">{rateLabel(rate)}</Text>
+              ) : null}
+            </Pressable>
+
+            <Pressable
               onPress={onFullscreen}
               accessibilityRole="button"
-              accessibilityLabel="Butun ekran"
+              accessibilityLabel={fullscreen ? "Butun ekrandan chiqish" : 'Butun ekran'}
               hitSlop={10}
               className="active:opacity-60"
             >
-              <Ionicons name="expand" size={20} color={colors.white} />
+              <Ionicons name={fullscreen ? 'contract' : 'expand'} size={20} color={colors.white} />
             </Pressable>
+          </View>
+        </View>
+      </View>
+
+      {settings ? (
+        <SettingsPanel
+          ladder={ladder}
+          chosen={chosen}
+          onQuality={(q) => {
+            onQuality(q);
+            setSettings(false);
+          }}
+          rate={rate}
+          onRate={(r) => {
+            chooseRate(r);
+            setSettings(false);
+          }}
+          onClose={() => setSettings(false)}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+/** На сколько секунд перематывают кнопки и двойное нажатие. */
+const SKIP_SECONDS = 5;
+
+/** Окно, в которое второе нажатие считается «двойным». */
+const DOUBLE_TAP_MS = 250;
+
+/** Скорости в меню. До 2× — просьба заказчика (18.09.2026). */
+const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
+
+function rateLabel(rate: number): string {
+  return `${rate}x`;
+}
+
+/** Кнопка перемотки: стрелка и цифра — чтобы было видно, на сколько. */
+function SkipButton({ side, onPress }: { side: -1 | 1; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={side < 0 ? '5 soniya orqaga' : '5 soniya oldinga'}
+      hitSlop={14}
+      className="items-center active:opacity-60"
+    >
+      <Ionicons name={side < 0 ? 'play-back' : 'play-forward'} size={26} color={colors.white} />
+      <Text className="text-micro font-semibold text-white">{SKIP_SECONDS}</Text>
+    </Pressable>
+  );
+}
+
+/**
+ * Окно настроек: качество и скорость.
+ *
+ * ⚠️ Лежит ВНУТРИ кадра, а не отдельным `Modal`: в нашем полном экране
+ * кадр повёрнут трансформацией, и окно снаружи открылось бы боком.
+ *
+ * «Auto» есть всегда — даже когда у видео одна ступень (файл без HLS):
+ * раньше меню качества в этом случае пропадало целиком, и казалось, что
+ * выбора нет вовсе.
+ */
+function SettingsPanel({
+  ladder,
+  chosen,
+  onQuality,
+  rate,
+  onRate,
+  onClose,
+}: {
+  ladder: Rung[];
+  chosen: Quality;
+  onQuality: (next: Quality) => void;
+  rate: number;
+  onRate: (next: number) => void;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const fillAll = { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 } as const;
+
+  return (
+    <View style={fillAll} className="items-center justify-center">
+      <Pressable
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Yopish"
+        style={fillAll}
+        className="bg-black/50"
+      />
+
+      <View className="max-w-[90%] gap-4 rounded-card bg-surface p-4">
+        <View className="gap-2">
+          <Text className="text-caption font-semibold text-text">Sifat</Text>
+          <View className="flex-row flex-wrap gap-2">
+            <QualityChip
+              label={t('content.qualityAuto')}
+              selected={chosen === 'auto'}
+              onPress={() => onQuality('auto')}
+            />
+            {ladder.map((r) => (
+              <QualityChip
+                key={r.height}
+                label={rungLabel(r.height)}
+                selected={chosen === r.height}
+                onPress={() => onQuality(r.height)}
+              />
+            ))}
+          </View>
+        </View>
+
+        <View className="gap-2">
+          <Text className="text-caption font-semibold text-text">Tezlik</Text>
+          <View className="flex-row flex-wrap gap-2">
+            {RATES.map((r) => (
+              <QualityChip
+                key={r}
+                label={r === 1 ? 'Oddiy' : rateLabel(r)}
+                selected={rate === r}
+                onPress={() => onRate(r)}
+              />
+            ))}
           </View>
         </View>
       </View>

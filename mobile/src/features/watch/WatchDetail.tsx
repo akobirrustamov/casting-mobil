@@ -273,9 +273,9 @@ function Stage({
           episodeId={info.episodeId}
           onError={() => setFailed(true)}
           // Сюда приходят, выбрав серию из списка, — «смотреть» уже
-          // сказано. Поэтому и воспроизведение, и полный экран сразу.
+          // сказано. (Открытую серию маршрут показывает полноэкранно сам —
+          // см. `app/episode/[id]`; эта ветка — запасная.)
           autoPlay
-          autoFullscreen
         />
 
         {info.sources.length > 1 ? (

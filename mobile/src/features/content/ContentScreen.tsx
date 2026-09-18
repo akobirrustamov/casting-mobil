@@ -29,8 +29,8 @@ import {
   WatchUnavailableError,
   useWatchContent,
 } from '@/features/watch/api';
-import { Player, playbackSource } from '@/features/watch/Player';
-import type { VideoSource, WatchInfo } from '@/features/watch/types';
+import { FullscreenWatch, useLandscape } from '@/features/watch/FullscreenWatch';
+import type { WatchInfo } from '@/features/watch/types';
 import { mediaUrl } from '@/lib/api';
 import { compactCount } from '@/lib/money';
 import { pushOnce } from '@/lib/navigation';
@@ -45,7 +45,6 @@ import {
   type ContentDetail,
 } from './detail';
 import { LockedPanel } from './LockedPanel';
-import { PlayerActions } from './PlayerActions';
 import { useSerialCountersFallback } from './serialCounters';
 import { StatsRow } from './StatsRow';
 
@@ -335,9 +334,8 @@ function Loaded({
  *
  * <h2>⚠️ Панель управления — НАША</h2>
  * У кнопок платформы нет места под «нравится», комментарии и донат, а на
- * макете они стоят прямо на кадре. Разбор — в `watch/Player`; там же
- * сказано, почему после кнопки «на весь экран» (системный режим) панель
- * всё-таки платформенная.
+ * макете они стоят прямо на кадре. Поэтому и полный экран свой, а не
+ * системный — разбор в `watch/FullscreenWatch`.
  */
 function WatchScreen({
   open,
@@ -354,8 +352,6 @@ function WatchScreen({
   onClose: () => void;
   onRetryPlayback: () => Promise<unknown>;
 }) {
-  const insets = useSafeAreaInsets();
-
   /**
    * ⚠️ Окно видно, только пока страница в фокусе.
    *
@@ -366,44 +362,35 @@ function WatchScreen({
    * продолжается с сохранённого места.
    */
   const focused = useIsFocused();
+  const { landscape, setLandscape } = useLandscape(info);
+
+  // Каждое открытие — заново развёрнутым: свернули в прошлый раз ради
+  // ошибки или случайно, а «Tomosha qilish» снова значит «на весь экран».
+  useEffect(() => {
+    if (open) setLandscape(true);
+  }, [open, setLandscape]);
+
+  // «Назад» на Android: сначала свернуть кадр, потом закрыть окно.
+  const requestClose = () => (landscape ? setLandscape(false) : onClose());
 
   return (
     <Modal
       visible={open && focused}
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={requestClose}
       statusBarTranslucent
-      // Кадр разворачивают в ландшафт кнопкой «на весь экран» — без
-      // этого списка окно осталось бы портретным и плеер поворачивался
-      // бы внутри неповёрнутого окна.
-      supportedOrientations={[
-        'portrait',
-        'landscape',
-        'landscape-left',
-        'landscape-right',
-      ]}
+      navigationBarTranslucent
+      supportedOrientations={['portrait']}
     >
-      <View className="flex-1 bg-black" style={{ paddingTop: insets.top }}>
-        <View className="flex-row px-2 py-2">
-          <Pressable
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel="Orqaga"
-            hitSlop={12}
-            style={{ width: TOUCH_TARGET, height: TOUCH_TARGET }}
-            className="items-center justify-center rounded-pill active:opacity-60"
-          >
-            <Ionicons name="chevron-back" size={24} color={colors.white} />
-          </Pressable>
-        </View>
-
-        <Stage
-          contentId={contentId}
-          detail={detail}
-          info={info}
-          onRetry={onRetryPlayback}
-        />
-      </View>
+      <FullscreenWatch
+        contentId={contentId}
+        detail={detail}
+        info={info}
+        onClose={onClose}
+        onRetry={onRetryPlayback}
+        landscape={landscape}
+        onLandscapeChange={setLandscape}
+      />
     </Modal>
   );
 }
@@ -823,122 +810,6 @@ function GenreTags({ genres }: { genres: string[] }) {
           <Text className="text-caption text-text-muted">{g}</Text>
         </View>
       ))}
-    </View>
-  );
-}
-
-/**
- * Кадр с видео.
- *
- * Перенесено из прежнего экрана вместе с разбором сбоев: адрес видео
- * подписан и живёт ограниченное время (билет плейлиста — 6 часов, подпись
- * сегмента — около трёх), поэтому «попробовать ещё раз» здесь означает
- * перезапросить `/watch`, а не перезапустить проигрывание.
- *
- * ⚠️ Повтор РУЧНОЙ. Автоматический бился бы в ту же стену на каждом кадре:
- * причина может быть и в сети, и в снятой подписке.
- */
-function Stage({
-  contentId,
-  detail,
-  info,
-  onRetry,
-}: {
-  contentId: number | null;
-  detail: ContentDetail | undefined;
-  info: WatchInfo | undefined;
-  onRetry: () => Promise<unknown>;
-}) {
-  const { t } = useTranslation();
-  const [part, setPart] = useState(0);
-  const [failed, setFailed] = useState(false);
-  const [retrying, setRetrying] = useState(false);
-
-  const source: VideoSource | undefined = info?.sources[part];
-
-  const retry = useCallback(() => {
-    setRetrying(true);
-    void onRetry().finally(() => {
-      setRetrying(false);
-      setFailed(false);
-    });
-  }, [onRetry]);
-
-  // Адрес сменился (повтор или «потянули вниз») — прошлый сбой к нему
-  // отношения не имеет.
-  const uri = source ? playbackSource(source).uri : null;
-  useEffect(() => setFailed(false), [uri]);
-
-  if (!info || info.sources.length === 0) {
-    return (
-      <View className="flex-1 justify-center">
-        <ScreenState kind="empty" body={t('content.noVideo')} />
-      </View>
-    );
-  }
-
-  if (source && (failed || retrying)) {
-    return (
-      <View className="flex-1 justify-center">
-        {retrying ? (
-          <ScreenState kind="loading" />
-        ) : (
-          <ScreenState
-            kind="error"
-            title={t('content.playbackFailedTitle')}
-            body={t('content.playbackFailedBody')}
-            onRetry={retry}
-          />
-        )}
-      </View>
-    );
-  }
-
-  if (!source) return null;
-
-  return (
-    <View className="flex-1 gap-3 pb-3">
-      {/* key: смена части пересоздаёт плеер. Признак HLS в ключе —
-          чтобы после «потянули вниз» плеер перешёл на появившийся
-          `hlsUrl`, а не остался со старым адресом мимо CDN. */}
-      <Player
-        key={`${source.mediaId ?? part}-${source.hlsUrl ? 'hls' : 'raw'}`}
-        source={source}
-        orientation={info.orientation}
-        contentId={info.contentId}
-        episodeId={info.episodeId}
-        onError={() => setFailed(true)}
-        controls="custom"
-        fill
-        autoPlay
-        // Человек нажал «Tomosha qilish» — второго нажатия ради полного
-        // экрана быть не должно.
-        autoFullscreen
-        title={detail?.title ?? info.title}
-        actions={<PlayerActions contentId={contentId} detail={detail} info={info} />}
-      />
-
-      {info.sources.length > 1 ? (
-        <View className="flex-row flex-wrap justify-center gap-2 px-4">
-          {info.sources.map((s, i) => (
-            <Pressable
-              key={s.mediaId ?? i}
-              onPress={() => setPart(i)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: i === part }}
-              className={`rounded-pill px-4 py-2 ${i === part ? 'bg-purple' : 'bg-surface'}`}
-            >
-              <Text
-                className={`text-caption ${
-                  i === part ? 'font-semibold text-white' : 'text-text-muted'
-                }`}
-              >
-                {t('content.part', { number: s.partNumber ?? i + 1 })}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
     </View>
   );
 }
