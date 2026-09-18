@@ -671,15 +671,14 @@ function Controls({
           ]}
           className="items-center justify-center"
         >
-          <View className="flex-row items-center gap-1 rounded-pill bg-black/55 px-3 py-2">
-            <Ionicons
-              name={flash.side < 0 ? 'play-back' : 'play-forward'}
-              size={16}
-              color={colors.white}
-            />
-            <Text className="text-caption font-semibold text-white">
-              {`${flash.side < 0 ? '−' : '+'}${SKIP_SECONDS} s`}
+          <View
+            style={{ width: 72, height: 72, borderRadius: 36 }}
+            className="items-center justify-center bg-black/55"
+          >
+            <Text className="text-h2 text-white">
+              {`${flash.side < 0 ? '−' : '+'}${SKIP_SECONDS}`}
             </Text>
+            <Text className="text-micro text-white/80">sek</Text>
           </View>
         </View>
       ) : null}
@@ -714,13 +713,11 @@ function Controls({
 
         <View
           pointerEvents="box-none"
-          className="flex-row items-center justify-center gap-10"
+          className="flex-row items-center justify-center gap-8"
         >
           <SkipButton side={-1} onPress={() => skip(-1)} />
-          <GlyphButton
-            icon={isPlaying ? 'pause' : 'play'}
-            label={isPlaying ? 'Pauza' : 'Davom ettirish'}
-            size={34}
+          <PlayPauseButton
+            playing={isPlaying}
             onPress={() => (isPlaying ? player.pause() : player.play())}
           />
           <SkipButton side={1} onPress={() => skip(1)} />
@@ -828,18 +825,63 @@ function rateLabel(rate: number): string {
   return `${rate}x`;
 }
 
-/** Кнопка перемотки: стрелка и цифра — чтобы было видно, на сколько. */
+/**
+ * Кнопка перемотки: «−5» / «+5» в круге.
+ *
+ * ⚠️ Цифра со знаком, а не стрелки «⏪ ⏩»: заказчик (18.09.2026) — стрелки
+ * читались как «предыдущая / следующая серия», и было непонятно, на
+ * сколько они перематывают.
+ */
 function SkipButton({ side, onPress }: { side: -1 | 1; onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={side < 0 ? '5 soniya orqaga' : '5 soniya oldinga'}
-      hitSlop={14}
-      className="items-center active:opacity-60"
+      hitSlop={12}
+      style={{
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.22)',
+      }}
+      className="items-center justify-center bg-black/45 active:opacity-60"
     >
-      <Ionicons name={side < 0 ? 'play-back' : 'play-forward'} size={26} color={colors.white} />
-      <Text className="text-micro font-semibold text-white">{SKIP_SECONDS}</Text>
+      <Text className="text-h2 text-white" style={{ lineHeight: 22 }}>
+        {`${side < 0 ? '−' : '+'}${SKIP_SECONDS}`}
+      </Text>
+      <Text className="text-micro text-white/70" style={{ lineHeight: 12 }}>
+        sek
+      </Text>
+    </Pressable>
+  );
+}
+
+/**
+ * Пауза / продолжить — главный круг панели.
+ *
+ * Белая заливка и тёмный знак: на любом кадре — и тёмном, и светлом —
+ * кнопка видна сразу и явно крупнее соседних.
+ */
+function PlayPauseButton({ playing, onPress }: { playing: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={playing ? 'Pauza' : 'Davom ettirish'}
+      hitSlop={10}
+      style={{ width: 72, height: 72, borderRadius: 36 }}
+      className="items-center justify-center bg-white/90 active:opacity-70"
+    >
+      <Ionicons
+        name={playing ? 'pause' : 'play'}
+        size={32}
+        color={colors.ink}
+        // Треугольник «play» оптически смещён влево — без сдвига он
+        // кажется не по центру круга.
+        style={playing ? undefined : { marginLeft: 4 }}
+      />
     </Pressable>
   );
 }
@@ -917,30 +959,6 @@ function SettingsPanel({
         </View>
       </View>
     </View>
-  );
-}
-
-function GlyphButton({
-  icon,
-  label,
-  onPress,
-  size = 26,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  onPress: () => void;
-  size?: number;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      hitSlop={14}
-      className="active:opacity-60"
-    >
-      <Ionicons name={icon} size={size} color={colors.white} />
-    </Pressable>
   );
 }
 
