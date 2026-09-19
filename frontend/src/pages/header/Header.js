@@ -20,8 +20,9 @@ import {
     mobileBarClass,
 } from "../../shared/headerStyles";
 
-// Public header menyusi rangi (avval header.css dagi .nav-link)
-const publicNavLink = navLinkClass + " text-[#1f2937] hover:text-[#2563eb]";
+// Public header menyusi rangi. Fon to'q (#111827) — ilgari matn ham to'q
+// (#1f2937) edi va menyu deyarli ko'rinmasdi.
+const publicNavLink = navLinkClass + " text-[#e5e7eb] hover:text-[#60a5fa]";
 
 function Header() {
     const [isScrolled, setIsScrolled] = useState(false);

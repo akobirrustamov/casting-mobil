@@ -62,7 +62,8 @@ const VideoWithLightAnimation = ({
     return (
         <div
             ref={containerRef}
-            className=" w-full h-1/2 relative overflow-hidden rounded-lg shadow-xl bg-gray-900"
+            // h-1/2 ishlamasdi: ota blokning balandligi yo'q. Video to'liq ekran.
+            className="w-full h-screen min-h-[480px] relative overflow-hidden shadow-xl bg-gray-900"
         >
             {/* Asosiy video */}
             {lightMode ? (

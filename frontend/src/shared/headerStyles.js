@@ -29,7 +29,7 @@ export const navListClass =
     "flex items-center gap-8 list-none max-md:flex-col max-md:w-full";
 
 // Rangsiz asos — rang chaqiruvchi tomonidan qo'shiladi
-// (public header: #1f2937, admin header: #f3f4f6).
+// (public header: #e5e7eb, admin header: #f3f4f6).
 export const navLinkClass =
     "relative no-underline font-medium transition-all duration-300 flex flex-col items-center py-2 overflow-hidden " +
     "after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 " +

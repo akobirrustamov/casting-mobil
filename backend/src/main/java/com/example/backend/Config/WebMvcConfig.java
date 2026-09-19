@@ -86,7 +86,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     private class PushStateResourceResolver implements ResourceResolver {
         private Resource index = new ClassPathResource("/static/index.html");
-        private List<String> handledExtensions = Arrays.asList("html", "js", "json", "csv", "css", "png", "svg", "eot", "ttf", "otf", "woff", "appcache", "jpg", "jpeg", "gif", "ico" );
+        // ⚠️ Ro'yxatda yo'q kengaytma fayl bo'lsa ham index.html ga tushadi.
+        // mp4 yo'qligi uchun bosh sahifa videosi (/videos/sahna.mp4) o'rniga
+        // HTML kelardi va video umuman ijro etilmasdi. Media va zamonaviy
+        // shrift/rasm formatlari shu sababli qo'shildi.
+        private List<String> handledExtensions = Arrays.asList("html", "js", "json", "csv", "css", "png", "svg", "eot", "ttf", "otf", "woff", "woff2", "appcache", "jpg", "jpeg", "gif", "ico", "webp", "avif", "mp4", "webm", "mp3", "txt", "xml", "map" );
         private List<String> ignoredPaths = Arrays.asList("api");
 
         @Override
