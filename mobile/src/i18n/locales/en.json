@@ -123,12 +123,120 @@
     "categoryRowsError": "Sections did not load"
   },
   "casting": {
-    "title": "Casting calls",
-    "subtitle": "All roles and projects",
-    "empty": "Casting calls will appear here soon.",
+    "title": "Casting",
+    "subtitle": "Candidate catalog",
+    "empty": "No candidates in the catalog yet.",
     "paid": "Paid",
     "unpaid": "Unpaid",
-    "deadline": "Deadline"
+    "deadline": "Deadline",
+    "found": "{{count}} candidates",
+    "all": "All",
+    "emptyByFilters": "No one matches the selected filters.",
+    "applyTitle": "Join the casting",
+    "applyBody": "Send your profile and photos. An administrator will review it and reply.",
+    "applyCta": "Apply",
+    "signInToApply": "Sign in to apply.",
+    "myApplication": "My application",
+    "details": "Details",
+    "types": {
+      "model": "Model",
+      "euromodel": "Euro model",
+      "bloger": "Blogger",
+      "actor": "Actor",
+      "extra": "Actress",
+      "influencer": "Advertising"
+    },
+    "status": {
+      "pending": "Under review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "pendingNote": "Your application was sent to the administrator. The answer will appear here.",
+      "rejectedNote": "Unfortunately, your application was not accepted this time.",
+      "paymentSoon": "Payment — coming soon",
+      "paid": "Payment received",
+      "price": "Price",
+      "priceNotSet": "Price not set yet",
+      "inCatalog": "Shown in the catalog",
+      "submittedAt": "Sent: {{date}}"
+    },
+    "my": {
+      "title": "My applications",
+      "empty": "You haven't applied yet.",
+      "signIn": "Sign in to see your applications."
+    },
+    "form": {
+      "title": "Casting application",
+      "subtitle": "Fields marked with (*) are required",
+      "sections": {
+        "basic": "Basic information",
+        "physical": "Appearance",
+        "contact": "Contacts",
+        "photos": "Photos"
+      },
+      "fields": {
+        "castingType": "Casting type",
+        "gender": "Gender",
+        "name": "Full name",
+        "region": "Region",
+        "nationality": "Nationality",
+        "birthday": "Date of birth",
+        "height": "Height (cm)",
+        "hairColor": "Hair color",
+        "eyeColor": "Eye color",
+        "clothSize": "Clothing size",
+        "shoeSize": "Shoe size",
+        "bust": "Bust (cm)",
+        "waist": "Waist (cm)",
+        "son": "Hips (cm)",
+        "email": "Email",
+        "phone": "Phone number",
+        "telegram": "Telegram username",
+        "facebook": "Facebook",
+        "instagram": "Instagram"
+      },
+      "birthdayPlaceholder": "DD.MM.YYYY",
+      "phonePlaceholder": "+998 90 123 45 67",
+      "male": "Male",
+      "female": "Female",
+      "photosHint": "Upload clear photos showing your face and full body ({{min}} to {{max}}).",
+      "photoSize": "Portrait photo: 3:4 · JPG / PNG · ≤10 MB. Keep your face centered.",
+      "addPhoto": "Add photo",
+      "photosCount": "{{count}} / {{max}}",
+      "uploading": "Uploading...",
+      "uploadFailed": "Upload failed",
+      "retry": "Retry",
+      "remove": "Remove",
+      "submit": "Send application",
+      "fixErrors": "Fix the highlighted fields.",
+      "pickerDenied": "No access to the gallery. Allow it in settings.",
+      "errors": {
+        "required": "Required",
+        "birthday": "Enter the date as DD.MM.YYYY",
+        "height": "Height must be 50–250 cm",
+        "email": "Invalid email",
+        "phone": "Invalid phone number",
+        "photosMin": "Upload at least {{min}} photos",
+        "photosMax": "At most {{max}} photos",
+        "photoTooLarge": "Photo is larger than 10 MB",
+        "photosUploading": "Wait for the photos to upload"
+      },
+      "success": {
+        "title": "Application sent!",
+        "body": "The administrator will review it. The result will appear in “My applications”.",
+        "action": "My applications",
+        "back": "Back to casting"
+      }
+    },
+    "errors": {
+      "pending": "You already have an application under review. Please wait for the answer.",
+      "photoInUse": "One of the photos is attached to another application. Remove it and upload again.",
+      "photoNotFound": "One of the photos was not found on the server. Remove it and upload again.",
+      "validation": "Check your data.",
+      "unauthorized": "Session ended. Sign in again.",
+      "network": "Can't reach the server. Check your connection.",
+      "readOnly": "Sending applications is disabled in this test build.",
+      "unknown": "Couldn't send the application. Try again later."
+    }
   },
   "premiere": {
     "title": "Media",
@@ -434,5 +542,73 @@
     "hideAuthor": "Hide author",
     "mutedNotice": "{{count}} comments hidden",
     "mutedUndo": "Show"
+  },
+  "castingAdmin": {
+    "entry": "Sign in as admin",
+    "login": {
+      "title": "Admin panel",
+      "subtitle": "Staff phone and password",
+      "phone": "Phone number",
+      "password": "Password",
+      "submit": "Sign in",
+      "expired": "Admin session expired. Sign in again.",
+      "errors": {
+        "invalid": "Wrong phone or password.",
+        "denied": "This account has no admin panel access.",
+        "locked": "Too many attempts. Try again later.",
+        "network": "Can't reach the server.",
+        "unknown": "Couldn't sign in. Try again later."
+      }
+    },
+    "list": {
+      "title": "Casting applications",
+      "tabs": {
+        "new": "New",
+        "accepted": "Accepted",
+        "rejected": "Rejected"
+      },
+      "search": "Name or phone",
+      "empty": "No applications here.",
+      "logout": "Sign out",
+      "logoutConfirm": "Sign out of the admin panel?",
+      "inCatalog": "In catalog"
+    },
+    "detail": {
+      "title": "Application",
+      "notFound": "Application not found or deleted.",
+      "sections": {
+        "basic": "Basic",
+        "physical": "Appearance",
+        "contact": "Contacts",
+        "photos": "Photos"
+      },
+      "age": "Age",
+      "createdAt": "Sent",
+      "status": "Status",
+      "price": "Price",
+      "paid": "Paid",
+      "photosHint": "Only enabled photos are shown in the catalog. Tap a photo to toggle it.",
+      "photoPublic": "Public",
+      "photoHidden": "Hidden",
+      "catalog": "Show in catalog",
+      "catalogHint": "When on, the profile is visible in the app and website catalog.",
+      "priceLabel": "Price (UZS)",
+      "pricePlaceholder": "e.g. 150 000",
+      "priceInvalid": "Enter a positive whole number.",
+      "approve": "Approve",
+      "reject": "Reject",
+      "rejectConfirmTitle": "Reject the application?",
+      "rejectConfirmBody": "The candidate will see “Rejected”.",
+      "approved": "Application approved.",
+      "rejected": "Application rejected."
+    },
+    "errors": {
+      "readOnly": "Changes are disabled in this test build.",
+      "network": "Can't reach the server.",
+      "expired": "Admin session expired. Sign in again.",
+      "forbidden": "You don't have permission for this action.",
+      "notFound": "Application not found.",
+      "unknown": "Action failed. Try again."
+    }
   }
 }

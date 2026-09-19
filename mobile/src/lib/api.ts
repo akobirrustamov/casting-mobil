@@ -300,13 +300,26 @@ api.interceptors.response.use(undefined, async (error: unknown) => {
   return api.request(config);
 });
 
+/**
+ * Режет ли read-only этот запрос.
+ *
+ * Вынесено из интерцептора ради второго клиента — админского
+ * (`features/castingAdmin/client`). У админки своя сессия и свой
+ * экземпляр axios, но правило записи ОБЯЗАНО быть одним: иначе
+ * сборка «только для чтения» писала бы в боевую базу через соседнюю
+ * дверь, и по коду этого не было бы видно.
+ */
+export function isBlockedByReadOnly(method: string | undefined, url: string): boolean {
+  const m = (method ?? 'get').toLowerCase();
+  if (!READ_ONLY || SAFE_METHODS.includes(m)) return false;
+  return !WRITE_ALLOWLIST.some((entry) => allows(entry, url));
+}
+
 api.interceptors.request.use((config) => {
   const method = (config.method ?? 'get').toLowerCase();
-
   const url = config.url ?? '';
-  const isAllowed = WRITE_ALLOWLIST.some((entry) => allows(entry, url));
 
-  if (READ_ONLY && !SAFE_METHODS.includes(method) && !isAllowed) {
+  if (isBlockedByReadOnly(method, url)) {
     throw new Error(
       `[READ_ONLY] Запрос ${method.toUpperCase()} ${url} заблокирован. ` +
         'Приложение подключено к боевой базе сайта, запись запрещена.'

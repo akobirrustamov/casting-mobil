@@ -54,7 +54,15 @@
       "expo-video",
       "expo-web-browser",
       "expo-localization",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "UzCasting kasting arizasiga rasmlaringizni biriktirish uchun galereyaga ruxsat so'raydi.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
     ],
     "extra": {
       "router": {},

@@ -123,12 +123,120 @@
     "categoryRowsError": "Bo'limlar yuklanmadi"
   },
   "casting": {
-    "title": "Casting e'lonlari",
-    "subtitle": "Barcha rollar va loyihalar",
-    "empty": "Kasting e'lonlari tez orada paydo bo'ladi.",
+    "title": "Casting",
+    "subtitle": "Kandidatlar katalogi",
+    "empty": "Katalogda hozircha kandidatlar yo'q.",
     "paid": "To'lovli",
     "unpaid": "To'lovsiz",
-    "deadline": "Muddat"
+    "deadline": "Muddat",
+    "found": "{{count}} ta kandidat",
+    "all": "Barchasi",
+    "emptyByFilters": "Tanlangan filtrlarga mos kandidat topilmadi.",
+    "applyTitle": "Kastingga qatnashing",
+    "applyBody": "Anketangiz va rasmlaringizni yuboring. Admin ko'rib chiqib, javob beradi.",
+    "applyCta": "Ariza qoldirish",
+    "signInToApply": "Ariza qoldirish uchun avval tizimga kiring.",
+    "myApplication": "Mening arizam",
+    "details": "Batafsil",
+    "types": {
+      "model": "Model",
+      "euromodel": "Yevro model",
+      "bloger": "Bloger",
+      "actor": "Aktyor",
+      "extra": "Aktrisa",
+      "influencer": "Reklama"
+    },
+    "status": {
+      "pending": "Ko'rib chiqilmoqda",
+      "approved": "Qabul qilindi",
+      "rejected": "Rad etildi",
+      "pendingNote": "Arizangiz adminga yuborildi. Javobni shu yerda ko'rasiz.",
+      "rejectedNote": "Afsuski, bu safar arizangiz qabul qilinmadi.",
+      "paymentSoon": "To'lov — tez orada",
+      "paid": "To'lov qabul qilingan",
+      "price": "Narx",
+      "priceNotSet": "Narx hali belgilanmagan",
+      "inCatalog": "Katalogda ko'rinmoqda",
+      "submittedAt": "Yuborilgan: {{date}}"
+    },
+    "my": {
+      "title": "Mening arizalarim",
+      "empty": "Siz hali ariza qoldirmagansiz.",
+      "signIn": "Arizalaringizni ko'rish uchun tizimga kiring."
+    },
+    "form": {
+      "title": "Kastingga ariza",
+      "subtitle": "Yulduzcha (*) bilan belgilangan maydonlar majburiy",
+      "sections": {
+        "basic": "Asosiy ma'lumotlar",
+        "physical": "Jismoniy tavsif",
+        "contact": "Aloqa ma'lumotlari",
+        "photos": "Rasmlar"
+      },
+      "fields": {
+        "castingType": "Casting turi",
+        "gender": "Jins",
+        "name": "To'liq ism",
+        "region": "Viloyat",
+        "nationality": "Millati",
+        "birthday": "Tug'ilgan sana",
+        "height": "Bo'y (sm)",
+        "hairColor": "Soch rangi",
+        "eyeColor": "Ko'z rangi",
+        "clothSize": "Kiyim o'lchami",
+        "shoeSize": "Oyoq kiyim o'lchami",
+        "bust": "Ko'krak (sm)",
+        "waist": "Bel (sm)",
+        "son": "Son (sm)",
+        "email": "Elektron pochta",
+        "phone": "Telefon raqam",
+        "telegram": "Telegram username",
+        "facebook": "Facebook",
+        "instagram": "Instagram"
+      },
+      "birthdayPlaceholder": "KK.OO.YYYY",
+      "phonePlaceholder": "+998 90 123 45 67",
+      "male": "Erkak",
+      "female": "Ayol",
+      "photosHint": "Yuzingiz va butun tanangiz aniq ko'rinadigan rasmlarni yuklang (kamida {{min}} ta, ko'pi bilan {{max}} ta).",
+      "photoSize": "Tik (vertikal) rasm: 3:4 · JPG / PNG · ≤10 MB. Yuzni markazda saqlang.",
+      "addPhoto": "Rasm qo'shish",
+      "photosCount": "{{count}} / {{max}}",
+      "uploading": "Yuklanmoqda...",
+      "uploadFailed": "Yuklanmadi",
+      "retry": "Qayta yuklash",
+      "remove": "O'chirish",
+      "submit": "Ariza yuborish",
+      "fixErrors": "Belgilangan maydonlarni to'g'rilang.",
+      "pickerDenied": "Galereyaga ruxsat berilmagan. Sozlamalardan ruxsat bering.",
+      "errors": {
+        "required": "Majburiy maydon",
+        "birthday": "Sanani KK.OO.YYYY ko'rinishida kiriting",
+        "height": "Bo'y 50 dan 250 sm gacha bo'lishi kerak",
+        "email": "Elektron pochta noto'g'ri",
+        "phone": "Telefon raqami noto'g'ri",
+        "photosMin": "Kamida {{min}} ta rasm yuklang",
+        "photosMax": "Ko'pi bilan {{max}} ta rasm",
+        "photoTooLarge": "Rasm 10 MB dan katta",
+        "photosUploading": "Rasmlar yuklanishini kuting"
+      },
+      "success": {
+        "title": "Ariza yuborildi!",
+        "body": "Admin arizangizni ko'rib chiqadi. Natijani «Mening arizalarim» bo'limida ko'rasiz.",
+        "action": "Arizalarimni ko'rish",
+        "back": "Castingga qaytish"
+      }
+    },
+    "errors": {
+      "pending": "Sizda ko'rib chiqilayotgan ariza bor. Javobni kuting.",
+      "photoInUse": "Rasmlardan biri boshqa arizaga biriktirilgan. Uni o'chirib, qayta yuklang.",
+      "photoNotFound": "Rasmlardan biri serverda topilmadi. Uni o'chirib, qayta yuklang.",
+      "validation": "Ma'lumotlarni tekshiring.",
+      "unauthorized": "Sessiya tugagan. Qayta kiring.",
+      "network": "Internet bilan bog'lanib bo'lmadi. Ulanishni tekshiring.",
+      "readOnly": "Bu sinov yig'ilmasida ariza yuborish o'chirilgan.",
+      "unknown": "Arizani yuborib bo'lmadi. Birozdan keyin urinib ko'ring."
+    }
   },
   "premiere": {
     "title": "Media",
@@ -434,5 +542,73 @@
     "hideAuthor": "Muallifni yashirish",
     "mutedNotice": "{{count}} ta izoh yashirilgan",
     "mutedUndo": "Ko'rsatish"
+  },
+  "castingAdmin": {
+    "entry": "Admin sifatida kirish",
+    "login": {
+      "title": "Admin panel",
+      "subtitle": "Xodim telefon raqami va paroli",
+      "phone": "Telefon raqam",
+      "password": "Parol",
+      "submit": "Kirish",
+      "expired": "Admin sessiyasi tugadi. Qayta kiring.",
+      "errors": {
+        "invalid": "Telefon yoki parol noto'g'ri.",
+        "denied": "Bu hisob admin panelga kira olmaydi.",
+        "locked": "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring.",
+        "network": "Internet bilan bog'lanib bo'lmadi.",
+        "unknown": "Kirib bo'lmadi. Birozdan keyin urinib ko'ring."
+      }
+    },
+    "list": {
+      "title": "Kasting arizalari",
+      "tabs": {
+        "new": "Yangi",
+        "accepted": "Qabul qilingan",
+        "rejected": "Rad etilgan"
+      },
+      "search": "Ism yoki telefon",
+      "empty": "Bu bo'limda arizalar yo'q.",
+      "logout": "Chiqish",
+      "logoutConfirm": "Admin paneldan chiqasizmi?",
+      "inCatalog": "Katalogda"
+    },
+    "detail": {
+      "title": "Ariza",
+      "notFound": "Ariza topilmadi yoki o'chirilgan.",
+      "sections": {
+        "basic": "Asosiy",
+        "physical": "Jismoniy tavsif",
+        "contact": "Aloqa",
+        "photos": "Rasmlar"
+      },
+      "age": "Yosh",
+      "createdAt": "Yuborilgan",
+      "status": "Holat",
+      "price": "Narx",
+      "paid": "To'lov qilingan",
+      "photosHint": "Katalogda faqat yoqilgan rasmlar ko'rinadi. Rasmni bosib holatini almashtiring.",
+      "photoPublic": "Ochiq",
+      "photoHidden": "Yashirin",
+      "catalog": "Katalogda ko'rsatish",
+      "catalogHint": "Yoqilsa, anketa ilova va saytdagi katalogda ko'rinadi.",
+      "priceLabel": "Narx (so'm)",
+      "pricePlaceholder": "Masalan: 150 000",
+      "priceInvalid": "Narxni musbat butun son bilan kiriting.",
+      "approve": "Qabul qilish",
+      "reject": "Rad etish",
+      "rejectConfirmTitle": "Arizani rad etasizmi?",
+      "rejectConfirmBody": "Kandidat «Rad etildi» holatini ko'radi.",
+      "approved": "Ariza qabul qilindi.",
+      "rejected": "Ariza rad etildi."
+    },
+    "errors": {
+      "readOnly": "Bu sinov yig'ilmasida o'zgartirish o'chirilgan.",
+      "network": "Internet bilan bog'lanib bo'lmadi.",
+      "expired": "Admin sessiyasi tugadi. Qayta kiring.",
+      "forbidden": "Bu amal uchun huquqingiz yo'q.",
+      "notFound": "Ariza topilmadi.",
+      "unknown": "Amal bajarilmadi. Qayta urinib ko'ring."
+    }
   }
 }
