@@ -48,6 +48,22 @@ public class CastingUser {
     private Integer secondChan;
     private Boolean isWebShow;
 
+    /**
+     * Anketani mobil ilovadan yuborgan foydalanuvchi ({@code users.id}, V40).
+     *
+     * Bot yuborgan anketalarda {@code null} — u yerda egasi
+     * {@link #telegramId} orqali tanilgan.
+     *
+     * ⚠️ {@code @JsonIgnore}: bu entity eski endpointlarda TO'G'RIDAN-TO'G'RI
+     * JSON'ga aylanadi, jumladan tokensiz {@code /casting-user/appeal/{id}}
+     * va {@code /casting-user/my/{telegramId}} da. Maydon ochiq bo'lsa
+     * foydalanuvchining ichki identifikatori begona odamga ko'rinardi,
+     * eski mijozlar javobi esa kutilmagan yangi maydon olardi.
+     */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "app_user_id")
+    private java.util.UUID appUserId;
+
     @OneToMany
     private List<Attachment> photos = new ArrayList<>();
 

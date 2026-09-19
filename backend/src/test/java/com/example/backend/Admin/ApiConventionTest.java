@@ -398,6 +398,13 @@ class ApiConventionTest {
                         "Foydalanuvchining O'ZI ishlatgan promokodlari. Bitta "
                                 + "odam uchun bu bir nechta qator: bitta kodni ikki "
                                 + "marta ishlatib bo'lmaydi (`uk_promocode_user`)."),
+                Map.entry("myCastingApplications",
+                        "Foydalanuvchining O'Z casting arizalari "
+                                + "(`AppCastingController`). Bir vaqtda faqat bitta "
+                                + "kutilayotgan ariza bo'lishi mumkin "
+                                + "(`CASTING_APPLICATION_PENDING`), ya'ni yangisi faqat "
+                                + "admin javob bergandan keyin qo'shiladi — bitta odam "
+                                + "uchun bir nechta qator."),
                 Map.entry("packages", "Sozlama ro'yxati: bir necha valyuta paketi."),
                 Map.entry("seasons", "BITTA kontent fasllari - o'sha kontent hajmi bilan chegaralangan."),
                 Map.entry("episodes", "BITTA kontent qismlari - o'sha kontent hajmi bilan chegaralangan."),

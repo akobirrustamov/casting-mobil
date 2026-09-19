@@ -43,6 +43,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * qolgan qoidalar ({@code /student}, {@code /superadmin/**}, {@code /groups/**},
  * {@code /subject/}) ham olib tashlandi — bu loyihada bunday endpointlar yo'q.
  *
+ * <h2>Token bor — lekin kim? (19.09.2026)</h2>
+ * Ilgari token faqat xodimlarda edi, shuning uchun eski casting admin amallari
+ * uchun {@code authenticated()} yetarli edi. Endi mobil ilova foydalanuvchisi
+ * ({@code ROLE_USER}) ham token oladi va anketani ilovadan yuboradi. Shu
+ * sababli eski casting admin amallari (to'liq ro'yxat, status, narx, to'lov,
+ * web-show, o'chirish, rasm ko'rinishi) endi faqat XODIM rollariga ochiq —
+ * {@link #STAFF_AUTHORITIES}.
+ *
  * <h2>Qolgan ochiq muammo</h2>
  * {@code GET /casting-user/appeal/{id}} va {@code GET /casting-user/my/{telegramId}} shaxsiy
  * ma'lumot (telefon, email, o'lchovlar) qaytaradi va ochiq qolmoqda — ularsiz bot oqimi
@@ -53,6 +61,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+
+    /**
+     * Xodim rollari — «umuman xodimmi» degan savol uchun.
+     *
+     * ⚠️ Nomlar eski `UserRoles` enum'idan keladi va `Role.getAuthority()`
+     * ularni shu ko'rinishda qaytaradi. `ROLE_USER` (mobil ilova) bu yerda
+     * ATAYLAB yo'q.
+     */
+    private static final String[] STAFF_AUTHORITIES = {
+            "ROLE_GIPERSUPERADMIN", "ROLE_SUPERADMIN", "ROLE_ADMIN", "ROLE_WORKER"};
 
     private final UserRepo userRepo;
     private final MyFilter myFilter;
@@ -219,13 +237,48 @@ public class SecurityConfig {
                         // Suiiste'mol xavfi bor — rate limiting PHASE 9 da.
                         .requestMatchers(HttpMethod.POST, "/api/v1/app/analytics/events").permitAll()
 
-                        // --- Qolgan barcha API yopiq ---
+                        // --- Eski casting admin amallari: FAQAT xodim ---
+                        //
+                        // ⚠️ Ilgari bular faqat `authenticated()` edi. Token faqat
+                        // xodimlarda bo'lgan paytda bu yetarli edi. Endi esa
+                        // mobil ilova foydalanuvchisi ham token oladi (SMS-kod,
+                        // Google) va o'z anketasini ilovadan yuboradi
+                        // (`/api/v1/app/casting`). Shu qoidasiz u o'z tokeni
+                        // bilan o'zini QABUL QILISHI, narx qo'yishi, «to'landi»
+                        // deb belgilashi yoki begona anketalarni (telefon,
+                        // o'lchovlar bilan) o'qishi mumkin edi.
+                        //
+                        // Rol ro'yxati `/api/v1/app/admin/**` dagi bilan bir xil.
+                        // Eski admin sayti (`frontend/src/bot-admin`) ROLE_ADMIN
+                        // hisobi bilan kiradi (`AutoRun.saveUser`), ya'ni u
+                        // ishlashda davom etadi.
+                        //
+                        // Ochiq casting qoidalari (yuqorida: `/web`, `POST`,
+                        // `/my/**`, `/appeal/**`) bu yerga TEGMAYDI — ular
+                        // oldinroq turadi va birinchi mos kelgan qoida ishlaydi.
+                        //
+                        // `GET /api/v1/casting-user` — AYNAN shu yo'l (to'liq
+                        // ro'yxat), `/**` emas: aks holda ochiq `/web`, `/my/**`
+                        // va `/appeal/**` ham shu qoidaga tushishi mumkin edi.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/casting-user").hasAnyAuthority(STAFF_AUTHORITIES)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/casting-user/payed/**").hasAnyAuthority(STAFF_AUTHORITIES)
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/casting-user/status/**").hasAnyAuthority(STAFF_AUTHORITIES)
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/casting-user/price/**").hasAnyAuthority(STAFF_AUTHORITIES)
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/casting-user/web-show/**").hasAnyAuthority(STAFF_AUTHORITIES)
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/casting-user/**").hasAnyAuthority(STAFF_AUTHORITIES)
+                        // Anketa rasmini saytda ko'rsatish/yashirish.
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/file/**").hasAnyAuthority(STAFF_AUTHORITIES)
+
+                        // ⚠️ Istalgan hisobga parol o'rnatadi va KIM so'rayotganini
+                        // tekshirmaydi (AuthServiceImpl.password). Ilgari faqat
+                        // `authenticated()` edi — ya'ni mobil USER tokeni va admin
+                        // UUID'si bilan admin hisobini egallab olish mumkin edi.
+                        // Hech bir frontend uni chaqirmaydi; faqat yuqori rollarga.
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/auth/password/**")
+                                .hasAnyAuthority("ROLE_GIPERSUPERADMIN", "ROLE_SUPERADMIN")
+
+                        // --- Qolgan barcha API: token talab qilinadi ---
                         // Bu qatorga tushadiganlar (aniq ro'yxat izoh uchun):
-                        //   GET    /api/v1/casting-user              — to'liq ro'yxat, shaxsiy ma'lumot bilan
-                        //   GET    /api/v1/casting-user/payed/**
-                        //   PUT    /api/v1/casting-user/status/**, /price/**, /web-show/**
-                        //   DELETE /api/v1/casting-user/**
-                        //   PUT    /api/v1/file/**
                         //   POST/PUT/DELETE /api/v1/news/**
                         //   GET    /api/v1/admin/**
                         //   GET    /api/v1/security, /api/v1/auth/decode
@@ -252,9 +305,7 @@ public class SecurityConfig {
                         //
                         // ⚠️ Rol nomlari eski `UserRoles` enum'idan keladi va
                         // `Role.getAuthority()` ularni shu ko'rinishda qaytaradi.
-                        .requestMatchers("/api/v1/app/admin/**").hasAnyAuthority(
-                                "ROLE_GIPERSUPERADMIN", "ROLE_SUPERADMIN",
-                                "ROLE_ADMIN", "ROLE_WORKER")
+                        .requestMatchers("/api/v1/app/admin/**").hasAnyAuthority(STAFF_AUTHORITIES)
                         .requestMatchers("/api/**").authenticated()
 
                         // --- SPA va statik fayllar ---
