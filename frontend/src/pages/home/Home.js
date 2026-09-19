@@ -276,16 +276,19 @@ function Home() {
                             d="M50,50 m-36,0 a36,36 0 1,1 72,0 a36,36 0 1,1 -72,0"
                         />
                     </defs>
-                    <text className="text-[7px] tracking-[2.2px] uppercase fill-white">
-                        <textPath href="#textcircle" startOffset="0%">
-                            {"ro'yhatdan o'tish • ro'yhatdan o'tish • ro'yhatdan o'tish • ro'yhatdan o'tish • "}
+                    {/* Matn aylana uzunligidan (2π·36 ≈ 226) uzun edi: oxiri kesilib,
+                        so'z o'rtasida uzilardi. textLength uni aylanaga aniq joylaydi. */}
+                    <text className="text-[7px] uppercase fill-white" textLength="224" lengthAdjust="spacing">
+                        <textPath href="#textcircle" startOffset="0%" textLength="224" lengthAdjust="spacing">
+                            {"ro'yhatdan o'tish • ro'yhatdan o'tish • "}
                         </textPath>
                     </text>
                 </svg>
 
-                <span className="absolute left-1/2 top-1/2 w-[60px] h-[60px] -translate-x-1/2 -translate-y-1/2 flex items-center justify-center bg-transparent border-none pointer-events-none">
-                    <FaArrowDown className="text-[28px] max-md:text-[15px] text-white animate-bounceY [animation-duration:1.5s]" aria-hidden="true" />
-                </span>
+                {/* O'q oddiy oqimda: ota <a> flex bilan markazlaydi. Ilgari
+                    absolute + translate bilan qo'yilgan edi va markazdan
+                    siljib, matn ustiga chiqib qolardi. */}
+                <FaArrowDown className="relative z-[1] pointer-events-none text-[24px] max-md:text-[15px] text-white animate-bounceY [animation-duration:1.5s]" aria-hidden="true" />
             </a>
 
             <Footer />
