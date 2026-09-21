@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 
 import { FormMessage } from '@/components/ui/FormMessage';
 import { exchangeGoogleToken, sendOtp } from '@/features/auth/api';
@@ -148,20 +148,6 @@ export default function SignInScreen() {
             error={googleError}
           />
 
-          {/*
-            Вход сотрудника — тихой ссылкой, а не третьей кнопкой: это
-            путь для нескольких человек, и спорить за внимание с входом
-            по номеру ему незачем. Сессия админа отдельная
-            (`features/castingAdmin/store`) и пользовательскую не трогает.
-          */}
-          <Pressable
-            onPress={() => router.push('/admin/login')}
-            accessibilityRole="link"
-            hitSlop={8}
-            className="self-center py-1 active:opacity-60"
-          >
-            <Text className="text-caption text-text-muted underline">{t('castingAdmin.entry')}</Text>
-          </Pressable>
         </>
       }
       /*

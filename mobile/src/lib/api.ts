@@ -300,16 +300,8 @@ api.interceptors.response.use(undefined, async (error: unknown) => {
   return api.request(config);
 });
 
-/**
- * Режет ли read-only этот запрос.
- *
- * Вынесено из интерцептора ради второго клиента — админского
- * (`features/castingAdmin/client`). У админки своя сессия и свой
- * экземпляр axios, но правило записи ОБЯЗАНО быть одним: иначе
- * сборка «только для чтения» писала бы в боевую базу через соседнюю
- * дверь, и по коду этого не было бы видно.
- */
-export function isBlockedByReadOnly(method: string | undefined, url: string): boolean {
+/** Режет ли read-only этот запрос. */
+function isBlockedByReadOnly(method: string | undefined, url: string): boolean {
   const m = (method ?? 'get').toLowerCase();
   if (!READ_ONLY || SAFE_METHODS.includes(m)) return false;
   return !WRITE_ALLOWLIST.some((entry) => allows(entry, url));
