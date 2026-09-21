@@ -108,6 +108,60 @@ export const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 /** Ключ перевода причины — экран сам подставит текст. */
 export type FormErrors = Partial<Record<FormField, string>>;
 
+/**
+ * Предел длины каждого поля.
+ *
+ * <h2>Почему не 255 на всё</h2>
+ * 255 — это предел колонки в базе, а не разумная длина имени или размера
+ * обуви. Поле, где ждут «42», принимало двести пятьдесят символов, и такая
+ * строка уезжала админу в список анкет как есть.
+ */
+export const FIELD_LIMITS: Partial<Record<FormField, number>> = {
+  name: 60,
+  region: 40,
+  nationality: 40,
+  hairColor: 30,
+  eyeColor: 30,
+  height: 3,
+  clothSize: 3,
+  shoeSize: 3,
+  bust: 3,
+  waist: 3,
+  son: 3,
+  email: 100,
+  phone: 20,
+  telegram: 50,
+  facebook: 100,
+  instagram: 50,
+};
+
+/** Поля, куда пускаем только 0–9: рост и мерки. */
+const DIGITS_ONLY: FormField[] = ['height', 'clothSize', 'shoeSize', 'bust', 'waist', 'son'];
+
+/**
+ * Очистка введённого значения.
+ *
+ * ⚠️ Вызывается в ОДНОМ месте — в `set` экрана анкеты. Если раскидать
+ * `replace` по каждому полю, новое поле добавят без фильтра и заметят это
+ * уже по мусору в заявке.
+ *
+ * Дата рождения сюда не попадает: у неё своя маска
+ * (`formatBirthdayInput`), она ставит точки и сама режет длину.
+ */
+export function sanitizeField(field: FormField, raw: string): string {
+  let value = raw;
+
+  if (DIGITS_ONLY.includes(field)) {
+    value = value.replace(/\D/g, '');
+  } else if (field === 'phone') {
+    // Цифры и ОДИН «+» в начале — как ждёт бэкенд.
+    value = value.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
+  }
+
+  const limit = FIELD_LIMITS[field];
+  return limit ? value.slice(0, limit) : value;
+}
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /**

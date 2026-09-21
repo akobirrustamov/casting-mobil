@@ -8,10 +8,12 @@
  */
 import {
   EMPTY_FORM,
+  FIELD_LIMITS,
   MIN_PHOTOS,
   buildPayload,
   formatBirthdayInput,
   parseBirthday,
+  sanitizeField,
   validateApplication,
   type ApplicationForm,
 } from '../form';
@@ -152,5 +154,29 @@ describe('buildPayload', () => {
     const payload = buildPayload({ ...FILLED, gender: 'male' }, ids, TODAY);
     expect(payload.bust).toBeUndefined();
     expect(payload.son).toBeUndefined();
+  });
+});
+
+describe('sanitizeField', () => {
+  it('в мерки и рост пускает только цифры', () => {
+    expect(sanitizeField('height', '1a8b0')).toBe('180');
+    expect(sanitizeField('shoeSize', '-42,5')).toBe('425');
+    expect(sanitizeField('bust', 'e+9')).toBe('9');
+  });
+
+  it('режет по длине поля', () => {
+    expect(sanitizeField('height', '123456')).toBe('123');
+    expect(sanitizeField('name', 'a'.repeat(200))).toHaveLength(FIELD_LIMITS.name as number);
+    expect(sanitizeField('clothSize', '4444')).toBe('444');
+  });
+
+  it('в телефоне оставляет цифры и один «+» в начале', () => {
+    expect(sanitizeField('phone', '+998 (90) 123-45-67')).toBe('+998901234567');
+    expect(sanitizeField('phone', '998+90+1')).toBe('998901');
+  });
+
+  it('не трогает обычный текст и дату', () => {
+    expect(sanitizeField('hairColor', 'qora')).toBe('qora');
+    expect(sanitizeField('birthday', '17.05.2000')).toBe('17.05.2000');
   });
 });

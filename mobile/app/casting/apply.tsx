@@ -28,11 +28,13 @@ import {
 import { ChoiceField, Field, Section } from '@/features/casting/components';
 import {
   EMPTY_FORM,
+  FIELD_LIMITS,
   MAX_PHOTOS,
   MAX_PHOTO_BYTES,
   MIN_PHOTOS,
   buildPayload,
   formatBirthdayInput,
+  sanitizeField,
   validateApplication,
   type ApplicationForm,
   type FormField,
@@ -119,7 +121,9 @@ export default function ApplyScreen() {
   }
 
   const set = <K extends keyof ApplicationForm>(field: K, value: ApplicationForm[K]) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    // Фильтр и предел длины — здесь, а не у каждого поля: см. sanitizeField.
+    const clean = (typeof value === 'string' ? sanitizeField(field, value) : value) as ApplicationForm[K];
+    setForm((prev) => ({ ...prev, [field]: clean }));
     // Поле исправили — старая ошибка под ним больше не про него.
     setErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
     setSubmitError(null);
@@ -268,9 +272,9 @@ export default function ApplyScreen() {
               onChange={(v) => set('gender', v)}
               error={errors.gender}
             />
-            <Field label={f('name')} required value={form.name} onChangeText={(v) => set('name', v)} error={errors.name} autoCapitalize="words" maxLength={255} />
-            <Field label={f('region')} required value={form.region} onChangeText={(v) => set('region', v)} error={errors.region} maxLength={255} />
-            <Field label={f('nationality')} required value={form.nationality} onChangeText={(v) => set('nationality', v)} error={errors.nationality} maxLength={255} />
+            <Field label={f('name')} required value={form.name} onChangeText={(v) => set('name', v)} error={errors.name} autoCapitalize="words" maxLength={FIELD_LIMITS.name} />
+            <Field label={f('region')} required value={form.region} onChangeText={(v) => set('region', v)} error={errors.region} maxLength={FIELD_LIMITS.region} />
+            <Field label={f('nationality')} required value={form.nationality} onChangeText={(v) => set('nationality', v)} error={errors.nationality} maxLength={FIELD_LIMITS.nationality} />
             <Field
               label={f('birthday')}
               required
@@ -284,27 +288,27 @@ export default function ApplyScreen() {
           </Section>
 
           <Section title={t('casting.form.sections.physical')}>
-            <Field label={f('height')} required value={form.height} onChangeText={(v) => set('height', v.replace(/\D/g, ''))} keyboardType="number-pad" maxLength={3} error={errors.height} />
-            <Field label={f('hairColor')} required value={form.hairColor} onChangeText={(v) => set('hairColor', v)} error={errors.hairColor} maxLength={255} />
-            <Field label={f('eyeColor')} required value={form.eyeColor} onChangeText={(v) => set('eyeColor', v)} error={errors.eyeColor} maxLength={255} />
-            <Field label={f('clothSize')} value={form.clothSize} onChangeText={(v) => set('clothSize', v)} error={errors.clothSize} maxLength={255} />
-            <Field label={f('shoeSize')} value={form.shoeSize} onChangeText={(v) => set('shoeSize', v)} error={errors.shoeSize} maxLength={255} />
+            <Field label={f('height')} required value={form.height} onChangeText={(v) => set('height', v)} keyboardType="number-pad" maxLength={FIELD_LIMITS.height} error={errors.height} />
+            <Field label={f('hairColor')} required value={form.hairColor} onChangeText={(v) => set('hairColor', v)} error={errors.hairColor} maxLength={FIELD_LIMITS.hairColor} />
+            <Field label={f('eyeColor')} required value={form.eyeColor} onChangeText={(v) => set('eyeColor', v)} error={errors.eyeColor} maxLength={FIELD_LIMITS.eyeColor} />
+            <Field label={f('clothSize')} value={form.clothSize} onChangeText={(v) => set('clothSize', v)} keyboardType="number-pad" error={errors.clothSize} maxLength={FIELD_LIMITS.clothSize} />
+            <Field label={f('shoeSize')} value={form.shoeSize} onChangeText={(v) => set('shoeSize', v)} keyboardType="number-pad" error={errors.shoeSize} maxLength={FIELD_LIMITS.shoeSize} />
             {/* Как на сайте: грудь и бёдра спрашиваем только не у мужчин. */}
             {!isMale ? (
               <>
-                <Field label={f('bust')} value={form.bust} onChangeText={(v) => set('bust', v)} error={errors.bust} maxLength={255} />
-                <Field label={f('son')} value={form.son} onChangeText={(v) => set('son', v)} error={errors.son} maxLength={255} />
+                <Field label={f('bust')} value={form.bust} onChangeText={(v) => set('bust', v)} keyboardType="number-pad" error={errors.bust} maxLength={FIELD_LIMITS.bust} />
+                <Field label={f('son')} value={form.son} onChangeText={(v) => set('son', v)} keyboardType="number-pad" error={errors.son} maxLength={FIELD_LIMITS.son} />
               </>
             ) : null}
-            <Field label={f('waist')} value={form.waist} onChangeText={(v) => set('waist', v)} error={errors.waist} maxLength={255} />
+            <Field label={f('waist')} value={form.waist} onChangeText={(v) => set('waist', v)} keyboardType="number-pad" error={errors.waist} maxLength={FIELD_LIMITS.waist} />
           </Section>
 
           <Section title={t('casting.form.sections.contact')}>
-            <Field label={f('email')} required value={form.email} onChangeText={(v) => set('email', v)} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} error={errors.email} maxLength={255} />
-            <Field label={f('phone')} required value={form.phone} onChangeText={(v) => set('phone', v)} keyboardType="phone-pad" placeholder={t('casting.form.phonePlaceholder')} error={errors.phone} maxLength={32} />
-            <Field label={f('telegram')} value={form.telegram} onChangeText={(v) => set('telegram', v)} autoCapitalize="none" autoCorrect={false} error={errors.telegram} maxLength={255} />
-            <Field label={f('facebook')} value={form.facebook} onChangeText={(v) => set('facebook', v)} autoCapitalize="none" autoCorrect={false} error={errors.facebook} maxLength={255} />
-            <Field label={f('instagram')} value={form.instagram} onChangeText={(v) => set('instagram', v)} autoCapitalize="none" autoCorrect={false} error={errors.instagram} maxLength={255} />
+            <Field label={f('email')} required value={form.email} onChangeText={(v) => set('email', v)} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} error={errors.email} maxLength={FIELD_LIMITS.email} />
+            <Field label={f('phone')} required value={form.phone} onChangeText={(v) => set('phone', v)} keyboardType="phone-pad" placeholder={t('casting.form.phonePlaceholder')} error={errors.phone} maxLength={FIELD_LIMITS.phone} />
+            <Field label={f('telegram')} value={form.telegram} onChangeText={(v) => set('telegram', v)} autoCapitalize="none" autoCorrect={false} error={errors.telegram} maxLength={FIELD_LIMITS.telegram} />
+            <Field label={f('facebook')} value={form.facebook} onChangeText={(v) => set('facebook', v)} autoCapitalize="none" autoCorrect={false} error={errors.facebook} maxLength={FIELD_LIMITS.facebook} />
+            <Field label={f('instagram')} value={form.instagram} onChangeText={(v) => set('instagram', v)} autoCapitalize="none" autoCorrect={false} error={errors.instagram} maxLength={FIELD_LIMITS.instagram} />
           </Section>
 
           <Section title={t('casting.form.sections.photos')}>

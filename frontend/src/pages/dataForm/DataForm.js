@@ -194,11 +194,51 @@ function DataForm() {
         return allFieldsFilled && hasEnoughPhotos;
     };
 
+    /**
+     * Har bir maydonning eng katta uzunligi.
+     *
+     * Ilgari cheklov umuman yo'q edi: anketaga bir necha ming belgilik matn
+     * kiritish mumkin edi va u bazaga ham, admin ro'yxatiga ham shundayligicha
+     * tushardi. Bazadagi ustunlar esa 255 belgilik.
+     */
+    const FIELD_LIMITS = {
+        name: 60, region: 40, nationality: 40,
+        hairColor: 30, eyeColor: 30,
+        age: 3, height: 3, clothSize: 3, shoeSize: 3,
+        bust: 3, waist: 3, son: 3,
+        email: 100, phone: 20,
+        telegram: 50, facebook: 100, instagram: 50,
+    };
+
+    /** Faqat 0-9 kiritiladigan maydonlar (yosh, bo'y, o'lchovlar). */
+    const DIGITS_ONLY = ['age', 'height', 'clothSize', 'shoeSize', 'bust', 'waist', 'son'];
+
+    /**
+     * Kiritilgan qiymatni tozalab, so'ng saqlaydi.
+     *
+     * ⚠️ Filtr AYNAN shu yerda, chunki qiymat faqat shu funksiya orqali
+     * o'zgaradi. Har bir <input> ga alohida yozilsa, yangi maydon qo'shgan
+     * odam uni unutib qoldiradi.
+     */
     const handleChange = (e) => {
         const { name, value } = e.target;
+        let next = value;
+
+        if (DIGITS_ONLY.includes(name)) {
+            next = next.replace(/\D/g, '');
+        } else if (name === 'phone') {
+            // Faqat raqam va boshidagi bitta "+".
+            next = next.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
+        }
+
+        const limit = FIELD_LIMITS[name];
+        if (limit) {
+            next = next.slice(0, limit);
+        }
+
         setFormData(prev => ({
             ...prev,
-            [name]: value
+            [name]: next
         }));
     };
 
@@ -481,6 +521,7 @@ function DataForm() {
                                 <input
                                     type="text"
                                     name="name"
+                                    maxLength={60}
                                     value={formData.name}
                                     onChange={handleChange}
                                     required
@@ -492,6 +533,7 @@ function DataForm() {
                                 <input
                                     type="text"
                                     name="region"
+                                    maxLength={40}
                                     value={formData.region}
                                     onChange={handleChange}
                                     required
@@ -505,6 +547,7 @@ function DataForm() {
                                 <input
                                     type="text"
                                     name="nationality"
+                                    maxLength={40}
                                     value={formData.nationality}
                                     onChange={handleChange}
                                     required
@@ -527,12 +570,16 @@ function DataForm() {
                         <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-6 mb-6 max-md:grid-cols-1 max-md:gap-4">
                             <div className={formGroupClass}>
                                 <label>{translations[language].age}*</label>
+                                {/* type="number" emas: u "e", "+", "-" ni ham qabul
+                                    qiladi va g'ildirak bilan qiymatni o'zgartiradi.
+                                    inputMode telefonda raqamli klaviatura ochadi. */}
                                 <input
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     name="age"
                                     value={formData.age}
                                     onChange={handleChange}
-                                    min="1"
+                                    maxLength={3}
                                     required
                                 />
                             </div>
@@ -540,11 +587,12 @@ function DataForm() {
                             <div className={formGroupClass}>
                                 <label>{translations[language].height}*</label>
                                 <input
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     name="height"
                                     value={formData.height}
                                     onChange={handleChange}
-                                    min="1"
+                                    maxLength={3}
                                     required
                                 />
                             </div>
@@ -556,6 +604,7 @@ function DataForm() {
                                 <input
                                     type="text"
                                     name="hairColor"
+                                    maxLength={30}
                                     value={formData.hairColor}
                                     onChange={handleChange}
                                     required
@@ -567,6 +616,7 @@ function DataForm() {
                                 <input
                                     type="text"
                                     name="eyeColor"
+                                    maxLength={30}
                                     value={formData.eyeColor}
                                     onChange={handleChange}
                                     required
@@ -579,7 +629,9 @@ function DataForm() {
                                 <label>{translations[language].clothSize}</label>
                                 <input
                                     type="text"
+                                    inputMode="numeric"
                                     name="clothSize"
+                                    maxLength={3}
                                     value={formData.clothSize}
                                     onChange={handleChange}
                                 />
@@ -589,7 +641,9 @@ function DataForm() {
                                 <label>{translations[language].shoeSize}</label>
                                 <input
                                     type="text"
+                                    inputMode="numeric"
                                     name="shoeSize"
+                                    maxLength={3}
                                     value={formData.shoeSize}
                                     onChange={handleChange}
                                 />
@@ -604,7 +658,9 @@ function DataForm() {
                                         <label>{translations[language].bust}</label>
                                         <input
                                             type="text"
+                                            inputMode="numeric"
                                             name="bust"
+                                            maxLength={3}
                                             value={formData.bust}
                                             onChange={handleChange}
                                         />
@@ -614,7 +670,9 @@ function DataForm() {
                                         <label>{translations[language].son}</label>
                                         <input
                                             type="text"
+                                            inputMode="numeric"
                                             name="son"
+                                            maxLength={3}
                                             value={formData.son}
                                             onChange={handleChange}
                                         />
@@ -627,7 +685,9 @@ function DataForm() {
                             <label>{translations[language].waist}</label>
                             <input
                                 type="text"
+                                inputMode="numeric"
                                 name="waist"
+                                maxLength={3}
                                 value={formData.waist}
                                 onChange={handleChange}
                             />
@@ -641,6 +701,7 @@ function DataForm() {
                                 <input
                                     type="email"
                                     name="email"
+                                    maxLength={100}
                                     value={formData.email}
                                     onChange={handleChange}
                                     required
@@ -652,6 +713,7 @@ function DataForm() {
                                 <input
                                     type="tel"
                                     name="phone"
+                                    maxLength={20}
                                     value={formData.phone}
                                     onChange={handleChange}
                                     required
@@ -665,6 +727,7 @@ function DataForm() {
                                 <input
                                     type="text"
                                     name="telegram"
+                                    maxLength={50}
                                     value={formData.telegram}
                                     onChange={handleChange}
                                 />
@@ -675,6 +738,7 @@ function DataForm() {
                                 <input
                                     type="text"
                                     name="facebook"
+                                    maxLength={100}
                                     value={formData.facebook}
                                     onChange={handleChange}
                                 />
@@ -686,6 +750,7 @@ function DataForm() {
                             <input
                                 type="text"
                                 name="instagram"
+                                maxLength={50}
                                 value={formData.instagram}
                                 onChange={handleChange}
                             />
