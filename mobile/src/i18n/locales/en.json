@@ -236,6 +236,19 @@
       "network": "Can't reach the server. Check your connection.",
       "readOnly": "Sending applications is disabled in this test build.",
       "unknown": "Couldn't send the application. Try again later."
+    },
+    "filters": {
+      "title": "Filters",
+      "searchPlaceholder": "Search: type, region...",
+      "type": "Type",
+      "gender": "Gender",
+      "region": "Region",
+      "age": "Age",
+      "height": "Height (cm)",
+      "from": "from",
+      "to": "to",
+      "noMatches": "Nothing found",
+      "apply": "Show ({{count}})"
     }
   },
   "premiere": {

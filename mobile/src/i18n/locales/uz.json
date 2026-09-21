@@ -236,6 +236,19 @@
       "network": "Internet bilan bog'lanib bo'lmadi. Ulanishni tekshiring.",
       "readOnly": "Bu sinov yig'ilmasida ariza yuborish o'chirilgan.",
       "unknown": "Arizani yuborib bo'lmadi. Birozdan keyin urinib ko'ring."
+    },
+    "filters": {
+      "title": "Filtrlar",
+      "searchPlaceholder": "Qidirish: yo'nalish, viloyat...",
+      "type": "Yo'nalish",
+      "gender": "Jins",
+      "region": "Viloyat",
+      "age": "Yosh",
+      "height": "Bo'y (sm)",
+      "from": "dan",
+      "to": "gacha",
+      "noMatches": "Hech narsa topilmadi",
+      "apply": "Ko'rsatish ({{count}})"
     }
   },
   "premiere": {

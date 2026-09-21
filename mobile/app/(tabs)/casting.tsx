@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, RefreshControl, Text, View, useWindowDimensions } from 'react-native';
+import { FlatList, Pressable, RefreshControl, Text, View, useWindowDimensions } from 'react-native';
 
 import { useTabBarHeight } from '@/components/navigation/TabBar';
 import { ScreenState } from '@/components/states/ScreenState';
@@ -12,12 +12,17 @@ import { Screen } from '@/components/ui/Screen';
 import { SkeletonGrid } from '@/components/ui/Skeleton';
 import { useAuthStore } from '@/features/auth/store';
 import { useMyApplications } from '@/features/casting/api';
-import { ApplicationStatusBlock, Chip, ChipRow } from '@/features/casting/components';
-import { CASTING_TYPES, GENDERS } from '@/features/casting/options';
+import {
+  EMPTY_CATALOG_FILTERS,
+  applyCatalogFilters,
+  collectRegionOptions,
+  countCatalogFilters,
+  type CatalogFilters,
+} from '@/features/casting/catalogFilters';
+import { ApplicationStatusBlock } from '@/features/casting/components';
+import { FilterSheet } from '@/features/casting/FilterSheet';
 import { pickHeadline } from '@/features/casting/status';
 import { useCreators } from '@/features/creators/api';
-import { EMPTY_FILTERS, applyFilters } from '@/features/creators/filters';
-import type { CastingType, Gender } from '@/features/creators/types';
 import { useFavoritesStore } from '@/features/favorites/store';
 import { useIsOffline } from '@/lib/network';
 import { colors } from '@/theme/tokens';
@@ -69,18 +74,16 @@ export default function CastingScreen() {
   const favoriteIds = useFavoritesStore((s) => s.ids);
   const toggleFavorite = useFavoritesStore((s) => s.toggle);
 
-  const [type, setType] = useState<CastingType | null>(null);
-  const [gender, setGender] = useState<Gender | null>(null);
+  const [filters, setFilters] = useState<CatalogFilters>(EMPTY_CATALOG_FILTERS);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
-  const visible = useMemo(
-    () =>
-      applyFilters(creators.data ?? [], {
-        ...EMPTY_FILTERS,
-        apiTypes: type ? [type] : [],
-        gender,
-      }),
-    [creators.data, type, gender],
-  );
+  const all = creators.data ?? [];
+  const regions = useMemo(() => collectRegionOptions(all), [all]);
+  const visible = useMemo(() => applyCatalogFilters(all, filters), [all, filters]);
+  const activeCount = countCatalogFilters(filters);
+
+  // Лист показывает, сколько анкет останется, ещё до «Применить».
+  const countFor = (next: CatalogFilters) => applyCatalogFilters(all, next).length;
 
   const headline = pickHeadline(mine.data ?? []);
   const hasPending = headline?.status === 'PENDING';
@@ -125,29 +128,31 @@ export default function CastingScreen() {
         ) : null}
       </View>
 
-      <ChipRow>
-        <Chip label={t('casting.all')} active={type === null} onPress={() => setType(null)} />
-        {CASTING_TYPES.map((value) => (
-          <Chip
-            key={value}
-            label={t(`casting.types.${value}`)}
-            active={type === value}
-            onPress={() => setType(type === value ? null : value)}
-          />
-        ))}
-      </ChipRow>
+      <View className="flex-row items-center gap-2 px-4">
+        <Pressable
+          onPress={() => setSheetOpen(true)}
+          accessibilityRole="button"
+          className="flex-row items-center gap-2 rounded-pill border px-3 py-2 active:opacity-70"
+          style={{ borderColor: activeCount > 0 ? colors.purple : colors.border }}
+        >
+          <Ionicons name="options-outline" size={16} color={activeCount > 0 ? colors.purple : colors.textMuted} />
+          <Text className={`text-caption ${activeCount > 0 ? 'text-text' : 'text-text-muted'}`}>
+            {t('casting.filters.title')}
+            {activeCount > 0 ? ` · ${activeCount}` : ''}
+          </Text>
+        </Pressable>
 
-      <ChipRow>
-        <Chip label={t('casting.all')} active={gender === null} onPress={() => setGender(null)} />
-        {GENDERS.map((value) => (
-          <Chip
-            key={value}
-            label={value === 'female' ? t('catalog.female') : t('catalog.male')}
-            active={gender === value}
-            onPress={() => setGender(gender === value ? null : value)}
-          />
-        ))}
-      </ChipRow>
+        {activeCount > 0 ? (
+          <Pressable
+            onPress={() => setFilters(EMPTY_CATALOG_FILTERS)}
+            accessibilityRole="button"
+            hitSlop={8}
+            className="active:opacity-60"
+          >
+            <Text className="text-caption text-violet">{t('catalog.reset')}</Text>
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 
@@ -168,7 +173,7 @@ export default function CastingScreen() {
       <View style={{ minHeight: 240 }}>
         <ScreenState
           kind="empty"
-          body={type || gender ? t('casting.emptyByFilters') : t('casting.empty')}
+          body={activeCount > 0 ? t('casting.emptyByFilters') : t('casting.empty')}
         />
       </View>
     );
@@ -221,6 +226,18 @@ export default function CastingScreen() {
             onToggleFavorite={() => toggleFavorite(item.id)}
           />
         )}
+      />
+
+      <FilterSheet
+        visible={sheetOpen}
+        value={filters}
+        regions={regions}
+        countFor={countFor}
+        onApply={(next) => {
+          setFilters(next);
+          setSheetOpen(false);
+        }}
+        onClose={() => setSheetOpen(false)}
       />
     </Screen>
   );
