@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +7,6 @@ import { FlatList, Pressable, RefreshControl, Text, View, useWindowDimensions } 
 
 import { useTabBarHeight } from '@/components/navigation/TabBar';
 import { ScreenState } from '@/components/states/ScreenState';
-import { Button } from '@/components/ui/Button';
 import { CreatorCard } from '@/components/ui/CreatorCard';
 import { Screen } from '@/components/ui/Screen';
 import { SkeletonGrid } from '@/components/ui/Skeleton';
@@ -25,7 +25,7 @@ import { pickHeadline } from '@/features/casting/status';
 import { useCreators } from '@/features/creators/api';
 import { useFavoritesStore } from '@/features/favorites/store';
 import { useIsOffline } from '@/lib/network';
-import { colors } from '@/theme/tokens';
+import { colors, gradients } from '@/theme/tokens';
 
 /**
  * Вкладка «Casting»: каталог кандидатов и вход в заявку.
@@ -105,27 +105,6 @@ export default function CastingScreen() {
           <ApplicationStatusBlock app={headline} compact onPress={() => router.push('/casting/my')} />
         ) : null}
 
-        {!hasPending ? (
-          <View className="gap-3 rounded-card-lg border border-border bg-surface p-4">
-            <View className="flex-row items-center gap-3">
-              <View
-                className="items-center justify-center rounded-card"
-                style={{ width: 44, height: 44, backgroundColor: `${colors.purple}26` }}
-              >
-                <Ionicons name="sparkles" size={20} color={colors.magenta} />
-              </View>
-              <View className="flex-1">
-                <Text className="text-body font-semibold text-text">{t('casting.applyTitle')}</Text>
-                <Text className="text-caption text-text-muted">
-                  {isAuthorized ? t('casting.applyBody') : t('casting.signInToApply')}
-                </Text>
-              </View>
-            </View>
-            <Button variant="primary" onPress={onApply}>
-              {t('casting.applyCta')}
-            </Button>
-          </View>
-        ) : null}
       </View>
 
       <View className="flex-row items-center gap-2 px-4">
@@ -227,6 +206,47 @@ export default function CastingScreen() {
           />
         )}
       />
+
+      {/*
+        «Ariza qoldirish» — круглой кнопкой в правом нижнем углу
+        (макет заказчика от 21.09.2026, как на сайте). Она всегда на
+        виду: каталог длинный, и карточка с призывом уезжала вверх
+        после первого же пролистывания.
+
+        Открытая заявка кнопку ПРЯЧЕТ: вторую сервер не примет (409),
+        и кнопка, заведомо ведущая к отказу, хуже её отсутствия.
+      */}
+      {!hasPending ? (
+        <Pressable
+          onPress={onApply}
+          accessibilityRole="button"
+          accessibilityLabel={t('casting.applyCta')}
+          style={{
+            position: 'absolute',
+            right: PADDING,
+            bottom: tabBarHeight + 16,
+            width: 64,
+            height: 64,
+            borderRadius: 32,
+            // Тень + свечение: кнопка лежит поверх постеров, и без
+            // отрыва от фона она читается как часть карточки под ней.
+            shadowColor: colors.purple,
+            shadowOpacity: 0.5,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 6 },
+            elevation: 8,
+          }}
+          className="items-center justify-center overflow-hidden active:opacity-80"
+        >
+          <LinearGradient
+            colors={gradients.premium}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          />
+          <Ionicons name="sparkles" size={26} color={colors.white} />
+        </Pressable>
+      ) : null}
 
       <FilterSheet
         visible={sheetOpen}
