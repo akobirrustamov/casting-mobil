@@ -268,6 +268,23 @@ function ShineSweep({
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
+        /**
+         * ⚠️ Возврат в 0 — ЯВНО, хотя у `Animated.loop` есть
+         * `resetBeforeIteration`.
+         *
+         * С нативным драйвером значение живёт на стороне UI-потока, и
+         * сброс последовательности до него не доходил: блик проходил
+         * ОДИН раз и больше не появлялся — ровно то, что видно на
+         * главной (заказчик, 21.09.2026).
+         *
+         * Нулевая длительность: это не анимация, а перевод полосы
+         * обратно за левый край перед следующим проходом.
+         */
+        Animated.timing(progress, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
       ])
     );
     loop.start();

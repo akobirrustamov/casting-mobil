@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -19,13 +18,14 @@ import {
   countCatalogFilters,
   type CatalogFilters,
 } from '@/features/casting/catalogFilters';
+import { ApplyFab } from '@/features/casting/ApplyFab';
 import { ApplicationStatusBlock } from '@/features/casting/components';
 import { FilterSheet } from '@/features/casting/FilterSheet';
 import { pickHeadline } from '@/features/casting/status';
 import { useCreators } from '@/features/creators/api';
 import { useFavoritesStore } from '@/features/favorites/store';
 import { useIsOffline } from '@/lib/network';
-import { colors, gradients } from '@/theme/tokens';
+import { colors } from '@/theme/tokens';
 
 /**
  * Вкладка «Casting»: каталог кандидатов и вход в заявку.
@@ -217,35 +217,12 @@ export default function CastingScreen() {
         и кнопка, заведомо ведущая к отказу, хуже её отсутствия.
       */}
       {!hasPending ? (
-        <Pressable
+        <ApplyFab
+          label={t('casting.applyCta')}
           onPress={onApply}
-          accessibilityRole="button"
-          accessibilityLabel={t('casting.applyCta')}
-          style={{
-            position: 'absolute',
-            right: PADDING,
-            bottom: tabBarHeight + 16,
-            width: 64,
-            height: 64,
-            borderRadius: 32,
-            // Тень + свечение: кнопка лежит поверх постеров, и без
-            // отрыва от фона она читается как часть карточки под ней.
-            shadowColor: colors.purple,
-            shadowOpacity: 0.5,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 6 },
-            elevation: 8,
-          }}
-          className="items-center justify-center overflow-hidden active:opacity-80"
-        >
-          <LinearGradient
-            colors={gradients.premium}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-          />
-          <Ionicons name="sparkles" size={26} color={colors.white} />
-        </Pressable>
+          right={PADDING}
+          bottom={tabBarHeight + 16}
+        />
       ) : null}
 
       <FilterSheet
