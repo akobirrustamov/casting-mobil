@@ -4,15 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScreenState } from '@/components/states/ScreenState';
@@ -26,6 +18,7 @@ import {
   useSubmitApplication,
 } from '@/features/casting/api';
 import { ChoiceField, Field, Section } from '@/features/casting/components';
+import { useKeyboardInset } from '@/lib/keyboard';
 import {
   EMPTY_FORM,
   FIELD_LIMITS,
@@ -71,6 +64,7 @@ type PhotoItem = {
 export default function ApplyScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const keyboard = useKeyboardInset();
   const isAuthorized = useAuthStore((s) => s.isAuthorized);
   const user = useAuthStore((s) => s.user);
 
@@ -240,14 +234,22 @@ export default function ApplyScreen() {
   const isMale = form.gender === 'male';
 
   return (
-    <KeyboardAvoidingView className="flex-1 bg-ink" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Screen
-        scroll={false}
-        title={t('casting.form.title')}
-        subtitle={t('casting.form.subtitle')}
-        onBack={() => router.back()}
-        underTabBar={false}
-      >
+    <Screen
+      scroll={false}
+      title={t('casting.form.title')}
+      subtitle={t('casting.form.subtitle')}
+      onBack={() => router.back()}
+      underTabBar={false}
+      // Отступ снизу отмеряем сами: под клавиатурой он другой.
+      padBottom={false}
+    >
+      {/*
+        ⚠️ Отступ под клавиатуру — на обёртке прокрутки, а не в её
+        содержимом: так короче становится ВИДИМАЯ часть списка, и поле,
+        до которого добрался человек, можно вывести из-под клавиатуры.
+        Почему не `KeyboardAvoidingView` — см. `useKeyboardInset`.
+      */}
+      <View className="flex-1" style={{ paddingBottom: keyboard }}>
         <ScrollView
           className="flex-1"
           keyboardShouldPersistTaps="handled"
@@ -352,8 +354,8 @@ export default function ApplyScreen() {
             {t('casting.form.submit')}
           </Button>
         </ScrollView>
-      </Screen>
-    </KeyboardAvoidingView>
+      </View>
+    </Screen>
   );
 }
 

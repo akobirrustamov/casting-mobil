@@ -1,19 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
 import { FormMessage } from '@/components/ui/FormMessage';
 import { GlowBackdrop } from '@/components/ui/GlowBackdrop';
 import { Wordmark } from '@/components/ui/Wordmark';
+import { useKeyboardInset } from '@/lib/keyboard';
 import { TOUCH_TARGET, colors } from '@/theme/tokens';
 
 import { AuthLanguageButton } from './AuthLanguageButton';
@@ -199,16 +193,19 @@ export function AuthScaffold({
   };
 }) {
   const insets = useSafeAreaInsets();
+  const keyboard = useKeyboardInset();
   const { width, height } = useWindowDimensions();
 
   // Безопасная высота окна: полосы системы знаку не принадлежат.
   const markSize = markSizeFor(height - insets.top - insets.bottom, width);
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    // ⚠️ Отступ под клавиатуру — здесь, на самом верхнем блоке: вместе с
+    // формой должна подниматься и кнопка, прибитая к низу. Почему не
+    // `KeyboardAvoidingView` — см. `useKeyboardInset`.
+    <View
       className="flex-1 bg-ink"
-      style={{ paddingTop: insets.top }}
+      style={{ paddingTop: insets.top, paddingBottom: keyboard }}
     >
       {/* Свечение с референса заказчика: на пустом экране входа оно и
           делает всю картинку, поэтому здесь оно ярче обычного. */}
@@ -306,7 +303,12 @@ export function AuthScaffold({
       </ScrollView>
 
       {/* Главное действие — последним и всегда на виду. */}
-      <View className="gap-3 px-6 pt-3" style={{ paddingBottom: insets.bottom + 12 }}>
+      <View
+        className="gap-3 px-6 pt-3"
+        // Клавиатура открыта — полосу жестов она закрыла собой, место под
+        // неё оставлять незачем.
+        style={{ paddingBottom: keyboard > 0 ? 12 : insets.bottom + 12 }}
+      >
         {/* ⚠️ Место под сообщение занято ВСЕГДА: ошибка приходит в ответ
             на нажатие, и если бы строка раздвигала низ экрана, кнопка
             уходила бы из-под пальца ровно в момент повторного нажатия. */}
@@ -326,6 +328,6 @@ export function AuthScaffold({
           {action.label}
         </Button>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }

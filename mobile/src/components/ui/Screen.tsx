@@ -34,6 +34,14 @@ export function Screen({
   scroll = true,
   /** Отключить отступ под таб-бар — для экранов вне вкладок. */
   underTabBar = true,
+  /**
+   * Отступ снизу (под таб-бар или под жесты системы).
+   *
+   * ⚠️ `false` ставит экран, у которого снизу прибито поле ввода: отступ
+   * ему мешает уехать вверх вместе с клавиатурой, и безопасную зону такой
+   * экран отмеряет сам (`useKeyboardInset`).
+   */
+  padBottom = true,
   /** Стрелка назад слева от заголовка. Задаём только на вложенных экранах. */
   onBack,
   /** Действие справа в шапке — например «Фильтры». */
@@ -59,6 +67,7 @@ export function Screen({
   subtitle?: string;
   scroll?: boolean;
   underTabBar?: boolean;
+  padBottom?: boolean;
   onBack?: () => void;
   headerRight?: ReactNode;
   onRefresh?: () => void;
@@ -69,7 +78,7 @@ export function Screen({
 }) {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useTabBarHeight();
-  const bottomPad = underTabBar ? tabBarHeight + 8 : insets.bottom + 24;
+  const bottomPad = !padBottom ? 0 : underTabBar ? tabBarHeight + 8 : insets.bottom + 24;
 
   // Порог с запасом в экран: страница успевает приехать до того, как
   // человек упрётся в конец списка, и прокрутка не «дёргается» ожиданием.

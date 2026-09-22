@@ -8,8 +8,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   Text,
   TextInput,
@@ -21,6 +19,7 @@ import { ScreenState } from '@/components/states/ScreenState';
 import { Screen } from '@/components/ui/Screen';
 import { useAuthStore } from '@/features/auth/store';
 import { useContentCard } from '@/features/home/api';
+import { useKeyboardInset } from '@/lib/keyboard';
 import { pushOnce } from '@/lib/navigation';
 import { useIsOffline } from '@/lib/network';
 import { TOUCH_TARGET, colors, radius } from '@/theme/tokens';
@@ -63,7 +62,9 @@ export function openComments(contentId: number) {
  * <h2>Новые — сверху, поле — снизу</h2>
  * Комментарий, отправленный только что, появляется первым: человек видит
  * его сразу, не листая сотню чужих. Поле ввода прибито к низу и уезжает
- * вверх вместе с клавиатурой.
+ * вверх вместе с клавиатурой — отступ считает `useKeyboardInset`, потому
+ * что на Android в режиме edge-to-edge `KeyboardAvoidingView` этого уже
+ * не делает (22.09.2026, разбор — в самом хуке).
  *
  * <h2>Гость читает, но не пишет</h2>
  * Вместо поля — кнопка входа. Писать без аккаунта нельзя: комментарий
@@ -72,6 +73,7 @@ export function openComments(contentId: number) {
 export function CommentsScreen({ contentId }: { contentId: number | null }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const keyboard = useKeyboardInset();
   const isOffline = useIsOffline();
   const card = useContentCard(contentId);
   const signedIn = useAuthStore((s) => s.token !== null);
@@ -196,6 +198,9 @@ export function CommentsScreen({ contentId }: { contentId: number | null }) {
           ) : null
         }
         keyboardShouldPersistTaps="handled"
+        // Потянул ленту — клавиатура ушла: читать чужие комментарии
+        // поверх открытой клавиатуры неудобно.
+        keyboardDismissMode="on-drag"
         onRefresh={() => void comments.refetch()}
         refreshing={comments.isRefetching && !comments.isFetchingNextPage}
         onEndReachedThreshold={0.4}
@@ -233,19 +238,29 @@ export function CommentsScreen({ contentId }: { contentId: number | null }) {
       title={total === null ? t('comments.title') : `${t('comments.title')} · ${total}`}
       subtitle={card?.title ?? undefined}
       underTabBar={false}
+      // Отступ снизу отмеряем сами: под клавиатурой он другой.
+      padBottom={false}
       onBack={() => router.back()}
     >
-      <KeyboardAvoidingView
+      {/*
+        ⚠️ Отступ под клавиатуру — на ВНЕШНЕМ блоке, а не на поле ввода:
+        лента тоже должна ужаться, иначе последние комментарии окажутся
+        под клавиатурой и их не пролистать.
+      */}
+      <View
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={insets.top}
+        // Поля ввода нет (старый бэкенд) — снизу пусто, и ленте нужен
+        // свой отступ: иначе последняя строка ложится на полосу жестов.
+        style={{ paddingBottom: unavailable ? insets.bottom + 24 : keyboard }}
       >
         <View className="flex-1">{body}</View>
 
         {unavailable ? null : (
           <View
             className="border-t border-border px-4 pt-3"
-            style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+            // Клавиатура открыта — полосу жестов она уже закрыла собой,
+            // место под неё оставлять незачем.
+            style={{ paddingBottom: keyboard > 0 ? 12 : Math.max(insets.bottom, 12) }}
           >
             {signedIn && alreadyCommented ? (
               <View className="flex-row items-center gap-2 rounded-card bg-surface px-4 py-3">
@@ -275,7 +290,7 @@ export function CommentsScreen({ contentId }: { contentId: number | null }) {
             )}
           </View>
         )}
-      </KeyboardAvoidingView>
+      </View>
 
       <ReportSheet
         open={reporting !== null}
