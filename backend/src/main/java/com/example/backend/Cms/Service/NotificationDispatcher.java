@@ -23,10 +23,9 @@ import java.util.List;
  * rejalashtirilgan xabar abadiy {@code SCHEDULED} bo'lib qolardi va admin
  * buni faqat foydalanuvchilar shikoyat qilganda bilardi.
  *
- * <h2>Provayder sozlanmagan bo'lsa</h2>
- * Yuborish {@code FAILED} bo'ladi va sabab yoziladi. «Yuborildi» deb
- * belgilanmaydi — bu foydalanuvchilar xabar olgandek soxta taassurot
- * qoldirardi va admin muammoni umuman ko'rmasdi.
+ * <h2>Qayerga yuboriladi</h2>
+ * Hozircha ilova ichidagi «Xabarlar» ro'yxatiga (status {@code SENT}).
+ * Push ulangach — o'sha {@link NotificationAdminService#send} orqali.
  *
  * <h2>Nima uchun chegaralangan to'plam</h2>
  * Bir vaqtning o'zida yuzlab xabar vaqti kelsa, hammasini bitta

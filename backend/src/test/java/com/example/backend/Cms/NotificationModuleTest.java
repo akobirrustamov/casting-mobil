@@ -188,27 +188,36 @@ class NotificationModuleTest {
     class Sending {
 
         @Test
-        @DisplayName("Provayder sozlanmagan — FAILED, soxta muvaffaqiyat emas")
-        void withoutProviderResultIsFailed() {
+        @DisplayName("Yuborilgan xabar SENT bo'ladi va vaqti yoziladi")
+        void sentNotificationIsMarkedSent() {
             Notification n = notificationService.save(null, null, translated());
 
             Notification sent = notificationService.send(null, n.getId());
 
-            // «Yuborildi» deb belgilash foydalanuvchilar xabar olgandek
-            // taassurot qoldirardi va admin muammoni ko'rmasdi.
-            assertThat(sent.getStatus()).isEqualTo(NotificationStatus.FAILED);
-            assertThat(sent.getSentAt()).isNull();
-            assertThat(sent.getFailureReason()).contains("FCM");
+            // SENT bo'lmasa ilovadagi «Xabarlar» ro'yxatida chiqmaydi.
+            assertThat(sent.getStatus()).isEqualTo(NotificationStatus.SENT);
+            assertThat(sent.getSentAt()).isNotNull();
+            assertThat(sent.getFailureReason()).isNull();
         }
 
         @Test
-        @DisplayName("Urinish natijasi SAQLANADI — iz qoladi")
-        void failedAttemptIsPersisted() {
+        @DisplayName("Yuborilgan xabarni qayta yuborib bo'lmaydi")
+        void sentNotificationCannotBeSentTwice() {
+            Notification n = notificationService.save(null, null, translated());
+            notificationService.send(null, n.getId());
+
+            assertThatThrownBy(() -> notificationService.send(null, n.getId()))
+                    .isInstanceOf(BusinessException.class);
+        }
+
+        @Test
+        @DisplayName("Yuborish natijasi SAQLANADI — iz qoladi")
+        void sendResultIsPersisted() {
             Notification n = notificationService.save(null, null, translated());
             notificationService.send(null, n.getId());
 
             assertThat(notificationService.report(n.getId()).getStatus())
-                    .isEqualTo(NotificationStatus.FAILED.name());
+                    .isEqualTo(NotificationStatus.SENT.name());
         }
 
         @Test
@@ -253,7 +262,7 @@ class NotificationModuleTest {
 
             // Bu holat to'g'ri — hammasi to'liq.
             assertThat(notificationService.send(null, n.getId()).getStatus())
-                    .isEqualTo(NotificationStatus.FAILED);
+                    .isEqualTo(NotificationStatus.SENT);
         }
     }
 
@@ -296,13 +305,12 @@ class NotificationModuleTest {
 
             dispatcher.dispatchDue();
 
-            // Provayder yo'qligi uchun FAILED bo'ladi — lekin SCHEDULED
-            // emas, ya'ni cheksiz qayta urinish halqasi yo'q.
+            // SCHEDULED da qolmaydi — cheksiz qayta urinish halqasi yo'q.
             assertThat(dispatcher.findDue())
                     .extracting(Notification::getId)
                     .doesNotContain(n.getId());
             assertThat(notificationService.report(n.getId()).getStatus())
-                    .isEqualTo(NotificationStatus.FAILED.name());
+                    .isEqualTo(NotificationStatus.SENT.name());
         }
 
         @Test
@@ -387,8 +395,8 @@ class NotificationModuleTest {
 
             // Voronka ko'rsatkichi bo'lmasa ham, urinish natijasi
             // yo'qolmaydi — u o'z joyida turadi.
-            assertThat(report.getStatus()).isEqualTo(NotificationStatus.FAILED.name());
-            assertThat(report.getFailureReason()).contains("FCM");
+            assertThat(report.getStatus()).isEqualTo(NotificationStatus.SENT.name());
+            assertThat(report.getSentAt()).isNotNull();
         }
 
         @Test

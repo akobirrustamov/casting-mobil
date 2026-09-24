@@ -30,9 +30,9 @@ import java.util.*;
 /**
  * Bildirishnomalarni yaratish va rejalashtirish.
  *
- * ⚠️ HAQIQIY YUBORISH ULANMAGAN. FCM provayderi sozlanmagan, shuning uchun
- * "yuborildi" holati qo'yilmaydi va soxta statistika ko'rsatilmaydi (§32, §33).
- * Yuborishga urinilsa aniq xato qaytariladi — jim muvaffaqiyat emas.
+ * Yuborish hozircha ilova ichidagi «Xabarlar» ro'yxatiga. Push provayderi
+ * ulanmagan, shuning uchun push'ga bog'liq statistika (yetkazildi va h.k.)
+ * soxta raqam bilan emas, «o'lchanmaydi» deb ko'rsatiladi (§32, §33).
  */
 @Service
 @RequiredArgsConstructor
@@ -167,19 +167,18 @@ public class NotificationAdminService {
     }
 
     /**
-     * Yuborishga urinish.
+     * Yuborish — hozircha faqat ilova ichidagi «Xabarlar» ro'yxatiga.
      *
-     * ⚠️ FCM ULANMAGAN. Provayder ulangach bu yerda haqiqiy chaqiruv bo'ladi
-     * va status FAQAT tasdiqdan keyin SENT ga o'tadi. Hozircha har urinish
-     * FAILED sifatida yoziladi — "yuborildi" deb belgilash foydalanuvchilar
-     * xabar olgandek taassurot qoldirardi.
+     * ⚠️ Push (telefon bildirishnomasi) hali ulanmagan. Xabar SENT bo'ladi,
+     * chunki u haqiqatan foydalanuvchiga yetadi — ilovani ochganda
+     * ro'yxatda ko'radi. Push qo'shilgach u shu metodda chaqiriladi.
      *
      * ⚠️ Bu metod ISTISNO TASHLAMAYDI. Ilgari tashlardi va tranzaksiya
      * qaytarilib, urinish haqidagi yozuv ham, audit ham yo'qolardi — ya'ni
      * urinishdan hech qanday iz qolmasdi. Endi natija SAQLANADI, HTTP kodini
      * esa controller qaytaradi.
      *
-     * @return saqlangan bildirishnoma; muvaffaqiyatsizlikda status FAILED
+     * @return saqlangan bildirishnoma (status SENT)
      */
     @Transactional
     public Notification send(User actor, Long id) {
@@ -203,13 +202,18 @@ public class NotificationAdminService {
         // bilan kelishidan qat'i nazar.
         requireAllLanguages(n);
 
-        // TODO: FCM ulangach — provayderga yuborish, javobga qarab SENT yoki FAILED.
-        n.setStatus(NotificationStatus.FAILED);
-        n.setFailureReason(PROVIDER_NOT_CONFIGURED);
+        // 1-bosqich: ILOVA ICHIDA yetkazish. SENT bo'lgan xabar
+        // `/api/v1/app/notifications` ro'yxatida chiqadi — «Xabarlar»
+        // ekrani shuni o'qiydi. Telefonga push hali ketmaydi (2-bosqich:
+        // qurilma tokenlari + Expo Push); push ulangach u shu yerda,
+        // SENT dan OLDIN chaqiriladi.
+        n.setStatus(NotificationStatus.SENT);
+        n.setSentAt(LocalDateTime.now());
+        n.setFailureReason(null);
         Notification saved = notificationRepo.save(n);
 
         auditService.log(actor, AuditAction.NOTIFICATION_SENT, "Notification", id, null,
-                Map.of("result", "provider_not_configured"));
+                Map.of("result", "in_app"));
         return saved;
     }
 
