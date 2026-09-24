@@ -49,6 +49,10 @@ public final class AuditAction {
     public static final String USER_BLOCKED = "USER_BLOCKED";
     public static final String USER_UNBLOCKED = "USER_UNBLOCKED";
     public static final String DEVICE_REVOKED = "DEVICE_REVOKED";
+    /** Admin bitta foydalanuvchini barcha qurilmalardan chiqardi. */
+    public static final String SESSIONS_REVOKED = "SESSIONS_REVOKED";
+    /** Ommaviy chiqarish — {@code afterState.scope} da kimlar. */
+    public static final String SESSIONS_REVOKED_BULK = "SESSIONS_REVOKED_BULK";
 
     public static final String ADMIN_LOGIN = "ADMIN_LOGIN";
 

@@ -765,12 +765,17 @@ export const adminApi = {
     api.get('/api/v1/app/admin/donations/transactions', params),
 
   // --- Eski casting moduli (ТЗ §49) ---
-  // ⚠️ Yo'l ATAYLAB eski: `/api/v1/casting-user/web`. Eski tizim
-  // o'zgartirilmaydi, panel unga shunchaki murojaat qiladi.
-  castingApplications: (params) => api.get('/api/v1/casting-user/web', params),
+  // ⚠️ Yo'l ATAYLAB eski va o'zgartirilmaydi. `/web` EMAS: u ochiq katalog —
+  // faqat saytda ko'rsatilganlar, ya'ni yangi anketalar unda yo'q.
+  // `GET /api/v1/casting-user` — xodimlar uchun to'liq ro'yxat.
+  castingApplications: () => api.get('/api/v1/casting-user'),
   revokePremium: (id) => api.del(`/api/v1/app/admin/users/${id}/premium`),
   userDevices: (id) => api.get(`/api/v1/app/admin/users/${id}/devices`),
   revokeDevice: (id, rowId) => api.del(`/api/v1/app/admin/users/${id}/devices/${rowId}`),
+
+  // Majburiy chiqarish — faqat SUPER_ADMIN (SessionAdminController).
+  logoutUserSessions: (id) => api.post(`/api/v1/app/admin/sessions/users/${id}/logout`),
+  logoutAllSessions: (scope) => api.post('/api/v1/app/admin/sessions/logout-all', { scope }),
 
   subscriptions: (params) => api.get('/api/v1/app/admin/subscriptions', params),
   /**

@@ -17,9 +17,57 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 
 public interface UserRepo extends JpaRepository<User, UUID> {
+
+    // ─── Majburiy chiqarish (V41) ────────────────────────────────────
+    //
+    // ⚠️ Native so'rov: rollar eski `users_roles` jadvalida, va «xodim
+    // emas» shartini JPQL'da yozish joinlar bilan chalkash bo'lardi.
+    // `clearAutomatically` — ommaviy update birinchi darajali keshni
+    // chetlab o'tadi (RefreshTokenRepo.revokeAllForUser izohiga qarang).
+
+    /** Xodim roli yo'q hamma — mobil ilova foydalanuvchilari. */
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
+    @Query(value = "update users u set sessions_valid_after = :now "
+            + "where u.id <> :actor and not exists ("
+            + "  select 1 from users_roles ur join role r on r.id = ur.roles_id "
+            + "  where ur.user_id = u.id and r.name in (:staffRoles))",
+            nativeQuery = true)
+    int markAppUsersLoggedOut(@Param("now") java.time.LocalDateTime now,
+                              @Param("actor") UUID actor,
+                              @Param("staffRoles") java.util.Collection<String> staffRoles);
+
+    /**
+     * Berilgan rollardan biri bor, lekin himoyalangan rollardan hech biri
+     * yo'q xodimlar — ya'ni amalni bajaruvchidan PAST darajadagilar.
+     */
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
+    @Query(value = "update users u set sessions_valid_after = :now "
+            + "where u.id <> :actor and exists ("
+            + "  select 1 from users_roles ur join role r on r.id = ur.roles_id "
+            + "  where ur.user_id = u.id and r.name in (:roles)) "
+            + "and not exists ("
+            + "  select 1 from users_roles ur join role r on r.id = ur.roles_id "
+            + "  where ur.user_id = u.id and r.name in (:protectedRoles))",
+            nativeQuery = true)
+    int markStaffLoggedOut(@Param("now") java.time.LocalDateTime now,
+                           @Param("actor") UUID actor,
+                           @Param("roles") java.util.Collection<String> roles,
+                           @Param("protectedRoles") java.util.Collection<String> protectedRoles);
+
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
+    @Query("update User u set u.sessionsValidAfter = :now where u.id = :id")
+    int markLoggedOut(@Param("id") UUID id, @Param("now") java.time.LocalDateTime now);
     Optional<User> findByPhone(String phone);
 
     Optional<User> findByGoogleSub(String googleSub);
+
+    /**
+     * Berilgan rollardan kamida bittasi bor hisoblar — xodimlar ro'yxati
+     * uchun. Ilgari {@code findAll()} bilan BARCHA ilova foydalanuvchilari
+     * xotiraga tortilib, keyin Java'da saralanardi.
+     */
+    @Query("select distinct u from User u join u.roles r where r.name in :roles")
+    List<User> findAllHavingAnyRole(@Param("roles") java.util.Collection<com.example.backend.Enums.UserRoles> roles);
 
     Optional<User> findByEmail(String email);
 

@@ -111,6 +111,18 @@ public class User implements UserDetails {
     private LocalDateTime createdAt;
 
     /**
+     * Shu vaqtdan OLDIN berilgan tokenlar yaroqsiz (V41) — admin
+     * «majburiy chiqarish» qilganda qo'yiladi. {@code null} — cheklov yo'q.
+     *
+     * ⚠️ Butun soniya bo'lib yoziladi: JWT'dagi {@code iat} ham
+     * soniyagacha kesilgan (sababi — {@code SessionAdminService.cutoffNow}).
+     *
+     * @see com.example.backend.Security.MyFilter
+     */
+    @Column(name = "sessions_valid_after")
+    private LocalDateTime sessionsValidAfter;
+
+    /**
      * Barcha yaratish yo'llari uchun bitta joy.
      *
      * Ro'yxatdan o'tish, Google orqali kirish, xodim yaratish — hammasi

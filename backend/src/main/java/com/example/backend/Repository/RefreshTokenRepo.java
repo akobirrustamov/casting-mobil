@@ -73,6 +73,21 @@ public interface RefreshTokenRepo extends JpaRepository<RefreshToken, UUID> {
                            @Param("now") LocalDateTime now);
 
     /**
+     * Ommaviy chiqarish: {@code sessions_valid_after} AYNAN shu vaqtga
+     * qo'yilgan foydalanuvchilarning faol tokenlari.
+     *
+     * ⚠️ Ro'yxat ikkinchi marta hisoblanmaydi — oldingi qadam belgilagan
+     * satrlar olinadi. Aks holda ikki so'rov orasida roli o'zgargan odam
+     * yarim chiqarilgan bo'lib qolardi (access yaroqsiz, refresh tirik).
+     */
+    @Modifying(clearAutomatically = true)
+    @Query(value = "update refresh_token set revoked_at = :now "
+            + "where revoked_at is null and user_id in "
+            + "(select id from users where sessions_valid_after = :now)",
+            nativeQuery = true)
+    int revokeAllMarkedAt(@Param("now") LocalDateTime now);
+
+    /**
      * Muddati o'tganlarni tozalash — jadval cheksiz o'smasin.
      *
      * ⚠️ {@code clearAutomatically} — {@code revokeAllForUser} dagi
