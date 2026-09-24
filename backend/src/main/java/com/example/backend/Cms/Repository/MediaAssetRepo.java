@@ -39,6 +39,27 @@ public interface MediaAssetRepo extends JpaRepository<MediaAsset, Long> {
     Page<MediaAsset> findAllByTypeOrderByCreatedAtDesc(MediaType type, Pageable pageable);
 
     /**
+     * Faqat id va ombor kaliti — butun jadval EMAS.
+     *
+     * ⚠️ `findAll()` o'rniga. Ombor hisoboti bazadagi hamma kalitni
+     * bilishi shart (qaysi fayl «yetim» ekanini aniqlash uchun), lekin
+     * unga faqat ikkita ustun kerak. `findAll()` bo'lsa Hibernate har bir
+     * media uchun to'liq obyekt yasardi — o'n minglab yozuvli kutubxonada
+     * bu hisobot sahifasini ochib bo'lmas qilardi va xotirani yeb qo'yardi.
+     *
+     * Hisobot NIMA ko'rsatishi o'zgarmaydi — faqat qancha ma'lumot
+     * o'qilishi o'zgaradi.
+     */
+    @Query("select m.id as id, m.storageKey as storageKey from MediaAsset m")
+    java.util.List<KeyRow> findAllKeys();
+
+    /** {@link #findAllKeys()} natijasi. */
+    interface KeyRow {
+        Long getId();
+        String getStorageKey();
+    }
+
+    /**
      * Kutubxona ro'yxati — filtr va qidiruv bilan.
      *
      * Qidiruv ASL fayl nomi bo'yicha: {@code storageKey} UUID bo'lgani

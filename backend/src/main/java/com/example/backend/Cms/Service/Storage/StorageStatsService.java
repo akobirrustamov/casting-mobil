@@ -93,7 +93,10 @@ public class StorageStatsService {
         Set<String> knownKeys = new HashSet<>();
         Set<Long> knownMediaIds = new HashSet<>();
 
-        for (MediaAsset asset : mediaAssetRepo.findAll()) {
+        // ⚠️ `findAllKeys()`, `findAll()` EMAS: bu yerda faqat id va kalit
+        // kerak. To'liq obyektlar o'qilsa, katta kutubxonada shu sikl
+        // hisobotni ochib bo'lmas qilardi.
+        for (MediaAssetRepo.KeyRow asset : mediaAssetRepo.findAllKeys()) {
             knownMediaIds.add(asset.getId());
             if (asset.getStorageKey() != null) {
                 knownKeys.add(normalize(asset.getStorageKey()));
@@ -189,7 +192,10 @@ public class StorageStatsService {
 
         Set<String> knownKeys = new HashSet<>();
         Set<Long> knownMediaIds = new HashSet<>();
-        for (MediaAsset asset : mediaAssetRepo.findAll()) {
+        // ⚠️ `findAllKeys()`, `findAll()` EMAS: bu yerda faqat id va kalit
+        // kerak. To'liq obyektlar o'qilsa, katta kutubxonada shu sikl
+        // hisobotni ochib bo'lmas qilardi.
+        for (MediaAssetRepo.KeyRow asset : mediaAssetRepo.findAllKeys()) {
             knownMediaIds.add(asset.getId());
             if (asset.getStorageKey() != null) {
                 knownKeys.add(normalize(asset.getStorageKey()));

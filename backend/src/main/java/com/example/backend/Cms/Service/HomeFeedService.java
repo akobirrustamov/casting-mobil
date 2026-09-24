@@ -6,6 +6,7 @@ import com.example.backend.Cms.Enums.*;
 import com.example.backend.Cms.Repository.*;
 import com.example.backend.Entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 /**
@@ -84,6 +87,71 @@ public class HomeFeedService {
                 .findFirst()
                 .map(a -> adCard(a, lang))
                 .orElse(null);
+    }
+
+    /**
+     * Bosh sahifa keshi.
+     *
+     * <h2>Nima uchun</h2>
+     * Bosh sahifa ilova ochilganda HAR SAFAR so'raladi va uni qurish
+     * arzon emas: bo'limlar, reklama, premyeralar, kategoriyalar,
+     * ijodkorlar va har qator uchun kontent — o'nlab so'rov. Tomoshabinlar
+     * soni oshganda aynan shu sahifa bazani birinchi bo'lib bo'g'adi.
+     *
+     * Javob esa hamma uchun bir xil: {@link #isVisible} foydalanuvchini
+     * umuman hisobga olmaydi — u faqat kontent chop etilganmi va ochiqmi,
+     * shuni tekshiradi.
+     *
+     * <h2>⚠️ Kalit nima uchun aynan shu ikkisi</h2>
+     * Lenta faqat IKKI narsaga bog'liq: til va reklama ko'rsatiladimi.
+     * Kalitga foydalanuvchi qo'shilsa kesh mutlaqo foydasiz bo'lardi
+     * (har kimga o'z nusxasi), olib tashlansa esa premium foydalanuvchi
+     * reklamali lentani ko'rardi — ya'ni pul to'lagan odam reklama
+     * ko'rardi va buni hech qanday test ushlamasdi.
+     *
+     * Shuning uchun {@link #isVisible} ga foydalanuvchiga bog'liq shart
+     * qo'shilsa, u SHU KALITGA ham qo'shilishi shart.
+     */
+    private record FeedKey(Locale lang, boolean showAds) {}
+
+    /** Keshlangan lenta va uning muddati (ms). */
+    private record CachedFeed(HomeFeedDto feed, long expiresAtMs) {}
+
+    /**
+     * ⚠️ Lombok bu maydonni konstruktorga QO'SHMAYDI, chunki u shu yerda
+     * qiymat oladi. Aks holda `@RequiredArgsConstructor` imzosi o'zgarardi.
+     */
+    private final ConcurrentMap<FeedKey, CachedFeed> feedCache = new ConcurrentHashMap<>();
+
+    /** Kesh muddati. {@code 0} yoki manfiy — kesh o'chiq. */
+    @Value("${app.home.cache-seconds:30}")
+    private long cacheSeconds;
+
+    /**
+     * Keshlangan bosh sahifa — ilova shuni so'raydi.
+     *
+     * ⚠️ Kesh eskirishi ATAYLAB qisqa (30 soniya): admin bo'limni
+     * o'zgartirganda natijani deyarli darhol ko'rishi kerak. Muddat
+     * uzaytirilsa, admin «o'zgarish saqlanmadi» deb o'ylab qayta-qayta
+     * saqlayverardi.
+     */
+    @Transactional(readOnly = true)
+    public HomeFeedDto buildCached(User user, Locale locale) {
+        if (cacheSeconds <= 0) {
+            return build(user, locale);
+        }
+
+        FeedKey key = new FeedKey(resolveLanguage(user, locale), accessService.shouldShowAds(user));
+        long now = System.currentTimeMillis();
+
+        CachedFeed hit = feedCache.get(key);
+        if (hit != null && hit.expiresAtMs() > now) {
+            return hit.feed();
+        }
+
+        HomeFeedDto fresh = build(user, locale);
+        feedCache.put(key, new CachedFeed(fresh, now + cacheSeconds * 1000L));
+        return fresh;
     }
 
     @Transactional(readOnly = true)

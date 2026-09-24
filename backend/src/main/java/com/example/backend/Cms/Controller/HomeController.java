@@ -32,6 +32,6 @@ public class HomeController {
 
     @GetMapping
     public ResponseEntity<HomeFeedDto> home(@RequestParam(defaultValue = "UZ") Locale locale) {
-        return ResponseEntity.ok(homeFeedService.build(CurrentUser.getOrNull(), locale));
+        return ResponseEntity.ok(homeFeedService.buildCached(CurrentUser.getOrNull(), locale));
     }
 }
