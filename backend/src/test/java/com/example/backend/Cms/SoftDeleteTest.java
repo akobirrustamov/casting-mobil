@@ -294,6 +294,31 @@ class SoftDeleteTest {
                 "tariffrepo", "premiererepo", "donationrepo", "purchaserepo",
                 "subscriptionrepo");
 
+        /**
+         * Manba IZOHLARSIZ.
+         *
+         * <h2>⚠️ Nega kerak</h2>
+         * Test qoidani matn bo'yicha qidiradi, ya'ni izohdagi misol ham
+         * chaqiriq kabi ko'rinadi. Aynan shu sodir bo'ldi:
+         * {@code AccountDeletionService} javadoc'ida
+         * «{@code userRepo.delete(user)} eng to'g'ri yo'l ko'rinadi, lekin…»
+         * deb yozilgan — ya'ni qoidani BUZMAYDIGAN, aksincha uni
+         * TUSHUNTIRADIGAN jumla testni yiqitdi.
+         *
+         * Natijasi yomon tomonga ishlaydi: nega qator o'chirilmasligini
+         * yozib qo'yish taqiqlangan bo'lardi, va keyingi odam sababni
+         * bilmay turib qattiq o'chirishni qaytarardi.
+         *
+         * ⚠️ {@code //} faqat qiyshiq chiziqdan oldin ikki nuqta bo'lmasa
+         * kesiladi — aks holda satr ichidagi {@code https://…} manzilining
+         * yarmi yo'qolardi va undan keyingi kod ko'rinmay qolardi.
+         */
+        private String withoutComments(String src) {
+            return src
+                    .replaceAll("(?s)/\\*.*?\\*/", "")
+                    .replaceAll("(?m)(?<!:)//.*$", "");
+        }
+
         @Test
         @DisplayName("Himoyalangan turlarda hard delete chaqirig'i yo'q")
         void noHardDeleteOnProtectedTypes() throws IOException {
@@ -301,7 +326,7 @@ class SoftDeleteTest {
             List<String> violations = new ArrayList<>();
 
             for (Path f : sources()) {
-                String src = Files.readString(f);
+                String src = withoutComments(Files.readString(f));
                 Matcher m = call.matcher(src);
                 while (m.find()) {
                     // Aniq nom bo'yicha: userPermissionRepo «user» bilan boshlansa

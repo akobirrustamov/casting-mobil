@@ -502,6 +502,118 @@ havolalar bilan ishlaydi.
 
 ---
 
+## 11. JDK yangilangach ilovani tiklash
+
+⚠️ **Bu bir marta sozlanadi va unutiladi.** Agar server qaytadan
+qurilsa — shu bo'limni qayta bajaring.
+
+### Muammo
+
+`unattended-upgrades` JDK ni yangilaganda ishlab turgan ilova
+o'chirilgan eski JDK ni xotirada ushlab qoladi. Tashqaridan hammasi
+joyida ko'rinadi: sayt ochiladi, API javob beradi, hech qanday xato
+yozilmaydi.
+
+Lekin JVM boshqa **hech qanday tashqi dastur ocha olmaydi**. Yangi
+jarayon ochish uchun kerak bo'lgan `jspawnhelper` YO'L bo'yicha
+qidiriladi, u yerda esa endi boshqa versiya turadi.
+
+Amalda bu shunday ko'rinadi:
+
+```
+Panelda:  «FFmpeg topilmadi (`ffmpeg`) — video HLS'ga o'girilmaydi»
+Terminalda: ffmpeg -version  →  mukammal ishlaydi
+```
+
+Ya'ni `ffmpeg` ham, PATH ham joyida — muammo ularda emas. Haqiqiy
+xato endpoint javobida ko'rinadi:
+
+```
+Cannot run program "ffmpeg": error=0, Failed to exec spawn helper
+```
+
+Tekshirish: `/proc/<pid>/exe` oxirida `(deleted)` tursa — shu holat.
+
+**24.09.2026 da aynan shunday bo'lgan:** 21-sentabrda ishga tushgan
+ilova, 23-sentabrda JDK yangilangan, video o'girish jimgina to'xtagan.
+
+### Yechim
+
+Ikkita fayl. Tekshiruv **paket nomiga emas, holatga** qaraydi —
+shuning uchun JDK ni qo'lda almashtirish ham qamrab olinadi.
+
+```bash
+nano /usr/local/sbin/uzcasting-restart-if-stale
+chmod 755 /usr/local/sbin/uzcasting-restart-if-stale
+```
+
+```bash
+#!/bin/bash
+set -u
+PROGRAM=uzcasting
+LOG=/var/log/uzcasting-restart.log
+log() { echo "$(date '+%F %T') $*" >> "$LOG"; }
+
+pid=$(supervisorctl pid "$PROGRAM" 2>/dev/null)
+case "$pid" in ''|0|*[!0-9]*) exit 0 ;; esac
+
+exe=$(readlink "/proc/$pid/exe" 2>/dev/null) || exit 0
+
+# --force — faqat sinov uchun
+if [ "${1:-}" != "--force" ] && [[ "$exe" != *"(deleted)"* ]]; then
+  exit 0
+fi
+
+log "JVM eskirgan ($exe) — qayta ishga tushirilmoqda"
+supervisorctl restart "$PROGRAM" >/dev/null 2>&1 \
+  && log "qayta ishga tushirildi, yangi pid: $(supervisorctl pid "$PROGRAM")" \
+  || log "XATO: qayta ishga tushirib bo'lmadi"
+```
+
+So'ng uni apt ga ulang:
+
+```bash
+nano /etc/apt/apt.conf.d/99-uzcasting-restart
+```
+
+```
+DPkg::Post-Invoke { "/usr/local/sbin/uzcasting-restart-if-stale || true"; };
+```
+
+### Tekshirish
+
+```bash
+# 1. Sog'lom holatda tegmasligi kerak — pid o'zgarmaydi
+supervisorctl pid uzcasting
+/usr/local/sbin/uzcasting-restart-if-stale
+supervisorctl pid uzcasting
+
+# 2. Majburiy rejimda qayta ishga tushirishi kerak — pid o'zgaradi
+/usr/local/sbin/uzcasting-restart-if-stale --force
+cat /var/log/uzcasting-restart.log
+
+# 3. Apt ilgagini qabul qilganmi
+apt-config dump | grep uzcasting-restart
+```
+
+⚠️ Ikkala shoxni ham sinang. Faqat birinchisi tekshirilsa, skript
+umuman ishlamayotgan bo'lsa ham «to'g'ri» ko'rinardi — u hech narsa
+qilmasligi kerak bo'lgan holatda hech narsa qilmaydi.
+
+### Qo'lda tuzatish
+
+Agar panelda «FFmpeg topilmadi» chiqsa va ilgak biror sababdan
+ishlamagan bo'lsa:
+
+```bash
+supervisorctl restart uzcasting
+```
+
+Boshqa hech narsa kerak emas — `ffmpeg` ni qayta o'rnatish yoki
+sozlamani o'zgartirish **yordam bermaydi**, chunki ular nosoz emas.
+
+---
+
 ## Muammolar
 
 ### `JWT KALITI BERILMAGAN`

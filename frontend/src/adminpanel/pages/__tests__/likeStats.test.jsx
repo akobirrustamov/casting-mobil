@@ -213,9 +213,17 @@ describe('kontent katalogi', () => {
     await waitFor(() => expect(screen.getByText('film-bir')).toBeInTheDocument());
     const row = screen.getByText('film-bir').closest('tr');
     // Ajratgich muhit tiliga bog'liq (`count` — `toLocaleString`):
-    // 4 321 ham, 4,321 ham to'g'ri. Testni ajratgichga bog'lash uni
-    // boshqa mashinada yiqitardi — kod esa to'g'ri qolardi.
-    expect(row).toHaveTextContent(/4\s?321/);
+    // 4 321 ham, 4,321 ham, 4.321 ham to'g'ri. Testni ajratgichga
+    // bog'lash uni boshqa mashinada yiqitardi — kod esa to'g'ri qolardi.
+    //
+    // ⚠️ Ilgari bu yerda `/4\s?321/` turgandi — ya'ni izoh «vergul ham
+    // to'g'ri» deb yozilgan bo'lsa-da, ifoda faqat BO'SHLIQNI qabul
+    // qilardi. Bu mashinada `toLocaleString` `4,321` beradi va test
+    // yiqildi: izoh ogohlantirgan narsaning o'zi sodir bo'ldi.
+    //
+    // Endi ajratgich sifatida istalgan bitta raqam bo'lmagan belgi
+    // (yoki uning yo'qligi) qabul qilinadi.
+    expect(row).toHaveTextContent(/4\D?321/);
     expect(row).toHaveTextContent('89');
   });
 });
