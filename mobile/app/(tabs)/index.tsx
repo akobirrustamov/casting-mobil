@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, useIsFocused } from 'expo-router';
+import { useIsFocused } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
+import { pushOnce } from '@/lib/navigation';
 import { HomeHeaderActions } from '@/components/navigation/HeaderActions';
 import { ScreenState } from '@/components/states/ScreenState';
 import { Screen } from '@/components/ui/Screen';
@@ -69,7 +70,7 @@ export default function HomeScreen() {
     >
       {/* Поиск: по ТЗ это строка на главной, а не отдельная вкладка */}
       <Pressable
-        onPress={() => router.push('/search')}
+        onPress={() => pushOnce('/search')}
         accessibilityRole="button"
         className="flex-row items-center gap-2 rounded-card bg-surface px-4 py-3 active:opacity-70"
       >

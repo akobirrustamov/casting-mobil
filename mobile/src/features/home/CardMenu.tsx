@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
-import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, Share, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { pushOnce } from '@/lib/navigation';
 import { TOUCH_TARGET, colors } from '@/theme/tokens';
 
 import type { ContentCard } from './types';
@@ -54,7 +54,7 @@ export function CardMenu({ card, onClose }: { card: ContentCard | null; onClose:
 
   const open = () => {
     onClose();
-    router.push(`/content/${card.id}`);
+    pushOnce(`/content/${card.id}`);
   };
 
   const share = async () => {

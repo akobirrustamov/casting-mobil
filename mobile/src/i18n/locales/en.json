@@ -194,7 +194,7 @@
         "facebook": "Facebook",
         "instagram": "Instagram"
       },
-      "birthdayPlaceholder": "DD.MM.YYYY",
+      "birthdayPlaceholder": "Select a date",
       "phonePlaceholder": "+998 90 123 45 67",
       "male": "Male",
       "female": "Female",
@@ -211,7 +211,7 @@
       "pickerDenied": "No access to the gallery. Allow it in settings.",
       "errors": {
         "required": "Required",
-        "birthday": "Enter the date as DD.MM.YYYY",
+        "birthday": "Pick your date of birth in the calendar",
         "height": "Height must be 50–250 cm",
         "email": "Invalid email",
         "phone": "Invalid phone number",
@@ -244,6 +244,31 @@
         "sirdarya": "Sirdarya",
         "surkhandarya": "Surkhandarya",
         "other": "Other"
+      },
+      "calendar": {
+        "months": [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December"
+        ],
+        "weekdays": [
+          "Mo",
+          "Tu",
+          "We",
+          "Th",
+          "Fr",
+          "Sa",
+          "Su"
+        ]
       }
     },
     "errors": {

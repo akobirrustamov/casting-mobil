@@ -1,8 +1,8 @@
-import { router } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking } from 'react-native';
 
+import { pushOnce } from '@/lib/navigation';
 import { HeroCarousel, type HeroItem } from '@/components/ui/HeroCarousel';
 import { PosterCard, type PosterBadge } from '@/components/ui/PosterCard';
 import { Rail } from '@/components/ui/Rail';
@@ -112,7 +112,7 @@ export function ContentPoster({
       onMenu={onMenu}
       menuLabel={t('common.more')}
       // Экран 17: право на просмотр и цену спрашивает уже он — в фиде их нет.
-      onPress={() => router.push(`/content/${card.id}`)}
+      onPress={() => pushOnce(`/content/${card.id}`)}
     />
   );
 }
@@ -188,7 +188,7 @@ function openBanner(banner: BannerCard) {
   if (target.kind === 'external') {
     void Linking.openURL(target.url);
   } else {
-    router.push(target.route);
+    pushOnce(target.route);
   }
 }
 
@@ -255,7 +255,7 @@ export function HomeSectionView({
         // Раньше вело на «Media» с подходящим типом, и набор получался
         // другой: ряд «Mini seriallar» — это `MINI_SERIES`, а вкладка
         // «Seriallar» показывает ещё и `SERIES`.
-        onSeeAll={() => router.push(`/section/${section.id}`)}
+        onSeeAll={() => pushOnce(`/section/${section.id}`)}
       >
         {section.content.map((card) => (
           <ContentPoster key={card.id} card={card} width={cardWidth} />
@@ -297,7 +297,7 @@ function PremiereRail({
     <Rail
       title={title}
       icon="flame"
-      onSeeAll={() => router.push(`/section/${section.id}`)}
+      onSeeAll={() => pushOnce(`/section/${section.id}`)}
     >
       {items.map((b) => (
         <PosterCard

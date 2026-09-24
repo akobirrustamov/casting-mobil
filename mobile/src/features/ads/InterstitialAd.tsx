@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
-import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
+import { pushOnce } from '@/lib/navigation';
 import { trackAdClick, trackAdImpression } from '@/features/analytics/api';
 import { bannerTarget } from '@/features/home/sections';
 import type { BannerCard } from '@/features/home/types';
@@ -72,7 +72,7 @@ export function InterstitialAd() {
     if (target.kind === 'external') {
       void Linking.openURL(target.url);
     } else {
-      router.push(target.route);
+      pushOnce(target.route);
     }
   };
 

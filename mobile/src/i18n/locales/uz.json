@@ -194,7 +194,7 @@
         "facebook": "Facebook",
         "instagram": "Instagram"
       },
-      "birthdayPlaceholder": "KK.OO.YYYY",
+      "birthdayPlaceholder": "Sanani tanlang",
       "phonePlaceholder": "+998 90 123 45 67",
       "male": "Erkak",
       "female": "Ayol",
@@ -211,7 +211,7 @@
       "pickerDenied": "Galereyaga ruxsat berilmagan. Sozlamalardan ruxsat bering.",
       "errors": {
         "required": "Majburiy maydon",
-        "birthday": "Sanani KK.OO.YYYY ko'rinishida kiriting",
+        "birthday": "Tug‘ilgan sanani kalendardan tanlang",
         "height": "Bo'y 50 dan 250 sm gacha bo'lishi kerak",
         "email": "Elektron pochta noto'g'ri",
         "phone": "Telefon raqami noto'g'ri",
@@ -244,6 +244,31 @@
         "sirdarya": "Sirdaryo",
         "surkhandarya": "Surxondaryo",
         "other": "Boshqa"
+      },
+      "calendar": {
+        "months": [
+          "Yanvar",
+          "Fevral",
+          "Mart",
+          "Aprel",
+          "May",
+          "Iyun",
+          "Iyul",
+          "Avgust",
+          "Sentabr",
+          "Oktabr",
+          "Noyabr",
+          "Dekabr"
+        ],
+        "weekdays": [
+          "Du",
+          "Se",
+          "Ch",
+          "Pa",
+          "Ju",
+          "Sh",
+          "Ya"
+        ]
       }
     },
     "errors": {

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { pushOnce } from '@/lib/navigation';
 import { ScreenState } from '@/components/states/ScreenState';
 import { SearchRow } from '@/components/ui/SearchRow';
 import { CATEGORIES, EXTRA_API_TYPES } from '@/features/catalog/categories';
@@ -111,7 +112,7 @@ export default function SearchScreen() {
                 .filter(Boolean)
                 .join(' • ')}
               imageUrl={item.photoUrls[0]}
-              onPress={() => router.push(`/creator/${item.id}`)}
+              onPress={() => pushOnce(`/creator/${item.id}`)}
             />
           )}
         />

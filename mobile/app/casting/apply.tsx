@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { pushOnce } from '@/lib/navigation';
 import { ScreenState } from '@/components/states/ScreenState';
 import { Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
@@ -17,6 +18,7 @@ import {
   uploadCastingPhoto,
   useSubmitApplication,
 } from '@/features/casting/api';
+import { BirthdayField } from '@/features/casting/BirthdayField';
 import { ChoiceField, Field, Section, SelectField } from '@/features/casting/components';
 import { useKeyboardInset } from '@/lib/keyboard';
 import {
@@ -26,7 +28,6 @@ import {
   MAX_PHOTO_BYTES,
   MIN_PHOTOS,
   buildPayload,
-  formatBirthdayInput,
   sanitizeField,
   validateApplication,
   type ApplicationForm,
@@ -92,7 +93,7 @@ export default function ApplyScreen() {
           kind="locked"
           body={t('casting.signInToApply')}
           actionLabel={t('profile.signIn')}
-          onAction={() => router.push('/(auth)/sign-in')}
+          onAction={() => pushOnce('/(auth)/sign-in')}
         />
       </Screen>
     );
@@ -310,14 +311,12 @@ export default function ApplyScreen() {
               />
             ) : null}
             <Field label={f('nationality')} required value={form.nationality} onChangeText={(v) => set('nationality', v)} error={errors.nationality} maxLength={FIELD_LIMITS.nationality} />
-            <Field
+            <BirthdayField
               label={f('birthday')}
               required
               value={form.birthday}
-              onChangeText={(v) => set('birthday', formatBirthdayInput(v))}
+              onChange={(v) => set('birthday', v)}
               placeholder={t('casting.form.birthdayPlaceholder')}
-              keyboardType="number-pad"
-              maxLength={10}
               error={errors.birthday}
             />
           </Section>

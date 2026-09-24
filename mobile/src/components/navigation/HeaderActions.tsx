@@ -1,8 +1,8 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
+import { pushOnce } from '@/lib/navigation';
 import { colors } from '@/theme/tokens';
 
 /**
@@ -34,7 +34,7 @@ export function PremiumChip() {
 
   return (
     <Pressable
-      onPress={() => router.push('/profile')}
+      onPress={() => pushOnce('/profile')}
       accessibilityRole="button"
       // Нажатие остаётся во всю высоту шапки (`hitSlop` добирает то, что
       // недобрала уменьшенная плашка), поэтому попасть по ней не сложнее,
@@ -67,7 +67,7 @@ export function NotificationBell({ dot = false }: { dot?: boolean }) {
 
   return (
     <Pressable
-      onPress={() => router.push('/messages')}
+      onPress={() => pushOnce('/messages')}
       accessibilityRole="button"
       accessibilityLabel={t('profile.notifications')}
       className="h-11 w-11 items-center justify-center active:opacity-70"

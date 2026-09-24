@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
+import { pushOnce } from '@/lib/navigation';
 import { PosterCard } from '@/components/ui/PosterCard';
 import { Rail } from '@/components/ui/Rail';
 import { CARD_RATIO, useRailCardWidth } from '@/features/content/railLayout';
@@ -112,7 +112,7 @@ function ContinueCard({ item, width }: { item: ContinueItem; width: number }) {
       meta={content.genre ?? undefined}
       imageUrl={mediaUrl(content.posterMediaId)}
       progressPercent={progress.percent}
-      onPress={() => router.push(`/content/${content.id}`)}
+      onPress={() => pushOnce(`/content/${content.id}`)}
     />
   );
 }

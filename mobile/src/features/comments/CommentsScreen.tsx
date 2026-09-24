@@ -277,7 +277,7 @@ export function CommentsScreen({ contentId }: { contentId: number | null }) {
               <Composer contentId={contentId} />
             ) : (
               <Pressable
-                onPress={() => router.push('/(auth)/sign-in')}
+                onPress={() => pushOnce('/(auth)/sign-in')}
                 accessibilityRole="button"
                 style={{ minHeight: TOUCH_TARGET, borderRadius: radius.card }}
                 className="flex-row items-center justify-center gap-2 bg-purple px-5 active:opacity-80"

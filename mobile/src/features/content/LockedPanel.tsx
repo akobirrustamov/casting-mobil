@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
+import { pushOnce } from '@/lib/navigation';
 import { Button } from '@/components/ui/Button';
 import type { RequiredAction, WatchInfo } from '@/features/watch/types';
 import { formatSum } from '@/lib/money';
@@ -65,7 +65,7 @@ export function LockedPanel({ info }: { info: WatchInfo }) {
       <Text className="text-body text-text-muted">{t(bodyKey)}</Text>
 
       {needsSignIn ? (
-        <Button onPress={() => router.push('/(auth)/sign-in')}>{t('profile.signIn')}</Button>
+        <Button onPress={() => pushOnce('/(auth)/sign-in')}>{t('profile.signIn')}</Button>
       ) : null}
 
       {needsPurchase ? (

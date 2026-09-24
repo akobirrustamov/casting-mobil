@@ -1,7 +1,7 @@
-import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
+import { pushOnce } from '@/lib/navigation';
 import { ScreenState } from '@/components/states/ScreenState';
 import { Rail } from '@/components/ui/Rail';
 import { SkeletonRail } from '@/components/ui/Skeleton';
@@ -137,7 +137,7 @@ function CategoryRowView({
       // открывающая ровно те же карточки, обманывает ожидание.
       onSeeAll={
         query.data.total > cards.length
-          ? () => router.push(`/category/${head.id}`)
+          ? () => pushOnce(`/category/${head.id}`)
           : undefined
       }
     >

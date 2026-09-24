@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { pushOnce } from '@/lib/navigation';
 import { ScreenState } from '@/components/states/ScreenState';
 import { Screen } from '@/components/ui/Screen';
 import { isVertical } from '@/features/content/orientation';
@@ -234,7 +235,7 @@ function EpisodeRow({
     <Pressable
       // Закрытая серия тоже открывается: цена и кнопка живут на экране
       // просмотра, и там же сервер ещё раз подтверждает решение.
-      onPress={() => router.push(`/episode/${episode.id}`)}
+      onPress={() => pushOnce(`/episode/${episode.id}`)}
       accessibilityRole="button"
       accessibilityState={{ selected: current }}
       style={{

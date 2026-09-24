@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, TextInput, View } from 'react-native';
 
+import { pushOnce } from '@/lib/navigation';
 import { FormMessage } from '@/components/ui/FormMessage';
 import { exchangeGoogleToken, sendOtp } from '@/features/auth/api';
 import { AuthScaffold } from '@/features/auth/AuthScaffold';
@@ -70,7 +71,7 @@ export default function SignInScreen() {
     setBusy(true);
     try {
       await sendOtp(fullPhone);
-      router.push({ pathname: '/(auth)/otp', params: { phone: fullPhone } });
+      pushOnce({ pathname: '/(auth)/otp', params: { phone: fullPhone } });
     } catch (e) {
       setError(t(authErrorKey(e)));
     } finally {

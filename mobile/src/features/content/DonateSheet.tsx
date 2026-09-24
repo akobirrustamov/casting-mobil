@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { pushOnce } from '@/lib/navigation';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/features/auth/store';
 import { useBalance } from '@/features/profile/api';
@@ -185,7 +185,7 @@ export function DonateSheet({
             <Button
               onPress={() => {
                 onClose();
-                router.push('/(auth)/sign-in');
+                pushOnce('/(auth)/sign-in');
               }}
             >
               {t('profile.signIn')}

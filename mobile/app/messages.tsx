@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Linking, Pressable, Text, View } from 'react-native';
 
+import { pushOnce } from '@/lib/navigation';
 import { ScreenState } from '@/components/states/ScreenState';
 import { Screen } from '@/components/ui/Screen';
 import { useAuthStore } from '@/features/auth/store';
@@ -43,7 +44,7 @@ export default function MessagesScreen() {
           kind="locked"
           body={t('notifications.signInRequired')}
           actionLabel={t('profile.signIn')}
-          onAction={() => router.push('/(auth)/sign-in')}
+          onAction={() => pushOnce('/(auth)/sign-in')}
         />
       </Screen>
     );
@@ -92,7 +93,7 @@ function NotificationCard({ item }: { item: AppNotification }) {
 
   const open = () => {
     if (target) {
-      router.push(target);
+      pushOnce(target);
       return;
     }
     if (external) {

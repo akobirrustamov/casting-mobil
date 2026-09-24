@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 
+import { pushOnce } from '@/lib/navigation';
 import { useAuthStore } from '@/features/auth/store';
 import { useContentCard } from '@/features/home/api';
 import { setLike } from '@/features/watch/api';
@@ -93,7 +93,7 @@ export function useContentLike(
     // входа: иначе один человек накрутил бы его сколько угодно раз.
     // Гостя ведём на экран входа, а не показываем ошибку.
     if (!signedIn) {
-      router.push('/(auth)/sign-in');
+      pushOnce('/(auth)/sign-in');
       return;
     }
 

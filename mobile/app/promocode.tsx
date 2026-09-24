@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, TextInput, View } from 'react-native';
 
+import { pushOnce } from '@/lib/navigation';
 import { ScreenState } from '@/components/states/ScreenState';
 import { Button } from '@/components/ui/Button';
 import { FormMessage } from '@/components/ui/FormMessage';
@@ -80,7 +81,7 @@ export default function PromocodeScreen() {
           kind="locked"
           body={t('promocode.signInRequired')}
           actionLabel={t('profile.signIn')}
-          onAction={() => router.push('/(auth)/sign-in')}
+          onAction={() => pushOnce('/(auth)/sign-in')}
         />
       </Screen>
     );

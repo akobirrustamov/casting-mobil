@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, RefreshControl, Text, View, useWindowDimensions } from 'react-native';
 
+import { pushOnce } from '@/lib/navigation';
 import { useTabBarHeight } from '@/components/navigation/TabBar';
 import { ScreenState } from '@/components/states/ScreenState';
 import { CreatorCard } from '@/components/ui/CreatorCard';
@@ -90,7 +90,7 @@ export default function CastingScreen() {
   const cardWidth = (width - PADDING * 2 - GAP * (COLUMNS - 1)) / COLUMNS;
 
   const onApply = () => {
-    router.push(isAuthorized ? '/casting/apply' : '/(auth)/sign-in');
+    pushOnce(isAuthorized ? '/casting/apply' : '/(auth)/sign-in');
   };
 
   const header = (
@@ -102,7 +102,7 @@ export default function CastingScreen() {
           хуже её отсутствия. После решения админа кнопка возвращается.
         */}
         {headline ? (
-          <ApplicationStatusBlock app={headline} compact onPress={() => router.push('/casting/my')} />
+          <ApplicationStatusBlock app={headline} compact onPress={() => pushOnce('/casting/my')} />
         ) : null}
 
       </View>
@@ -200,7 +200,7 @@ export default function CastingScreen() {
               .join(' • ')}
             imageUrl={item.photoUrls[0]}
             width={cardWidth}
-            onPress={() => router.push(`/creator/${item.id}`)}
+            onPress={() => pushOnce(`/creator/${item.id}`)}
             isFavorite={favoriteIds.has(item.id)}
             onToggleFavorite={() => toggleFavorite(item.id)}
           />

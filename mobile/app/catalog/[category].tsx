@@ -10,6 +10,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 
+import { pushOnce } from '@/lib/navigation';
 import { useTabBarHeight } from '@/components/navigation/TabBar';
 import { ScreenState } from '@/components/states/ScreenState';
 import { CreatorCard } from '@/components/ui/CreatorCard';
@@ -178,7 +179,7 @@ export default function CatalogScreen() {
                 .join(' • ')}
               imageUrl={item.photoUrls[0]}
               width={cardWidth}
-              onPress={() => router.push(`/creator/${item.id}`)}
+              onPress={() => pushOnce(`/creator/${item.id}`)}
               isFavorite={favoriteIds.has(item.id)}
               onToggleFavorite={() => toggleFavorite(item.id)}
             />

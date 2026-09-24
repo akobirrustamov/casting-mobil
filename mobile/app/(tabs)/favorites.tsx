@@ -1,8 +1,8 @@
-import { router } from 'expo-router';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 
+import { pushOnce } from '@/lib/navigation';
 import { useTabBarHeight } from '@/components/navigation/TabBar';
 import { ScreenState } from '@/components/states/ScreenState';
 import { CreatorCard } from '@/components/ui/CreatorCard';
@@ -147,7 +147,7 @@ export default function FavoritesScreen() {
                 .join(' • ')}
               imageUrl={item.photoUrls[0]}
               width={cardWidth}
-              onPress={() => router.push(`/creator/${item.id}`)}
+              onPress={() => pushOnce(`/creator/${item.id}`)}
               isFavorite
               onToggleFavorite={() => toggleFavorite(item.id)}
             />
@@ -207,7 +207,7 @@ function SavedContentRail({
             imageUrl={mediaUrl(card.posterMediaId)}
             width={cardWidth}
             ratio={CARD_RATIO}
-            onPress={() => router.push(`/content/${card.id}`)}
+            onPress={() => pushOnce(`/content/${card.id}`)}
           />
         ))}
       </ScrollView>

@@ -8,6 +8,7 @@ import { Linking, Pressable, Text, View } from 'react-native';
 
 import coinIcon from '../../assets/brand/uzcasting-coin.png';
 
+import { pushOnce } from '@/lib/navigation';
 import { Button } from '@/components/ui/Button';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { Screen } from '@/components/ui/Screen';
@@ -134,7 +135,7 @@ export default function ProfileScreen() {
       hint: subscriptionHint,
       icon: 'ribbon-outline',
       value: subscriptionValue,
-      onPress: () => router.push('/subscription'),
+      onPress: () => pushOnce('/subscription'),
     },
     { key: 'topUp', label: t('profile.topUp'), hint: t('profile.topUpHint'), icon: 'card-outline' },
     {
@@ -142,35 +143,35 @@ export default function ProfileScreen() {
       label: t('profile.promocodes'),
       hint: t('profile.promocodesHint'),
       icon: 'pricetag-outline',
-      onPress: () => router.push('/promocode'),
+      onPress: () => pushOnce('/promocode'),
     },
     {
       key: 'paymentHistory',
       label: t('profile.paymentHistory'),
       hint: t('profile.paymentHistoryHint'),
       icon: 'time-outline',
-      onPress: () => router.push('/subscription/history'),
+      onPress: () => pushOnce('/subscription/history'),
     },
     {
       key: 'favorites',
       label: t('profile.favorites'),
       hint: t('profile.favoritesHint'),
       icon: 'heart-outline',
-      onPress: () => router.push('/favorites'),
+      onPress: () => pushOnce('/favorites'),
     },
     {
       key: 'devices',
       label: t('profile.devices'),
       hint: t('profile.devicesHint'),
       icon: 'phone-portrait-outline',
-      onPress: () => router.push('/devices'),
+      onPress: () => pushOnce('/devices'),
     },
     {
       key: 'tariffs',
       label: t('profile.tariffs'),
       hint: t('profile.tariffsHint'),
       icon: 'play-circle-outline',
-      onPress: () => router.push('/subscription/tariffs'),
+      onPress: () => pushOnce('/subscription/tariffs'),
     },
   ];
 
@@ -179,7 +180,7 @@ export default function ProfileScreen() {
       key: 'editProfile',
       label: t('profile.editProfile'),
       icon: 'person-outline',
-      onPress: () => router.push('/settings/profile'),
+      onPress: () => pushOnce('/settings/profile'),
     },
     // ⚠️ Ряд «Xavfsizlik» убран. После отказа от пароля (04.09.2026) под
     // ним оставались только активные устройства — а они уже есть
@@ -189,7 +190,7 @@ export default function ProfileScreen() {
       key: 'notifications',
       label: t('profile.notifications'),
       icon: 'notifications-outline',
-      onPress: () => router.push('/messages'),
+      onPress: () => pushOnce('/messages'),
     },
     {
       key: 'language',
@@ -198,7 +199,7 @@ export default function ProfileScreen() {
       value: LANGUAGE_LABELS[language],
       // Отдельный экран, а не раскрывающийся переключатель под рядом
       // (заказчик, 14.09.2026). Разбор — в `app/settings/language.tsx`.
-      onPress: () => router.push('/settings/language'),
+      onPress: () => pushOnce('/settings/language'),
     },
     { key: 'about', label: t('profile.about'), icon: 'information-circle-outline', value: `v ${version}` },
     ...(isAuthorized
@@ -224,7 +225,7 @@ export default function ProfileScreen() {
       title={t('profile.title')}
       headerRight={
         <Pressable
-          onPress={() => router.push('/messages')}
+          onPress={() => pushOnce('/messages')}
           accessibilityRole="button"
           accessibilityLabel={t('profile.notifications')}
           hitSlop={10}
@@ -344,7 +345,7 @@ function ProfileCard() {
             />
           </View>
         ) : (
-          <Button variant="primary" shape="card" onPress={() => router.push('/(auth)/sign-in')}>
+          <Button variant="primary" shape="card" onPress={() => pushOnce('/(auth)/sign-in')}>
             {t('profile.signIn')}
           </Button>
         )}
@@ -456,7 +457,7 @@ function PremiumBanner() {
         <Button
           variant="gold"
           className="self-start"
-          onPress={() => router.push('/subscription/tariffs')}
+          onPress={() => pushOnce('/subscription/tariffs')}
         >
           {t('profile.premiumBannerCta')}
         </Button>

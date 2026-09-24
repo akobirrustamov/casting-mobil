@@ -620,7 +620,7 @@ function SaveButton({ contentId }: { contentId: number | null }) {
 
   const press = () => {
     if (!signedIn) {
-      router.push('/(auth)/sign-in');
+      pushOnce('/(auth)/sign-in');
       return;
     }
     if (contentId !== null) void toggle(contentId);

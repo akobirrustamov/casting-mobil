@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
+import { pushOnce } from '@/lib/navigation';
 import { ScreenState } from '@/components/states/ScreenState';
 import { Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
@@ -39,7 +40,7 @@ export default function SubscriptionScreen() {
           kind="locked"
           body={t('subscription.signInRequired')}
           actionLabel={t('profile.signIn')}
-          onAction={() => router.push('/(auth)/sign-in')}
+          onAction={() => pushOnce('/(auth)/sign-in')}
         />
       </Screen>
     );
@@ -71,13 +72,13 @@ export default function SubscriptionScreen() {
           <Button
             variant="primary"
             shape="card"
-            onPress={() => router.push('/subscription/tariffs')}
+            onPress={() => pushOnce('/subscription/tariffs')}
           >
             {state === 'active' ? t('subscription.viewTariffs') : t('subscription.choosePlan')}
           </Button>
 
           <Pressable
-            onPress={() => router.push('/subscription/history')}
+            onPress={() => pushOnce('/subscription/history')}
             accessibilityRole="button"
             className="flex-row items-center justify-between rounded-card bg-surface p-4 active:opacity-70"
           >

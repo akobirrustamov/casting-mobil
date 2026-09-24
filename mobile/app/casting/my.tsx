@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { FlatList, RefreshControl, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { pushOnce } from '@/lib/navigation';
 import { ScreenState } from '@/components/states/ScreenState';
 import { Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
@@ -42,7 +43,7 @@ export default function MyApplicationsScreen() {
         kind="locked"
         body={t('casting.my.signIn')}
         actionLabel={t('profile.signIn')}
-        onAction={() => router.push('/(auth)/sign-in')}
+        onAction={() => pushOnce('/(auth)/sign-in')}
       />,
     );
   }
@@ -88,7 +89,7 @@ export default function MyApplicationsScreen() {
         // иначе сервер ответит 409.
         !hasPending ? (
           <View className="pt-2">
-            <Button variant="secondary" onPress={() => router.push('/casting/apply')}>
+            <Button variant="secondary" onPress={() => pushOnce('/casting/apply')}>
               {t('casting.applyCta')}
             </Button>
           </View>
