@@ -199,7 +199,7 @@
       "male": "Erkak",
       "female": "Ayol",
       "photosHint": "Yuzingiz va butun tanangiz aniq ko'rinadigan rasmlarni yuklang (kamida {{min}} ta, ko'pi bilan {{max}} ta).",
-      "photoSize": "Tik (vertikal) rasm: 3:4 · JPG / PNG · ≤10 MB. Yuzni markazda saqlang.",
+      "photoSize": "Istalgan formatdagi rasm · ≤20 MB. Yuzingiz aniq ko‘rinsin.",
       "addPhoto": "Rasm qo'shish",
       "photosCount": "{{count}} / {{max}}",
       "uploading": "Yuklanmoqda...",
@@ -217,7 +217,7 @@
         "phone": "Telefon raqami noto'g'ri",
         "photosMin": "Kamida {{min}} ta rasm yuklang",
         "photosMax": "Ko'pi bilan {{max}} ta rasm",
-        "photoTooLarge": "Rasm 10 MB dan katta",
+        "photoTooLarge": "Rasm 20 MB dan katta",
         "photosUploading": "Rasmlar yuklanishini kuting"
       },
       "success": {
@@ -225,6 +225,25 @@
         "body": "Admin arizangizni ko'rib chiqadi. Natijani «Mening arizalarim» bo'limida ko'rasiz.",
         "action": "Arizalarimni ko'rish",
         "back": "Castingga qaytish"
+      },
+      "regionPlaceholder": "Viloyatni tanlang",
+      "regionOtherPlaceholder": "Viloyat yoki shaharni yozing",
+      "regions": {
+        "tashkentCity": "Toshkent shahri",
+        "tashkent": "Toshkent viloyati",
+        "andijan": "Andijon",
+        "bukhara": "Buxoro",
+        "fergana": "Farg‘ona",
+        "jizzakh": "Jizzax",
+        "khorezm": "Xorazm",
+        "namangan": "Namangan",
+        "navoi": "Navoiy",
+        "kashkadarya": "Qashqadaryo",
+        "karakalpakstan": "Qoraqalpog‘iston",
+        "samarkand": "Samarqand",
+        "sirdarya": "Sirdaryo",
+        "surkhandarya": "Surxondaryo",
+        "other": "Boshqa"
       }
     },
     "errors": {
@@ -381,7 +400,7 @@
     "gift": "Sovg'a",
     "sourcePurchase": "Obuna",
     "sourceGift": "Sovg'a obuna",
-    "donation": "Donat",
+    "donation": "Yulduz hadyasi",
     "revoked": "bekor qilingan"
   },
   "settings": {
@@ -474,13 +493,13 @@
     "more": "Ko'proq",
     "less": "Yopish",
     "scenes": "Qiziq sahnalar",
-    "topDonors": "Top donatchilar",
-    "topDonorsTitle": "Top 100 donatchilar",
+    "topDonors": "Top hadya qilganlar",
+    "topDonorsTitle": "Top 100 hadya qilganlar",
     "donorsUnavailable": "Reyting bu serverda hali yoqilmagan. Server yangilangach ko'rinadi.",
     "starsTotal": "Jami {{amount}} yulduz",
     "noDonors": "Hali hech kim qo'llab-quvvatlamagan",
     "anonymousDonor": "Noma'lum foydalanuvchi",
-    "donate": "Donat qilish",
+    "donate": "Yulduz hadya qilish",
     "donateAmount": "{{amount}} yulduz yuborish",
     "donateHint": "Yulduzlar bilan qo'llab-quvvatlang",
     "donateSoon": "To'lov ilovada hali ulanmagan — tez orada ishga tushadi.",

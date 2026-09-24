@@ -34,3 +34,31 @@ export function isCastingType(value: unknown): value is CastingType {
 export function castingTypeKey(value: string | null | undefined): string | null {
   return isCastingType(value) ? `casting.types.${value}` : null;
 }
+
+/**
+ * Viloyatlar анкеты: ключ — для подписи (`casting.form.regions.*`),
+ * `value` — то, что уходит на сервер.
+ *
+ * ⚠️ На сервер всегда идёт узбекское название, на каком бы языке ни был
+ * интерфейс: по этому полю фильтруется каталог (`collectRegionOptions`),
+ * и «Samarqand» с «Самарканд» распались бы там на два региона.
+ */
+export const REGIONS = [
+  { key: 'tashkentCity', value: 'Toshkent shahri' },
+  { key: 'tashkent', value: 'Toshkent viloyati' },
+  { key: 'andijan', value: 'Andijon' },
+  { key: 'bukhara', value: 'Buxoro' },
+  { key: 'fergana', value: "Farg'ona" },
+  { key: 'jizzakh', value: 'Jizzax' },
+  { key: 'khorezm', value: 'Xorazm' },
+  { key: 'namangan', value: 'Namangan' },
+  { key: 'navoi', value: 'Navoiy' },
+  { key: 'kashkadarya', value: 'Qashqadaryo' },
+  { key: 'karakalpakstan', value: "Qoraqalpog'iston" },
+  { key: 'samarkand', value: 'Samarqand' },
+  { key: 'sirdarya', value: 'Sirdaryo' },
+  { key: 'surkhandarya', value: 'Surxondaryo' },
+] as const;
+
+/** Пункт «Boshqa» — регион пишут сами. */
+export const REGION_OTHER = 'other';

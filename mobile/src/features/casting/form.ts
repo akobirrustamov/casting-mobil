@@ -102,8 +102,8 @@ export const MAX_PHOTOS = 10;
 export const HEIGHT_MIN = 50;
 export const HEIGHT_MAX = 250;
 
-/** Предел размера фото на сервере — `ImageSizeLimit`, 10 МБ. */
-export const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+/** Предел размера фото на сервере — `app.upload.max-casting-photo-bytes`, 20 МБ. */
+export const MAX_PHOTO_BYTES = 20 * 1024 * 1024;
 
 /** Ключ перевода причины — экран сам подставит текст. */
 export type FormErrors = Partial<Record<FormField, string>>;

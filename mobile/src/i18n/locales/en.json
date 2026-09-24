@@ -199,7 +199,7 @@
       "male": "Male",
       "female": "Female",
       "photosHint": "Upload clear photos showing your face and full body ({{min}} to {{max}}).",
-      "photoSize": "Portrait photo: 3:4 · JPG / PNG · ≤10 MB. Keep your face centered.",
+      "photoSize": "Photo in any format · ≤20 MB. Make sure your face is clearly visible.",
       "addPhoto": "Add photo",
       "photosCount": "{{count}} / {{max}}",
       "uploading": "Uploading...",
@@ -217,7 +217,7 @@
         "phone": "Invalid phone number",
         "photosMin": "Upload at least {{min}} photos",
         "photosMax": "At most {{max}} photos",
-        "photoTooLarge": "Photo is larger than 10 MB",
+        "photoTooLarge": "Photo is larger than 20 MB",
         "photosUploading": "Wait for the photos to upload"
       },
       "success": {
@@ -225,6 +225,25 @@
         "body": "The administrator will review it. The result will appear in “My applications”.",
         "action": "My applications",
         "back": "Back to casting"
+      },
+      "regionPlaceholder": "Select a region",
+      "regionOtherPlaceholder": "Type your region or city",
+      "regions": {
+        "tashkentCity": "Tashkent city",
+        "tashkent": "Tashkent region",
+        "andijan": "Andijan",
+        "bukhara": "Bukhara",
+        "fergana": "Fergana",
+        "jizzakh": "Jizzakh",
+        "khorezm": "Khorezm",
+        "namangan": "Namangan",
+        "navoi": "Navoi",
+        "kashkadarya": "Kashkadarya",
+        "karakalpakstan": "Karakalpakstan",
+        "samarkand": "Samarkand",
+        "sirdarya": "Sirdarya",
+        "surkhandarya": "Surkhandarya",
+        "other": "Other"
       }
     },
     "errors": {
@@ -381,7 +400,7 @@
     "gift": "Gift",
     "sourcePurchase": "Subscription",
     "sourceGift": "Gift subscription",
-    "donation": "Donation",
+    "donation": "Star gift",
     "revoked": "revoked"
   },
   "settings": {
@@ -480,7 +499,7 @@
     "starsTotal": "{{amount}} stars in total",
     "noDonors": "No one has supported this yet",
     "anonymousDonor": "Unknown user",
-    "donate": "Support",
+    "donate": "Gift stars",
     "donateAmount": "Send {{amount}} stars",
     "donateHint": "Support with stars",
     "donateSoon": "Payments are not connected in the app yet — coming soon.",

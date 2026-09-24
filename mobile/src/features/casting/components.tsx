@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Badge } from '@/components/ui/Badge';
 import { formatSum } from '@/lib/money';
@@ -127,6 +128,97 @@ export function ChoiceField<T extends string>({
           {error}
         </Text>
       ) : null}
+    </View>
+  );
+}
+
+/**
+ * Выбор одного значения из длинного списка — поле открывает шторку.
+ *
+ * Чипами, как у `ChoiceField`, четырнадцать регионов заняли бы пол-экрана.
+ */
+export function SelectField<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  placeholder,
+  required = false,
+  error,
+}: {
+  label: string;
+  options: { value: T; label: string }[];
+  value: T | '';
+  onChange: (value: T) => void;
+  placeholder?: string;
+  required?: boolean;
+  error?: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const insets = useSafeAreaInsets();
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <View className="gap-1.5">
+      <Text className="text-caption text-text-muted">
+        {label}
+        {required ? <Text style={{ color: colors.magenta }}> *</Text> : null}
+      </Text>
+      <Pressable
+        onPress={() => setOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        className="flex-row items-center rounded-card border bg-surface-2 px-3 py-3 active:opacity-70"
+        style={{ borderColor: error ? colors.danger : colors.border }}
+      >
+        <Text
+          numberOfLines={1}
+          className="flex-1 text-body"
+          style={{ color: selected ? colors.white : colors.textDisabled }}
+        >
+          {selected ? selected.label : placeholder}
+        </Text>
+        <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
+      </Pressable>
+      {error ? (
+        <Text className="text-micro" style={{ color: colors.danger }}>
+          {error}
+        </Text>
+      ) : null}
+
+      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)} statusBarTranslucent>
+        <Pressable className="flex-1 justify-end bg-black/60" onPress={() => setOpen(false)}>
+          {/* Нажатие внутри окна не должно его закрывать. */}
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            style={{ paddingBottom: insets.bottom + 16, maxHeight: '80%' }}
+            className="gap-3 rounded-t-card-lg bg-surface px-4 pt-3"
+          >
+            <View className="h-1 w-10 self-center rounded-pill bg-border" />
+            <Text className="text-title font-semibold text-text">{label}</Text>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+              {options.map((o) => {
+                const active = o.value === value;
+                return (
+                  <Pressable
+                    key={o.value}
+                    onPress={() => {
+                      onChange(o.value);
+                      setOpen(false);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    className="flex-row items-center gap-3 rounded-card bg-surface-2 px-4 py-3 active:opacity-70"
+                  >
+                    <Text className="flex-1 text-body text-text">{o.label}</Text>
+                    {active ? <Ionicons name="checkmark" size={18} color={colors.purple} /> : null}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }

@@ -17,7 +17,7 @@ import {
   uploadCastingPhoto,
   useSubmitApplication,
 } from '@/features/casting/api';
-import { ChoiceField, Field, Section } from '@/features/casting/components';
+import { ChoiceField, Field, Section, SelectField } from '@/features/casting/components';
 import { useKeyboardInset } from '@/lib/keyboard';
 import {
   EMPTY_FORM,
@@ -32,7 +32,7 @@ import {
   type ApplicationForm,
   type FormField,
 } from '@/features/casting/form';
-import { CASTING_TYPES, GENDERS } from '@/features/casting/options';
+import { CASTING_TYPES, GENDERS, REGIONS, REGION_OTHER } from '@/features/casting/options';
 import { colors } from '@/theme/tokens';
 
 /**
@@ -79,6 +79,8 @@ export default function ApplyScreen() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pendingExists, setPendingExists] = useState(false);
   const [done, setDone] = useState(false);
+  // «Boshqa» — регион не из списка, человек пишет его сам в поле ниже.
+  const [regionOther, setRegionOther] = useState(false);
 
   const submit = useSubmitApplication();
   const keySeq = useRef(0);
@@ -133,7 +135,7 @@ export default function ApplyScreen() {
       patchPhoto(item.key, { status: 'done', id });
     } catch (e) {
       const err = toCastingError(e);
-      // Сервер про размер говорит конкретно («Rasm juda katta: 15 MB…») —
+      // Сервер про размер говорит конкретно («Rasm juda katta: 25 MB…») —
       // его текст полезнее нашего общего.
       patchPhoto(item.key, {
         status: 'error',
@@ -152,8 +154,9 @@ export default function ApplyScreen() {
         mediaTypes: ['images'],
         allowsMultipleSelection: true,
         selectionLimit: remaining,
-        // Пережатие на телефоне: снимок с камеры бывает 12+ МБ, а сервер
-        // принимает до 10. Качество 0.8 на глаз неотличимо.
+        // Без обрезки: снимок уходит как есть, в любом формате и пропорциях.
+        // Пережатие 0.8 на глаз неотличимо и держит снимок с камеры
+        // в пределах 20 МБ сервера.
         quality: 0.8,
       });
     } catch {
@@ -231,6 +234,16 @@ export default function ApplyScreen() {
   const typeOptions = CASTING_TYPES.map((value) => ({ value, label: t(`casting.types.${value}`) }));
   const genderOptions = GENDERS.map((value) => ({ value, label: t(`casting.form.${value}`) }));
   const f = (key: keyof ApplicationForm) => t(`casting.form.fields.${key}`);
+  const regionOptions = [
+    ...REGIONS.map((r) => ({ value: r.value as string, label: t(`casting.form.regions.${r.key}`) })),
+    { value: REGION_OTHER, label: t('casting.form.regions.other') },
+  ];
+  const regionChoice = regionOther ? REGION_OTHER : form.region;
+  const onRegionChoice = (v: string) => {
+    const other = v === REGION_OTHER;
+    setRegionOther(other);
+    set('region', other ? '' : v);
+  };
   const isMale = form.gender === 'male';
 
   return (
@@ -275,7 +288,27 @@ export default function ApplyScreen() {
               error={errors.gender}
             />
             <Field label={f('name')} required value={form.name} onChangeText={(v) => set('name', v)} error={errors.name} autoCapitalize="words" maxLength={FIELD_LIMITS.name} />
-            <Field label={f('region')} required value={form.region} onChangeText={(v) => set('region', v)} error={errors.region} maxLength={FIELD_LIMITS.region} />
+            <SelectField
+              label={f('region')}
+              required
+              options={regionOptions}
+              value={regionChoice}
+              onChange={onRegionChoice}
+              placeholder={t('casting.form.regionPlaceholder')}
+              error={regionOther ? null : errors.region}
+            />
+            {regionOther ? (
+              <Field
+                label={t('casting.form.regions.other')}
+                required
+                value={form.region}
+                onChangeText={(v) => set('region', v)}
+                placeholder={t('casting.form.regionOtherPlaceholder')}
+                error={errors.region}
+                maxLength={FIELD_LIMITS.region}
+                autoFocus
+              />
+            ) : null}
             <Field label={f('nationality')} required value={form.nationality} onChangeText={(v) => set('nationality', v)} error={errors.nationality} maxLength={FIELD_LIMITS.nationality} />
             <Field
               label={f('birthday')}
@@ -380,7 +413,7 @@ function PhotoGrid({
     <View className="flex-row flex-wrap gap-2">
       {photos.map((p) => (
         <View key={p.key} style={{ width: TILE }} className="gap-1">
-          <View style={{ width: TILE, height: (TILE * 4) / 3 }} className="overflow-hidden rounded-card bg-surface-2">
+          <View style={{ width: TILE, height: TILE }} className="overflow-hidden rounded-card bg-surface-2">
             <Image source={{ uri: p.uri }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
 
             {p.status === 'uploading' ? (
@@ -425,7 +458,7 @@ function PhotoGrid({
           onPress={onAdd}
           accessibilityRole="button"
           accessibilityLabel={t('casting.form.addPhoto')}
-          style={{ width: TILE, height: (TILE * 4) / 3, borderStyle: 'dashed' }}
+          style={{ width: TILE, height: TILE, borderStyle: 'dashed' }}
           className="items-center justify-center gap-1 rounded-card border border-border active:opacity-70"
         >
           <Ionicons name="add" size={26} color={colors.textMuted} />

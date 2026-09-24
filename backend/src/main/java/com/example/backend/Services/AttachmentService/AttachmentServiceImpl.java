@@ -2,8 +2,10 @@ package com.example.backend.Services.AttachmentService;
 
 import com.example.backend.Entity.Attachment;
 import com.example.backend.Repository.AttachmentRepo;
+import com.example.backend.exceptions.BusinessException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -27,18 +29,21 @@ public class AttachmentServiceImpl implements AttachmentService {
     private final AttachmentRepo attachmentRepo;
 
     /**
-     * ⚠️ Rasm hajmi chegarasi.
+     * ⚠️ Fayl hajmi chegarasi — sukut bo'yicha 20 MB, turidan qat'i nazar.
      *
-     * Bu endpoint OCHIQ — tokensiz chaqiriladi (ochiq anketa formasi).
-     * Ilgari bu yerda hech qanday hajm tekshiruvi yo'q edi: yagona
+     * Bu endpoint OCHIQ — tokensiz chaqiriladi (anketa formasi, mobil
+     * ilova). Ilgari bu yerda hech qanday hajm tekshiruvi yo'q edi: yagona
      * to'siq nginx (60 MB) bo'lgan, va cheklov daqiqasiga 30 ta
      * so'rovga ruxsat beradi. Ya'ni begona odam serverning diskini
      * to'ldirib qo'yishi mumkin edi.
      *
-     * Forma tagidagi yozuv esa allaqachon «≤10 MB» deb turardi —
-     * ya'ni qoida e'lon qilingan, lekin qo'llanmagan.
+     * ⚠️ Nega {@code ImageSizeLimit} emas: u admin afishalari uchun (10 MB)
+     * va faqat RASM deb tanilgan faylni tekshiradi. Kandidat esa istalgan
+     * formatda (HEIC va h.k.) yuklay oladi — u yerdan o'tib ketgan fayl
+     * chegarasiz qolardi.
      */
-    private final com.example.backend.Cms.Service.Storage.ImageSizeLimit imageSizeLimit;
+    @Value("${app.upload.max-casting-photo-bytes:20971520}")
+    private long maxPhotoBytes;
 
     @Override
     public HttpEntity<?> uploadFile(MultipartFile photo, String prefix) throws IOException {
@@ -48,7 +53,11 @@ public class AttachmentServiceImpl implements AttachmentService {
 
         // ⚠️ Diskka yozishdan OLDIN. Aks holda katta fayl avval
         // saqlanib, keyin rad etilardi — va o'sha fayl diskda qolardi.
-        imageSizeLimit.check(photo.getOriginalFilename(), photo.getContentType(), photo.getSize());
+        if (photo.getSize() > maxPhotoBytes) {
+            throw BusinessException.validation(
+                    "Rasm juda katta: " + (photo.getSize() / 1024 / 1024) + " MB. "
+                            + "Ruxsat etilgan chegara: " + (maxPhotoBytes / 1024 / 1024) + " MB");
+        }
 
         String safePrefix = safePrefix(prefix);
         UUID id = UUID.randomUUID();
