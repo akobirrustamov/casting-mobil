@@ -101,7 +101,7 @@ export function DonateSheet({
 
           <View className="flex-row items-start gap-2">
             <View className="flex-1">
-              <Text className="text-h2 text-text">{t('content.donate')}</Text>
+              <Text className="text-h2 text-text">{t(stars ? 'content.donate' : 'content.donateCoins')}</Text>
               {title ? (
                 <Text numberOfLines={1} className="mt-1 text-caption text-text-muted">
                   {title}

@@ -426,6 +426,7 @@
     "sourcePurchase": "Подписка",
     "sourceGift": "Подарочная подписка",
     "donation": "Подарок звёзд",
+    "donationCoins": "Донат",
     "revoked": "отозвана"
   },
   "settings": {
@@ -525,6 +526,7 @@
     "noDonors": "Ещё никто не поддержал",
     "anonymousDonor": "Неизвестный пользователь",
     "donate": "Подарить звёзды",
+    "donateCoins": "Сделать донат",
     "donateAmount": "Отправить {{amount}} звёзд",
     "donateHint": "Поддержите звёздами",
     "donateSoon": "Оплата в приложении пока не подключена — скоро заработает.",

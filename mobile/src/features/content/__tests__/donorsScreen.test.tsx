@@ -172,10 +172,11 @@ describe('рейтинг', () => {
     expect(pressable(tree, 'content.donate')).toBeTruthy();
   });
 
-  it('«Donat qilish» открывает окно доната в валюте страницы', () => {
+  it('«Donat taqdim etish» открывает окно доната в валюте страницы', () => {
     const tree = render('UZCASTING_COIN');
 
-    act(() => pressable(tree, 'content.donate').props.onPress());
+    // У монет своя подпись кнопки, у звёзд — «Yulduz hadya qilish».
+    act(() => pressable(tree, 'content.donateCoins').props.onPress());
 
     expect(texts(tree)).toContain('donate-sheet:UZCASTING_COIN');
   });

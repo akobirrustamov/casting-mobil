@@ -191,7 +191,7 @@ export function DonorsScreen({
             {/* Знак валюты этой вкладки, а не сердце (заказчик, 15.09.2026). */}
             <Mark stars={stars} size={18} color={colors.white} />
             <Text className="flex-1 text-body font-semibold text-white">
-              {t('content.donate')}
+              {t(stars ? 'content.donate' : 'content.donateCoins')}
             </Text>
             <Ionicons name="chevron-forward" size={18} color={colors.white} />
           </LinearGradient>

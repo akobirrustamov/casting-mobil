@@ -426,6 +426,7 @@
     "sourcePurchase": "Subscription",
     "sourceGift": "Gift subscription",
     "donation": "Star gift",
+    "donationCoins": "Donation",
     "revoked": "revoked"
   },
   "settings": {
@@ -525,6 +526,7 @@
     "noDonors": "No one has supported this yet",
     "anonymousDonor": "Unknown user",
     "donate": "Gift stars",
+    "donateCoins": "Donate",
     "donateAmount": "Send {{amount}} stars",
     "donateHint": "Support with stars",
     "donateSoon": "Payments are not connected in the app yet — coming soon.",

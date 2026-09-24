@@ -116,7 +116,7 @@ function HistoryRow({ row }: { row: PaymentEntry }) {
   return (
     <Row
       icon="heart-outline"
-      title={d.targetName ?? t('subscription.donation')}
+      title={d.targetName ?? t(d.kind === 'STARS' ? 'subscription.donation' : 'subscription.donationCoins')}
       subtitle={formatDate(d.createdAt) ?? ''}
       amount={`${formatSum(d.amount)} ${unit}`}
     />

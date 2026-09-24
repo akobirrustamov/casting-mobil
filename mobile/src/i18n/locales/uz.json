@@ -426,6 +426,7 @@
     "sourcePurchase": "Obuna",
     "sourceGift": "Sovg'a obuna",
     "donation": "Yulduz hadyasi",
+    "donationCoins": "Donat",
     "revoked": "bekor qilingan"
   },
   "settings": {
@@ -525,6 +526,7 @@
     "noDonors": "Hali hech kim qo'llab-quvvatlamagan",
     "anonymousDonor": "Noma'lum foydalanuvchi",
     "donate": "Yulduz hadya qilish",
+    "donateCoins": "Donat taqdim etish",
     "donateAmount": "{{amount}} yulduz yuborish",
     "donateHint": "Yulduzlar bilan qo'llab-quvvatlang",
     "donateSoon": "To'lov ilovada hali ulanmagan — tez orada ishga tushadi.",
