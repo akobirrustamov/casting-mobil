@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -113,6 +114,30 @@ public class AppDeviceController {
         return ResponseEntity.ok(response(user, DeviceService.deviceIdOf(request)));
     }
 
+    /**
+     * Push tokenini saqlash — joriy qurilma ({@code X-Device-Id}) uchun.
+     *
+     * Ilova buni {@code /register} dan keyin, bildirishnomaga ruxsat
+     * olinganda chaqiradi. Takroriy chaqiruv xavfsiz.
+     */
+    @PutMapping("/push-token")
+    public ResponseEntity<Void> savePushToken(@RequestBody PushTokenRequest body,
+                                              HttpServletRequest request) {
+        User user = CurrentUser.get();
+        String header = DeviceService.deviceIdOf(request);
+        String deviceId = header != null ? header : body.getDeviceId();
+        deviceService.savePushToken(user.getId(), deviceId, body.getToken());
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Chiqishda — bu telefonga endi push kelmasin. */
+    @DeleteMapping("/push-token")
+    public ResponseEntity<Void> clearPushToken(HttpServletRequest request) {
+        User user = CurrentUser.get();
+        deviceService.clearPushToken(user.getId(), DeviceService.deviceIdOf(request));
+        return ResponseEntity.noContent().build();
+    }
+
     // ------------------------------------------------------------------ DTO
 
     private DevicesResponse response(User user, String currentDeviceId) {
@@ -139,6 +164,14 @@ public class AppDeviceController {
                 .limit(deviceService.limitFor(platform))
                 .devices(devices)
                 .build();
+    }
+
+    @Data
+    public static class PushTokenRequest {
+        /** {@code ExponentPushToken[...]}. */
+        private String token;
+        /** Sarlavhasiz klientlar uchun zaxira. */
+        private String deviceId;
     }
 
     @Data

@@ -8,7 +8,6 @@ import com.example.backend.Admin.Dto.NotificationDto;
 import com.example.backend.Admin.Dto.NotificationSaveRequest;
 import com.example.backend.Admin.Dto.PageResponse;
 import com.example.backend.Cms.Enums.CommentStatus;
-import com.example.backend.Cms.Enums.NotificationStatus;
 import com.example.backend.Cms.Service.ModerationService;
 import com.example.backend.Cms.Service.NotificationAdminService;
 import com.example.backend.Enums.Permission;
@@ -183,25 +182,14 @@ public class ModerationController {
     }
 
     /**
-     * Yuborish.
-     *
-     * Servis natijani SAQLAYDI (urinish izsiz qolmasin), HTTP kodini esa shu
-     * yerda hal qilamiz: provayder ulanmagan bo'lsa 503 — soxta muvaffaqiyat
-     * qaytarilmaydi (§32, §33).
+     * Yuborish: xabar ilovada darhol ko'rinadi, push fonda ketadi.
+     * Push natijasi hisobotda ({@code /report}) chiqadi.
      */
     @PostMapping("/notifications/{id}/send")
     public ResponseEntity<NotificationDto> sendNotification(@PathVariable Long id) {
         require(Permission.NOTIFICATION_SEND);
-
-        var sent = notificationService.send(CurrentUser.get(), id);
-        if (sent.getStatus() != NotificationStatus.SENT) {
-            throw new BusinessException("PUSH_PROVIDER_NOT_CONFIGURED",
-                    sent.getFailureReason() == null
-                            ? NotificationAdminService.PROVIDER_NOT_CONFIGURED
-                            : sent.getFailureReason(),
-                    HttpStatus.SERVICE_UNAVAILABLE);
-        }
-        return ResponseEntity.ok(NotificationDto.from(sent));
+        return ResponseEntity.ok(NotificationDto.from(
+                notificationService.send(CurrentUser.get(), id)));
     }
 
     /**

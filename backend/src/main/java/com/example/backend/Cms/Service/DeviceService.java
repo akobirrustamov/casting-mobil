@@ -70,6 +70,7 @@ public class DeviceService {
     private static final int MAX_DEVICE_ID = 128;
     private static final int MAX_NAME = 255;
     private static final int MAX_PLATFORM = 32;
+    private static final int MAX_PUSH_TOKEN = 255;
 
     private final UserDeviceRepo deviceRepo;
     private final UserRepo userRepo;
@@ -227,6 +228,8 @@ public class DeviceService {
         }
 
         device.setActive(false);
+        // Chiqarilgan telefonga push ham bormasin.
+        device.setPushToken(null);
 
         // ⚠️ `saveAndFlush`, `save` emas — va bu didga bog'liq emas.
         //
@@ -244,6 +247,56 @@ public class DeviceService {
         // Yozuv nofaol bo'ldi — endi sessiya ham yopilsin.
         refreshTokenService.revokeForDevice(ownerId, device.getDeviceId());
         return saved;
+    }
+
+    /**
+     * Qurilmaning Expo push tokenini saqlaydi.
+     *
+     * Qurilma avval {@link #register} bilan ro'yxatga olingan bo'lishi
+     * kerak — token faqat FAOL qurilmaga yoziladi. Chiqarilgan qurilma
+     * token yubora olmaydi: aks holda u push orqali «qaytib kelardi».
+     *
+     * ⚠️ Xuddi shu token boshqa qatorlardan olib tashlanadi — telefonda
+     * boshqa odam kirgan bo'lishi mumkin (V42 izohi).
+     */
+    @Transactional
+    public void savePushToken(UUID userId, String deviceId, String token) {
+        String id = required(deviceId);
+        String value = token == null ? null : token.trim();
+        if (value == null || value.isEmpty() || value.length() > MAX_PUSH_TOKEN) {
+            throw BusinessException.validation("Push token noto'g'ri");
+        }
+
+        UserDevice device = deviceRepo.findByUserIdAndDeviceId(userId, id)
+                .filter(d -> Boolean.TRUE.equals(d.getActive()))
+                .orElseThrow(() -> BusinessException.notFound("Device", id));
+
+        deviceRepo.detachPushToken(value, device.getId());
+        // Ommaviy `update` keshni tozaladi — qatorni qayta o'qiymiz.
+        UserDevice fresh = deviceRepo.findById(device.getId()).orElseThrow();
+        if (!value.equals(fresh.getPushToken())) {
+            fresh.setPushToken(value);
+            deviceRepo.save(fresh);
+        }
+    }
+
+    /**
+     * Chiqishda: bu qurilmaga endi push kelmasin.
+     *
+     * Qurilma topilmasa jim o'tadi — chiqish hech qachon xato bilan
+     * to'xtamasligi kerak.
+     */
+    @Transactional
+    public void clearPushToken(UUID userId, String deviceId) {
+        if (deviceId == null || deviceId.isBlank()) {
+            return;
+        }
+        deviceRepo.findByUserIdAndDeviceId(userId, deviceId.trim()).ifPresent(d -> {
+            if (d.getPushToken() != null) {
+                d.setPushToken(null);
+                deviceRepo.save(d);
+            }
+        });
     }
 
     // ------------------------------------------------------------ ichki

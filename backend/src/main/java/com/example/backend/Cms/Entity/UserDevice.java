@@ -49,6 +49,13 @@ public class UserDevice {
     @Builder.Default
     private Boolean active = true;
 
+    /**
+     * Expo push tokeni ({@code ExponentPushToken[...]}), V42.
+     * {@code null} — ilova ruxsat olmagan yoki hali yubormagan.
+     */
+    @Column(name = "push_token", length = 255)
+    private String pushToken;
+
     @Column(name = "last_active_at")
     private LocalDateTime lastActiveAt;
 

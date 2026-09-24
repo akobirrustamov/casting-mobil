@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { useDeviceStore, type DeviceStatus } from '@/features/devices/store';
+import { unregisterPushToken } from '@/features/notifications/pushToken';
 import { setAuthToken, setTokenRefresher } from '@/lib/api';
 import { getItem, removeItem, setItem } from '@/lib/storage';
 
@@ -226,6 +227,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
+    // Пока токен авторизации ещё есть: отвязать push от этого телефона.
+    await unregisterPushToken();
+
     await Promise.all([
       removeItem(TOKEN_KEY),
       removeItem(REFRESH_KEY),

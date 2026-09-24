@@ -20,9 +20,36 @@
  *   npx expo config --type prebuild | grep -i cleartext                  # пусто
  *   ALLOW_CLEARTEXT=true npx expo config --type prebuild | grep -i cleartext
  */
+const fs = require('fs');
+const path = require('path');
+
 const ALLOW_CLEARTEXT = process.env.ALLOW_CLEARTEXT === 'true';
 
-module.exports = ({ config }) => {
+/**
+ * Firebase-конфиг для push на Android (FCM).
+ *
+ * Без него Expo-токен на Android не выдаётся — push не придёт, но
+ * приложение работает. Подключаем, только если файл реально лежит рядом:
+ * иначе prebuild упал бы у каждого, кто клонировал репозиторий без него.
+ * Путь можно переопределить секретом EAS (`GOOGLE_SERVICES_JSON`, тип «file»).
+ * См. `docs/PUSH.md`.
+ */
+const GOOGLE_SERVICES =
+  process.env.GOOGLE_SERVICES_JSON ?? path.join(__dirname, 'google-services.json');
+
+function withGoogleServices(config) {
+  if (!fs.existsSync(GOOGLE_SERVICES)) {
+    return config;
+  }
+  return {
+    ...config,
+    android: { ...config.android, googleServicesFile: GOOGLE_SERVICES },
+  };
+}
+
+module.exports = ({ config: base }) => {
+  const config = withGoogleServices(base);
+
   if (!ALLOW_CLEARTEXT) {
     return config;
   }

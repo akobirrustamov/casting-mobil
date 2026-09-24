@@ -56,6 +56,14 @@
       "expo-localization",
       "expo-font",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#05050A",
+          "defaultChannel": "default"
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "UzCasting kasting arizasiga rasmlaringizni biriktirish uchun galereyaga ruxsat so'raydi.",

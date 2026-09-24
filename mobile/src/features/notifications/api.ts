@@ -14,10 +14,10 @@ import { api, mediaUrl } from '@/lib/api';
  * расписание, страница в админке. В приложении экран «Xabarlar» был
  * пустой заглушкой — то есть написанное админом не видел никто.
  *
- * <h2>Push пока нет</h2>
- * FCM не подключён: сообщение записывается, но не отправляется. Для
- * списка внутри приложения это не помеха — сообщение лежит в базе, и
- * его можно прочитать. Когда push появится, экран менять не придётся.
+ * <h2>Push</h2>
+ * Тот же отправленный админом текст приходит и push-уведомлением
+ * (`./push.ts`); нажатие ведёт туда же, куда карточка в списке —
+ * маршрут считает одна функция `internalRoute`.
  *
  * <h2>⚠️ «Прочитано» не отслеживается</h2>
  * Отметка требует отдельной таблицы (кто что прочитал) и записи на
@@ -85,4 +85,28 @@ export function useNotifications() {
     queryFn: () => fetchNotifications(language),
     enabled: isAuthorized,
   });
+}
+
+/**
+ * Внутренняя ссылка → маршрут приложения.
+ *
+ * ⚠️ Возвращает `null` для всего, чего в приложении ещё нет. Экран не
+ * должен уводить в несуществующий маршрут: expo-router на такое
+ * отвечает пустым белым экраном без объяснения.
+ */
+export function internalRoute(
+  item: Pick<AppNotification, 'linkType' | 'targetType' | 'targetId'>
+): string | null {
+  if (item.linkType !== 'INTERNAL' || item.targetId == null) return null;
+
+  switch (item.targetType) {
+    case 'CONTENT':
+      return `/content/${item.targetId}`;
+    case 'EPISODE':
+      return `/episode/${item.targetId}`;
+    case 'CREATOR':
+      return `/creator/${item.targetId}`;
+    default:
+      return null;
+  }
 }

@@ -69,6 +69,25 @@ public class Notification {
     @Column(name = "failure_reason", length = 500)
     private String failureReason;
 
+    /**
+     * Push natijasi (V42). {@code null} — push urinilmagan.
+     *
+     * <ul>
+     *   <li>{@code pushRecipients} — auditoriyaga mos, tokeni bor qurilmalar;</li>
+     *   <li>{@code pushAccepted} — Expo qabul qilgan (telefonga yetkazish
+     *       kvitansiyasi EMAS);</li>
+     *   <li>{@code pushFailed} — Expo rad etgan yoki so'rov yiqilgan.</li>
+     * </ul>
+     */
+    @Column(name = "push_recipients")
+    private Integer pushRecipients;
+
+    @Column(name = "push_accepted")
+    private Integer pushAccepted;
+
+    @Column(name = "push_failed")
+    private Integer pushFailed;
+
     @OneToMany(mappedBy = "notification", cascade = CascadeType.ALL,
             orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default

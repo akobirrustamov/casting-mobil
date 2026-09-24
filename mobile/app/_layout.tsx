@@ -19,6 +19,7 @@ import { useAuthStore } from '@/features/auth/store';
 import { useDeviceStore } from '@/features/devices/store';
 import { useFavoritesStore } from '@/features/favorites/store';
 import { useMutedAuthors } from '@/features/comments/mutedAuthors';
+import { usePushNotifications } from '@/features/notifications/push';
 import { isOnboardingSeen } from '@/features/onboarding/store';
 import i18nInstance from '@/i18n';
 import { loadLanguage } from '@/i18n/storage';
@@ -58,6 +59,7 @@ export default function RootLayout() {
 
   const { showSplash, fontsReady } = useBootstrap();
   useDeviceGuard(showSplash);
+  usePushNotifications(!showSplash);
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.ink }}>

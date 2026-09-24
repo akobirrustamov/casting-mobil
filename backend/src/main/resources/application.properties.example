@@ -316,3 +316,10 @@ app.video.transcoding.profiles[1].audio-bitrate=128k
 app.video.transcoding.profiles[2].height=480
 app.video.transcoding.profiles[2].video-bitrate=1200k
 app.video.transcoding.profiles[2].audio-bitrate=96k
+
+# --- Push bildirishnomalar (Expo Push) -----------------------------------
+# Sukut bo'yicha YOQILGAN. Kalit shart emas: Expo o'zi FCM/APNs'ga
+# uzatadi (FCM kaliti EAS'ga yuklanadi). Token faqat Expo loyihasida
+# «Enhanced push security» yoqilgan bo'lsa kerak.
+app.push.enabled=${APP_PUSH_ENABLED:true}
+app.push.expo.access-token=${APP_PUSH_EXPO_ACCESS_TOKEN:}

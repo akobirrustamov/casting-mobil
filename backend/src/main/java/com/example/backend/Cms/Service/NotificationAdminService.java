@@ -17,7 +17,9 @@ import com.example.backend.Entity.User;
 import com.example.backend.Services.AuditService.AuditAction;
 import com.example.backend.Services.AuditService.AuditService;
 import com.example.backend.exceptions.BusinessException;
+import com.example.backend.Cms.Service.Push.NotificationPushService.NotificationSentEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -30,9 +32,9 @@ import java.util.*;
 /**
  * Bildirishnomalarni yaratish va rejalashtirish.
  *
- * Yuborish hozircha ilova ichidagi «Xabarlar» ro'yxatiga. Push provayderi
- * ulanmagan, shuning uchun push'ga bog'liq statistika (yetkazildi va h.k.)
- * soxta raqam bilan emas, «o'lchanmaydi» deb ko'rsatiladi (§32, §33).
+ * Yuborish — ilova ichidagi «Xabarlar» ro'yxatiga va Expo Push orqali
+ * telefonlarga ({@code NotificationPushService}). Telefonga YETKAZILGANI
+ * o'lchanmaydi, shuning uchun u soxta raqam emas, «o'lchanmaydi» (§33).
  */
 @Service
 @RequiredArgsConstructor
@@ -44,6 +46,7 @@ public class NotificationAdminService {
     private final com.example.backend.Repository.UserRepo userRepo;
     private final MediaAssetRepo mediaAssetRepo;
     private final AuditService auditService;
+    private final ApplicationEventPublisher events;
 
     @Transactional(readOnly = true)
     public Page<Notification> list(Pageable pageable) {
@@ -167,11 +170,11 @@ public class NotificationAdminService {
     }
 
     /**
-     * Yuborish — hozircha faqat ilova ichidagi «Xabarlar» ro'yxatiga.
+     * Yuborish: ilova ichidagi «Xabarlar» ro'yxatiga va telefonlarga push.
      *
-     * ⚠️ Push (telefon bildirishnomasi) hali ulanmagan. Xabar SENT bo'ladi,
-     * chunki u haqiqatan foydalanuvchiga yetadi — ilovani ochganda
-     * ro'yxatda ko'radi. Push qo'shilgach u shu metodda chaqiriladi.
+     * Xabar darhol SENT bo'ladi — ilovada u baribir ko'rinadi. Push
+     * natijasi (nechta qurilma qabul qildi) keyinroq, fon oqimidan
+     * yoziladi va hisobotda chiqadi.
      *
      * ⚠️ Bu metod ISTISNO TASHLAMAYDI. Ilgari tashlardi va tranzaksiya
      * qaytarilib, urinish haqidagi yozuv ham, audit ham yo'qolardi — ya'ni
@@ -202,18 +205,19 @@ public class NotificationAdminService {
         // bilan kelishidan qat'i nazar.
         requireAllLanguages(n);
 
-        // 1-bosqich: ILOVA ICHIDA yetkazish. SENT bo'lgan xabar
-        // `/api/v1/app/notifications` ro'yxatida chiqadi — «Xabarlar»
-        // ekrani shuni o'qiydi. Telefonga push hali ketmaydi (2-bosqich:
-        // qurilma tokenlari + Expo Push); push ulangach u shu yerda,
-        // SENT dan OLDIN chaqiriladi.
+        // SENT bo'lgan xabar `/api/v1/app/notifications` ro'yxatida
+        // chiqadi — «Xabarlar» ekrani shuni o'qiydi.
         n.setStatus(NotificationStatus.SENT);
         n.setSentAt(LocalDateTime.now());
         n.setFailureReason(null);
         Notification saved = notificationRepo.save(n);
 
+        // Telefonlarga push — tranzaksiya yopilgandan KEYIN, alohida
+        // oqimda (`NotificationPushService`).
+        events.publishEvent(new NotificationSentEvent(saved.getId()));
+
         auditService.log(actor, AuditAction.NOTIFICATION_SENT, "Notification", id, null,
-                Map.of("result", "in_app"));
+                Map.of("result", "sent"));
         return saved;
     }
 
@@ -238,9 +242,6 @@ public class NotificationAdminService {
         TranslationRules.requireAll(byLocale, NotificationTranslation::getBody, "Matn");
     }
 
-    /** Provayder sozlanmaganini bildiruvchi sabab — controller ham tekshiradi. */
-    public static final String PROVIDER_NOT_CONFIGURED =
-            "Push provayderi (FCM) sozlanmagan. APP_FCM_CREDENTIALS berilmagan.";
 
     @Transactional
     public void cancel(User actor, Long id) {
@@ -276,11 +277,9 @@ public class NotificationAdminService {
         Notification n = notificationRepo.findById(id)
                 .orElseThrow(() -> BusinessException.notFound("Notification", id));
 
-        // Qabul qiluvchilar bo'yicha ko'rsatkichlar uchun har bir odam
-        // bo'yicha yozuv kerak. Bunday jadval yo'q va u push provayderi
-        // ulangandan keyin paydo bo'ladi.
-        String needsProvider = "Qabul qiluvchilar bo'yicha yozuv yo'q. "
-                + PROVIDER_NOT_CONFIGURED;
+        // Push natijasi fon oqimidan yoziladi. `null` — push hali
+        // bo'lmagan (xabar yuborilmagan, push o'chirilgan yoki eski xabar).
+        String noPush = "Push natijasi yo'q: xabar hali yuborilmagan yoki push o'chirilgan";
 
         return NotificationReportDto.builder()
                 .notificationId(n.getId())
@@ -296,11 +295,17 @@ public class NotificationAdminService {
                 // ⚠️ Ilgari bu yerda `sent = 1` turardi, ya'ni «holati SENT».
                 // Bu voronkani ma'nosiz qilardi: 1 kishiga yuborilgan
                 // xabarni 250 kishi ochgan bo'lib chiqardi.
-                .sent(NotificationReportDto.Metric.unavailable(needsProvider))
-                .failed(NotificationReportDto.Metric.unavailable(needsProvider))
+                //
+                // Endi `sent` — Expo QABUL QILGAN qurilmalar soni.
+                .sent(n.getPushAccepted() == null
+                        ? NotificationReportDto.Metric.unavailable(noPush)
+                        : NotificationReportDto.Metric.of(n.getPushAccepted()))
+                .failed(n.getPushFailed() == null
+                        ? NotificationReportDto.Metric.unavailable(noPush)
+                        : NotificationReportDto.Metric.of(n.getPushFailed()))
                 .delivered(NotificationReportDto.Metric.unavailable(
-                        "Yetkazish kvitansiyasi push provayderidan keladi. "
-                                + PROVIDER_NOT_CONFIGURED))
+                        "Telefonga yetkazilgani o'lchanmaydi: Expo kvitansiyalari "
+                                + "yig'ilmaydi. «Yuborildi» — Expo qabul qilgan son."))
 
                 // Bular HAQIQIY: klient analitika hodisasini yuboradi.
                 .opened(NotificationReportDto.Metric.of(

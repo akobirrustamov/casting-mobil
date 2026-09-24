@@ -8,7 +8,11 @@ import { pushOnce } from '@/lib/navigation';
 import { ScreenState } from '@/components/states/ScreenState';
 import { Screen } from '@/components/ui/Screen';
 import { useAuthStore } from '@/features/auth/store';
-import { useNotifications, type AppNotification } from '@/features/notifications/api';
+import {
+  internalRoute,
+  useNotifications,
+  type AppNotification,
+} from '@/features/notifications/api';
 import { formatDate } from '@/features/profile/api';
 import { colors } from '@/theme/tokens';
 
@@ -143,26 +147,4 @@ function NotificationCard({ item }: { item: AppNotification }) {
       {body}
     </Pressable>
   );
-}
-
-/**
- * Внутренняя ссылка → маршрут приложения.
- *
- * ⚠️ Возвращает `null` для всего, чего в приложении ещё нет. Экран не
- * должен уводить в несуществующий маршрут: expo-router на такое
- * отвечает пустым белым экраном без объяснения.
- */
-function internalRoute(item: AppNotification): string | null {
-  if (item.linkType !== 'INTERNAL' || item.targetId == null) return null;
-
-  switch (item.targetType) {
-    case 'CONTENT':
-      return `/content/${item.targetId}`;
-    case 'EPISODE':
-      return `/episode/${item.targetId}`;
-    case 'CREATOR':
-      return `/creator/${item.targetId}`;
-    default:
-      return null;
-  }
 }
