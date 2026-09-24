@@ -64,7 +64,7 @@ function Money({ label, value, suffix, accent }) {
  */
 export default function UserDetailPage() {
   const { t } = usePanelI18n();
-  const { can } = useAuth();
+  const { can, atLeast } = useAuth();
   const { userId } = useParams();
   const navigate = useNavigate();
 
@@ -140,6 +140,17 @@ export default function UserDetailPage() {
                   </button>
                 )}
               </>
+            )}
+
+            {atLeast('SUPER_ADMIN') && (
+              <button type="button" className="uz-btn uz-btn-ghost" disabled={busy}
+                      onClick={() => confirmer.ask({
+                        message: `${user.phone || user.name} — ${t('confirm.logoutUser')}`,
+                        confirmLabel: t('us.logoutUser'),
+                        run: () => adminApi.logoutUserSessions(user.id),
+                      })}>
+                {t('us.logoutUser')}
+              </button>
             )}
 
             {can('USER_BLOCK') && (

@@ -201,6 +201,12 @@ public class JwtService {
         return jti == null ? null : UUID.fromString(jti);
     }
 
+    /** Token berilgan vaqt ({@code iat}); eski tokenlarda bo'lmasa {@code null}. */
+    public java.time.Instant issuedAt(String token) {
+        java.util.Date iat = claims(token).getIssuedAt();
+        return iat == null ? null : iat.toInstant();
+    }
+
     public boolean isRefreshToken(String token) {
         return TYPE_REFRESH.equals(typeOf(token));
     }

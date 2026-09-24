@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { PageHeader, TableWrap } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
+import SessionsCard from './SessionsCard';
 
 /**
  * Platforma sozlamalari: narxlar, kurslar, limitlar.
@@ -13,7 +14,7 @@ import { usePanelI18n } from '../i18n';
  */
 export default function SettingsPage() {
   const { t } = usePanelI18n();
-  const { can } = useAuth();
+  const { can, atLeast } = useAuth();
   const { data, error, loading, reload } = useApi(() => adminApi.settings(), []);
   const [drafts, setDrafts] = useState({});
   const [saving, setSaving] = useState(null);
@@ -97,6 +98,8 @@ export default function SettingsPage() {
           </TableWrap>
         )}
       </div>
+
+      {atLeast('SUPER_ADMIN') && <SessionsCard />}
     </>
   );
 }

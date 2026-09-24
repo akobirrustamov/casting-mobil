@@ -15,6 +15,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -59,6 +62,13 @@ public class MyFilter extends OncePerRequestFilter {
             if (user.isEmpty()) {
                 return;
             }
+            // Admin majburiy chiqargan — undan oldingi token yaroqsiz, garchi
+            // muddati tugamagan bo'lsa ham. Refresh token ham bekor qilingan,
+            // shuning uchun ilova 401 dan keyin kirish oynasiga qaytadi.
+            if (issuedBeforeCutoff(token, user.get())) {
+                log.debug("Token majburiy chiqarishdan oldin berilgan - rad etildi");
+                return;
+            }
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(user.get(), null, user.get().getAuthorities());
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -66,5 +76,19 @@ public class MyFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             log.debug("Token bo'yicha autentifikatsiya o'tmadi: {}", e.getMessage());
         }
+    }
+
+    /**
+     * ⚠️ {@code iat} yo'q eski token cheklov qo'yilgan foydalanuvchida
+     * ham RAD etiladi: uning qachon berilganini bilib bo'lmaydi, va
+     * «chiqarib yuborildi» degan va'da buzilgandan ko'ra qayta kirish arzon.
+     */
+    private boolean issuedBeforeCutoff(String token, User user) {
+        LocalDateTime cutoff = user.getSessionsValidAfter();
+        if (cutoff == null) {
+            return false;
+        }
+        Instant iat = jwtService.issuedAt(token);
+        return iat == null || iat.isBefore(cutoff.atZone(ZoneId.systemDefault()).toInstant());
     }
 }
