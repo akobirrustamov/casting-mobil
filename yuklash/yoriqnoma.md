@@ -391,13 +391,36 @@ scp backend.jar root@72.56.247.79:/root/
 
 **[SERVER]**
 
+⚠️ Xizmatni **supervisord** boshqaradi, `systemd` EMAS
+(`/etc/supervisor/conf.d/uzcasting.conf`), va jar `new.jar` deb
+ataladi. `systemctl stop uzcasting` xatosiz tugaydi — shunchaki
+hech narsa qilmaydi, keyin `mv` ishlaydigan jar ustiga yozadi va
+ilova o'sha zahoti yiqiladi.
+
 ```bash
-sudo systemctl stop uzcasting
-sudo mv /root/backend.jar /opt/uzcasting/backend.jar
-sudo chown uzcasting:uzcasting /opt/uzcasting/backend.jar
-sudo systemctl start uzcasting
-sudo journalctl -u uzcasting -f
+cd /opt/uzcasting
+cp new.jar new.jar.oldingi-$(date +%Y%m%d-%H%M%S)
+supervisorctl stop uzcasting
+mv /root/backend.jar /opt/uzcasting/new.jar
+supervisorctl start uzcasting
+supervisorctl status uzcasting
+tail -f /var/log/uzcasting.log
 ```
+
+⚠️ `stop` bilan `mv` orasida `/var/log/uzcasting-error.log` ga
+`Unable to access jarfile` yoziladi — bu normal: supervisor jar
+yo'q paytda qayta urinib ko'radi. Ishga tushgandan keyingi
+loglarda bu satr chiqmasligi kerak.
+
+**TEKSHIRUV — migratsiyalar mos keldimi:**
+
+```bash
+grep "Successfully validated" /var/log/uzcasting.log | tail -1
+```
+
+Bazadagi migratsiyalar soni chiqishi kerak. `Validate failed`
+bo'lsa jar bazada qo'llangan migratsiyani TOPOLMAYAPTI — ya'ni
+yig'ilgan kod serverdagidan eski.
 
 **TEKSHIRUV [MAC] — yangi kod HAQIQATAN chiqdimi:**
 
@@ -688,3 +711,65 @@ ko'tariladi va panel ishlaydi, faqat yuklash ishlamaydi.
 [SERVER]  nano → panel paroli → qayta ishga tushir
 [SERVER]  systemctl enable --now uzcasting
 ```
+
+---
+
+## 12. ⚠️ Jar ichida bor, git'da yo'q kod
+
+**2026-09-24 da aynan shu holat yuz berdi.** Serverda ishlab turgan
+jar'da git'da umuman bo'lmagan to'rtta narsa bor edi: majburiy
+chiqarish (`SessionAdminController` + `V41` migratsiyasi), bosh sahifa
+keshi, `MediaAssetRepo.findAllKeys()` va `OpenInViewConfig`.
+
+Yangi jar o'sha holda yuklanganda ular JIMGINA yo'qolardi: ilova
+ko'tarilardi, log toza bo'lardi, sayt ochilardi. Faqat video
+ko'rayotgan har bir odam bittadan baza ulanishini band qilib turardi
+va bosh sahifa har so'rovda qaytadan qurilardi.
+
+### Yuklashdan OLDIN tekshirish
+
+Yangi jar serverdagisidan hech narsani yo'qotmasligini isbotlash:
+
+```bash
+# [SERVER]
+cd /tmp && rm -rf jx && mkdir jx && cd jx
+unzip -o -q /opt/uzcasting/new.jar "BOOT-INF/classes/com/example/backend/*"
+find . -name "*.class" | sed 's#./BOOT-INF/classes/##' | sort > /tmp/server-classes.txt
+wc -l /tmp/server-classes.txt
+```
+
+```bash
+# [MAC]
+scp root@72.56.247.79:/tmp/server-classes.txt /tmp/
+unzip -l backend/target/backend-0.0.1-SNAPSHOT.jar \
+  | grep "BOOT-INF/classes/com/example" | awk '{print $NF}' \
+  | sed 's#BOOT-INF/classes/##' | sort > /tmp/local-classes.txt
+
+comm -23 /tmp/server-classes.txt /tmp/local-classes.txt
+```
+
+Natija **bo'sh** bo'lishi kerak. Nimadir chiqsa — u kod serverda bor,
+sizda yo'q. Yuklamang.
+
+### Nima yo'qolganini bayt-koddan o'qish
+
+Manba yo'q bo'lsa ham sinf tuzilishi va doimiylari o'qiladi:
+
+```bash
+javap -p -c BOOT-INF/classes/com/example/backend/Config/OpenInViewConfig.class
+javap -v -p .../HomeFeedService.class | grep -oE '\$\{[^}]*\}'   # @Value kalitlari
+javap -v -p .../MediaAssetRepo.class  | grep -oE 'select [^"]*'  # @Query so'rovlari
+```
+
+### Flyway buni o'zi ham ushlaydi
+
+Migratsiya bazada qo'llangan, lekin jar ichida yo'q bo'lsa, Flyway
+`Validate failed` bilan ilovani UMUMAN ko'tarmaydi. Bu yaxshi —
+migratsiyasiz kod jimgina ishlab ketmaydi. Lekin Java kodi uchun
+bunday qo'riqchi YO'Q: u shunchaki yo'qoladi.
+
+### Asl sabab
+
+Kod serverga yuklangan, lekin `git commit` qilinmagan. Yuklashdan
+oldin `git status` toza ekaniga ishonch hosil qiling — aks holda
+keyingi yuklash o'sha ishni o'chiradi.

@@ -149,6 +149,14 @@ class HomeFeedCacheTest {
             List<?> hammasi = ReflectionTestUtils.invokeMethod(registry, "getInterceptors");
             assertThat(hammasi).hasSize(1);
 
+            // ⚠️ Tur tekshiruvi ataylab ALOHIDA: istisno olib tashlansa
+            // Spring interceptor'ni yo'lsiz ro'yxatga oladi va u boshqa
+            // turda bo'ladi. Tekshiruvsiz bu `ClassCastException` bo'lib
+            // chiqardi — sababi o'rniga stek izi.
+            assertThat(hammasi.get(0))
+                    .as("interceptor yo'l shabloni bilan ro'yxatga olinishi kerak")
+                    .isInstanceOf(MappedInterceptor.class);
+
             MappedInterceptor mapped = (MappedInterceptor) hammasi.get(0);
 
             assertThat(mapped.matches(sorov("/api/v1/app/media/5/raw"))).isFalse();
