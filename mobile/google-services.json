@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "21125452896",
+    "project_id": "uzcasting-c4c77",
+    "storage_bucket": "uzcasting-c4c77.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:21125452896:android:38f0c82dec5ad2b5685f05",
+        "android_client_info": {
+          "package_name": "uz.uzcasting.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyYfiw3_IbbUXPZ8zCUYfJDuC9N2RUV7Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
