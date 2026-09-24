@@ -48,6 +48,30 @@ Android'da Expo tokeni faqat FCM orqali olinadi. Bu sozlashsiz ilova ishlayverad
    npx eas-cli build -p android --profile preview
    ```
 
+## iOS (holat: 24.09.2026 — Apple Developer akkaunti hali yo'q)
+
+Push kodi iOS'da ham o'zgarishsiz ishlaydi. Expo iPhone'ga APNs orqali yuboradi, Firebase **kerak emas**. `expo-notifications` plagini `aps-environment` ruxsatini o'zi qo'shadi.
+
+Tayyor:
+- `bundleIdentifier: uz.uzcasting.app`
+- `ITSAppUsesNonExemptEncryption: false` — App Store har build'da shifrlash haqida so'ramaydi (ilova faqat oddiy HTTPS ishlatadi).
+
+Qilinishi kerak:
+1. **Apple Developer Program** — https://developer.apple.com/programs/enroll/ ($99/yil). Jismoniy shaxs yoki tashkilot sifatida ochiladi. Tashkilot uchun D-U-N-S raqami kerak bo'ladi.
+2. **Google Sign-In (iOS).** Google Cloud Console (loyiha `497193534365`) → Credentials → **Create OAuth client ID → iOS**, Bundle ID `uz.uzcasting.app`. Undan ikki qiymat olinadi:
+   - **Client ID** → EAS env `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` (kod `src/features/auth/config.ts` uni allaqachon o'qiydi);
+   - **iOS URL scheme** (`com.googleusercontent.apps....`) → `app.json` plaginlariga
+     `["@react-native-google-signin/google-signin", { "iosUrlScheme": "..." }]`.
+
+   Bu qilinmasa, iPhone'da Google orqali kirish ishlamaydi, telefon raqam + SMS orqali kirish esa ishlayveradi.
+3. **Birinchi iOS build** — interaktiv, Apple ID + 2FA so'raladi. Sertifikat, provisioning va **push kaliti (APNs)** EAS'ning o'zi yaratadi:
+   ```
+   cd mobile
+   npx eas-cli build -p ios --profile production
+   ```
+   «Generate a new Apple Push Notifications service key?» deb so'raganda — **Yes**.
+4. Sinov: `npx eas-cli submit -p ios` → TestFlight. `preview` (internal) profilida esa har bir iPhone'ni oldindan ro'yxatdan o'tkazish kerak (`npx eas-cli device:create`).
+
 ## Server
 
 Qo'shimcha sozlash kerak emas: push sukut bo'yicha yoqilgan. Ixtiyoriy parametrlar (`application.properties`):

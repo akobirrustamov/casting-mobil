@@ -19,7 +19,10 @@
     "backgroundColor": "#05050A",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "uz.uzcasting.app"
+      "bundleIdentifier": "uz.uzcasting.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "uz.uzcasting.app",
