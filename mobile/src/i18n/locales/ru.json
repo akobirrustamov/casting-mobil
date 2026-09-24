@@ -242,8 +242,7 @@
         "karakalpakstan": "Каракалпакстан",
         "samarkand": "Самарканд",
         "sirdarya": "Сырдарья",
-        "surkhandarya": "Сурхандарья",
-        "other": "Другой"
+        "surkhandarya": "Сурхандарья"
       },
       "calendar": {
         "months": [
@@ -269,7 +268,10 @@
           "Сб",
           "Вс"
         ]
-      }
+      },
+      "clothSizePlaceholder": "Выберите размер",
+      "clothSizeOtherPlaceholder": "Напишите свой размер",
+      "other": "Другой"
     },
     "errors": {
       "pending": "У вас уже есть заявка на рассмотрении. Дождитесь ответа.",

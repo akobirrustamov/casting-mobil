@@ -242,8 +242,7 @@
         "karakalpakstan": "Karakalpakstan",
         "samarkand": "Samarkand",
         "sirdarya": "Sirdarya",
-        "surkhandarya": "Surkhandarya",
-        "other": "Other"
+        "surkhandarya": "Surkhandarya"
       },
       "calendar": {
         "months": [
@@ -269,7 +268,10 @@
           "Sa",
           "Su"
         ]
-      }
+      },
+      "clothSizePlaceholder": "Select a size",
+      "clothSizeOtherPlaceholder": "Type your size",
+      "other": "Other"
     },
     "errors": {
       "pending": "You already have an application under review. Please wait for the answer.",

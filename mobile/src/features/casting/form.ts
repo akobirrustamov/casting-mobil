@@ -123,7 +123,7 @@ export const FIELD_LIMITS: Partial<Record<FormField, number>> = {
   hairColor: 30,
   eyeColor: 30,
   height: 3,
-  clothSize: 3,
+  clothSize: 10,
   shoeSize: 3,
   bust: 3,
   waist: 3,
@@ -135,8 +135,12 @@ export const FIELD_LIMITS: Partial<Record<FormField, number>> = {
   instagram: 50,
 };
 
-/** Поля, куда пускаем только 0–9: рост и мерки. */
-const DIGITS_ONLY: FormField[] = ['height', 'clothSize', 'shoeSize', 'bust', 'waist', 'son'];
+/**
+ * Поля, куда пускаем только 0–9: рост и мерки.
+ *
+ * Размер одежды сюда не входит: он буквенный (`XL`, `2XL`), см. `CLOTH_SIZES`.
+ */
+const DIGITS_ONLY: FormField[] = ['height', 'shoeSize', 'bust', 'waist', 'son'];
 
 /**
  * Очистка введённого значения.

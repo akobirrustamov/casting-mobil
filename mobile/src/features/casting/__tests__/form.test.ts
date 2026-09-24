@@ -167,7 +167,7 @@ describe('sanitizeField', () => {
   it('режет по длине поля', () => {
     expect(sanitizeField('height', '123456')).toBe('123');
     expect(sanitizeField('name', 'a'.repeat(200))).toHaveLength(FIELD_LIMITS.name as number);
-    expect(sanitizeField('clothSize', '4444')).toBe('444');
+    expect(sanitizeField('clothSize', 'a'.repeat(20))).toHaveLength(FIELD_LIMITS.clothSize as number);
   });
 
   it('в телефоне оставляет цифры и один «+» в начале', () => {
@@ -177,6 +177,8 @@ describe('sanitizeField', () => {
 
   it('не трогает обычный текст и дату', () => {
     expect(sanitizeField('hairColor', 'qora')).toBe('qora');
+    // Размер одежды буквенный — «2XL» не должен стать «2».
+    expect(sanitizeField('clothSize', '2XL')).toBe('2XL');
     expect(sanitizeField('birthday', '17.05.2000')).toBe('17.05.2000');
   });
 });

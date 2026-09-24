@@ -60,5 +60,8 @@ export const REGIONS = [
   { key: 'surkhandarya', value: 'Surxondaryo' },
 ] as const;
 
-/** Пункт «Boshqa» — регион пишут сами. */
-export const REGION_OTHER = 'other';
+/**
+ * Размеры одежды — буквенная сетка. Уходит на сервер как есть;
+ * всё остальное («46», «S/M») — через «Boshqa».
+ */
+export const CLOTH_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'] as const;

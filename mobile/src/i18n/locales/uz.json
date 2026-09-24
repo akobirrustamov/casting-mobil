@@ -242,8 +242,7 @@
         "karakalpakstan": "Qoraqalpog‘iston",
         "samarkand": "Samarqand",
         "sirdarya": "Sirdaryo",
-        "surkhandarya": "Surxondaryo",
-        "other": "Boshqa"
+        "surkhandarya": "Surxondaryo"
       },
       "calendar": {
         "months": [
@@ -269,7 +268,10 @@
           "Sh",
           "Ya"
         ]
-      }
+      },
+      "clothSizePlaceholder": "O‘lchamni tanlang",
+      "clothSizeOtherPlaceholder": "O‘lchamingizni yozing",
+      "other": "Boshqa"
     },
     "errors": {
       "pending": "Sizda ko'rib chiqilayotgan ariza bor. Javobni kuting.",

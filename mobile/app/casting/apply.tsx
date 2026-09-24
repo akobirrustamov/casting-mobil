@@ -19,7 +19,7 @@ import {
   useSubmitApplication,
 } from '@/features/casting/api';
 import { BirthdayField } from '@/features/casting/BirthdayField';
-import { ChoiceField, Field, Section, SelectField } from '@/features/casting/components';
+import { ChoiceField, Field, Section, SelectOrTextField } from '@/features/casting/components';
 import { useKeyboardInset } from '@/lib/keyboard';
 import {
   EMPTY_FORM,
@@ -33,7 +33,7 @@ import {
   type ApplicationForm,
   type FormField,
 } from '@/features/casting/form';
-import { CASTING_TYPES, GENDERS, REGIONS, REGION_OTHER } from '@/features/casting/options';
+import { CASTING_TYPES, CLOTH_SIZES, GENDERS, REGIONS } from '@/features/casting/options';
 import { colors } from '@/theme/tokens';
 
 /**
@@ -80,8 +80,6 @@ export default function ApplyScreen() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pendingExists, setPendingExists] = useState(false);
   const [done, setDone] = useState(false);
-  // «Boshqa» — регион не из списка, человек пишет его сам в поле ниже.
-  const [regionOther, setRegionOther] = useState(false);
 
   const submit = useSubmitApplication();
   const keySeq = useRef(0);
@@ -235,16 +233,8 @@ export default function ApplyScreen() {
   const typeOptions = CASTING_TYPES.map((value) => ({ value, label: t(`casting.types.${value}`) }));
   const genderOptions = GENDERS.map((value) => ({ value, label: t(`casting.form.${value}`) }));
   const f = (key: keyof ApplicationForm) => t(`casting.form.fields.${key}`);
-  const regionOptions = [
-    ...REGIONS.map((r) => ({ value: r.value as string, label: t(`casting.form.regions.${r.key}`) })),
-    { value: REGION_OTHER, label: t('casting.form.regions.other') },
-  ];
-  const regionChoice = regionOther ? REGION_OTHER : form.region;
-  const onRegionChoice = (v: string) => {
-    const other = v === REGION_OTHER;
-    setRegionOther(other);
-    set('region', other ? '' : v);
-  };
+  const regionOptions = REGIONS.map((r) => ({ value: r.value as string, label: t(`casting.form.regions.${r.key}`) }));
+  const clothOptions = CLOTH_SIZES.map((v) => ({ value: v as string, label: v }));
   const isMale = form.gender === 'male';
 
   return (
@@ -289,27 +279,18 @@ export default function ApplyScreen() {
               error={errors.gender}
             />
             <Field label={f('name')} required value={form.name} onChangeText={(v) => set('name', v)} error={errors.name} autoCapitalize="words" maxLength={FIELD_LIMITS.name} />
-            <SelectField
+            <SelectOrTextField
               label={f('region')}
               required
               options={regionOptions}
-              value={regionChoice}
-              onChange={onRegionChoice}
+              value={form.region}
+              onChange={(v) => set('region', v)}
               placeholder={t('casting.form.regionPlaceholder')}
-              error={regionOther ? null : errors.region}
+              otherLabel={t('casting.form.other')}
+              otherPlaceholder={t('casting.form.regionOtherPlaceholder')}
+              error={errors.region}
+              maxLength={FIELD_LIMITS.region}
             />
-            {regionOther ? (
-              <Field
-                label={t('casting.form.regions.other')}
-                required
-                value={form.region}
-                onChangeText={(v) => set('region', v)}
-                placeholder={t('casting.form.regionOtherPlaceholder')}
-                error={errors.region}
-                maxLength={FIELD_LIMITS.region}
-                autoFocus
-              />
-            ) : null}
             <Field label={f('nationality')} required value={form.nationality} onChangeText={(v) => set('nationality', v)} error={errors.nationality} maxLength={FIELD_LIMITS.nationality} />
             <BirthdayField
               label={f('birthday')}
@@ -325,7 +306,17 @@ export default function ApplyScreen() {
             <Field label={f('height')} required value={form.height} onChangeText={(v) => set('height', v)} keyboardType="number-pad" maxLength={FIELD_LIMITS.height} error={errors.height} />
             <Field label={f('hairColor')} required value={form.hairColor} onChangeText={(v) => set('hairColor', v)} error={errors.hairColor} maxLength={FIELD_LIMITS.hairColor} />
             <Field label={f('eyeColor')} required value={form.eyeColor} onChangeText={(v) => set('eyeColor', v)} error={errors.eyeColor} maxLength={FIELD_LIMITS.eyeColor} />
-            <Field label={f('clothSize')} value={form.clothSize} onChangeText={(v) => set('clothSize', v)} keyboardType="number-pad" error={errors.clothSize} maxLength={FIELD_LIMITS.clothSize} />
+            <SelectOrTextField
+              label={f('clothSize')}
+              options={clothOptions}
+              value={form.clothSize}
+              onChange={(v) => set('clothSize', v)}
+              placeholder={t('casting.form.clothSizePlaceholder')}
+              otherLabel={t('casting.form.other')}
+              otherPlaceholder={t('casting.form.clothSizeOtherPlaceholder')}
+              error={errors.clothSize}
+              maxLength={FIELD_LIMITS.clothSize}
+            />
             <Field label={f('shoeSize')} value={form.shoeSize} onChangeText={(v) => set('shoeSize', v)} keyboardType="number-pad" error={errors.shoeSize} maxLength={FIELD_LIMITS.shoeSize} />
             {/* Как на сайте: грудь и бёдра спрашиваем только не у мужчин. */}
             {!isMale ? (

@@ -223,6 +223,77 @@ export function SelectField<T extends string>({
   );
 }
 
+/** Значение пункта «Boshqa» в `SelectOrTextField`. */
+export const OTHER_OPTION = '__other__';
+
+/**
+ * Список + «Boshqa»: не нашёл своего в списке — пишет сам в поле ниже.
+ *
+ * Для viloyat и размера одежды: стандартные значения выбирают, чтобы у
+ * админа не было «XL», «xl» и «Xl» тремя разными размерами; редкое
+ * значение всё равно можно ввести.
+ *
+ * ⚠️ Режим «Boshqa» — своё состояние поля, а не вывод из `value`: пока
+ * человек не начал печатать, значение пустое и неотличимо от «ничего не
+ * выбрано», и поле ввода исчезало бы сразу после выбора «Boshqa».
+ */
+export function SelectOrTextField({
+  label,
+  options,
+  value,
+  onChange,
+  placeholder,
+  otherLabel,
+  otherPlaceholder,
+  required = false,
+  error,
+  maxLength,
+}: {
+  label: string;
+  options: { value: string; label: string }[];
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  otherLabel: string;
+  otherPlaceholder?: string;
+  required?: boolean;
+  error?: string | null;
+  maxLength?: number;
+}) {
+  // Значение не из списка (например, восстановленное) — сразу режим «Boshqa».
+  const [other, setOther] = useState(() => value !== '' && !options.some((o) => o.value === value));
+
+  return (
+    <>
+      <SelectField
+        label={label}
+        required={required}
+        options={[...options, { value: OTHER_OPTION, label: otherLabel }]}
+        value={other ? OTHER_OPTION : value}
+        onChange={(v) => {
+          const isOther = v === OTHER_OPTION;
+          setOther(isOther);
+          onChange(isOther ? '' : v);
+        }}
+        placeholder={placeholder}
+        error={other ? null : error}
+      />
+      {other ? (
+        <Field
+          label={otherLabel}
+          required={required}
+          value={value}
+          onChangeText={onChange}
+          placeholder={otherPlaceholder}
+          error={error}
+          maxLength={maxLength}
+          autoFocus
+        />
+      ) : null}
+    </>
+  );
+}
+
 /** Строка «подпись — значение»; пустое значение не рисуем вовсе. */
 export function InfoRow({ label, value }: { label: string; value: string | number | null | undefined }) {
   if (value === null || value === undefined || value === '') return null;
