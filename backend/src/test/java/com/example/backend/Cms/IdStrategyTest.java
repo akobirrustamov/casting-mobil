@@ -64,19 +64,38 @@ class IdStrategyTest {
             "@Id\\s*(?:@GeneratedValue\\([^)]*\\)\\s*)?(?:@Column\\([^)]*\\)\\s*)?"
                     + "private\\s+([\\w.]+)\\s+(\\w+)\\s*;");
 
-    /** {@code entity -> id turi}. */
+    /**
+     * {@code entity -> id turi}. Tarkibiy kalit uchun {@code composite}.
+     *
+     * ⚠️ TARKIBIY KALIT ALOHIDA ANIQLANADI. Ilgari bu yerda faqat
+     * BIRINCHI {@code @Id} maydoni o'qilardi. Ikki maydonli kalitda
+     * ({@code @IdClass}) natija birinchi maydonning turi bo'lib
+     * qolardi — masalan {@code NotificationRead -> UUID}. Bu ikki
+     * tomondan yolg'on:
+     *
+     * 1. Entity'ning ID si UUID EMAS, u ikkita ustundan iborat;
+     * 2. Istisnoni {@code NATURAL_KEYS} ga «UUID» deb yozish kerak
+     *    bo'lardi va keyin maydonlar tartibi almashsa, qo'riqchi
+     *    jimgina boshqa narsani tekshirib yurardi.
+     */
     private Map<String, String> idTypes(Path dir) throws IOException {
         Map<String, String> out = new LinkedHashMap<>();
         try (Stream<Path> files = Files.walk(dir)) {
             for (Path f : files.filter(p -> p.toString().endsWith(".java")).sorted().toList()) {
                 Matcher m = ID_FIELD.matcher(Files.readString(f));
-                if (m.find()) {
-                    String name = f.getFileName().toString().replace(".java", "");
+
+                List<String> found = new ArrayList<>();
+                while (m.find()) {
                     String type = m.group(1);
                     // `java.util.UUID` -> `UUID`: taqqoslash oddiy nom bo'yicha.
-                    type = type.substring(type.lastIndexOf('.') + 1);
-                    out.put(name, type);
+                    found.add(type.substring(type.lastIndexOf('.') + 1));
                 }
+                if (found.isEmpty()) {
+                    continue;
+                }
+
+                String name = f.getFileName().toString().replace(".java", "");
+                out.put(name, found.size() == 1 ? found.get(0) : "composite");
             }
         }
         return out;
@@ -93,14 +112,24 @@ class IdStrategyTest {
          * <ul>
          *   <li>{@code PlatformSetting} — kalitning o'zi
          *       ({@code pricing.episode.default});</li>
-         *   <li>{@code UploadSession} — yuklash tokeni.</li>
+         *   <li>{@code UploadSession} — yuklash tokeni;</li>
+         *   <li>{@code NotificationRead} — BOG'LOVCHI jadval:
+         *       kalit «kim» + «qaysi xabar», qatorning o'zi esa
+         *       «o'qilgan» degan faktdan boshqa hech narsa
+         *       saqlamaydi.</li>
          * </ul>
          * Ularga qo'shimcha raqamli ID berish faqat ortiqcha ustun
          * qo'shardi va qidiruvni bir bosqich uzaytirardi.
+         *
+         * ⚠️ Bog'lovchi jadvalda sun'iy ID zarar ham keltirardi:
+         * birlamchi kalit takrorlanishni O'ZI to'sadi, sun'iy ID
+         * bo'lsa esa bitta odam bitta xabarni ikki marta «o'qigan»
+         * qatorini yozib qo'yish mumkin bo'lardi.
          */
         private static final Map<String, String> NATURAL_KEYS = Map.of(
                 "PlatformSetting", "String",
-                "UploadSession", "String");
+                "UploadSession", "String",
+                "NotificationRead", "composite");
 
         @Test
         @DisplayName("⚠️ Barcha CMS entity'lari `Long` ishlatadi")
