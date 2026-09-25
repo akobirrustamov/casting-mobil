@@ -1,5 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 
+import { withPaymentsGate } from '@/features/config/PaymentsGate';
 import { DonorsScreen, parseCurrency } from '@/features/content/DonorsScreen';
 
 /**
@@ -9,7 +10,7 @@ import { DonorsScreen, parseCurrency } from '@/features/content/DonorsScreen';
  * такие же значки на кадре плеера. Валюта — в адресе, чтобы «назад» и
  * повторное открытие попадали в тот же рейтинг, с которого пришли.
  */
-export default function DonorsRoute() {
+function DonorsRoute() {
   const { id, currency } = useLocalSearchParams<{ id: string; currency?: string }>();
 
   const parsed = Number(id);
@@ -17,3 +18,5 @@ export default function DonorsRoute() {
 
   return <DonorsScreen contentId={contentId} initialCurrency={parseCurrency(currency)} />;
 }
+
+export default withPaymentsGate(DonorsRoute);

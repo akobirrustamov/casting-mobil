@@ -4,23 +4,29 @@
 
 @font-face {
     font-family: 'Lora';
-    src: url('./assets/Lora/Lora-Regular.ttf') format('truetype');
+    src: url('./assets/Lora/Lora-Regular.woff2') format('woff2');
     font-weight: 400;
     font-style: normal;
+    /* Shrift yuklanguncha matn tizim shriftida ko'rinadi (bo'sh ekran emas) */
+    font-display: swap;
 }
 
 @font-face {
     font-family: 'Lora';
-    src: url('./assets/Lora/Lora-Bold.ttf') format('truetype');
+    src: url('./assets/Lora/Lora-Bold.woff2') format('woff2');
     font-weight: 700;
     font-style: normal;
+    /* Shrift yuklanguncha matn tizim shriftida ko'rinadi (bo'sh ekran emas) */
+    font-display: swap;
 }
 
 @font-face {
     font-family: 'Lora';
-    src: url('./assets/Lora/Lora-Italic.ttf') format('truetype');
+    src: url('./assets/Lora/Lora-Italic.woff2') format('woff2');
     font-weight: 400;
     font-style: italic;
+    /* Shrift yuklanguncha matn tizim shriftida ko'rinadi (bo'sh ekran emas) */
+    font-display: swap;
 }
 
 /* по аналогии для SemiBold, Medium, VariableFont */

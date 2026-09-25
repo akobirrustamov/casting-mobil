@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking } from 'react-native';
 
@@ -13,6 +13,7 @@ import { mediaUrl } from '@/lib/api';
 import { compactCount } from '@/lib/money';
 
 import type { AccessPolicy, BannerCard, ContentCard, HomeSection } from './types';
+import { usePaymentsVisible } from '@/features/config/api';
 
 /**
  * Отрисовка одной секции главной.
@@ -65,7 +66,7 @@ function accessBadge(
  * задавал `orientation`, и вертикальный ряд получался другой высоты — по
  * нажатию «Barchasi ›» карточки менялись на глазах.
  */
-export function ContentPoster({
+export const ContentPoster = memo(function ContentPoster({
   card,
   width,
   ratio,
@@ -79,7 +80,13 @@ export function ContentPoster({
   onMenu?: () => void;
 }) {
   const { t } = useTranslation();
-  const badge = accessBadge(card.accessPolicy);
+  const paymentsVisible = usePaymentsVisible();
+  const rawBadge = accessBadge(card.accessPolicy);
+  // Платежи скрыты — «Premium» на постере не пишем, только «закрыто».
+  const badge =
+    !paymentsVisible && rawBadge?.key === 'common.premium'
+      ? { tone: 'locked' as const, key: 'common.locked' }
+      : rawBadge;
 
   // У многосерийного контента своей длительности нет — там число серий.
   // Показываем то, что сервер действительно знает, а не среднее по палате.
@@ -115,7 +122,7 @@ export function ContentPoster({
       onPress={() => pushOnce(`/content/${card.id}`)}
     />
   );
-}
+});
 
 /**
  * Куда ведёт баннер — или `null`, если вести некуда.
@@ -192,7 +199,7 @@ function openBanner(banner: BannerCard) {
   }
 }
 
-export function HomeSectionView({
+export const HomeSectionView = memo(function HomeSectionView({
   section,
   active = true,
 }: {
@@ -265,7 +272,7 @@ export function HomeSectionView({
   }
 
   return null;
-}
+});
 
 /**
  * Премьеры — ряд постеров, а не большая карусель.

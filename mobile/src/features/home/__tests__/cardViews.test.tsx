@@ -24,6 +24,7 @@ jest.mock('react-i18next', () => ({
 }));
 
 jest.mock('@/lib/api', () => ({ mediaUrl: () => undefined }));
+jest.mock('@/features/config/api', () => ({ usePaymentsVisible: () => false }));
 
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { Text } from 'react-native';

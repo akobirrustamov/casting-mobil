@@ -16,6 +16,7 @@ import { SplashOverlay } from '@/components/SplashOverlay';
 import { DebugOverlay } from '@/components/states/DebugOverlay';
 import { OfflineBanner } from '@/components/states/OfflineBanner';
 import { useAuthStore } from '@/features/auth/store';
+import { useAppConfigSync } from '@/features/config/api';
 import { useDeviceStore } from '@/features/devices/store';
 import { useFavoritesStore } from '@/features/favorites/store';
 import { useMutedAuthors } from '@/features/comments/mutedAuthors';
@@ -40,6 +41,12 @@ import { FONT_ASSETS } from '@/theme/typography';
  * `adb logcat`.
  */
 export { AppErrorBoundary as ErrorBoundary } from '@/components/states/AppErrorBoundary';
+
+/** `useAppConfigSync` нужен клиент запросов — поэтому компонент ВНУТРИ провайдера. */
+function AppConfigSync() {
+  useAppConfigSync();
+  return null;
+}
 
 /** По подписи к макету splash висит 1–2 секунды. */
 const SPLASH_MIN_MS = 1300;
@@ -99,6 +106,9 @@ export default function RootLayout() {
                 <Stack.Screen name="devices" />
               </Stack>
             ) : null}
+
+            {/* Один на всё приложение: держит свежей настройку платежей. */}
+            <AppConfigSync />
 
             {/* Поверх навигатора, но под splash — на splash сеть ещё не нужна */}
             <OfflineBanner />

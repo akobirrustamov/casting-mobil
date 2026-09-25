@@ -56,6 +56,15 @@ public final class SettingKeys {
     public static final String CREATOR_RANKING = "homepage.creators.ranking";
 
     /**
+     * Mobil ilovada to'lovga oid hamma narsa ko'rinadimi: Premium, tariflar,
+     * obuna, promokod, balans, donat, sotib olish tugmalari.
+     *
+     * Default {@code false} — yashirin. Faqat SUPER_ADMIN va undan yuqori
+     * o'zgartiradi ({@code MonetizationController.updateSetting}).
+     */
+    public static final String MOBILE_PAYMENTS_VISIBLE = "mobile.payments.visible";
+
+    /**
      * Boshlang'ich qiymatlar. Kalit bazada bo'lmasa shu ishlatiladi va
      * birinchi so'rovda yoziladi.
      *
@@ -73,6 +82,8 @@ public final class SettingKeys {
                 {REVENUE_SHARE_PERCENT, "50", "Ijodkorga tushadigan ulush (%)"},
                 {CREATOR_RANKING, "MANUAL",
                         "Mashhur ijodkorlar tartibi: MANUAL (admin tanlaydi) yoki STARS"},
+                {MOBILE_PAYMENTS_VISIBLE, "false",
+                        "Mobil ilovada to'lov bo'limlari ko'rinadimi: true yoki false"},
         };
     }
 
@@ -118,7 +129,7 @@ public final class SettingKeys {
         return switch (key) {
             case EPISODE_PRICE, PREMIERE_PRICE, STAR_RATE, COIN_RATE -> ValueType.MONEY;
             case DEVICE_LIMIT, DEVICE_LIMIT_WEB, REVENUE_SHARE_PERCENT -> ValueType.INTEGER;
-            case CREATOR_RANKING -> ValueType.ENUM;
+            case CREATOR_RANKING, MOBILE_PAYMENTS_VISIBLE -> ValueType.ENUM;
             default -> ValueType.TEXT;
         };
     }
@@ -127,6 +138,9 @@ public final class SettingKeys {
     public static java.util.List<String> allowedValues(String key) {
         if (CREATOR_RANKING.equals(key)) {
             return java.util.List.of("MANUAL", "STARS");
+        }
+        if (MOBILE_PAYMENTS_VISIBLE.equals(key)) {
+            return java.util.List.of("true", "false");
         }
         return java.util.List.of();
     }

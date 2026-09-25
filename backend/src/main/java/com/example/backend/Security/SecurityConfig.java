@@ -218,6 +218,8 @@ public class SecurityConfig {
                         // Token yuborilsa hisobga olinadi: undan foydalanuvchi
                         // tanlagan til olinadi.
                         .requestMatchers(HttpMethod.GET, "/api/v1/app/tariffs").permitAll()
+                        // Mobil ilova sozlamalari (to'lovlar ko'rinadimi) — kirishdan oldin ham kerak.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/app/config").permitAll()
                         // ⚠️ Bot foydalanuvchisi anketa rasmini kirmasdan yuklaydi.
                         // Yopilsa Telegram bot oqimi ishlamay qoladi.
                         .requestMatchers(HttpMethod.POST, "/api/v1/file/upload").permitAll()

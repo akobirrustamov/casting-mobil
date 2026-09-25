@@ -95,23 +95,45 @@ public interface ContentRepo extends JpaRepository<Content, Long> {
 
     // ---------------------------------------------------------- bosh sahifa
     //
-    // Quyidagilar §31 bosh sahifa qatorlari uchun. Ro'yxat qisqa (bo'lim
-    // chegarasi odatda 20 ta), shuning uchun Pageable emas, oddiy List.
+    // Quyidagilar §31 bosh sahifa qatorlari uchun.
+    //
+    // ⚠️ Saralash va CHEGARA bazada (`Pageable` — faqat birinchi sahifa).
+    // Ilgari bu yerda filtrsiz `List` qaytardi: har bir qator uchun o'sha
+    // turdagi BUTUN katalog yuklanib, Java'da saralanib, 20 tasidan
+    // boshqasi tashlab yuborilardi — bosh sahifa katalog o'sgan sari
+    // sekinlashardi. Ko'rinish sharti ham shu sababli so'rovda
+    // (`HomeFeedService.isVisible` bilan bir xil qoida).
     //
     // ⚠️ Bu yerda @EntityGraph ATAYLAB YO'Q: Content da ikkita to'plam bor
     // (translations, media) va ikkalasini birdan fetch join qilish
     // MultipleBagFetchException beradi. N+1 esa entity ustidagi
     // @BatchSize bilan hal qilingan.
 
-    List<Content> findAllByDeletedAtIsNullAndFeaturedTrueAndStatus(PublicationStatus status);
+    String HOME_VISIBLE = " c.deletedAt is null and c.status = :status"
+            + " and (c.visibility is null or c.visibility = :visibility) ";
+    String HOME_ORDER = " order by c.publicationDate desc nulls last, c.id desc";
 
-    List<Content> findAllByDeletedAtIsNullAndPopularTrueAndStatus(PublicationStatus status);
+    @Query("select c from Content c where" + HOME_VISIBLE + "and c.featured = true" + HOME_ORDER)
+    List<Content> homeFeatured(@Param("status") PublicationStatus status,
+                               @Param("visibility") ContentVisibility visibility,
+                               Pageable pageable);
 
-    List<Content> findAllByDeletedAtIsNullAndContentTypeAndStatus(
-            ContentType contentType, PublicationStatus status);
+    @Query("select c from Content c where" + HOME_VISIBLE + "and c.popular = true" + HOME_ORDER)
+    List<Content> homePopular(@Param("status") PublicationStatus status,
+                              @Param("visibility") ContentVisibility visibility,
+                              Pageable pageable);
 
-    List<Content> findAllByDeletedAtIsNullAndOrientationAndStatus(
-            ContentOrientation orientation, PublicationStatus status);
+    @Query("select c from Content c where" + HOME_VISIBLE + "and c.contentType = :type" + HOME_ORDER)
+    List<Content> homeByType(@Param("type") ContentType type,
+                             @Param("status") PublicationStatus status,
+                             @Param("visibility") ContentVisibility visibility,
+                             Pageable pageable);
+
+    @Query("select c from Content c where" + HOME_VISIBLE + "and c.orientation = :orientation" + HOME_ORDER)
+    List<Content> homeByOrientation(@Param("orientation") ContentOrientation orientation,
+                                    @Param("status") PublicationStatus status,
+                                    @Param("visibility") ContentVisibility visibility,
+                                    Pageable pageable);
 
     /**
      * Kategoriya bo'yicha kontent — katalog qatorlari uchun

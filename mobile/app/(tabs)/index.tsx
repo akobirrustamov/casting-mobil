@@ -63,7 +63,10 @@ export default function HomeScreen() {
       // Шапка по макету заказчика (01.09.2026): слева знак и «UzCasting»,
       // справа «Premium» и колокольчик. Знак больше не по центру — на
       // макете он прижат к левому краю, как в большинстве витрин.
-      titleContent={<Wordmark variant="compact" shine />}
+      // Блик только на видимой главной: на Android `MaskedView` с идущей
+      // анимацией перерисовывает маску каждый кадр, и в скрытой вкладке
+      // это чистая трата.
+      titleContent={<Wordmark variant="compact" shine={isFocused} />}
       headerRight={<HomeHeaderActions />}
       onRefresh={() => void feed.refetch()}
       refreshing={feed.isRefetching}

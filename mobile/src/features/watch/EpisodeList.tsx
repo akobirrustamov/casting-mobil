@@ -21,6 +21,7 @@ import { colors, radius } from '@/theme/tokens';
 import { ContentNotFoundError, WatchUnavailableError, useViewerKey } from './api';
 import { episodesOfSeason, type EpisodeCard, type useEpisodes } from './episodes';
 import { fetchContinueWatching } from './progressApi';
+import { usePaymentsVisible } from '@/features/config/api';
 
 /**
  * Серии контента — макет заказчика «3» (08.09.2026): сезоны вкладками,
@@ -227,6 +228,7 @@ function EpisodeRow({
   current: boolean;
 }) {
   const { t } = useTranslation();
+  const paymentsVisible = usePaymentsVisible();
 
   const thumbnail = mediaUrl(episode.thumbnailMediaId);
   const duration = clock(episode.durationSeconds);
@@ -297,7 +299,7 @@ function EpisodeRow({
             </View>
           ) : null}
 
-          {!episode.allowed && episode.episodePrice !== null ? (
+          {paymentsVisible && !episode.allowed && episode.episodePrice !== null ? (
             <Text className="text-micro text-gold">
               {t('common.price', { amount: formatSum(episode.episodePrice) })}
             </Text>

@@ -44,10 +44,15 @@ export type Creator = {
   id: number;
   name: string;
   castingType: CastingType | null;
+  /** Тип как пришёл с API — для направлений вне списка `CastingType`. */
+  castingTypeRaw: string | null;
   gender: Gender;
   region: string | null;
+  nationality: string | null;
   age: number | null;
   height: number | null;
+  hairColor: string | null;
+  eyeColor: string | null;
   /** Только фото с isWebShow — остальные показывать нельзя. */
   photoUrls: string[];
 };

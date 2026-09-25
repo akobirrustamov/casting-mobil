@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import * as Notifications from 'expo-notifications';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppState } from 'react-native';
@@ -8,6 +7,8 @@ import { useAuthStore } from '@/features/auth/store';
 import { feedLocale } from '@/features/home/api';
 import { DEFAULT_LANGUAGE, isSupportedLanguage, type Language } from '@/i18n';
 import { api, mediaUrl } from '@/lib/api';
+
+import { Notifications } from './module';
 
 /**
  * Уведомления — `GET /api/v1/app/notifications`.
@@ -31,9 +32,31 @@ import { api, mediaUrl } from '@/lib/api';
  * - `useUnreadCount` — число на колокольчике;
  * - `markAllRead` — экран открыт;
  * - `markRead(id)` — нажали push и ушли сразу по ссылке, минуя список.
+ *
+ * <h2>Два вида (25.09.2026)</h2>
+ * Админ выбирает тип: `APP_NOTIFICATION` — колокольчик на главной,
+ * `CASTING_NOTIFICATION` — колокольчик во вкладке «Casting». Список,
+ * число и «прочитано» считаются отдельно для каждого вида (`?type=`).
  */
+export type NotificationKind = 'APP_NOTIFICATION' | 'CASTING_NOTIFICATION';
+
+export const APP_KIND: NotificationKind = 'APP_NOTIFICATION';
+export const CASTING_KIND: NotificationKind = 'CASTING_NOTIFICATION';
+
+/** Значение параметра маршрута `/messages?type=…` → вид. */
+export function kindFromParam(value: unknown): NotificationKind {
+  return value === 'casting' || value === CASTING_KIND ? CASTING_KIND : APP_KIND;
+}
+
+/** Экран списка для вида. */
+export function messagesRoute(kind: NotificationKind): string {
+  return kind === CASTING_KIND ? '/messages?type=casting' : '/messages';
+}
+
 export type AppNotification = {
   id: number;
+  /** Вид; старый бэкенд не присылает — общий. */
+  kind: NotificationKind;
   title: string | null;
   body: string | null;
   /** Готовый адрес картинки или `undefined`. */
@@ -60,6 +83,7 @@ function map(raw: unknown): AppNotification {
   const r = (raw ?? {}) as Record<string, unknown>;
   return {
     id: num(r.id) ?? 0,
+    kind: r.type === CASTING_KIND ? CASTING_KIND : APP_KIND,
     title: str(r.title),
     body: str(r.body),
     // Адрес собирается здесь, а не на экране: правило «id → URL» уже
@@ -81,21 +105,25 @@ function useLanguage(): Language {
   return isSupportedLanguage(i18n.language) ? i18n.language : DEFAULT_LANGUAGE;
 }
 
-export async function fetchNotifications(language: Language): Promise<AppNotification[]> {
+export async function fetchNotifications(
+  language: Language,
+  kind: NotificationKind
+): Promise<AppNotification[]> {
   const { data } = await api.get<unknown[]>('/api/v1/app/notifications', {
-    params: { locale: feedLocale(language) },
+    params: { locale: feedLocale(language), type: kind },
   });
-  return (Array.isArray(data) ? data : []).map(map);
+  // Старый бэкенд `type` игнорирует — фильтруем и здесь.
+  return (Array.isArray(data) ? data : []).map(map).filter((item) => item.kind === kind);
 }
 
-export function useNotifications() {
+export function useNotifications(kind: NotificationKind = APP_KIND) {
   const language = useLanguage();
   const isAuthorized = useAuthStore((s) => s.isAuthorized);
   const userId = useAuthStore((s) => s.user?.id ?? null);
 
   return useQuery({
-    queryKey: ['notifications', userId, language],
-    queryFn: () => fetchNotifications(language),
+    queryKey: ['notifications', kind, userId, language],
+    queryFn: () => fetchNotifications(language, kind),
     enabled: isAuthorized,
   });
 }
@@ -116,14 +144,14 @@ function readChanged(): void {
 }
 
 /** Сколько непрочитанных — для колокольчика. */
-export function useUnreadCount() {
+export function useUnreadCount(kind: NotificationKind = APP_KIND) {
   const isAuthorized = useAuthStore((s) => s.isAuthorized);
   const userId = useAuthStore((s) => s.user?.id ?? null);
 
   const query = useQuery({
-    queryKey: ['notifications', 'unread', userId],
+    queryKey: ['notifications', 'unread', kind, userId],
     queryFn: async () => {
-      const { data } = await api.get<{ count?: unknown }>(UNREAD_URL);
+      const { data } = await api.get<{ count?: unknown }>(UNREAD_URL, { params: { type: kind } });
       return num(data?.count) ?? 0;
     },
     enabled: isAuthorized,
@@ -135,7 +163,7 @@ export function useUnreadCount() {
     const again = () => void refetch();
 
     // Пришёл push при открытом приложении — знак загорается сразу.
-    const received = Notifications.addNotificationReceivedListener(again);
+    const received = Notifications?.addNotificationReceivedListener(again);
     // Вернулись в приложение (push пришёл, пока оно было свёрнуто).
     const appState = AppState.addEventListener('change', (state) => {
       if (state === 'active') again();
@@ -143,7 +171,7 @@ export function useUnreadCount() {
     readListeners.add(again);
 
     return () => {
-      received.remove();
+      received?.remove();
       appState.remove();
       readListeners.delete(again);
     };
@@ -158,19 +186,19 @@ export function useUnreadCount() {
  * Список при этом НЕ перечитывается: подсветка «новое» остаётся до
  * ухода с экрана, иначе человек не успел бы увидеть, что именно пришло.
  */
-export function useMarkAllRead() {
+export function useMarkAllRead(kind: NotificationKind = APP_KIND) {
   const client = useQueryClient();
   const userId = useAuthStore((s) => s.user?.id ?? null);
 
   return useMutation({
     mutationFn: async () => {
-      await api.post('/api/v1/app/notifications/read');
+      await api.post('/api/v1/app/notifications/read', null, { params: { type: kind } });
     },
     onSuccess: () => {
-      client.setQueryData(['notifications', 'unread', userId], 0);
+      client.setQueryData(['notifications', 'unread', kind, userId], 0);
       // Из шторки — тоже: прочитанное там больше не нужно.
-      Notifications.dismissAllNotificationsAsync().catch(() => {});
-      Notifications.setBadgeCountAsync(0).catch(() => {});
+      Notifications?.dismissAllNotificationsAsync().catch(() => {});
+      Notifications?.setBadgeCountAsync(0).catch(() => {});
     },
   });
 }

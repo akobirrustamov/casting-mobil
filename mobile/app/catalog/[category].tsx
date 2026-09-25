@@ -177,7 +177,7 @@ export default function CatalogScreen() {
               ]
                 .filter(Boolean)
                 .join(' • ')}
-              imageUrl={item.photoUrls[0]}
+              imageUrls={item.photoUrls}
               width={cardWidth}
               onPress={() => pushOnce(`/creator/${item.id}`)}
               isFavorite={favoriteIds.has(item.id)}

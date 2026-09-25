@@ -397,6 +397,13 @@ public class MonetizationController {
     public ResponseEntity<PlatformSettingDto> updateSetting(@PathVariable String key,
                                                             @RequestBody SettingValue body) {
         require(Permission.SETTINGS_EDIT);
+        // Mobil to'lovlarni ochish/yopish — faqat SUPER_ADMIN va undan yuqori.
+        if (com.example.backend.Cms.Service.SettingKeys.MOBILE_PAYMENTS_VISIBLE.equals(key)) {
+            var role = permissionService.roleOf(CurrentUser.get());
+            if (role == null || !role.isAtLeast(com.example.backend.Enums.PlatformRole.SUPER_ADMIN)) {
+                throw BusinessException.accessDenied("Faqat SUPER_ADMIN o'zgartira oladi");
+            }
+        }
         return ResponseEntity.ok(PlatformSettingDto.from(
                 settingsService.update(CurrentUser.get(), key, body.getValue())));
     }

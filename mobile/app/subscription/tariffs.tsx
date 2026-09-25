@@ -10,6 +10,7 @@ import { Screen } from '@/components/ui/Screen';
 import { useTariffs, type Tariff } from '@/features/subscription/api';
 import { formatSum } from '@/lib/money';
 import { colors, gradients, radius } from '@/theme/tokens';
+import { withPaymentsGate } from '@/features/config/PaymentsGate';
 
 /**
  * Тарифы Premium — карточки с ценами.
@@ -29,7 +30,7 @@ import { colors, gradients, radius } from '@/theme/tokens';
  * Цена, «в месяц» и «самый выгодный» приходят из админки. Здесь ничего
  * не считается и не захардкожено: заказчик меняет цены без релиза.
  */
-export default function TariffsScreen() {
+function TariffsScreen() {
   const { t } = useTranslation();
   const tariffs = useTariffs();
 
@@ -153,3 +154,5 @@ function TariffCard({ tariff }: { tariff: Tariff }) {
     </LinearGradient>
   );
 }
+
+export default withPaymentsGate(TariffsScreen);

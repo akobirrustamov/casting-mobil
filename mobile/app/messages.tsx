@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, Pressable, Text, View } from 'react-native';
@@ -10,7 +10,9 @@ import { ScreenState } from '@/components/states/ScreenState';
 import { Screen } from '@/components/ui/Screen';
 import { useAuthStore } from '@/features/auth/store';
 import {
+  CASTING_KIND,
   internalRoute,
+  kindFromParam,
   useMarkAllRead,
   useNotifications,
   type AppNotification,
@@ -37,13 +39,20 @@ import { colors } from '@/theme/tokens';
  * Новые при этом остаются подсвеченными, пока человек на экране: иначе
  * он не увидел бы, что именно пришло.
  *
+ * <h2>Два вида (25.09.2026)</h2>
+ * `/messages` — общие уведомления (колокольчик на главной),
+ * `/messages?type=casting` — кастинговые (колокольчик во вкладке «Casting»).
+ *
  * TODO: чаты и системные сообщения (статусы заявок) — отдельный модуль.
  */
 export default function MessagesScreen() {
   const { t } = useTranslation();
   const isAuthorized = useAuthStore((s) => s.isAuthorized);
-  const notifications = useNotifications();
-  const markAllRead = useMarkAllRead();
+  const params = useLocalSearchParams<{ type?: string }>();
+  const kind = kindFromParam(params.type);
+  const title = kind === CASTING_KIND ? t('notifications.castingTitle') : t('tabs.messages');
+  const notifications = useNotifications(kind);
+  const markAllRead = useMarkAllRead(kind);
 
   const hasUnread = notifications.data?.some((item) => !item.read) ?? false;
   const { mutate: markAll } = markAllRead;
@@ -53,7 +62,7 @@ export default function MessagesScreen() {
 
   if (!isAuthorized) {
     return (
-      <Screen title={t('tabs.messages')} scroll={false} underTabBar={false} onBack={() => router.back()}>
+      <Screen title={title} scroll={false} underTabBar={false} onBack={() => router.back()}>
         <ScreenState
           kind="locked"
           body={t('notifications.signInRequired')}
@@ -66,7 +75,7 @@ export default function MessagesScreen() {
 
   return (
     <Screen
-      title={t('tabs.messages')}
+      title={title}
       underTabBar={false}
       onBack={() => router.back()}
       onRefresh={() => void notifications.refetch()}

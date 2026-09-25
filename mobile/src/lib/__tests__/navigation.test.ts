@@ -10,7 +10,12 @@ jest.mock('expo-router', () => ({
   router: { push: (...a: unknown[]) => mockPush(...a) },
 }));
 
-import { PUSH_COOLDOWN_MS, pushOnce, resetPushOnceForTests } from '../navigation';
+import {
+  PUSH_COOLDOWN_MS,
+  SAME_HREF_COOLDOWN_MS,
+  pushOnce,
+  resetPushOnceForTests,
+} from '../navigation';
 
 beforeEach(() => {
   resetPushOnceForTests();
@@ -36,7 +41,18 @@ it('замок общий: «Izohlar» и сразу «Yulduzlar» — тоже 
 it('после паузы переход снова работает', () => {
   const t0 = 1_000_000;
   expect(pushOnce('/comments/42', t0)).toBe(true);
-  expect(pushOnce('/comments/42', t0 + PUSH_COOLDOWN_MS)).toBe(true);
+  expect(pushOnce('/donors/42', t0 + PUSH_COOLDOWN_MS)).toBe(true);
+  expect(pushOnce('/donors/42', t0 + PUSH_COOLDOWN_MS + SAME_HREF_COOLDOWN_MS)).toBe(true);
 
-  expect(mockPush).toHaveBeenCalledTimes(2);
+  expect(mockPush).toHaveBeenCalledTimes(3);
 });
+
+it('медленный экран: тот же профиль через секунду не открывается второй раз', () => {
+  const t0 = 1_000_000;
+  pushOnce('/creator/7', t0);
+  pushOnce('/creator/7', t0 + 900);
+  pushOnce('/creator/7', t0 + 1600);
+
+  expect(mockPush).toHaveBeenCalledTimes(1);
+});
+

@@ -6,6 +6,23 @@ import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import { PageHeader, TableWrap } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
 import SessionsCard from './SessionsCard';
+import MobilePaymentsCard, { MOBILE_PAYMENTS_KEY } from './MobilePaymentsCard';
+
+// Ro'yxat tartibi: mantiqiy guruhlar (narx → kurs → daromad → limit → bosh sahifa).
+const ORDER = [
+  'pricing.episode.default', 'pricing.premiere.default',
+  'currency.coin.rate', 'currency.star.rate',
+  'revenue.creator.percent',
+  'account.device.limit', 'account.device.limit.web',
+  'homepage.creators.ranking',
+];
+// Faqat belgilangan qiymatlarni qabul qiladigan sozlamalar — input o'rniga select.
+const OPTIONS = { 'homepage.creators.ranking': ['MANUAL', 'STARS'] };
+
+const rank = (key) => {
+  const i = ORDER.indexOf(key);
+  return i === -1 ? ORDER.length : i;
+};
 
 /**
  * Platforma sozlamalari: narxlar, kurslar, limitlar.
@@ -21,6 +38,12 @@ export default function SettingsPage() {
   const [saveError, setSaveError] = useState(null);
 
   const canEdit = can('SETTINGS_EDIT');
+
+  // Tarjima bo'lmasa (yangi kalit) — backenddagi kalit/tavsifga qaytamiz.
+  const tr = (key, fallback) => {
+    const v = t(key);
+    return v === key ? fallback : v;
+  };
 
   const save = async (key) => {
     setSaving(key);
@@ -45,6 +68,13 @@ export default function SettingsPage() {
       <PageHeader title={t('st.title')} subtitle={t('st.subtitle')} />
       <p className="uz-muted mb-4 text-sm">{t('st.hint')}</p>
 
+      {atLeast('SUPER_ADMIN') && data && (
+        <MobilePaymentsCard
+          value={data.find((s) => s.key === MOBILE_PAYMENTS_KEY)?.value}
+          onChanged={reload}
+        />
+      )}
+
       {saveError && (
         <div role="alert" className="mb-4 px-4 py-3"
              style={{ borderRadius: 'var(--p-radius)', background: 'var(--danger-soft)',
@@ -68,18 +98,31 @@ export default function SettingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {[...data].sort((a, b) => a.key.localeCompare(b.key)).map((s) => {
+                {data.filter((s) => s.key !== MOBILE_PAYMENTS_KEY).sort((a, b) => rank(a.key) - rank(b.key) || a.key.localeCompare(b.key)).map((s) => {
                   const draft = drafts[s.key];
                   const dirty = draft !== undefined && draft !== s.value;
                   return (
                     <tr key={s.key}>
-                      <td className="uz-mono" style={{ fontSize: 12 }}>{s.key}</td>
                       <td>
-                        <input className="uz-input uz-mono" style={{ minHeight: 36 }}
-                               value={draft ?? s.value} disabled={!canEdit}
-                               onChange={(e) => setDrafts({ ...drafts, [s.key]: e.target.value })} />
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{tr(`st.k.${s.key}`, s.key)}</div>
+                        <div className="uz-mono uz-muted" style={{ fontSize: 11, marginTop: 2 }}>{s.key}</div>
                       </td>
-                      <td className="uz-muted" style={{ fontSize: 12 }}>{s.description}</td>
+                      <td>
+                        {OPTIONS[s.key] ? (
+                          <select className="uz-input" style={{ minHeight: 36 }}
+                                  value={draft ?? s.value} disabled={!canEdit}
+                                  onChange={(e) => setDrafts({ ...drafts, [s.key]: e.target.value })}>
+                            {OPTIONS[s.key].map((o) => (
+                              <option key={o} value={o}>{tr(`st.opt.${o}`, o)}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input className="uz-input uz-mono" style={{ minHeight: 36 }}
+                                 value={draft ?? s.value} disabled={!canEdit}
+                                 onChange={(e) => setDrafts({ ...drafts, [s.key]: e.target.value })} />
+                        )}
+                      </td>
+                      <td className="uz-muted" style={{ fontSize: 12 }}>{tr(`st.d.${s.key}`, s.description)}</td>
                       <td style={{ textAlign: 'right' }}>
                         {canEdit && dirty && (
                           <button type="button" className="uz-btn uz-btn-primary"

@@ -6,13 +6,15 @@ import "react-responsive-modal/styles.css";
 import { useNavigate } from "react-router-dom";
 import { FaArrowDown, FaCheckCircle } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
-import bg from "../../images/bg.jpg"
+import bgLarge from "../../images/bg-1600.webp"
+import bgSmall from "../../images/bg-800.webp"
 import VideoWithLightAnimation from "./VideoWithLightAnimation"
-import face from "../../images/bashara.png"
-import banner from "../../images/banner.jpg"
-import one from "../../images/1.jpg"
-import two from "../../images/2.jpg"
-import three from "../../images/3.jpg"
+import LiteYouTube from "./LiteYouTube"
+import face from "../../images/bashara.webp"
+import banner from "../../images/banner.webp"
+import one from "../../images/1.webp"
+import two from "../../images/2.webp"
+import three from "../../images/3.webp"
 import Footer from "../footer/Footer"
 import { motion } from "framer-motion";
 import { fadeIn } from "../framerMotion/variants";
@@ -45,7 +47,8 @@ function Home() {
             <Header />
             <VideoWithLightAnimation
                 src={`${process.env.PUBLIC_URL}/videos/sahna.mp4`}
-                poster={bg}
+                // Telefonga 1600px rasm kerak emas
+                poster={typeof window !== "undefined" && window.innerWidth < 768 ? bgSmall : bgLarge}
                 alt="Sahna ortidagi lavhalar"
             />
 
@@ -120,7 +123,7 @@ function Home() {
                 className="px-4 pt-[clamp(20px,3vw,36px)] pb-2">
                 <div className="max-w-[1200px] mx-auto grid gap-10 grid-cols-[360px_1fr] max-[900px]:grid-cols-1 bg-white/[0.04] border border-white/[0.08] rounded-[18px] p-4">
                     <div className="[&_img]:w-full [&_img]:h-auto [&_img]:block [&_img]:rounded-2xl [&_img]:border [&_img]:border-white/[0.08] [&_img]:shadow-[0_18px_40px_rgba(0,0,0,0.35)] [&_img]:object-cover">
-                        <img src={face} alt="Sattorov Jasur — Producer / Director" />
+                        <img src={face} alt="Sattorov Jasur — Producer / Director" width="467" height="401" loading="lazy" decoding="async" />
                     </div>
                     <div className="[&_h2]:mt-2 [&_h2]:mb-2.5 [&_h2]:mx-0 [&_h2]:text-[clamp(22px,2.6vw,28px)] [&_h2]:font-extrabold [&_p]:m-0 [&_p]:text-[#cfd6e6] [&_p]:leading-[1.65] [&_p]:text-justify">
                         <h2>{t("director.heading")}</h2>
@@ -144,27 +147,20 @@ function Home() {
                         className="flex flex-col gap-[18px]"
                     >
                         <div className="bg-white/[0.04] border border-white/[0.08] rounded-[18px] p-3 [&_img]:w-full [&_img]:rounded-[14px] [&_img]:object-cover [&_figcaption]:text-[13px] [&_figcaption]:text-[#bfc7d6] [&_figcaption]:mt-2 [&_figcaption]:text-center">
-                            <img src={banner} alt="Maxsus Bo‘lim — poster" />
+                            <img src={banner} alt="Maxsus Bo‘lim — poster" width="960" height="540" loading="lazy" decoding="async" />
                             <figcaption>{t("showcase.films.posterCaption")}</figcaption>
                         </div>
 
-                        <div className="[&_iframe]:rounded-[14px] [&_iframe]:border [&_iframe]:border-white/[0.08] [&_iframe]:shadow-[0_8px_20px_rgba(0,0,0,0.35)]">
-                            <iframe
-                                width="100%"
-                                height="315"
-                                src="https://www.youtube.com/embed/gF6kaevugtk?si=gWYT4VdZw32Cvxlf"
-                                title="YouTube video player"
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                referrerPolicy="strict-origin-when-cross-origin"
-                                allowFullScreen
-                            ></iframe>
-                        </div>
+                        <LiteYouTube
+                            id="gF6kaevugtk"
+                            title="YouTube video player"
+                            className="rounded-[14px] border border-white/[0.08] shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
+                        />
 
                         <div className="flex gap-1 w-full">
-                            <img className="w-1/3" src={one} alt="one" />
-                            <img className="w-1/3" src={two} alt="two" />
-                            <img className="w-1/3" src={three} alt="three" />
+                            <img className="w-1/3" src={one} alt="one" width="400" height="642" loading="lazy" decoding="async" />
+                            <img className="w-1/3" src={two} alt="two" width="400" height="642" loading="lazy" decoding="async" />
+                            <img className="w-1/3" src={three} alt="three" width="400" height="642" loading="lazy" decoding="async" />
                         </div>
                     </motion.div>
 
@@ -233,29 +229,25 @@ function Home() {
 
                 <div className="max-w-[1200px] mx-auto grid gap-5 grid-cols-[repeat(auto-fit,minmax(300px,1fr))]">
                     {[
-                        "https://www.youtube.com/embed/G650mrCmNWM?si=BEXo0vfEoU93_n3K",
-                        "https://www.youtube.com/embed/w_ZOD_y68w0?si=ETVpry5UL02ocOJJ",
-                        "https://www.youtube.com/embed/6chd2yev_Ug?si=KFRsU4NaMZ4eKq-d",
-                        "https://www.youtube.com/embed/jGnlnNCW_WA?si=7z0xUgPCqe1uTInb",
-                        "https://www.youtube.com/embed/_Ns_0M_1F3g?si=2yU5ZJN3Y32QhuwO",
-                        "https://www.youtube.com/embed/npTIpW3IFHI?si=rSYmZ00uXQ_LTjS_",
-                    ].map((src, index) => (
+                        "G650mrCmNWM",
+                        "w_ZOD_y68w0",
+                        "6chd2yev_Ug",
+                        "jGnlnNCW_WA",
+                        "_Ns_0M_1F3g",
+                        "npTIpW3IFHI",
+                    ].map((id, index) => (
                         <motion.div
                             key={index}
                             variants={fadeIn("up", 0.2 * index)}
                             initial="hidden"
                             whileInView="show"
                             viewport={{ once: false, amount: 0 }}
-                            className="[&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-[14px] [&_iframe]:border [&_iframe]:border-white/[0.08] [&_iframe]:shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
                         >
-                            <iframe
-                                src={src}
+                            <LiteYouTube
+                                id={id}
                                 title={`YouTube video player ${index + 1}`}
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                referrerPolicy="strict-origin-when-cross-origin"
-                                allowFullScreen
-                            ></iframe>
+                                className="rounded-[14px] border border-white/[0.08] shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
+                            />
                         </motion.div>
                     ))}
                 </div>

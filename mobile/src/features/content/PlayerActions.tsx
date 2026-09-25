@@ -13,6 +13,7 @@ import { openComments } from '@/features/comments/CommentsScreen';
 import type { ContentDetail } from './detail';
 import { openDonors } from './DonorsScreen';
 import { useContentLike } from './like';
+import { usePaymentsVisible } from '@/features/config/api';
 
 /**
  * Ряд действий НА КАДРЕ — левый нижний угол макета от 10.09.2026.
@@ -38,6 +39,7 @@ export function PlayerActions({
   info: WatchInfo | undefined;
 }) {
   const like = useContentLike(contentId, detail, info);
+  const paymentsVisible = usePaymentsVisible();
 
   const stars = detail?.starsReceived ?? info?.starsReceived ?? null;
   const coins = detail?.coinsReceived ?? info?.coinsReceived ?? null;
@@ -68,22 +70,26 @@ export function PlayerActions({
         disabled={contentId === null}
       />
 
-      <Action
-        icon="star-outline"
-        color={colors.white}
-        value={stars}
-        label="Yulduzlar"
-        onPress={() => contentId !== null && openDonors(contentId, 'STARS')}
-        disabled={contentId === null}
-      />
-      <Action
-        icon="coin"
-        color={colors.white}
-        value={coins}
-        label="Uzcasting"
-        onPress={() => contentId !== null && openDonors(contentId, 'UZCASTING_COIN')}
-        disabled={contentId === null}
-      />
+      {paymentsVisible ? (
+        <>
+          <Action
+            icon="star-outline"
+            color={colors.white}
+            value={stars}
+            label="Yulduzlar"
+            onPress={() => contentId !== null && openDonors(contentId, 'STARS')}
+            disabled={contentId === null}
+          />
+          <Action
+            icon="coin"
+            color={colors.white}
+            value={coins}
+            label="Uzcasting"
+            onPress={() => contentId !== null && openDonors(contentId, 'UZCASTING_COIN')}
+            disabled={contentId === null}
+          />
+        </>
+      ) : null}
     </>
   );
 }
@@ -112,19 +118,19 @@ function Action({
       {icon === 'coin' ? (
         // Фирменная серебряная монета как есть, без перекраски
         // (заказчик, 15.09.2026) — та же, что в донатах и в профиле.
-        <Image source={coinIcon} style={{ width: 20, height: 20 }} contentFit="contain" />
+        <Image source={coinIcon} style={{ width: 26, height: 26 }} contentFit="contain" />
       ) : (
-        <Ionicons name={icon} size={18} color={color} />
+        <Ionicons name={icon} size={24} color={color} />
       )}
       {/* Число рядом, а не под знаком: на кадре высоты под вторую строку
           нет — ряд стоит в одной полосе с «на весь экран». Пустое — «0»,
           как и на плитках страницы (заказчик, 10.09.2026). */}
-      <Text className="text-micro text-white">{compactCount(value ?? 0)}</Text>
+      <Text className="text-caption font-semibold text-white">{compactCount(value ?? 0)}</Text>
     </>
   );
 
   if (!onPress) {
-    return <View className="flex-row items-center gap-1">{body}</View>;
+    return <View className="flex-row items-center gap-1.5">{body}</View>;
   }
 
   return (
@@ -135,7 +141,7 @@ function Action({
       accessibilityLabel={label}
       accessibilityState={{ selected, busy: disabled }}
       hitSlop={10}
-      className="flex-row items-center gap-1 active:opacity-60"
+      className="flex-row items-center gap-1.5 active:opacity-60"
     >
       {body}
     </Pressable>

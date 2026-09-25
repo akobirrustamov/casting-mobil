@@ -443,6 +443,7 @@
     "signInRequired": "Profilni tahrirlash uchun hisobingizga kiring."
   },
   "notifications": {
+    "castingTitle": "Kasting xabarlari",
     "empty": "Hozircha xabar yo'q.",
     "untitled": "Sarlavhasiz xabar",
     "signInRequired": "Xabarlarni ko'rish uchun hisobingizga kiring."
@@ -462,6 +463,11 @@
     "noDataYet": "Bu yo'nalish bo'yicha anketalar hali qo'shilmagan."
   },
   "creator": {
+    "type": "Yo'nalish",
+    "nationality": "Millati",
+    "hairColor": "Soch rangi",
+    "eyeColor": "Ko'z rangi",
+    "photos": "Rasmlar: {{count}} ta",
     "age": "Yosh",
     "height": "Bo'y",
     "region": "Viloyat",

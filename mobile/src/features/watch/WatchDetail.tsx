@@ -26,6 +26,7 @@ import {
 } from './api';
 import { Player, playbackSource } from './Player';
 import type { RequiredAction, WatchInfo } from './types';
+import { usePaymentsVisible } from '@/features/config/api';
 
 /**
  * Экран просмотра — общий для цельного контента (17) и отдельной серии.
@@ -427,7 +428,10 @@ function Facts({ info, card }: { info: WatchInfo; card: ContentCard | undefined 
     views !== null ? t('content.views', { value: compactCount(views) }) : null,
   ].filter((f): f is string => Boolean(f));
 
-  const badge = info.allowed ? accessBadge(info.reason) : null;
+  const paymentsVisible = usePaymentsVisible();
+  const rawBadge = info.allowed ? accessBadge(info.reason) : null;
+  // Платежи скрыты — остаётся только «Bepul».
+  const badge = paymentsVisible || rawBadge?.key === 'common.free' ? rawBadge : null;
 
   if (facts.length === 0 && badge === null) return null;
 

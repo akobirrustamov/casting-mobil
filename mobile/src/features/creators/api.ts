@@ -33,15 +33,25 @@ function calcAge(birthday: string | null): number | null {
   return age >= 0 && age <= 100 ? age : null;
 }
 
+/** Пустая строка с API — то же, что «не указано». */
+function text(value: string | null | undefined): string | null {
+  const trimmed = (value ?? '').trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 function mapCreator(dto: CastingUserDto): Creator {
   return {
     id: dto.id,
     name: dto.name,
     castingType: toCastingType(dto.castingType),
+    castingTypeRaw: text(dto.castingType),
     gender: dto.gender,
     region: dto.region,
+    nationality: text(dto.nationality),
     age: dto.age ?? calcAge(dto.birthday),
     height: dto.height,
+    hairColor: text(dto.hairColor),
+    eyeColor: text(dto.eyeColor),
     // Сайт показывает только isWebShow-фото. Повторяем то же правило.
     photoUrls: (dto.photos ?? []).filter((p) => p.isWebShow).map((p) => fileUrl(p.id)),
   };

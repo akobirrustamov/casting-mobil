@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useIsFocused } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Defs, Path, Text as SvgText, TextPath } from 'react-native-svg';
@@ -49,8 +50,13 @@ export function ApplyFab({
   const spin = useRef(new Animated.Value(0)).current;
   const shine = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(0)).current;
+  // Вкладки не размонтируются: без этого три бесконечные анимации
+  // крутились бы и тогда, когда «Casting» скрыт за другой вкладкой.
+  const focused = useIsFocused();
 
   useEffect(() => {
+    if (!focused) return;
+
     const spinLoop = Animated.loop(
       Animated.timing(spin, {
         toValue: 1,
@@ -96,7 +102,7 @@ export function ApplyFab({
       shineLoop.stop();
       pulseLoop.stop();
     };
-  }, [spin, shine, pulse]);
+  }, [focused, spin, shine, pulse]);
 
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
   const shineX = shine.interpolate({ inputRange: [0, 1], outputRange: [-CORE, CORE] });

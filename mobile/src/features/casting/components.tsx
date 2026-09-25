@@ -9,6 +9,7 @@ import { formatSum } from '@/lib/money';
 import { colors } from '@/theme/tokens';
 
 import { applicationStatusView, formatDate, type MyApplication } from './status';
+import { usePaymentsVisible } from '@/features/config/api';
 
 /**
  * Мелкие блоки раздела кастинга — общие для кандидата и админки.
@@ -323,7 +324,14 @@ export function ApplicationStatusBlock({
   compact?: boolean;
 }) {
   const { t } = useTranslation();
-  const view = applicationStatusView(app);
+  const paymentsVisible = usePaymentsVisible();
+  const rawView = applicationStatusView(app);
+  // Платежи скрыты — ни строки цены, ни заметки об оплате.
+  const paymentNote =
+    rawView.noteKey === 'casting.status.paid' || rawView.noteKey === 'casting.status.paymentSoon';
+  const view = paymentsVisible
+    ? rawView
+    : { ...rawView, noteKey: paymentNote ? null : rawView.noteKey };
   const typeLabel = t(`casting.types.${app.castingType}`, { defaultValue: app.castingType });
 
   const body = (
@@ -342,7 +350,7 @@ export function ApplicationStatusBlock({
         <Badge tone={view.tone}>{t(view.labelKey)}</Badge>
       </View>
 
-      {app.status === 'APPROVED' ? (
+      {paymentsVisible && app.status === 'APPROVED' ? (
         <View className="flex-row items-center justify-between">
           <Text className="text-body text-text-muted">{t('casting.status.price')}</Text>
           <Text className="text-body font-semibold text-text">

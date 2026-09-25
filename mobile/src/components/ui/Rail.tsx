@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { colors } from '@/theme/tokens';
@@ -43,6 +43,9 @@ export function Rail({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        // Android: карточки за краем отцепляются от нативного дерева —
+        // меньше рисовать при прокрутке главной.
+        removeClippedSubviews={Platform.OS === 'android'}
         contentContainerClassName="gap-3 pr-4"
       >
         {children}
