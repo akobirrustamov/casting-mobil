@@ -72,6 +72,15 @@ Qilinishi kerak:
    «Generate a new Apple Push Notifications service key?» deb so'raganda — **Yes**.
 4. Sinov: `npx eas-cli submit -p ios` → TestFlight. `preview` (internal) profilida esa har bir iPhone'ni oldindan ro'yxatdan o'tkazish kerak (`npx eas-cli device:create`).
 
+## O'qilgan / o'qilmagan va logo (25.09.2026)
+
+- Qo'ng'iroqchada qizil belgi — o'qilmaganlar soni: `GET /api/v1/app/notifications/unread-count`. Push kelganda (ilova ochiq bo'lsa) va ilovaga qaytilganda yangilanadi.
+- «Xabarlar» ochilganda hammasi o'qilgan bo'ladi: `POST /api/v1/app/notifications/read`. Push bosilib to'g'ridan-to'g'ri havolaga o'tilsa, faqat o'sha xabar o'qilgan bo'ladi: `POST /api/v1/app/notifications/{id}/read`.
+- Belgilar `cms_notification_read` jadvalida (`V43`) saqlanadi. Ular odamga tegishli, qurilmaga emas.
+- Telefondagi logo:
+  - **Kichik ikonka** (`assets/notification-icon.png`) — oq siluet. Android uni `app.json`dagi `color` bilan bo'yaydi. Oldin rang `#05050A` edi, qorong'i panelda logo ko'rinmasdi. Endi `#A855F7`. ⚠️ Bu native sozlama, shuning uchun **yangi APK kerak**.
+  - **Rangli logo** xabarning o'ng tomonida rasm bo'lib chiqadi: backend Expo'ga `richContent.image` yuboradi. Admin rasm biriktirgan bo'lsa o'sha rasm, bo'lmasa `https://uzcasting.com/logo.png`. Manzilni `app.push.public-base-url` va `app.push.logo-path` bilan o'zgartirish mumkin. Bu faqat Android'da ishlaydi. iOS'da rasm uchun Notification Service Extension kerak.
+
 ## Server
 
 Qo'shimcha sozlash kerak emas: push sukut bo'yicha yoqilgan. Ixtiyoriy parametrlar (`application.properties`):

@@ -7,7 +7,7 @@ import { track } from '@/features/analytics/api';
 import { useAuthStore } from '@/features/auth/store';
 import { useDeviceStore } from '@/features/devices/store';
 
-import { internalRoute } from './api';
+import { internalRoute, markRead } from './api';
 import { registerPushToken } from './pushToken';
 
 /**
@@ -56,6 +56,9 @@ export function openPushTarget(raw: unknown): void {
   const notificationId = num(data.notificationId);
   if (notificationId != null) {
     track({ type: 'NOTIFICATION_OPEN', targetId: notificationId });
+    // Сразу по ссылке, мимо списка — иначе знак на колокольчике так и
+    // горел бы из-за сообщения, которое человек уже открыл.
+    void markRead(notificationId);
   }
 
   const linkType = str(data.linkType);

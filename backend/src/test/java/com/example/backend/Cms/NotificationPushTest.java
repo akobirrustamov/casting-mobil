@@ -175,6 +175,22 @@ class NotificationPushTest {
             assertThat(m.data()).containsEntry("notificationId", n.getId());
         }
 
+        /**
+         * Android'ning kichik ikonkasi oq siluet, rangli logo faqat rasm
+         * bo'lib chiqadi. Rasm manzili ochiq bo'lishi shart — telefon
+         * uni tokensiz yuklaydi.
+         */
+        @Test
+        @DisplayName("Rasm biriktirilmagan xabarda UzCasting logosi")
+        void logoWhenNoImage() {
+            String tok = "ExponentPushToken[logo-" + SEQ.incrementAndGet() + "]";
+            device(user(null), tok);
+
+            pushService.deliver(sent(NotificationAudience.ALL).getId());
+
+            assertThat(messageFor(tok).image()).isEqualTo("https://uzcasting.com/logo.png");
+        }
+
         @Test
         @DisplayName("PREMIUM_ONLY — premiumsizga push ketmaydi")
         void audienceIsRespected() {

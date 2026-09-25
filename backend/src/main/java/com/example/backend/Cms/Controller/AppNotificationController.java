@@ -2,10 +2,12 @@ package com.example.backend.Cms.Controller;
 
 import com.example.backend.Admin.CurrentUser;
 import com.example.backend.Cms.Entity.Notification;
+import com.example.backend.Cms.Entity.NotificationRead;
 import com.example.backend.Cms.Entity.NotificationTranslation;
 import com.example.backend.Cms.Enums.Locale;
 import com.example.backend.Cms.Enums.NotificationAudience;
 import com.example.backend.Cms.Enums.NotificationStatus;
+import com.example.backend.Cms.Repository.NotificationReadRepo;
 import com.example.backend.Cms.Repository.NotificationRepo;
 import com.example.backend.Cms.Service.AccessService;
 import com.example.backend.Cms.Service.HomeFeedService;
@@ -18,12 +20,17 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Bildirishnomalar — ilova ichida o'qish.
@@ -39,11 +46,18 @@ import java.util.List;
  * ketmaydi). Lekin ilova ichida ro'yxatni ko'rsatish uchun push kerak
  * emas: xabar bazada turibdi va uni o'qish mumkin.
  *
- * <h2>«O'qilgan» belgisi YO'Q — ataylab</h2>
- * U alohida jadval talab qiladi (kim nimani o'qigan) va har ochilishda
- * yozuv. Buyurtmachiga birinchi versiyada bu taklif qilinmadi: xabarlar
- * kam, va o'qilmaganlar soni uchun butun jadval saqlash erta. Kerak
- * bo'lsa keyin qo'shiladi — hozirgi shakl unga xalaqit bermaydi.
+ * <h2>«O'qilgan» belgisi (25.09.2026)</h2>
+ * Buyurtmachi: qo'ng'iroqchada «yangi xabar bor» qizil belgisi chiqsin,
+ * «Xabarlar» ochilganda esa xabarlar o'qilgan bo'lsin. Belgi
+ * {@code cms_notification_read} da (V43) — odamga tegishli, qurilmaga
+ * emas.
+ * <ul>
+ *   <li>{@code GET /unread-count} — qo'ng'iroqchadagi son;</li>
+ *   <li>{@code POST /read} — ekran ochildi, ko'rinayotganlarning hammasi
+ *       o'qildi;</li>
+ *   <li>{@code POST /{id}/read} — push bosildi va xabar ekrani
+ *       ochilmasdan to'g'ridan-to'g'ri havolaga o'tildi.</li>
+ * </ul>
  */
 @RestController
 @RequestMapping("/api/v1/app/notifications")
@@ -60,6 +74,7 @@ public class AppNotificationController {
     private static final int LIMIT = 50;
 
     private final NotificationRepo notificationRepo;
+    private final NotificationReadRepo readRepo;
     private final AccessService accessService;
     private final HomeFeedService homeFeedService;
 
@@ -77,18 +92,8 @@ public class AppNotificationController {
 
         User user = CurrentUser.get();
         Locale resolved = homeFeedService.resolveLanguage(user, locale);
-        boolean premium = accessService.premiumStatus(user).active();
-
-        // ⚠️ Faqat YUBORILGANLARI. Qoralama va rejalashtirilgani hali
-        // xabar emas: birinchisi tayyor emas, ikkinchisining vaqti
-        // kelmagan — ikkalasi ham ilovada ko'rinmasligi kerak.
-        List<Notification> sent = notificationRepo
-                .findAllByOrderByCreatedAtDesc(PageRequest.of(0, LIMIT * 2))
-                .getContent().stream()
-                .filter(n -> n.getStatus() == NotificationStatus.SENT)
-                .filter(n -> matches(n.getAudience(), premium))
-                .limit(LIMIT)
-                .toList();
+        List<Notification> sent = visible(user);
+        Set<Long> read = readIds(user, sent);
 
         // Tarjimalar alohida so'rov bilan — sahifalash bilan fetch join
         // birga ishlamaydi (`NotificationRepo` izohida yozilgan).
@@ -102,10 +107,97 @@ public class AppNotificationController {
                         .filter(x -> x.getId().equals(n.getId()))
                         .findFirst()
                         .orElse(n))
-                .map(n -> map(n, resolved))
+                .map(n -> map(n, resolved, read.contains(n.getId())))
                 .toList();
 
         return ResponseEntity.ok(result);
+    }
+
+    /**
+     * O'qilmaganlar soni — qo'ng'iroqchadagi qizil belgi.
+     *
+     * ⚠️ Ro'yxat bilan BIR XIL to'plamdan sanaladi ({@link #visible}).
+     * Aks holda belgi odamga ko'rsatilmaydigan (boshqa auditoriya)
+     * xabarlarni ham sanardi va ekran ochilgandan keyin ham o'chmasdi.
+     */
+    @GetMapping("/unread-count")
+    @Transactional(readOnly = true)
+    public ResponseEntity<Map<String, Long>> unreadCount() {
+        User user = CurrentUser.get();
+        List<Notification> sent = visible(user);
+        Set<Long> read = readIds(user, sent);
+        long unread = sent.stream().filter(n -> !read.contains(n.getId())).count();
+        return ResponseEntity.ok(Map.of("count", unread));
+    }
+
+    /** «Xabarlar» ochildi — ko'rinayotgan hamma xabar o'qildi. */
+    @PostMapping("/read")
+    @Transactional
+    public ResponseEntity<Void> readAll() {
+        User user = CurrentUser.get();
+        List<Notification> sent = visible(user);
+        Set<Long> read = readIds(user, sent);
+        markRead(user, sent.stream().map(Notification::getId).filter(id -> !read.contains(id)).toList());
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Bitta xabar o'qildi — push bosilib, havolaga to'g'ridan-to'g'ri
+     * o'tilganda.
+     *
+     * ⚠️ Faqat shu odamga KO'RINADIGAN xabar belgilanadi: mavjud bo'lmagan
+     * id chet el kalitiga urilib 500 berardi, boshqa auditoriyaning
+     * xabari esa jadvalda ma'nosiz qator bo'lib qolardi.
+     */
+    @PostMapping("/{id}/read")
+    @Transactional
+    public ResponseEntity<Void> readOne(@PathVariable Long id) {
+        User user = CurrentUser.get();
+        boolean visible = visible(user).stream().anyMatch(n -> n.getId().equals(id));
+        if (visible && readRepo.findReadIds(user.getId(), List.of(id)).isEmpty()) {
+            markRead(user, List.of(id));
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Shu odamga ko'rsatiladigan xabarlar — yangi birinchi.
+     *
+     * ⚠️ Faqat YUBORILGANLARI. Qoralama va rejalashtirilgani hali
+     * xabar emas: birinchisi tayyor emas, ikkinchisining vaqti
+     * kelmagan — ikkalasi ham ilovada ko'rinmasligi kerak.
+     */
+    private List<Notification> visible(User user) {
+        boolean premium = accessService.premiumStatus(user).active();
+        return notificationRepo
+                .findAllByOrderByCreatedAtDesc(PageRequest.of(0, LIMIT * 2))
+                .getContent().stream()
+                .filter(n -> n.getStatus() == NotificationStatus.SENT)
+                .filter(n -> matches(n.getAudience(), premium))
+                .limit(LIMIT)
+                .toList();
+    }
+
+    private Set<Long> readIds(User user, List<Notification> notifications) {
+        if (notifications.isEmpty()) {
+            return Set.of();
+        }
+        return new HashSet<>(readRepo.findReadIds(user.getId(),
+                notifications.stream().map(Notification::getId).toList()));
+    }
+
+    private void markRead(User user, List<Long> ids) {
+        if (ids.isEmpty()) {
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        readRepo.saveAll(ids.stream()
+                .map(id -> NotificationRead.builder()
+                        .userId(user.getId())
+                        .notificationId(id)
+                        .readAt(now)
+                        .build())
+                .toList());
     }
 
     /**
@@ -123,7 +215,7 @@ public class AppNotificationController {
         return audience == NotificationAudience.PREMIUM_ONLY ? premium : !premium;
     }
 
-    private NotificationDto map(Notification n, Locale locale) {
+    private NotificationDto map(Notification n, Locale locale, boolean read) {
         NotificationTranslation text = TranslationPicker.pick(
                 n.getTranslations(), locale, NotificationTranslation::getLocale);
 
@@ -138,6 +230,7 @@ public class AppNotificationController {
                 .targetType(n.getLink() == null || n.getLink().getInternalTargetType() == null
                         ? null : n.getLink().getInternalTargetType().name())
                 .targetId(n.getLink() == null ? null : n.getLink().getInternalTargetId())
+                .read(read)
                 .build();
     }
 
@@ -171,5 +264,8 @@ public class AppNotificationController {
         /** Ichki havola: nimaga va qaysi id ga. */
         private String targetType;
         private Long targetId;
+
+        /** Shu odam o'qiganmi. */
+        private boolean read;
     }
 }

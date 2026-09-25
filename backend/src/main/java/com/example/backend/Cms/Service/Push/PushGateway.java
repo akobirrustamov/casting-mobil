@@ -21,7 +21,13 @@ public interface PushGateway {
      */
     List<PushResult> send(List<PushMessage> messages);
 
-    record PushMessage(String token, String title, String body, Map<String, Object> data) {
+    /**
+     * @param image rasm manzili (ochiq, to'liq URL) yoki {@code null}.
+     *              Android'da bildirishnomaning o'ng tomonida kichik rasm
+     *              bo'lib chiqadi, ochilganda — katta.
+     */
+    record PushMessage(String token, String title, String body, Map<String, Object> data,
+                       String image) {
     }
 
     /**
