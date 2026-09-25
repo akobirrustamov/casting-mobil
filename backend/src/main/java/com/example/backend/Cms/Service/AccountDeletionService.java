@@ -5,6 +5,7 @@ import com.example.backend.Cms.Enums.UserStatus;
 import com.example.backend.Cms.Repository.CommentReportRepo;
 import com.example.backend.Cms.Repository.UserAccountRepo;
 import com.example.backend.Cms.Repository.UserDeviceRepo;
+import com.example.backend.Cms.Repository.NotificationReadRepo;
 import com.example.backend.Cms.Repository.UserFavoriteRepo;
 import com.example.backend.Cms.Repository.WatchProgressRepo;
 import com.example.backend.Entity.User;
@@ -89,6 +90,7 @@ public class AccountDeletionService {
     private final RefreshTokenRepo refreshTokenRepo;
     private final UserDeviceRepo deviceRepo;
     private final UserFavoriteRepo favoriteRepo;
+    private final NotificationReadRepo notificationReadRepo;
     private final WatchProgressRepo watchProgressRepo;
     private final CommentReportRepo commentReportRepo;
     private final PasswordEncoder passwordEncoder;
@@ -107,6 +109,7 @@ public class AccountDeletionService {
         // 2. Shaxsiy ro'yxatlar.
         deviceRepo.deleteByUserId(id);
         favoriteRepo.deleteByUserId(id);
+        notificationReadRepo.deleteByUserId(id);
         watchProgressRepo.deleteByUserId(id);
         commentReportRepo.deleteByUserId(id);
 

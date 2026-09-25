@@ -12,6 +12,7 @@ import com.example.backend.Cms.Service.TranslationPicker;
 import com.example.backend.Cms.Service.Push.PushGateway.PushMessage;
 import com.example.backend.Cms.Service.Push.PushGateway.PushResult;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.event.TransactionPhase;
@@ -61,6 +62,22 @@ public class NotificationPushService {
     private final UserDeviceRepo deviceRepo;
     private final PushGateway gateway;
     private final TransactionTemplate tx;
+
+    /**
+     * Push rasmi uchun ochiq manzil — telefon rasmni tokensiz yuklaydi.
+     *
+     * <h2>⚠️ Nega logo (25.09.2026)</h2>
+     * Buyurtmachi: telefonga kelgan xabarda UzCasting logosi ko'rinsin.
+     * Android'ning kichik ikonkasi faqat oq siluet (tizim uni bir rangga
+     * bo'yaydi), rangli logo esa faqat rasm sifatida chiqadi. Admin
+     * xabarga rasm biriktirgan bo'lsa — o'sha rasm, bo'lmasa — logo.
+     */
+    @Value("${app.push.public-base-url:https://uzcasting.com}")
+    private String publicBaseUrl;
+
+    @Value("${app.push.logo-path:/logo.png}")
+    private String logoPath;
+
     private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "notification-push");
         t.setDaemon(true);
@@ -173,6 +190,7 @@ public class NotificationPushService {
 
         Map<Locale, NotificationTranslation> textCache = new HashMap<>();
         Map<String, Object> data = payload(n);
+        String image = image(n);
 
         List<PushMessage> out = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
@@ -194,9 +212,26 @@ public class NotificationPushService {
                 continue;
             }
             out.add(new PushMessage(t.getPushToken(), text.getTitle(),
-                    truncate(text.getBody(), MAX_BODY), data));
+                    truncate(text.getBody(), MAX_BODY), data, image));
         }
         return out;
+    }
+
+    /** Admin rasmi — {@code /api/v1/app/media/{id}/raw} ochiq; yo'q bo'lsa logo. */
+    String image(Notification n) {
+        if (publicBaseUrl == null || publicBaseUrl.isBlank()) {
+            return null;
+        }
+        String root = publicBaseUrl.endsWith("/")
+                ? publicBaseUrl.substring(0, publicBaseUrl.length() - 1)
+                : publicBaseUrl;
+        if (n.getImage() != null) {
+            return root + "/api/v1/app/media/" + n.getImage().getId() + "/raw";
+        }
+        if (logoPath == null || logoPath.isBlank()) {
+            return null;
+        }
+        return root + (logoPath.startsWith("/") ? logoPath : "/" + logoPath);
     }
 
     /** Ilova bosilganda qayerga ochishini shu ma'lumotdan biladi. */

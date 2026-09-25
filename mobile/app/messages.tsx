@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, Pressable, Text, View } from 'react-native';
 
@@ -10,6 +11,7 @@ import { Screen } from '@/components/ui/Screen';
 import { useAuthStore } from '@/features/auth/store';
 import {
   internalRoute,
+  useMarkAllRead,
   useNotifications,
   type AppNotification,
 } from '@/features/notifications/api';
@@ -30,9 +32,10 @@ import { colors } from '@/theme/tokens';
  * настоящий — `GET /api/v1/app/notifications`, на языке интерфейса, с
  * учётом аудитории (для всех / только Premium / только без Premium).
  *
- * <h2>Чего здесь нет</h2>
- * Отметки «прочитано» и счётчика непрочитанного: они требуют отдельной
- * таблицы, а сообщений пока мало.
+ * <h2>Прочитано (25.09.2026)</h2>
+ * Открыл экран — всё видимое прочитано, знак на колокольчике гаснет.
+ * Новые при этом остаются подсвеченными, пока человек на экране: иначе
+ * он не увидел бы, что именно пришло.
  *
  * TODO: чаты и системные сообщения (статусы заявок) — отдельный модуль.
  */
@@ -40,6 +43,13 @@ export default function MessagesScreen() {
   const { t } = useTranslation();
   const isAuthorized = useAuthStore((s) => s.isAuthorized);
   const notifications = useNotifications();
+  const markAllRead = useMarkAllRead();
+
+  const hasUnread = notifications.data?.some((item) => !item.read) ?? false;
+  const { mutate: markAll } = markAllRead;
+  useEffect(() => {
+    if (hasUnread) markAll();
+  }, [hasUnread, markAll]);
 
   if (!isAuthorized) {
     return (
@@ -106,7 +116,11 @@ function NotificationCard({ item }: { item: AppNotification }) {
   };
 
   const body = (
-    <View className="gap-3 rounded-card bg-surface p-4">
+    <View
+      className="gap-3 rounded-card bg-surface p-4"
+      // Новое — фиолетовая рамка: видно, что именно пришло.
+      style={item.read ? undefined : { borderWidth: 1, borderColor: colors.purple }}
+    >
       {item.imageUrl ? (
         <Image
           source={{ uri: item.imageUrl }}
@@ -118,7 +132,17 @@ function NotificationCard({ item }: { item: AppNotification }) {
 
       <View className="flex-row items-start gap-3">
         <View className="h-11 w-11 items-center justify-center rounded-pill bg-surface-2">
-          <Ionicons name="notifications-outline" size={20} color={colors.textMuted} />
+          <Ionicons
+            name={item.read ? 'notifications-outline' : 'notifications'}
+            size={20}
+            color={item.read ? colors.textMuted : colors.violet}
+          />
+          {item.read ? null : (
+            <View
+              style={{ borderWidth: 2, borderColor: colors.surface2 }}
+              className="absolute right-0.5 top-0.5 h-3 w-3 rounded-pill bg-danger"
+            />
+          )}
         </View>
 
         <View className="flex-1 gap-1">

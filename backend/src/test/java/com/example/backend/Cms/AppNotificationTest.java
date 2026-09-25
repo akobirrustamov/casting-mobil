@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -168,6 +169,100 @@ class AppNotificationTest {
             mockMvc.perform(get(URL).header("Authorization", token(user())))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$").isArray());
+        }
+    }
+
+    /**
+     * Qo'ng'iroqchadagi qizil belgi va «o'qildi».
+     *
+     * ⚠️ Eng jimgina xato — belgi hech qachon o'chmasligi: son boshqa
+     * to'plamdan sanalsa (masalan, boshqa auditoriya xabarlari bilan),
+     * ekranni ochish uni nolga tushirmaydi.
+     */
+    @Nested
+    @DisplayName("O'qilgan / o'qilmagan")
+    class ReadMarks {
+
+        @Test
+        @DisplayName("Yangi xabar o'qilmagan va sanaladi")
+        void newIsUnread() throws Exception {
+            notification(NotificationStatus.SENT, NotificationAudience.ALL);
+            User u = user();
+
+            mockMvc.perform(get(URL).header("Authorization", token(u)))
+                    .andExpect(jsonPath("$[0].read").value(false));
+            mockMvc.perform(get(URL + "/unread-count").header("Authorization", token(u)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.count").value(visibleCount(u)));
+        }
+
+        @Test
+        @DisplayName("Ekran ochildi — hammasi o'qildi, son nol")
+        void readAllClearsBadge() throws Exception {
+            notification(NotificationStatus.SENT, NotificationAudience.ALL);
+            notification(NotificationStatus.SENT, NotificationAudience.ALL);
+            User u = user();
+
+            mockMvc.perform(post(URL + "/read").header("Authorization", token(u)))
+                    .andExpect(status().isNoContent());
+
+            mockMvc.perform(get(URL + "/unread-count").header("Authorization", token(u)))
+                    .andExpect(jsonPath("$.count").value(0));
+            mockMvc.perform(get(URL).header("Authorization", token(u)))
+                    .andExpect(jsonPath("$[*].read", org.hamcrest.Matchers.everyItem(
+                            org.hamcrest.Matchers.is(true))));
+
+            // Takroriy so'rov xato bermaydi — qator ikki marta yozilmaydi.
+            mockMvc.perform(post(URL + "/read").header("Authorization", token(u)))
+                    .andExpect(status().isNoContent());
+        }
+
+        @Test
+        @DisplayName("Belgi odamga tegishli — boshqasiga ta'sir qilmaydi")
+        void marksArePerUser() throws Exception {
+            notification(NotificationStatus.SENT, NotificationAudience.ALL);
+            User reader = user();
+            User other = user();
+
+            mockMvc.perform(post(URL + "/read").header("Authorization", token(reader)));
+
+            mockMvc.perform(get(URL + "/unread-count").header("Authorization", token(other)))
+                    .andExpect(jsonPath("$.count").value(visibleCount(other)));
+        }
+
+        @Test
+        @DisplayName("Bitta xabar o'qildi (push bosildi)")
+        void readOne() throws Exception {
+            notification(NotificationStatus.SENT, NotificationAudience.ALL);
+            User u = user();
+            long before = visibleCount(u);
+            Long id = notificationRepo.findAll().stream()
+                    .filter(n -> n.getStatus() == NotificationStatus.SENT
+                            && n.getAudience() == NotificationAudience.ALL)
+                    .map(Notification::getId)
+                    .max(Long::compare)
+                    .orElseThrow();
+
+            mockMvc.perform(post(URL + "/" + id + "/read").header("Authorization", token(u)))
+                    .andExpect(status().isNoContent());
+
+            mockMvc.perform(get(URL + "/unread-count").header("Authorization", token(u)))
+                    .andExpect(jsonPath("$.count").value(before - 1));
+        }
+
+        /** Ko'rinmaydigan xabar belgilanmaydi — mavjud bo'lmagan id 500 bermaydi. */
+        @Test
+        @DisplayName("Noma'lum id — xato emas")
+        void unknownIdIgnored() throws Exception {
+            mockMvc.perform(post(URL + "/999999999/read").header("Authorization", token(user())))
+                    .andExpect(status().isNoContent());
+        }
+
+        /** Shu odamga ko'rinadigan xabarlar soni — ro'yxatning uzunligi. */
+        private long visibleCount(User u) throws Exception {
+            String json = mockMvc.perform(get(URL).header("Authorization", token(u)))
+                    .andReturn().getResponse().getContentAsString();
+            return com.jayway.jsonpath.JsonPath.<List<Object>>read(json, "$").size();
         }
     }
 

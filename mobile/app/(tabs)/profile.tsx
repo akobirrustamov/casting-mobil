@@ -9,10 +9,12 @@ import { Linking, Pressable, Text, View } from 'react-native';
 import coinIcon from '../../assets/brand/uzcasting-coin.png';
 
 import { pushOnce } from '@/lib/navigation';
+import { UnreadBadge } from '@/components/navigation/HeaderActions';
 import { Button } from '@/components/ui/Button';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { Screen } from '@/components/ui/Screen';
 import { useAuthStore } from '@/features/auth/store';
+import { useUnreadCount } from '@/features/notifications/api';
 import {
   formatDate,
   premiumState,
@@ -91,6 +93,7 @@ export default function ProfileScreen() {
 
   const isAuthorized = useAuthStore((s) => s.isAuthorized);
   const signOut = useAuthStore((s) => s.signOut);
+  const unread = useUnreadCount();
 
   /**
    * Выход — и сразу на экран входа.
@@ -232,6 +235,7 @@ export default function ProfileScreen() {
           className="h-11 w-11 items-center justify-center rounded-pill bg-surface active:opacity-70"
         >
           <Ionicons name="notifications-outline" size={20} color={colors.white} />
+          <UnreadBadge count={unread} />
         </Pressable>
       }
     >

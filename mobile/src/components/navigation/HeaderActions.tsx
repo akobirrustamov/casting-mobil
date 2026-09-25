@@ -2,8 +2,10 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
+import { useUnreadCount } from '@/features/notifications/api';
 import { pushOnce } from '@/lib/navigation';
 import { colors } from '@/theme/tokens';
+import { fonts } from '@/theme/typography';
 
 /**
  * Правая часть шапки главной: «Premium» и колокольчик (макет заказчика
@@ -53,17 +55,15 @@ export function PremiumChip() {
 /**
  * Колокольчик уведомлений — ведёт на экран сообщений.
  *
- * <h2>Почему точка по умолчанию не горит</h2>
- * На макете у колокольчика красная точка. Источника непрочитанного в
- * приложении пока нет: `app/messages.tsx` — пустой экран с `TODO` про
- * чаты и unread badge, эндпоинта тоже нет. Постоянная точка означала бы
- * «у вас непрочитанное», после нажатия человек видел бы пустоту, а точка
- * осталась бы гореть — это выдуманные данные, а не оформление.
- *
- * Проп готов: когда появится счётчик, точка включается одной строкой.
+ * <h2>Красный знак</h2>
+ * Число непрочитанных с бэкенда (`useUnreadCount`). Раньше знака не было
+ * вовсе: источника «прочитано» не существовало, а постоянная точка
+ * означала бы выдуманное «у вас новое». Теперь источник есть — заказчик
+ * 25.09.2026: «push keladi, lekin qizil belgi turmaydi».
  */
-export function NotificationBell({ dot = false }: { dot?: boolean }) {
+export function NotificationBell() {
   const { t } = useTranslation();
+  const unread = useUnreadCount();
 
   return (
     <Pressable
@@ -73,14 +73,46 @@ export function NotificationBell({ dot = false }: { dot?: boolean }) {
       className="h-11 w-11 items-center justify-center active:opacity-70"
     >
       <Ionicons name="notifications-outline" size={25} color={colors.white} />
-      {dot ? (
-        // Обводка цветом фона — иначе точка сливается с дужкой колокольчика.
-        <View
-          style={{ borderWidth: 2, borderColor: colors.ink }}
-          className="absolute right-0.5 top-0.5 h-3 w-3 rounded-pill bg-danger"
-        />
-      ) : null}
+      <UnreadBadge count={unread} />
     </Pressable>
+  );
+}
+
+/**
+ * Красный кружок с числом в правом верхнем углу кнопки.
+ *
+ * Родитель — квадратная кнопка с `items-center`; кружок лежит поверх
+ * (`absolute`) и её размер не меняет.
+ */
+export function UnreadBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+
+  return (
+    <View
+      pointerEvents="none"
+      // Обводка цветом фона — иначе кружок сливается с дужкой колокольчика.
+      style={{
+        position: 'absolute',
+        top: 2,
+        right: 0,
+        minWidth: 18,
+        height: 18,
+        paddingHorizontal: 4,
+        borderRadius: 9,
+        borderWidth: 2,
+        borderColor: colors.ink,
+        backgroundColor: colors.danger,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Text
+        style={{ color: colors.white, fontSize: 10, lineHeight: 12, fontFamily: fonts.bold }}
+        allowFontScaling={false}
+      >
+        {count > 9 ? '9+' : count}
+      </Text>
+    </View>
   );
 }
 

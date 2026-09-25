@@ -117,6 +117,11 @@ public class ExpoPushGateway implements PushGateway {
         json.put("priority", "high");
         // Ilova yaratadigan Android kanali (`features/notifications/push.ts`).
         json.put("channelId", "default");
+        if (m.image() != null) {
+            // Android buni o'zi ko'rsatadi; iOS'da Notification Service
+            // Extension kerak — u yo'q, iPhone rasmsiz ko'rsatadi.
+            json.put("richContent", Map.of("image", m.image()));
+        }
         return json;
     }
 

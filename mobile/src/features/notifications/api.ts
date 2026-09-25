@@ -1,5 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Notifications from 'expo-notifications';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AppState } from 'react-native';
 
 import { useAuthStore } from '@/features/auth/store';
 import { feedLocale } from '@/features/home/api';
@@ -19,10 +22,15 @@ import { api, mediaUrl } from '@/lib/api';
  * (`./push.ts`); нажатие ведёт туда же, куда карточка в списке —
  * маршрут считает одна функция `internalRoute`.
  *
- * <h2>⚠️ «Прочитано» не отслеживается</h2>
- * Отметка требует отдельной таблицы (кто что прочитал) и записи на
- * каждое открытие. В первой версии её нет намеренно: сообщений мало, а
- * счётчик непрочитанного стоил бы целой таблицы и синхронизации.
+ * <h2>«Прочитано» (25.09.2026)</h2>
+ * Заказчик: push приходит, а на колокольчике нет красного знака «есть
+ * новое»; открыл «Xabarlar» — всё должно стать прочитанным. Отметки
+ * хранит бэкенд (`cms_notification_read`, V43) — по человеку, а не по
+ * телефону: прочитанное на одном устройстве прочитано и на другом.
+ *
+ * - `useUnreadCount` — число на колокольчике;
+ * - `markAllRead` — экран открыт;
+ * - `markRead(id)` — нажали push и ушли сразу по ссылке, минуя список.
  */
 export type AppNotification = {
   id: number;
@@ -36,6 +44,8 @@ export type AppNotification = {
   linkUrl: string | null;
   targetType: string | null;
   targetId: number | null;
+  /** Этот человек уже прочитал. */
+  read: boolean;
 };
 
 function str(value: unknown): string | null {
@@ -60,6 +70,9 @@ function map(raw: unknown): AppNotification {
     linkUrl: str(r.linkUrl),
     targetType: str(r.targetType),
     targetId: num(r.targetId),
+    // Старый бэкенд поля не присылает — считаем прочитанным, иначе
+    // все сообщения разом загорелись бы «новыми».
+    read: r.read !== false,
   };
 }
 
@@ -85,6 +98,91 @@ export function useNotifications() {
     queryFn: () => fetchNotifications(language),
     enabled: isAuthorized,
   });
+}
+
+const UNREAD_URL = '/api/v1/app/notifications/unread-count';
+
+/**
+ * Отметка ушла на сервер — пора перечитать число.
+ *
+ * ⚠️ Отдельный канал, а не `queryClient`: `markRead` зовёт `push.ts`
+ * из обработчика нажатия, а он живёт в корневом layout ВЫШЕ
+ * `QueryClientProvider`. Подписчик — `useUnreadCount`.
+ */
+const readListeners = new Set<() => void>();
+
+function readChanged(): void {
+  readListeners.forEach((listener) => listener());
+}
+
+/** Сколько непрочитанных — для колокольчика. */
+export function useUnreadCount() {
+  const isAuthorized = useAuthStore((s) => s.isAuthorized);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
+
+  const query = useQuery({
+    queryKey: ['notifications', 'unread', userId],
+    queryFn: async () => {
+      const { data } = await api.get<{ count?: unknown }>(UNREAD_URL);
+      return num(data?.count) ?? 0;
+    },
+    enabled: isAuthorized,
+  });
+
+  const { refetch } = query;
+  useEffect(() => {
+    if (!isAuthorized) return;
+    const again = () => void refetch();
+
+    // Пришёл push при открытом приложении — знак загорается сразу.
+    const received = Notifications.addNotificationReceivedListener(again);
+    // Вернулись в приложение (push пришёл, пока оно было свёрнуто).
+    const appState = AppState.addEventListener('change', (state) => {
+      if (state === 'active') again();
+    });
+    readListeners.add(again);
+
+    return () => {
+      received.remove();
+      appState.remove();
+      readListeners.delete(again);
+    };
+  }, [isAuthorized, refetch]);
+
+  return isAuthorized ? (query.data ?? 0) : 0;
+}
+
+/**
+ * Экран «Xabarlar» открыт — всё видимое прочитано.
+ *
+ * Список при этом НЕ перечитывается: подсветка «новое» остаётся до
+ * ухода с экрана, иначе человек не успел бы увидеть, что именно пришло.
+ */
+export function useMarkAllRead() {
+  const client = useQueryClient();
+  const userId = useAuthStore((s) => s.user?.id ?? null);
+
+  return useMutation({
+    mutationFn: async () => {
+      await api.post('/api/v1/app/notifications/read');
+    },
+    onSuccess: () => {
+      client.setQueryData(['notifications', 'unread', userId], 0);
+      // Из шторки — тоже: прочитанное там больше не нужно.
+      Notifications.dismissAllNotificationsAsync().catch(() => {});
+      Notifications.setBadgeCountAsync(0).catch(() => {});
+    },
+  });
+}
+
+/** Одно сообщение прочитано — нажали push. Ошибка не мешает переходу. */
+export async function markRead(notificationId: number): Promise<void> {
+  try {
+    await api.post(`/api/v1/app/notifications/${notificationId}/read`);
+    readChanged();
+  } catch {
+    // Не страшно: сообщение отметится, когда человек откроет список.
+  }
 }
 
 /**
