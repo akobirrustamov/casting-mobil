@@ -2,10 +2,16 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
-import { useUnreadCount } from '@/features/notifications/api';
+import {
+  APP_KIND,
+  messagesRoute,
+  useUnreadCount,
+  type NotificationKind,
+} from '@/features/notifications/api';
 import { pushOnce } from '@/lib/navigation';
 import { colors } from '@/theme/tokens';
 import { fonts } from '@/theme/typography';
+import { usePaymentsVisible } from '@/features/config/api';
 
 /**
  * Правая часть шапки главной: «Premium» и колокольчик (макет заказчика
@@ -60,14 +66,16 @@ export function PremiumChip() {
  * вовсе: источника «прочитано» не существовало, а постоянная точка
  * означала бы выдуманное «у вас новое». Теперь источник есть — заказчик
  * 25.09.2026: «push keladi, lekin qizil belgi turmaydi».
+ *
+ * `kind` — какой список: общий (главная) или кастинг (вкладка «Casting»).
  */
-export function NotificationBell() {
+export function NotificationBell({ kind = APP_KIND }: { kind?: NotificationKind }) {
   const { t } = useTranslation();
-  const unread = useUnreadCount();
+  const unread = useUnreadCount(kind);
 
   return (
     <Pressable
-      onPress={() => pushOnce('/messages')}
+      onPress={() => pushOnce(messagesRoute(kind))}
       accessibilityRole="button"
       accessibilityLabel={t('profile.notifications')}
       className="h-11 w-11 items-center justify-center active:opacity-70"
@@ -118,9 +126,11 @@ export function UnreadBadge({ count }: { count: number }) {
 
 /** Оба знака вместе — то, что уходит в `headerRight`. */
 export function HomeHeaderActions() {
+  const paymentsVisible = usePaymentsVisible();
+
   return (
     <View className="h-11 flex-row items-center gap-2">
-      <PremiumChip />
+      {paymentsVisible ? <PremiumChip /> : null}
       <NotificationBell />
     </View>
   );

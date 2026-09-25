@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Keyboard, Platform } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /**
  * Сколько экрана снизу закрыто клавиатурой (0 — клавиатуры нет).
@@ -24,10 +24,30 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
  * ровно на высоту полосы.
  *
  * iOS отдаёт полную высоту клавиатуры от низа экрана — добавлять нечего.
+ *
+ * <h2>⚠️ Не на всех Android окно остаётся прежним</h2>
+ * На части телефонов (жалоба 25.09.2026, скрин экрана входа) система
+ * всё-таки сжимает окно под клавиатуру. Тогда наш отступ ложился ВТОРОЙ
+ * раз поверх уже сжатого окна: форма уезжала вверх, а между кнопкой и
+ * клавиатурой зияла пустота высотой с клавиатуру.
+ *
+ * Поэтому из отступа вычитаем то, на сколько окно (корневой вид) уже
+ * сжалось само: сжалось на всю клавиатуру — добавлять нечего.
  */
 export function useKeyboardInset(): number {
   const insets = useSafeAreaInsets();
-  const [inset, setInset] = useState(0);
+  const frame = useSafeAreaFrame();
+  const [raw, setRaw] = useState(0);
+
+  // Полная высота окна без клавиатуры — от неё меряем, насколько окно
+  // сжала сама система. Поворот экрана меняет ширину — начинаем заново.
+  const full = useRef({ width: frame.width, height: frame.height });
+  if (full.current.width !== frame.width) {
+    full.current = { width: frame.width, height: frame.height };
+  } else if (frame.height > full.current.height) {
+    full.current.height = frame.height;
+  }
+  const shrunk = full.current.height - frame.height;
 
   useEffect(() => {
     // iOS присылает `will*` заранее — поле едет вместе с клавиатурой, а не
@@ -38,9 +58,9 @@ export function useKeyboardInset(): number {
     const show = Keyboard.addListener(showEvent, (e) => {
       const height = e.endCoordinates?.height ?? 0;
       if (height <= 0) return;
-      setInset(Platform.OS === 'android' ? height + insets.bottom : height);
+      setRaw(Platform.OS === 'android' ? height + insets.bottom : height);
     });
-    const hide = Keyboard.addListener(hideEvent, () => setInset(0));
+    const hide = Keyboard.addListener(hideEvent, () => setRaw(0));
 
     return () => {
       show.remove();
@@ -48,5 +68,6 @@ export function useKeyboardInset(): number {
     };
   }, [insets.bottom]);
 
-  return inset;
+  if (raw <= 0) return 0;
+  return Math.max(0, raw - shrunk);
 }

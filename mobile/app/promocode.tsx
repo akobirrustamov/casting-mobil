@@ -18,6 +18,7 @@ import {
   type RedeemResult,
 } from '@/features/promocode/api';
 import { colors } from '@/theme/tokens';
+import { withPaymentsGate } from '@/features/config/PaymentsGate';
 
 /**
  * Промокод — ввод кода и список уже использованных.
@@ -41,7 +42,7 @@ import { colors } from '@/theme/tokens';
 const MIN_LENGTH = 3;
 const MAX_LENGTH = 32;
 
-export default function PromocodeScreen() {
+function PromocodeScreen() {
   const { t } = useTranslation();
   const isAuthorized = useAuthStore((s) => s.isAuthorized);
 
@@ -206,3 +207,5 @@ function SuccessCard({ result }: { result: RedeemResult }) {
     </View>
   );
 }
+
+export default withPaymentsGate(PromocodeScreen);

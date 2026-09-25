@@ -257,10 +257,15 @@ export function AuthScaffold({
           {/* Шестерёнка выбора языка — справа, примерно на нижней кромке
               знака, как на референсе. Она ВНЕ потока, поэтому колонка
               под ней стоит там же, где стояла бы без неё. */}
-          <AuthLanguageButton
-            top={markSize - TOUCH_TARGET / 2}
-            windowTop={insets.top + WORDMARK_PADDING_TOP}
-          />
+          {/* ⚠️ Пока открыта клавиатура, шестерёнки нет: человек занят
+              вводом, язык ему сейчас не нужен, а на части Android кружок
+              вылезал поверх поля номера и кода (жалоба 25.09.2026). */}
+          {keyboard === 0 ? (
+            <AuthLanguageButton
+              top={markSize - TOUCH_TARGET / 2}
+              windowTop={insets.top + WORDMARK_PADDING_TOP}
+            />
+          ) : null}
         </View>
 
         <View className="gap-4 px-6 pt-2">

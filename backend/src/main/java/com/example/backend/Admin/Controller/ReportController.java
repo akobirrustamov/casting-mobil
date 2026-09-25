@@ -312,7 +312,8 @@ public class ReportController {
         // Nomlarni bitta so'rovda olamiz — har qator uchun alohida so'rov emas (§66)
         Map<Long, String> adNames = advertisementRepo.findAllByOrderBySortOrderAscIdAsc()
                 .stream().collect(Collectors.toMap(a -> a.getId(), a -> a.getName(), (a, b) -> a));
-        Map<Long, String> contentNames = contentRepo.findAll()
+        // Faqat jadvaldagi o'nta kontent — butun katalog emas.
+        Map<Long, String> contentNames = contentRepo.findAllById(topContentIds)
                 .stream().collect(Collectors.toMap(c -> c.getId(), c -> c.getSlug(), (a, b) -> a));
 
         // Tarif filtri (ТЗ §47) — obuna daromadi shu tarif bo'yicha.

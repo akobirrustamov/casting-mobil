@@ -183,6 +183,7 @@ export function HeroCarousel({
                 style={StyleSheet.absoluteFill}
                 contentFit="cover"
                 transition={200}
+                cachePolicy="memory-disk"
               />
             ) : null}
             {/* Затемнение, чтобы текст читался поверх кадра */}

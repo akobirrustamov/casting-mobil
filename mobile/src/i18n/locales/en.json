@@ -443,6 +443,7 @@
     "signInRequired": "Sign in to edit your profile."
   },
   "notifications": {
+    "castingTitle": "Casting notifications",
     "empty": "No messages yet.",
     "untitled": "Untitled message",
     "signInRequired": "Sign in to see your messages."
@@ -462,6 +463,11 @@
     "noDataYet": "No profiles in this category yet."
   },
   "creator": {
+    "type": "Category",
+    "nationality": "Nationality",
+    "hairColor": "Hair color",
+    "eyeColor": "Eye color",
+    "photos": "Photos: {{count}}",
     "age": "Age",
     "height": "Height",
     "region": "Region",

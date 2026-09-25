@@ -23,10 +23,13 @@ import { colors } from '@/theme/tokens';
 /**
  * Профиль креатора — экран 13 из ТЗ.
  *
- * Показываем только то, что сайт и так публикует: имя, направление,
- * город, возраст, рост и фото с `isWebShow`. Телефон, email, telegram
- * и замеры фигуры API отдаёт, но это персональные данные — в приложение
- * они не идут (docs/API.md).
+ * Показываем ВСЁ, что отдаёт публичный каталог (`CastingUserPublicDto`),
+ * как в модальном окне сайта: ID, направление, возраст, рост, пол,
+ * регион, национальность, цвет волос и глаз, все фото с `isWebShow`.
+ * Незаполненное — «—», чтобы список был одинаковым у всех анкет.
+ *
+ * Телефон, email, соцсети и замеры фигуры публичный эндпоинт НЕ отдаёт
+ * (это персональные данные, в т.ч. несовершеннолетних) — и здесь их нет.
  */
 export default function CreatorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -64,24 +67,32 @@ export default function CreatorScreen() {
   }
 
   const isRu = i18n.language === 'ru';
-  const typeLabel = labelForType(creator.castingType, isRu);
+  const typeLabel = labelForType(creator.castingTypeRaw, isRu);
+  const dash = '—';
 
-  const facts = [
-    creator.age !== null
-      ? { key: 'age', label: t('creator.age'), value: String(creator.age) }
-      : null,
-    creator.height !== null
-      ? { key: 'height', label: t('creator.height'), value: `${creator.height} ${t('creator.cm')}` }
-      : null,
-    creator.region
-      ? { key: 'region', label: t('creator.region'), value: creator.region }
-      : null,
+  const facts: { key: string; label: string; value: string }[] = [
+    { key: 'id', label: 'ID', value: String(creator.id) },
+    { key: 'type', label: t('creator.type'), value: typeLabel ?? dash },
+    {
+      key: 'age',
+      label: t('creator.age'),
+      value: creator.age !== null ? t('common.years', { count: creator.age }) : dash,
+    },
+    {
+      key: 'height',
+      label: t('creator.height'),
+      value: creator.height !== null ? `${creator.height} ${t('creator.cm')}` : dash,
+    },
     {
       key: 'gender',
       label: t('creator.gender'),
       value: creator.gender === 'female' ? t('catalog.female') : t('catalog.male'),
     },
-  ].filter((f): f is { key: string; label: string; value: string } => f !== null);
+    { key: 'region', label: t('creator.region'), value: creator.region ?? dash },
+    { key: 'nationality', label: t('creator.nationality'), value: creator.nationality ?? dash },
+    { key: 'hairColor', label: t('creator.hairColor'), value: creator.hairColor ?? dash },
+    { key: 'eyeColor', label: t('creator.eyeColor'), value: creator.eyeColor ?? dash },
+  ];
 
   return (
     <Screen
@@ -107,6 +118,12 @@ export default function CreatorScreen() {
     >
       <Gallery photos={creator.photoUrls} />
 
+      {creator.photoUrls.length > 1 ? (
+        <Text className="text-caption text-text-muted">
+          {t('creator.photos', { count: creator.photoUrls.length })}
+        </Text>
+      ) : null}
+
       <View className="gap-2 rounded-card-lg bg-surface p-4">
         {facts.map((f, i) => (
           <View
@@ -116,7 +133,7 @@ export default function CreatorScreen() {
             }`}
           >
             <Text className="text-body text-text-muted">{f.label}</Text>
-            <Text className="text-body text-text">{f.value}</Text>
+            <Text className="ml-4 flex-1 text-right text-body text-text">{f.value}</Text>
           </View>
         ))}
       </View>

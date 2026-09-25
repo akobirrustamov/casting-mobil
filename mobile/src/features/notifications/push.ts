@@ -1,4 +1,3 @@
-import * as Notifications from 'expo-notifications';
 import { router, useRootNavigationState } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Linking } from 'react-native';
@@ -7,8 +6,17 @@ import { track } from '@/features/analytics/api';
 import { useAuthStore } from '@/features/auth/store';
 import { useDeviceStore } from '@/features/devices/store';
 
-import { internalRoute, markRead } from './api';
+import { CASTING_KIND, internalRoute, kindFromParam, markRead, messagesRoute } from './api';
+import { Notifications } from './module';
 import { registerPushToken } from './pushToken';
+
+/**
+ * Хук последнего нажатия. Выбирается ОДИН раз при загрузке модуля, поэтому
+ * порядок хуков между рендерами не меняется. В Expo Go — всегда `null`.
+ */
+const useLastNotificationResponse: () => ReturnType<
+  NonNullable<typeof Notifications>['useLastNotificationResponse']
+> = Notifications ? Notifications.useLastNotificationResponse : () => null;
 
 /**
  * Push-уведомления — Expo Push.
@@ -34,6 +42,8 @@ import { registerPushToken } from './pushToken';
 /** Данные, которые кладёт бэкенд (`NotificationPushService.payload`). */
 type PushData = {
   notificationId?: unknown;
+  /** `APP_NOTIFICATION` / `CASTING_NOTIFICATION`. */
+  type?: unknown;
   linkType?: unknown;
   linkUrl?: unknown;
   targetType?: unknown;
@@ -50,7 +60,7 @@ function num(v: unknown): number | null {
   return null;
 }
 
-/** Куда вести по нажатию. Ничего подходящего — список «Xabarlar». */
+/** Куда вести по нажатию. Ничего подходящего — список своего вида. */
 export function openPushTarget(raw: unknown): void {
   const data = (raw ?? {}) as PushData;
   const notificationId = num(data.notificationId);
@@ -80,7 +90,12 @@ export function openPushTarget(raw: unknown): void {
     return;
   }
 
-  router.push('/messages');
+  // Сначала — вкладка своего раздела, поверх — список этого вида: кастинговое
+  // уведомление открывается в «Casting», общее — на главной, и «назад»
+  // возвращает именно туда.
+  const kind = kindFromParam(data.type);
+  router.navigate((kind === CASTING_KIND ? '/(tabs)/casting' : '/(tabs)') as never);
+  router.push(messagesRoute(kind) as never);
 }
 
 /**
@@ -100,13 +115,13 @@ export function usePushNotifications(ready: boolean): void {
   }, [isAuthorized, deviceStatus]);
 
   // Нажатие: и холодный старт из уведомления, и нажатие при открытом приложении.
-  const response = Notifications.useLastNotificationResponse();
+  const response = useLastNotificationResponse();
   const handled = useRef<string | null>(null);
   const navigationState = useRootNavigationState();
   const navigatorReady = Boolean(navigationState?.key);
 
   useEffect(() => {
-    if (!response || !ready || !navigatorReady || !isAuthorized) return;
+    if (!Notifications || !response || !ready || !navigatorReady || !isAuthorized) return;
     if (response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
 
     const id = response.notification.request.identifier;

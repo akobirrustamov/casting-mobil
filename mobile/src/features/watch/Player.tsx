@@ -762,7 +762,7 @@ function Controls({
             pointerEvents="box-none"
             className="flex-row items-center justify-between gap-3"
           >
-            <View pointerEvents="box-none" className="flex-1 flex-row items-center gap-4">
+            <View pointerEvents="box-none" className="flex-1 flex-row items-center gap-5">
               {actions}
             </View>
 
@@ -773,7 +773,7 @@ function Controls({
               hitSlop={10}
               className="flex-row items-center gap-1 active:opacity-60"
             >
-              <Ionicons name="settings-outline" size={20} color={colors.white} />
+              <Ionicons name="settings-outline" size={24} color={colors.white} />
               {rate !== 1 ? (
                 <Text className="text-micro font-semibold text-white">{rateLabel(rate)}</Text>
               ) : null}
@@ -786,7 +786,7 @@ function Controls({
               hitSlop={10}
               className="active:opacity-60"
             >
-              <Ionicons name={fullscreen ? 'contract' : 'expand'} size={20} color={colors.white} />
+              <Ionicons name={fullscreen ? 'contract' : 'expand'} size={24} color={colors.white} />
             </Pressable>
           </View>
         </View>

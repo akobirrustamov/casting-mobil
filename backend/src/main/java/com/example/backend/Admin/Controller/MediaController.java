@@ -30,6 +30,8 @@ import org.springframework.http.HttpRange;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaTypeFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -55,6 +57,7 @@ import java.util.List;
 public class MediaController {
 
     private final MediaAssetRepo mediaAssetRepo;
+    private final PlatformTransactionManager transactionManager;
     private final StorageService storageService;
     private final PermissionService permissionService;
 
@@ -183,6 +186,16 @@ public class MediaController {
      * ro'yxati, mobil ilova) avvalgidek ishlaydi.
      */
     private MediaAsset readable(Long id, String ticket) {
+        // ⚠️ O'z tranzaksiyasida: `/raw` open-in-view'dan chiqarilgan
+        // (`OpenInViewConfig`), ya'ni tekshiruv davomidagi lazy
+        // yuklashlarga sessiya shu yerda beriladi. Tranzaksiya tugashi
+        // bilan ulanish havzaga qaytadi — fayl uzatilishi uni ushlamaydi.
+        TransactionTemplate tx = new TransactionTemplate(transactionManager);
+        tx.setReadOnly(true);
+        return tx.execute(status -> checkReadable(id, ticket));
+    }
+
+    private MediaAsset checkReadable(Long id, String ticket) {
         MediaAsset asset = mediaAssetRepo.findById(id)
                 .orElseThrow(() -> BusinessException.notFound("Media", id));
 

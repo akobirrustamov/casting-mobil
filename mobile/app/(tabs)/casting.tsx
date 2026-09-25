@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, RefreshControl, Text, View, useWindowDimensions } from 'react-native';
 
 import { pushOnce } from '@/lib/navigation';
+import { NotificationBell } from '@/components/navigation/HeaderActions';
 import { useTabBarHeight } from '@/components/navigation/TabBar';
 import { ScreenState } from '@/components/states/ScreenState';
 import { CreatorCard } from '@/components/ui/CreatorCard';
@@ -23,6 +24,7 @@ import { ApplicationStatusBlock } from '@/features/casting/components';
 import { FilterSheet } from '@/features/casting/FilterSheet';
 import { pickHeadline } from '@/features/casting/status';
 import { useCreators } from '@/features/creators/api';
+import { CASTING_KIND } from '@/features/notifications/api';
 import { useFavoritesStore } from '@/features/favorites/store';
 import { useIsOffline } from '@/lib/network';
 import { colors } from '@/theme/tokens';
@@ -54,6 +56,10 @@ import { colors } from '@/theme/tokens';
  * <h2>Заявка</h2>
  * Требует входа: новый эндпоинт привязывает заявку к аккаунту. Гость
  * видит ту же кнопку, но она ведёт на вход.
+ *
+ * <h2>Колокольчик (25.09.2026)</h2>
+ * Свой список: уведомления, которые админ отправил с типом
+ * «Casting» (`CASTING_NOTIFICATION`). Общие — на главной.
  */
 const GAP = 12;
 const PADDING = 16;
@@ -163,6 +169,7 @@ export default function CastingScreen() {
       scroll={false}
       title={t('casting.title')}
       subtitle={creators.data ? t('casting.found', { count: visible.length }) : t('casting.subtitle')}
+      headerRight={<NotificationBell kind={CASTING_KIND} />}
     >
       <FlatList
         data={creators.isPending || creators.isError ? [] : visible}
@@ -198,7 +205,7 @@ export default function CastingScreen() {
             ]
               .filter(Boolean)
               .join(' • ')}
-            imageUrl={item.photoUrls[0]}
+            imageUrls={item.photoUrls}
             width={cardWidth}
             onPress={() => pushOnce(`/creator/${item.id}`)}
             isFavorite={favoriteIds.has(item.id)}

@@ -236,7 +236,9 @@ export function setTokenRefresher(fn: TokenRefresher | null): void {
  * запускал бы обновление токена, а сам эндпоинт обновления при
  * отказе дёргал бы себя же — бесконечный цикл на экране входа.
  */
-const NO_REFRESH_PATHS = ['/api/v1/app/auth/', '/api/v1/auth/'];
+// `/app/config` — открытый: 401 там значит «старый сервер без эндпоинта»,
+// а не истёкший токен, и обновлять сессию из-за него нельзя.
+const NO_REFRESH_PATHS = ['/api/v1/app/auth/', '/api/v1/auth/', '/api/v1/app/config'];
 
 /**
  * Обновление в ОДНОМ экземпляре.

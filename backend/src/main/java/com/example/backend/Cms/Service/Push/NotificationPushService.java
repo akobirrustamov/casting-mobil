@@ -238,6 +238,10 @@ public class NotificationPushService {
     private static Map<String, Object> payload(Notification n) {
         Map<String, Object> data = new HashMap<>();
         data.put("notificationId", n.getId());
+        // Ilova bosilganda qaysi ro'yxatni ochishni biladi: umumiy yoki kasting.
+        if (n.getType() != null) {
+            data.put("type", n.getType().name());
+        }
         if (n.getLink() != null) {
             if (n.getLink().getLinkType() != null) {
                 data.put("linkType", String.valueOf(n.getLink().getLinkType()));

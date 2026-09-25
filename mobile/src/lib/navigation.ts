@@ -9,7 +9,19 @@ import { router, type Href } from 'expo-router';
  */
 export const PUSH_COOLDOWN_MS = 700;
 
+/**
+ * Сколько игнорируется повтор ТОГО ЖЕ адреса.
+ *
+ * ⚠️ 25.09.2026: быстрые нажатия на карточку во вкладке «Casting»
+ * открывали 3–4 одинаковых профиля. Сетка с каруселями тяжёлая, и на
+ * слабом Android новый экран появляется позже 700 мс — старая карточка
+ * всё ещё под пальцем, и следующее нажатие проходило. На тот же адрес
+ * замок держится дольше.
+ */
+export const SAME_HREF_COOLDOWN_MS = 2500;
+
 let lastPushAt = -Infinity;
+let lastHref: string | null = null;
 
 /**
  * `router.push`, который не открывает одну страницу десять раз.
@@ -29,8 +41,11 @@ let lastPushAt = -Infinity;
  * тоже две страницы друг на друге, а человек хотел одну.
  */
 export function pushOnce(href: Href, now: number = Date.now()): boolean {
+  const key = typeof href === 'string' ? href : JSON.stringify(href);
   if (now - lastPushAt < PUSH_COOLDOWN_MS) return false;
+  if (key === lastHref && now - lastPushAt < SAME_HREF_COOLDOWN_MS) return false;
   lastPushAt = now;
+  lastHref = key;
   router.push(href);
   return true;
 }
@@ -38,4 +53,5 @@ export function pushOnce(href: Href, now: number = Date.now()): boolean {
 /** ⚠️ Только для тестов: замок живёт на уровне модуля. */
 export function resetPushOnceForTests() {
   lastPushAt = -Infinity;
+  lastHref = null;
 }

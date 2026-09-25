@@ -1,10 +1,11 @@
 import type { AxiosRequestConfig } from 'axios';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { api } from '@/lib/api';
+
+import { Notifications } from './module';
 
 /**
  * Push-токен этого телефона ↔ бэкенд.
@@ -21,7 +22,7 @@ export const ANDROID_CHANNEL_ID = 'default';
 const PUSH_TOKEN_URL = '/api/v1/app/devices/push-token';
 
 /** Пришедшее при открытом приложении — тоже показываем баннером. */
-Notifications.setNotificationHandler({
+Notifications?.setNotificationHandler({
   handleNotification: async () => ({
     shouldPlaySound: true,
     shouldSetBadge: false,
@@ -41,7 +42,8 @@ let sentToken: string | null = null;
 export async function registerPushToken(): Promise<string | null> {
   try {
     // На эмуляторе Expo-токена нет — не просим разрешение зря.
-    if (!Device.isDevice) return null;
+    // В Expo Go модуля нет вовсе (см. `module.ts`).
+    if (!Device.isDevice || !Notifications) return null;
 
     if (Platform.OS === 'android') {
       // Канал должен существовать ДО запроса разрешения: на Android 13+

@@ -12,6 +12,7 @@ import { useAuthStore } from '@/features/auth/store';
 import { formatDate, premiumState, type PremiumState } from '@/features/profile/api';
 import { useMySubscription } from '@/features/subscription/api';
 import { colors, gradients, radius } from '@/theme/tokens';
+import { withPaymentsGate } from '@/features/config/PaymentsGate';
 
 /**
  * «Mening obunam» — статус и что с ним делать.
@@ -28,7 +29,7 @@ import { colors, gradients, radius } from '@/theme/tokens';
  * Флаг «активна» считает `AccessService` на сервере (ТЗ §37); здесь он
  * только читается.
  */
-export default function SubscriptionScreen() {
+function SubscriptionScreen() {
   const { t } = useTranslation();
   const isAuthorized = useAuthStore((s) => s.isAuthorized);
   const subscription = useMySubscription();
@@ -183,3 +184,5 @@ function daysLeft(iso: string | null): number | null {
   const days = Math.ceil((end - start) / 86_400_000);
   return days > 0 ? days : null;
 }
+
+export default withPaymentsGate(SubscriptionScreen);

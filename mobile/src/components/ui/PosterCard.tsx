@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
@@ -32,7 +33,7 @@ const MICRO_LINE = 14;
 /** Сколько строк отведено названию — столько же места у любого названия. */
 const TITLE_LINES = 2;
 
-export function PosterCard({
+export const PosterCard = memo(function PosterCard({
   title,
   subtitle,
   imageUrl,
@@ -110,6 +111,7 @@ export function PosterCard({
             style={{ width: '100%', height: '100%' }}
             contentFit="cover"
             transition={200}
+            cachePolicy="memory-disk"
           />
         ) : null}
 
@@ -228,4 +230,4 @@ export function PosterCard({
       </View>
     </Pressable>
   );
-}
+});

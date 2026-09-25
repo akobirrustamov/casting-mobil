@@ -14,6 +14,7 @@ import { openComments } from '@/features/comments/CommentsScreen';
 import type { ContentDetail } from './detail';
 import { openDonors } from './DonorsScreen';
 import { useContentLike } from './like';
+import { usePaymentsVisible } from '@/features/config/api';
 
 /**
  * Четыре плитки под кнопкой «Tomosha qilish» (макет заказчика, 08.09.2026).
@@ -52,6 +53,7 @@ export function StatsRow({
   info: WatchInfo | undefined;
 }) {
   const { t } = useTranslation();
+  const paymentsVisible = usePaymentsVisible();
 
   const like = useContentLike(contentId, detail, info);
 
@@ -76,22 +78,27 @@ export function StatsRow({
         selected={like.liked}
       />
 
-      <Tile
-        icon="star-outline"
-        color={colors.gold}
-        value={stars}
-        label={t('content.stars')}
-        onPress={() => contentId !== null && openDonors(contentId, 'STARS')}
-        disabled={contentId === null}
-      />
-      <Tile
-        icon="coin"
-        color={colors.textMuted}
-        value={coins}
-        label={t('content.coins')}
-        onPress={() => contentId !== null && openDonors(contentId, 'UZCASTING_COIN')}
-        disabled={contentId === null}
-      />
+      {/* Звёзды и монеты — донаты: скрыты, пока платежи выключены в админке. */}
+      {paymentsVisible ? (
+        <>
+          <Tile
+            icon="star-outline"
+            color={colors.gold}
+            value={stars}
+            label={t('content.stars')}
+            onPress={() => contentId !== null && openDonors(contentId, 'STARS')}
+            disabled={contentId === null}
+          />
+          <Tile
+            icon="coin"
+            color={colors.textMuted}
+            value={coins}
+            label={t('content.coins')}
+            onPress={() => contentId !== null && openDonors(contentId, 'UZCASTING_COIN')}
+            disabled={contentId === null}
+          />
+        </>
+      ) : null}
       <Tile
         icon="chatbubble-outline"
         color={colors.violet}

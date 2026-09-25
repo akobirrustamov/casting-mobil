@@ -5,6 +5,8 @@ import com.example.backend.Cms.Enums.StaffStatus;
 import com.example.backend.Cms.Repository.StaffProfileRepo;
 import com.example.backend.Entity.User;
 import com.example.backend.Enums.PlatformRole;
+import com.example.backend.Enums.UserRoles;
+import com.example.backend.Security.RoleMapper;
 import com.example.backend.Repository.UserRepo;
 import com.example.backend.Services.AuditService.AuditAction;
 import com.example.backend.Services.AuditService.AuditService;
@@ -194,7 +196,13 @@ public class StaffService {
         PlatformRole actorRole = permissionService.roleOf(actor);
         boolean seesEveryone = actorRole == PlatformRole.HYPER_ADMIN;
 
-        return userRepo.findAll().stream()
+        // Bazadan faqat xodim rollari borlar olinadi; eng yuqori rolni
+        // aniqlash (va USER'ni chiqarish) avvalgidek quyidagi filtrda.
+        List<UserRoles> staffRoles = java.util.Arrays.stream(PlatformRole.values())
+                .filter(r -> r != PlatformRole.USER)
+                .map(RoleMapper::toUserRole)
+                .toList();
+        return userRepo.findAllHavingAnyRole(staffRoles).stream()
                 .filter(u -> {
                     PlatformRole r = permissionService.roleOf(u);
                     if (r == null || r == PlatformRole.USER) {

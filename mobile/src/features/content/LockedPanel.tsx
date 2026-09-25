@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import type { RequiredAction, WatchInfo } from '@/features/watch/types';
 import { formatSum } from '@/lib/money';
 import { colors } from '@/theme/tokens';
+import { usePaymentsVisible } from '@/features/config/api';
 
 /**
  * Почему закрыто и что с этим делать.
@@ -46,13 +47,22 @@ export function LockedPanel({ info }: { info: WatchInfo }) {
   const action: RequiredAction = info.requiredAction;
 
   const [paymentNote, setPaymentNote] = useState(false);
+  // Платежи выключены в админке — ни цены, ни «купить/подписаться»,
+  // только «закрыто».
+  const paymentsVisible = usePaymentsVisible();
 
   const needsSignIn = action === 'SIGN_IN';
   const needsPurchase =
-    action === 'BUY_EPISODE' || action === 'BUY_PREMIERE' || action === 'BUY_OR_SUBSCRIBE';
-  const needsSubscription = action === 'SUBSCRIBE' || action === 'BUY_OR_SUBSCRIBE';
+    paymentsVisible &&
+    (action === 'BUY_EPISODE' || action === 'BUY_PREMIERE' || action === 'BUY_OR_SUBSCRIBE');
+  const needsSubscription =
+    paymentsVisible && (action === 'SUBSCRIBE' || action === 'BUY_OR_SUBSCRIBE');
 
-  const bodyKey = LOCKED_BODY[action] ?? LOCKED_REASON[info.reason] ?? 'states.lockedBody';
+  const showActionBody = paymentsVisible || needsSignIn;
+  const bodyKey =
+    (showActionBody ? LOCKED_BODY[action] : undefined) ??
+    LOCKED_REASON[info.reason] ??
+    'states.lockedBody';
   const price = info.episodePrice ?? info.premierePrice;
 
   return (

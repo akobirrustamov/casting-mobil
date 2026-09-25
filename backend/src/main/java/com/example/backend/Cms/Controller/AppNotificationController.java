@@ -7,6 +7,7 @@ import com.example.backend.Cms.Entity.NotificationTranslation;
 import com.example.backend.Cms.Enums.Locale;
 import com.example.backend.Cms.Enums.NotificationAudience;
 import com.example.backend.Cms.Enums.NotificationStatus;
+import com.example.backend.Cms.Enums.NotificationType;
 import com.example.backend.Cms.Repository.NotificationReadRepo;
 import com.example.backend.Cms.Repository.NotificationRepo;
 import com.example.backend.Cms.Service.AccessService;
@@ -58,6 +59,12 @@ import java.util.Set;
  *   <li>{@code POST /{id}/read} — push bosildi va xabar ekrani
  *       ochilmasdan to'g'ridan-to'g'ri havolaga o'tildi.</li>
  * </ul>
+ *
+ * <h2>Ikki tur (25.09.2026)</h2>
+ * Admin xabar turini tanlaydi: {@code APP_NOTIFICATION} — bosh sahifadagi
+ * qo'ng'iroqcha, {@code CASTING_NOTIFICATION} — «Casting» bo'limidagi
+ * qo'ng'iroqcha. Har bir endpoint ixtiyoriy {@code type} oladi; berilmasa
+ * hammasi (eski ilova versiyalari uchun).
  */
 @RestController
 @RequestMapping("/api/v1/app/notifications")
@@ -88,11 +95,12 @@ public class AppNotificationController {
     @GetMapping
     @Transactional(readOnly = true)
     public ResponseEntity<List<NotificationDto>> list(
-            @RequestParam(required = false) Locale locale) {
+            @RequestParam(required = false) Locale locale,
+            @RequestParam(required = false) NotificationType type) {
 
         User user = CurrentUser.get();
         Locale resolved = homeFeedService.resolveLanguage(user, locale);
-        List<Notification> sent = visible(user);
+        List<Notification> sent = visible(user, type);
         Set<Long> read = readIds(user, sent);
 
         // Tarjimalar alohida so'rov bilan — sahifalash bilan fetch join
@@ -122,9 +130,10 @@ public class AppNotificationController {
      */
     @GetMapping("/unread-count")
     @Transactional(readOnly = true)
-    public ResponseEntity<Map<String, Long>> unreadCount() {
+    public ResponseEntity<Map<String, Long>> unreadCount(
+            @RequestParam(required = false) NotificationType type) {
         User user = CurrentUser.get();
-        List<Notification> sent = visible(user);
+        List<Notification> sent = visible(user, type);
         Set<Long> read = readIds(user, sent);
         long unread = sent.stream().filter(n -> !read.contains(n.getId())).count();
         return ResponseEntity.ok(Map.of("count", unread));
@@ -133,9 +142,10 @@ public class AppNotificationController {
     /** «Xabarlar» ochildi — ko'rinayotgan hamma xabar o'qildi. */
     @PostMapping("/read")
     @Transactional
-    public ResponseEntity<Void> readAll() {
+    public ResponseEntity<Void> readAll(
+            @RequestParam(required = false) NotificationType type) {
         User user = CurrentUser.get();
-        List<Notification> sent = visible(user);
+        List<Notification> sent = visible(user, type);
         Set<Long> read = readIds(user, sent);
         markRead(user, sent.stream().map(Notification::getId).filter(id -> !read.contains(id)).toList());
         return ResponseEntity.noContent().build();
@@ -153,7 +163,7 @@ public class AppNotificationController {
     @Transactional
     public ResponseEntity<Void> readOne(@PathVariable Long id) {
         User user = CurrentUser.get();
-        boolean visible = visible(user).stream().anyMatch(n -> n.getId().equals(id));
+        boolean visible = visible(user, null).stream().anyMatch(n -> n.getId().equals(id));
         if (visible && readRepo.findReadIds(user.getId(), List.of(id)).isEmpty()) {
             markRead(user, List.of(id));
         }
@@ -167,15 +177,21 @@ public class AppNotificationController {
      * xabar emas: birinchisi tayyor emas, ikkinchisining vaqti
      * kelmagan — ikkalasi ham ilovada ko'rinmasligi kerak.
      */
-    private List<Notification> visible(User user) {
+    private List<Notification> visible(User user, NotificationType type) {
         boolean premium = accessService.premiumStatus(user).active();
         return notificationRepo
                 .findAllByOrderByCreatedAtDesc(PageRequest.of(0, LIMIT * 2))
                 .getContent().stream()
                 .filter(n -> n.getStatus() == NotificationStatus.SENT)
+                .filter(n -> type == null || typeOf(n) == type)
                 .filter(n -> matches(n.getAudience(), premium))
                 .limit(LIMIT)
                 .toList();
+    }
+
+    /** Eski qatorlarda tur bo'lmasa — umumiy ilova xabari. */
+    private static NotificationType typeOf(Notification n) {
+        return n.getType() == null ? NotificationType.APP_NOTIFICATION : n.getType();
     }
 
     private Set<Long> readIds(User user, List<Notification> notifications) {
@@ -221,6 +237,7 @@ public class AppNotificationController {
 
         return NotificationDto.builder()
                 .id(n.getId())
+                .type(typeOf(n).name())
                 .title(text == null ? null : text.getTitle())
                 .body(text == null ? null : text.getBody())
                 .imageId(n.getImage() == null ? null : n.getImage().getId())
@@ -240,6 +257,9 @@ public class AppNotificationController {
     @Builder
     public static class NotificationDto {
         private Long id;
+
+        /** {@code APP_NOTIFICATION} / {@code CASTING_NOTIFICATION}. */
+        private String type;
 
         /** Tanlangan tildagi sarlavha. */
         private String title;

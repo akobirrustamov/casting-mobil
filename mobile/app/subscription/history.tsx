@@ -16,6 +16,7 @@ import {
 } from '@/features/subscription/api';
 import { formatSum } from '@/lib/money';
 import { colors } from '@/theme/tokens';
+import { withPaymentsGate } from '@/features/config/PaymentsGate';
 
 /**
  * История платежей — подписки и донаты одним списком.
@@ -30,7 +31,7 @@ import { colors } from '@/theme/tokens';
  * У подписки от админа `paidAmount` пустой. Показать там ноль значило бы
  * сказать «купил бесплатно»; строка честно говорит «Sovg'a».
  */
-export default function PaymentHistoryScreen() {
+function PaymentHistoryScreen() {
   const { t } = useTranslation();
   const isAuthorized = useAuthStore((s) => s.isAuthorized);
 
@@ -160,3 +161,5 @@ function Row({
     </View>
   );
 }
+
+export default withPaymentsGate(PaymentHistoryScreen);

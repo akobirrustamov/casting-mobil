@@ -6,7 +6,8 @@ import com.example.backend.Cms.Enums.*;
 import com.example.backend.Cms.Repository.*;
 import com.example.backend.Entity.User;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,8 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 /**
@@ -90,74 +89,51 @@ public class HomeFeedService {
     }
 
     /**
-     * Bosh sahifa keshi.
+     * Bosh sahifa — qisqa muddatli kesh bilan ({@code GET /api/v1/app/home}).
      *
-     * <h2>Nima uchun</h2>
-     * Bosh sahifa ilova ochilganda HAR SAFAR so'raladi va uni qurish
-     * arzon emas: bo'limlar, reklama, premyeralar, kategoriyalar,
-     * ijodkorlar va har qator uchun kontent — o'nlab so'rov. Tomoshabinlar
-     * soni oshganda aynan shu sahifa bazani birinchi bo'lib bo'g'adi.
+     * <h2>Nega kesh</h2>
+     * Bu ilovaning eng ko'p chaqiriladigan endpointi va har ochilishda
+     * o'nlab so'rov yuboradi. Javob esa foydalanuvchiga faqat IKKI narsa
+     * orqali bog'liq: til va reklama ko'rsatilishi — kalit shu.
      *
-     * Javob esa hamma uchun bir xil: {@link #isVisible} foydalanuvchini
-     * umuman hisobga olmaydi — u faqat kontent chop etilganmi va ochiqmi,
-     * shuni tekshiradi.
-     *
-     * <h2>⚠️ Kalit nima uchun aynan shu ikkisi</h2>
-     * Lenta faqat IKKI narsaga bog'liq: til va reklama ko'rsatiladimi.
-     * Kalitga foydalanuvchi qo'shilsa kesh mutlaqo foydasiz bo'lardi
-     * (har kimga o'z nusxasi), olib tashlansa esa premium foydalanuvchi
-     * reklamali lentani ko'rardi — ya'ni pul to'lagan odam reklama
-     * ko'rardi va buni hech qanday test ushlamasdi.
-     *
-     * Shuning uchun {@link #isVisible} ga foydalanuvchiga bog'liq shart
-     * qo'shilsa, u SHU KALITGA ham qo'shilishi shart.
-     */
-    private record FeedKey(Locale lang, boolean showAds) {}
-
-    /** Keshlangan lenta va uning muddati (ms). */
-    private record CachedFeed(HomeFeedDto feed, long expiresAtMs) {}
-
-    /**
-     * ⚠️ Lombok bu maydonni konstruktorga QO'SHMAYDI, chunki u shu yerda
-     * qiymat oladi. Aks holda `@RequiredArgsConstructor` imzosi o'zgarardi.
-     */
-    private final ConcurrentMap<FeedKey, CachedFeed> feedCache = new ConcurrentHashMap<>();
-
-    /** Kesh muddati. {@code 0} yoki manfiy — kesh o'chiq. */
-    @Value("${app.home.cache-seconds:30}")
-    private long cacheSeconds;
-
-    /**
-     * Keshlangan bosh sahifa — ilova shuni so'raydi.
-     *
-     * ⚠️ Kesh eskirishi ATAYLAB qisqa (30 soniya): admin bo'limni
-     * o'zgartirganda natijani deyarli darhol ko'rishi kerak. Muddat
-     * uzaytirilsa, admin «o'zgarish saqlanmadi» deb o'ylab qayta-qayta
-     * saqlayverardi.
+     * ⚠️ Admin o'zgarishi va vaqtga bog'langan reklama/premyera ilovada
+     * ko'pi bilan {@code app.home.cache-seconds} kechikib chiqadi.
+     * {@code 0} — kesh o'chiq.
      */
     @Transactional(readOnly = true)
     public HomeFeedDto buildCached(User user, Locale locale) {
+        Locale lang = resolveLanguage(user, locale);
+        boolean showAds = accessService.shouldShowAds(user);
         if (cacheSeconds <= 0) {
-            return build(user, locale);
+            return build(lang, showAds, user);
         }
-
-        FeedKey key = new FeedKey(resolveLanguage(user, locale), accessService.shouldShowAds(user));
-        long now = System.currentTimeMillis();
-
+        FeedKey key = new FeedKey(lang, showAds);
+        long nowMs = System.currentTimeMillis();
         CachedFeed hit = feedCache.get(key);
-        if (hit != null && hit.expiresAtMs() > now) {
+        if (hit != null && hit.expiresAtMs() > nowMs) {
             return hit.feed();
         }
-
-        HomeFeedDto fresh = build(user, locale);
-        feedCache.put(key, new CachedFeed(fresh, now + cacheSeconds * 1000L));
-        return fresh;
+        HomeFeedDto built = build(lang, showAds, user);
+        feedCache.put(key, new CachedFeed(built, nowMs + cacheSeconds * 1000L));
+        return built;
     }
+
+    private record FeedKey(Locale lang, boolean showAds) { }
+
+    private record CachedFeed(HomeFeedDto feed, long expiresAtMs) { }
+
+    private final java.util.concurrent.ConcurrentMap<FeedKey, CachedFeed> feedCache =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    @org.springframework.beans.factory.annotation.Value("${app.home.cache-seconds:30}")
+    private long cacheSeconds;
 
     @Transactional(readOnly = true)
     public HomeFeedDto build(User user, Locale locale) {
-        Locale lang = resolveLanguage(user, locale);
-        boolean showAds = accessService.shouldShowAds(user);
+        return build(resolveLanguage(user, locale), accessService.shouldShowAds(user), user);
+    }
+
+    private HomeFeedDto build(Locale lang, boolean showAds, User user) {
         LocalDateTime now = LocalDateTime.now();
 
         List<HomeFeedDto.Section> sections = new ArrayList<>();
@@ -394,39 +370,39 @@ public class HomeFeedService {
      */
     private List<HomeFeedDto.ContentCard> contentFor(HomepageSectionType type, Locale lang,
                                                      User user, int limit) {
+        // Saralash, ko'rinish sharti va chegara — bazada (ContentRepo
+        // izohiga qarang). `isVisible` qo'riqchi sifatida qoladi.
+        Pageable first = PageRequest.of(0, limit);
         List<Content> pool = switch (type) {
-            case FEATURED_CONTENT -> contentRepo.findAllByDeletedAtIsNullAndFeaturedTrueAndStatus(
-                    PublicationStatus.PUBLISHED);
-            case POPULAR_CONTENT -> contentRepo.findAllByDeletedAtIsNullAndPopularTrueAndStatus(
-                    PublicationStatus.PUBLISHED);
-            case MINI_SERIES -> byType(ContentType.MINI_SERIES);
-            case REELS_SERIES -> reels();
-            case PODCASTS -> byType(ContentType.PODCAST);
-            case SHOWS -> byType(ContentType.SHOW);
-            case STREAMS -> byType(ContentType.STREAM);
-            case CLIPS -> byType(ContentType.CLIP);
+            case FEATURED_CONTENT -> contentRepo.homeFeatured(
+                    PublicationStatus.PUBLISHED, ContentVisibility.PUBLIC, first);
+            case POPULAR_CONTENT -> contentRepo.homePopular(
+                    PublicationStatus.PUBLISHED, ContentVisibility.PUBLIC, first);
+            case MINI_SERIES -> byType(ContentType.MINI_SERIES, first);
+            case REELS_SERIES -> reels(first);
+            case PODCASTS -> byType(ContentType.PODCAST, first);
+            case SHOWS -> byType(ContentType.SHOW, first);
+            case STREAMS -> byType(ContentType.STREAM, first);
+            case CLIPS -> byType(ContentType.CLIP, first);
             // CUSTOM_ROW uchun avtomatik qoida YO'Q: u butunlay admin
             // tanloviga asoslangan qator. Ro'yxat bo'sh bo'lsa - qator yo'q.
             default -> List.of();
         };
         return pool.stream()
                 .filter(c -> isVisible(c, user))
-                .sorted(Comparator.comparing(Content::getPublicationDate,
-                        Comparator.nullsLast(Comparator.reverseOrder())))
-                .limit(limit)
                 .map(c -> contentCard(c, lang))
                 .toList();
     }
 
-    private List<Content> byType(ContentType type) {
-        return contentRepo.findAllByDeletedAtIsNullAndContentTypeAndStatus(
-                type, PublicationStatus.PUBLISHED);
+    private List<Content> byType(ContentType type, Pageable first) {
+        return contentRepo.homeByType(
+                type, PublicationStatus.PUBLISHED, ContentVisibility.PUBLIC, first);
     }
 
     /** Reels — tik formatdagi seriallar: alohida tur emas, YO'NALISH. */
-    private List<Content> reels() {
-        return contentRepo.findAllByDeletedAtIsNullAndOrientationAndStatus(
-                ContentOrientation.VERTICAL, PublicationStatus.PUBLISHED);
+    private List<Content> reels(Pageable first) {
+        return contentRepo.homeByOrientation(
+                ContentOrientation.VERTICAL, PublicationStatus.PUBLISHED, ContentVisibility.PUBLIC, first);
     }
 
     // ------------------------------------------------------------ yordamchi

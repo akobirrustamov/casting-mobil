@@ -24,6 +24,7 @@ import {
 import { LANGUAGE_LABELS, isSupportedLanguage, type Language } from '@/i18n';
 import { formatSum } from '@/lib/money';
 import { colors, gradients, radius } from '@/theme/tokens';
+import { usePaymentsVisible } from '@/features/config/api';
 
 /**
  * Аккаунт — экран 21, раскладка с макета заказчика «Screen 4».
@@ -116,6 +117,7 @@ export default function ProfileScreen() {
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
   const me = useMe();
+  const paymentsVisible = usePaymentsVisible();
   const state = premiumState(me.data?.premium);
   const until = formatDate(me.data?.premium.until ?? null);
 
@@ -131,30 +133,33 @@ export default function ProfileScreen() {
   const subscriptionHint =
     until !== null ? t('profile.subscriptionUntil', { date: until }) : undefined;
 
+  // Платёжные пункты — только когда платежи включены в админке.
+  const paymentRow = (row: Row): Row[] => (paymentsVisible ? [row] : []);
+
   const account: Row[] = [
-    {
+    ...paymentRow({
       key: 'mySubscription',
       label: t('profile.mySubscription'),
       hint: subscriptionHint,
       icon: 'ribbon-outline',
       value: subscriptionValue,
       onPress: () => pushOnce('/subscription'),
-    },
-    { key: 'topUp', label: t('profile.topUp'), hint: t('profile.topUpHint'), icon: 'card-outline' },
-    {
+    }),
+    ...paymentRow({ key: 'topUp', label: t('profile.topUp'), hint: t('profile.topUpHint'), icon: 'card-outline' }),
+    ...paymentRow({
       key: 'promocodes',
       label: t('profile.promocodes'),
       hint: t('profile.promocodesHint'),
       icon: 'pricetag-outline',
       onPress: () => pushOnce('/promocode'),
-    },
-    {
+    }),
+    ...paymentRow({
       key: 'paymentHistory',
       label: t('profile.paymentHistory'),
       hint: t('profile.paymentHistoryHint'),
       icon: 'time-outline',
       onPress: () => pushOnce('/subscription/history'),
-    },
+    }),
     {
       key: 'favorites',
       label: t('profile.favorites'),
@@ -169,13 +174,13 @@ export default function ProfileScreen() {
       icon: 'phone-portrait-outline',
       onPress: () => pushOnce('/devices'),
     },
-    {
+    ...paymentRow({
       key: 'tariffs',
       label: t('profile.tariffs'),
       hint: t('profile.tariffsHint'),
       icon: 'play-circle-outline',
       onPress: () => pushOnce('/subscription/tariffs'),
-    },
+    }),
   ];
 
   const settings: Row[] = [
@@ -243,7 +248,7 @@ export default function ProfileScreen() {
 
       {/* Подписчику незачем предлагать подписку: баннер выглядел бы так,
           будто платёж не прошёл. */}
-      {state === 'active' ? null : <PremiumBanner />}
+      {!paymentsVisible || state === 'active' ? null : <PremiumBanner />}
 
       <RowGroup rows={account} />
 
@@ -279,6 +284,7 @@ function ProfileCard() {
   const user = useAuthStore((s) => s.user);
   const isAuthorized = useAuthStore((s) => s.isAuthorized);
   const balance = useBalance();
+  const paymentsVisible = usePaymentsVisible();
 
   // Тот же ключ запроса, что и на экране выше, — повторного обращения нет.
   const premium = premiumState(useMe().data?.premium);
@@ -311,7 +317,7 @@ function ProfileCard() {
             {/* Метка подписчика — как на макете Screen 4. Показывается
                 только по ответу сервера: нарисовать её «на всякий случай»
                 значило бы пообещать доступ, которого нет. */}
-            {premium === 'active' ? (
+            {paymentsVisible && premium === 'active' ? (
               <View className="mt-1 flex-row items-center gap-1 self-start rounded-pill bg-purple px-3 py-1">
                 <Ionicons name="diamond" size={11} color={colors.white} />
                 <Text className="text-micro font-semibold text-white">
@@ -323,6 +329,8 @@ function ProfileCard() {
         </View>
 
         {isAuthorized ? (
+          // Баланс, звёзды и монеты — деньги: скрыты, пока платежи выключены.
+          !paymentsVisible ? null : (
           <View className="flex-row items-stretch rounded-card bg-surface-2 py-3">
             <Stat
               icon="cash-outline"
@@ -348,6 +356,7 @@ function ProfileCard() {
               value={balance.data ? String(balance.data.coins) : null}
             />
           </View>
+          )
         ) : (
           <Button variant="primary" shape="card" onPress={() => pushOnce('/(auth)/sign-in')}>
             {t('profile.signIn')}
