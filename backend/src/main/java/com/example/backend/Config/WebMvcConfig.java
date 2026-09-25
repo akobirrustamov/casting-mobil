@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -18,6 +19,7 @@ import org.springframework.web.servlet.resource.ResourceResolverChain;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 
 
@@ -77,6 +79,19 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // CRA build'idagi /static/** fayllar nomida xesh bor (main.fa366818.js):
+        // mazmun o'zgarsa nom ham o'zgaradi. Shuning uchun ularni brauzer bir
+        // yil keshlashi xavfsiz — takroriy tashriflarda qayta yuklanmaydi.
+        // index.html esa keshlanmaydi (pastdagi "/**"), yangi deploy darhol ko'rinadi.
+        registry.addResourceHandler("/static/**")
+                .addResourceLocations("classpath:/static/static/")
+                .setCacheControl(CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic().immutable());
+
+        // Xeshsiz, lekin kam o'zgaradigan media (bosh sahifa videosi) — 7 kun.
+        registry.addResourceHandler("/videos/**")
+                .addResourceLocations("classpath:/static/videos/")
+                .setCacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic());
+
         registry.addResourceHandler("/**")
                 .addResourceLocations("classpath:/static/")
 //                .setCacheControl(CacheControl.maxAge(365, TimeUnit.DAYS))

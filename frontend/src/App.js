@@ -1,29 +1,33 @@
-import React, { useEffect } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import ApiCall from "./config/index"
 
-// my pages
+// Bosh sahifa darhol yuklanadi — foydalanuvchilarning aksariyati shu yerga
+// keladi. Qolgan sahifalar (admin panel, bot, tomosha) alohida bo'laklarga
+// ajratilgan: ilgari hammasi bitta 2.2 MB main.js ichida edi va bosh sahifa
+// ham recharts, primereact, hls.js va boshqalarni yuklab olishga majbur edi.
 import Home from "./pages/home/Home"
-import PageNotFound from "./pages/404/404";
-import DataForm from "./pages/dataForm/DataForm";
-import History from "./pages/history/History";
-import Appeal from "./pages/appeal/Appeal";
-import CastingUser from "./admin/admin/CastingUser";
-import CastingUserDetail from "./admin/admin/CastingUserDetail";
-import Models from "./pages/models/Models";
-import LoginPage from "./admin/LoginAdmin"
-import BotHome from "./pages/HomeBot/BotHome"
 
-import PanelApp from "./adminpanel/PanelApp";
-import ViewerLayout from "./viewer/ViewerLayout";
-import ViewerSignIn from "./viewer/pages/SignInPage";
-import ViewerWatch from "./viewer/pages/WatchPage";
+const PageNotFound = lazy(() => import("./pages/404/404"));
+const DataForm = lazy(() => import("./pages/dataForm/DataForm"));
+const History = lazy(() => import("./pages/history/History"));
+const Appeal = lazy(() => import("./pages/appeal/Appeal"));
+const CastingUser = lazy(() => import("./admin/admin/CastingUser"));
+const CastingUserDetail = lazy(() => import("./admin/admin/CastingUserDetail"));
+const Models = lazy(() => import("./pages/models/Models"));
+const LoginPage = lazy(() => import("./admin/LoginAdmin"));
+const BotHome = lazy(() => import("./pages/HomeBot/BotHome"));
 
-import BotAdminHome from "./bot-admin/admin/AdminHome";
-import BotAdminNews from "./bot-admin/admin/AdminNews";
-import BotCastingUser from "./bot-admin/admin/CastingUser";
-import BotCastingUserDetail from "./bot-admin/admin/CastingUserDetail";
-import BotCastingUserAccepted from "./bot-admin/admin/CastingUserAccepted";
+const PanelApp = lazy(() => import("./adminpanel/PanelApp"));
+const ViewerLayout = lazy(() => import("./viewer/ViewerLayout"));
+const ViewerSignIn = lazy(() => import("./viewer/pages/SignInPage"));
+const ViewerWatch = lazy(() => import("./viewer/pages/WatchPage"));
+
+const BotAdminHome = lazy(() => import("./bot-admin/admin/AdminHome"));
+const BotAdminNews = lazy(() => import("./bot-admin/admin/AdminNews"));
+const BotCastingUser = lazy(() => import("./bot-admin/admin/CastingUser"));
+const BotCastingUserDetail = lazy(() => import("./bot-admin/admin/CastingUserDetail"));
+const BotCastingUserAccepted = lazy(() => import("./bot-admin/admin/CastingUserAccepted"));
 
 // ⚠️ Ilgari App() ichida ["/dashboard"] turgan, lekin bunday marshrut loyihada
 // YO'Q — ya'ni tekshiruv hech qachon ishlamagan va admin sahifalari umuman
@@ -101,6 +105,7 @@ function App() {
 
   return (
     <div>
+      <Suspense fallback={<div className="min-h-screen bg-[#0b1220]" />}>
       <Routes>
         {/*  app admin */}
         <Route path={"/aadmin/login"} element={<LoginPage />} />
@@ -135,6 +140,7 @@ function App() {
         <Route path={"/appeal/:userId"} element={<Appeal />} />
         <Route path={"/models"} element={<Models />} />
       </Routes>
+      </Suspense>
     </div >
   );
 }
