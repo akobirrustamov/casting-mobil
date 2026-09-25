@@ -714,6 +714,21 @@ export const adminApi = {
 
   storageDeleteOrphan: (key) =>
     api.post('/api/v1/app/admin/storage/orphan/delete', { key }),
+
+  /**
+   * Faylni ko'rish uchun qisqa muddatli imzolangan havola.
+   *
+   * ⚠️ Javobda faylning o'zi emas, unga HAVOLA qaytadi:
+   * `{ key, url, contentType, kind, expiresAt }`. Sababi — panel access
+   * tokenni xotirada saqlab `Authorization` sarlavhasida yuboradi,
+   * `<img src>` va `<video src>` esa sarlavha qo'sha olmaydi. Endpoint
+   * manzilini to'g'ridan-to'g'ri `src` ga qo'yish 401 berardi.
+   *
+   * ⚠️ Havola muddati bor (sukut bo'yicha 10 daqiqa). Uni saqlab qo'yib
+   * keyin ishlatib bo'lmaydi — oyna har ochilishida qaytadan so'raladi.
+   */
+  storagePreview: (key) =>
+    api.get('/api/v1/app/admin/storage/preview', { key }),
   /** Yiqilgan transcoding'ni navbatga qaytaradi (MEDIA_UPLOAD). */
   retryTranscoding: (id) => api.post(`/api/v1/app/admin/media/${id}/retry-transcoding`),
   /** Navbat holati — panel yangilashni qachon to'xtatishni biladi. */

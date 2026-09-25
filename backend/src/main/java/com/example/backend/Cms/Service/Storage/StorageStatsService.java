@@ -126,7 +126,8 @@ public class StorageStatsService {
                 // JSON'ga solish javobni o'nlab megabaytga
                 // chiqarardi va brauzer uni chiza olmasdi.
                 if (orphans.size() < MAX_LISTED) {
-                    orphans.add(new Orphan(item.getKey(), item.getSizeBytes()));
+                    orphans.add(new Orphan(item.getKey(), item.getSizeBytes(),
+                            MediaContentTypes.previewKind(item.getKey())));
                 }
             }
         }
@@ -459,6 +460,16 @@ public class StorageStatsService {
     public static class Orphan {
         private final String key;
         private final long sizeBytes;
+
+        /**
+         * Panelda ko'rsatish mumkinmi va qanday.
+         *
+         * ⚠️ Turni SERVER aytadi. Brauzerda kengaytmalar ro'yxatini
+         * takrorlash ikki joyning jimgina uzilib qolishiga olib
+         * kelardi: yangi format qo'shilganda server faylni
+         * ko'rsatishga qodir bo'lardi, tugma esa chiqmasdi.
+         */
+        private final MediaContentTypes.PreviewKind previewKind;
     }
 
     @Data

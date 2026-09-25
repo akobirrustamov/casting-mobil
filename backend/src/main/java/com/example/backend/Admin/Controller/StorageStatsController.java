@@ -1,6 +1,7 @@
 package com.example.backend.Admin.Controller;
 
 import com.example.backend.Admin.CurrentUser;
+import com.example.backend.Cms.Service.Storage.StoragePreviewService;
 import com.example.backend.Cms.Service.Storage.StorageStatsService;
 import com.example.backend.Enums.Permission;
 import com.example.backend.Services.AuditService.AuditAction;
@@ -42,6 +43,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class StorageStatsController {
 
     private final StorageStatsService statsService;
+    private final StoragePreviewService previewService;
     private final PermissionService permissionService;
     private final com.example.backend.Services.AuditService.AuditService auditService;
 
@@ -90,6 +92,38 @@ public class StorageStatsController {
             @RequestParam(required = false, defaultValue = "") String prefix) {
         require();
         return ResponseEntity.ok(statsService.browse(prefix));
+    }
+
+    /**
+     * Faylni ko'rish uchun qisqa muddatli havola.
+     *
+     * <h2>Nima uchun kerak</h2>
+     * Yetim fayllar ro'yxatida faqat kalit turadi
+     * ({@code content/2ac6ed2b-….mp4}) — nomlar UUID, chunki ular
+     * server tomonida yasaladi. Admin «o'chirish xavfsiz» degan
+     * yozuvga ishonishi uchun faylni KO'RISHI kerak: rasm ko'rinsin,
+     * video o'ynasin.
+     *
+     * ⚠️ Javobda faylning O'ZI emas, unga imzolangan havola qaytadi.
+     * Sababi {@link StoragePreviewService} da yozilgan: `<img src>`
+     * sarlavha yubora olmaydi, gigabaytli videoni esa ilova orqali
+     * oqizib bo'lmaydi.
+     *
+     * ⚠️ Kalit YETIM ekani tekshirilmaydi — atayin. Ruxsat bir xil
+     * ({@code MEDIA_DELETE}): bu admin xohlagan faylni allaqachon
+     * O'CHIRA oladi, demak uni ko'rish yangi imkoniyat bermaydi.
+     * Tekshiruv qo'shilsa, har ko'rish uchun butun ombor qayta
+     * skanerlanardi — ya'ni tugma bosilgach sahifa soniyalab qotardi.
+     */
+    @GetMapping("/preview")
+    public ResponseEntity<StoragePreviewService.Preview> preview(@RequestParam String key) {
+        require();
+
+        if (key == null || key.isBlank()) {
+            throw BusinessException.validation("Kalit ko'rsatilmagan");
+        }
+
+        return ResponseEntity.ok(previewService.of(key));
     }
 
     /**

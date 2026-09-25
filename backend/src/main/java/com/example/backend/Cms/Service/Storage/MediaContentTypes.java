@@ -57,4 +57,49 @@ public final class MediaContentTypes {
     public static String of(String filenameOrKey) {
         return BY_EXTENSION.getOrDefault(StorageKeys.extensionOf(filenameOrKey), DEFAULT);
     }
+
+    /**
+     * Faylni panelda QANDAY ko'rsatish mumkinligi.
+     *
+     * ⚠️ Bu ro'yxat brauzerda TAKRORLANMAYDI. Panel tugmani ko'rsatish
+     * yoki ko'rsatmaslikni shu qiymatga qarab hal qiladi. Ikki joyda
+     * alohida ro'yxat bo'lsa, yangi format qo'shilganda ular jimgina
+     * bir-biridan uzilardi: server faylni ko'rsatishga qodir bo'lsa
+     * ham, tugma chiqmasdi.
+     */
+    public enum PreviewKind {
+        /** `<img>` bilan ko'rsatiladi. */
+        IMAGE,
+        /** `<video controls>` bilan o'ynatiladi. */
+        VIDEO,
+        /** Ko'rsatib bo'lmaydi — tugma ham chiqmaydi. */
+        OTHER
+    }
+
+    /**
+     * Kalitdan ko'rsatish turini aniqlaydi.
+     *
+     * ⚠️ HLS BO'LAKLARI ({@code .m4s}, {@code .ts}) `video/…` bilan
+     * boshlanadi, lekin OTHER qaytaradi: bitta bo'lak o'zicha yaroqli
+     * video emas. Ularni VIDEO deb belgilash har segment yonida
+     * ishlamaydigan tugma chiqarardi — bosilardi, pleyer ochilardi va
+     * «video buzuq» degan xulosa berardi.
+     *
+     * ⚠️ {@code .m3u8} ham OTHER: playlistni oddiy `<video>` faqat
+     * Safari'da ochadi. Yetim playlist uchun `hls.js` ko'tarish
+     * arzimaydi — u baribir segmentlarisiz o'ynamaydi.
+     */
+    public static PreviewKind previewKind(String filenameOrKey) {
+        String type = of(filenameOrKey);
+        if (type.startsWith("image/")) {
+            return PreviewKind.IMAGE;
+        }
+        if (type.equals("video/iso.segment") || type.equals("video/mp2t")) {
+            return PreviewKind.OTHER;
+        }
+        if (type.startsWith("video/")) {
+            return PreviewKind.VIDEO;
+        }
+        return PreviewKind.OTHER;
+    }
 }

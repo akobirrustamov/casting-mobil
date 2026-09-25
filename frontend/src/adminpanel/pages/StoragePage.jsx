@@ -3,6 +3,7 @@ import { adminApi } from '../api/client';
 import ConfirmDialog, { useConfirm } from '../components/ConfirmDialog';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
 import StorageBrowser from '../components/StorageBrowser';
+import StorageObjectPreview from '../components/StorageObjectPreview';
 import { PageHeader } from '../components/Ui';
 import { usePanelI18n } from '../i18n';
 
@@ -37,6 +38,8 @@ const humanSize = (bytes) => {
  */
 export default function StoragePage() {
   const { t } = usePanelI18n();
+  // Qaysi yetim fayl ko'rilyapti. `null` — oyna yopiq.
+  const [previewed, setPreviewed] = useState(null);
 
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -112,6 +115,19 @@ export default function StoragePage() {
       </div>
 
       <ConfirmDialog {...confirmer.props} />
+
+      {/* ⚠️ Oyna `previewed` bo'lganda QAYTA yasaladi (kalit `key` da):
+          shunda havola har ochilishda yangidan so'raladi. Bitta
+          nusxani qayta ishlatsak, ikkinchi fayl birinchisining
+          muddati o'tgan havolasi bilan ochilardi. */}
+      {previewed && (
+        <StorageObjectPreview
+          key={previewed.key}
+          objectKey={previewed.key}
+          kind={previewed.previewKind}
+          onClose={() => setPreviewed(null)}
+        />
+      )}
 
       {/* ⚠️ Papka ko'rinishi hisobotga BOG'LIQ EMAS.
           U jonli va arzon — bitta daraja o'qiladi. Ilgari u
@@ -191,7 +207,22 @@ export default function StoragePage() {
                           <td style={{ fontVariantNumeric: 'tabular-nums' }}>
                             {humanSize(o.sizeBytes)}
                           </td>
-                          <td style={{ textAlign: 'right' }}>
+                          <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                            {/* ⚠️ Tugma faqat KO'RSATILADIGAN fayl uchun chiqadi va
+                                turni SERVER aytadi (`previewKind`). Hammasiga chiqarilsa,
+                                HLS bo'lagi yonidagi tugma bosilardi, pleyer ochilardi va
+                                hech narsa o'ynamasdi — admin «video buzuq» degan XATO
+                                xulosaga kelardi. */}
+                            {o.previewKind && o.previewKind !== 'OTHER' && (
+                              <button
+                                type="button"
+                                className="uz-btn uz-btn-ghost"
+                                style={{ minHeight: 32, fontSize: 12, marginRight: 8 }}
+                                onClick={() => setPreviewed(o)}
+                              >
+                                {t('storage.preview')}
+                              </button>
+                            )}
                             <button
                               type="button"
                               className="uz-btn uz-btn-danger"
