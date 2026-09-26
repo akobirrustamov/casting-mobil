@@ -66,8 +66,8 @@ export default function MobilePaymentsCard({ value, onChanged }) {
               width: 20,
               height: 20,
               borderRadius: '50%',
-              background: '#fff',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              background: 'var(--p-knob)',
+              boxShadow: 'var(--p-knob-shadow)',
               transition: 'left 0.2s',
             }} />
           </button>

@@ -163,6 +163,19 @@
     --p-header:    var(--header);
     --p-shadow:    var(--shadow);
 
+    /* Almashtirgich («switch») dastagi.
+
+       ⚠️ Rangli yo'lda turadi: yoqilganda `--p-success` (yashil),
+       o'chirilganda `--p-border` (kulrang). Shuning uchun u sirt
+       rangidan OLINMAYDI — `--p-surface` qora gammada va yashil
+       fonda ko'rinmasdi. `--on-brand` aynan «rangli fon ustidagi»
+       rang uchun. */
+    --p-knob:        var(--on-brand);
+    /* Kichik soya — dastak yo'ldan ajralib turishi uchun. `--p-shadow`
+       kartochkalar uchun (30px yoyilish) va 20px dastakda u butun
+       almashtirgichni bo'yab tashlardi. */
+    --p-knob-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+
     background: var(--p-bg);
     color: var(--p-text);
     min-height: 100vh;

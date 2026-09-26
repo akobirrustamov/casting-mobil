@@ -32,6 +32,12 @@ jest.mock('react-i18next', () => ({
 }));
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 44, bottom: 34, left: 0, right: 0 }),
+  // ⚠️ `useSafeAreaFrame` ham SHART: `useKeyboardInset` (`src/lib/keyboard.ts`)
+  // oyna balandligini shundan oladi. Zaglushkada bo'lmasa yiqiladigan narsa
+  // klaviatura hisobi emas — EKRANNING O'ZI umuman render bo'lmaydi
+  // (`useSafeAreaFrame is not a function`), va sabab test nomidan
+  // ko'rinmaydi.
+  useSafeAreaFrame: () => ({ x: 0, y: 0, width: 400, height: 800 }),
 }));
 jest.mock('@/components/ui/Screen', () => ({
   Screen: ({ children }: { children: React.ReactNode }) => children,
